@@ -278,6 +278,19 @@ $('makeTickets').onclick = () => {
     `<br><br>合計：${unit*picks.length}円` +
     '<br>※オッズや組合せの適合を確認してから購入してください。';
 };
+function dedupeRunnerRows(rows) {
+  const map = new Map();
+  for (const h of rows || []) {
+    const no = String(h.horseNo ?? '').trim();
+    if (!/^\d+$/.test(no)) continue;
+    if (!map.has(no)) {
+      map.set(no, h);
+    } else {
+      map.set(no, { ...map.get(no), ...h });
+    }
+  }
+  return [...map.values()];
+}
 </script>
 </body>
 </html>
