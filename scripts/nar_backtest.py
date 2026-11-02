@@ -461,7 +461,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
         pending.append((field,race))
         if len(field)<3: continue
         payout=payouts.get(key)
-        if not payout: continue
+        if not payout or not payout.get("win"): continue
         winners={numbers[0] for numbers, _ in payout.get("win", [])}
         if not winners: continue
         for model_name,weights in models.items():
