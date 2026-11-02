@@ -36,15 +36,15 @@ jobs:
           from pathlib import Path
           model = json.loads(Path("data/live-model.json").read_text(encoding="utf-8"))
           history = json.loads(Path("data/live-history.json").read_text(encoding="utf-8"))
-          payload = "window.KEIBA_LAB_LEARNED_MODEL=" + json.dumps(model, ensure_ascii=False, separators=(",", ":")) + ";\\n"
-          payload += "window.KEIBA_LAB_LEARNED_HISTORY=" + json.dumps(history, ensure_ascii=False, separators=(",", ":")) + ";\\n"
+          payload = "window.KEIBA_LAB_LEARNED_MODEL=" + json.dumps(model, ensure_ascii=False, separators=(",", ":")) + ";\n"
+          payload += "window.KEIBA_LAB_LEARNED_HISTORY=" + json.dumps(history, ensure_ascii=False, separators=(",", ":")) + ";\n"
           Path("app/src/main/assets/learned-data.js").write_text(payload, encoding="utf-8")
           index_path = Path("app/src/main/assets/index.html")
           html = index_path.read_text(encoding="utf-8")
           first_script = html.find("<script")
           if first_script < 0:
               raise SystemExit("index.html has no script element")
-          html = html[:first_script] + '<script src="learned-data.js"></script>\\n' + html[first_script:]
+          html = html[:first_script] + '<script src="learned-data.js"></script>\n' + html[first_script:]
           index_path.write_text(html, encoding="utf-8")
           print("Bundled trained weights and historical feature snapshot into APK")
           PY
