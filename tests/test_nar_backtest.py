@@ -78,6 +78,13 @@ class OddsSnapshotParsingTests(unittest.TestCase):
             self.assertEqual([row["race_key"] for row in rows], [first["race_key"], second["race_key"]])
 
 
+class FieldSizeNormalizationTests(unittest.TestCase):
+    def test_finish_rank_is_normalized_by_field_size(self):
+        self.assertEqual(nb.rank_quality(1, 16), 100.0)
+        self.assertAlmostEqual(nb.rank_quality(8, 16), 53.3333333333, places=6)
+        self.assertEqual(nb.rank_quality(1, None), 100.0)
+
+
 class ProbabilityCalibrationTests(unittest.TestCase):
     def test_softmax_probabilities_sum_to_one(self):
         probs = nb.softmax_probabilities([0.2, 0.4, 0.1], 0.18)
