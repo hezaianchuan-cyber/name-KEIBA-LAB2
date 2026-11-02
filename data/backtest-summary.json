@@ -1,0 +1,169 @@
+{
+  "generated_at": "2026-11-02T13:22:30.400920+00:00",
+  "period": {
+    "start": "2025-11-02",
+    "end": "2026-11-01"
+  },
+  "source": "NAR official monthly race data; raw archives are not retained",
+  "downloaded_months": [
+    {
+      "month": "2025-11",
+      "bytes": 1272919
+    },
+    {
+      "month": "2025-12",
+      "bytes": 1305598
+    },
+    {
+      "month": "2026-01",
+      "bytes": 1059227
+    },
+    {
+      "month": "2026-02",
+      "bytes": 941511
+    },
+    {
+      "month": "2026-03",
+      "bytes": 1262890
+    },
+    {
+      "month": "2026-04",
+      "bytes": 1235458
+    },
+    {
+      "month": "2026-05",
+      "bytes": 1360810
+    },
+    {
+      "month": "2026-06",
+      "bytes": 1321050
+    },
+    {
+      "month": "2026-07",
+      "bytes": 1357657
+    },
+    {
+      "month": "2026-08",
+      "bytes": 1211113
+    },
+    {
+      "month": "2026-09",
+      "bytes": 1359705
+    },
+    {
+      "month": "2026-10",
+      "bytes": 1420092
+    },
+    {
+      "month": "2026-11",
+      "bytes": 180832
+    }
+  ],
+  "race_count": 15491,
+  "horse_rows": 159395,
+  "payout_races": 15491,
+  "evaluated": 108437,
+  "method": {
+    "prediction_order": "chronological; each race is predicted before its results enter horse/jockey/sire history",
+    "odds_feature": false,
+    "ticket_policy": "fixed top-rank tickets per race; 100 JPY per ticket; not a betting recommendation",
+    "ticket_counts_per_race": {
+      "win": 1,
+      "place": 3,
+      "wide": 3,
+      "quinella": 1,
+      "exacta": 1,
+      "trio": 1,
+      "trifecta": 1
+    },
+    "limitations": [
+      "No historical pre-race odds feature; NAR monthly odds are confirmed odds and are not used.",
+      "Only a fixed, transparent ticket policy is tested; scores are heuristic, not calibrated probabilities.",
+      "Missing or incomplete historical rows are excluded where necessary."
+    ]
+  },
+  "metrics": {
+    "win": {
+      "races": 15491,
+      "tickets": 15491,
+      "hits": 4503,
+      "stake": 1549100,
+      "return": 1154980.0,
+      "hit_rate": 29.07,
+      "roi": 74.56,
+      "profit": -394120.0
+    },
+    "place": {
+      "races": 15491,
+      "tickets": 46473,
+      "hits": 22527,
+      "stake": 4647300,
+      "return": 3502510.0,
+      "hit_rate": 48.47,
+      "roi": 75.37,
+      "profit": -1144790.0
+    },
+    "wide": {
+      "races": 15491,
+      "tickets": 46473,
+      "hits": 10154,
+      "stake": 4647300,
+      "return": 3114330.0,
+      "hit_rate": 21.85,
+      "roi": 67.01,
+      "profit": -1532970.0
+    },
+    "quinella": {
+      "races": 15491,
+      "tickets": 15491,
+      "hits": 1996,
+      "stake": 1549100,
+      "return": 940910.0,
+      "hit_rate": 12.88,
+      "roi": 60.74,
+      "profit": -608190.0
+    },
+    "exacta": {
+      "races": 15491,
+      "tickets": 15491,
+      "hits": 1148,
+      "stake": 1549100,
+      "return": 943590.0,
+      "hit_rate": 7.41,
+      "roi": 60.91,
+      "profit": -605510.0
+    },
+    "trio": {
+      "races": 15491,
+      "tickets": 15491,
+      "hits": 1158,
+      "stake": 1549100,
+      "return": 976200.0,
+      "hit_rate": 7.48,
+      "roi": 63.02,
+      "profit": -572900.0
+    },
+    "trifecta": {
+      "races": 15491,
+      "tickets": 15491,
+      "hits": 301,
+      "stake": 1549100,
+      "return": 1126520.0,
+      "hit_rate": 1.94,
+      "roi": 72.72,
+      "profit": -422580.0
+    }
+  },
+  "online_learning": {
+    "updates": 15406,
+    "final_weights": {
+      "form": 0.13379335855011606,
+      "venue": 0.2003730345771109,
+      "distance": 0.0753201495080792,
+      "sire": 0.18725127704829728,
+      "jockey": 0.3911390702936168,
+      "age": 0.012123110022779824
+    },
+    "note": "Each race is scored first; its result updates weights only for subsequent races."
+  }
+}
