@@ -378,7 +378,7 @@ def holdout_validation(races, horses, payouts):
             top2={ranked[0]["no"],ranked[1]["no"]}
             m["wide_stake"]+=100
             for a,b,pay in p["wide"]:
-                nums=[re.sub(r"\\D","",a),re.sub(r"\\D","",b)]
+                nums=[re.sub(r"\D","",a),re.sub(r"\D","",b)]
                 if pay and top2==set(nums):
                     m["wide_return"]+=pay;break
         pending.append((field,race))
