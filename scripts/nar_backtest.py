@@ -647,7 +647,7 @@ def main():
             "ticket_counts_per_race": {"win":1,"place":3,"wide":3,"quinella":1,"exacta":1,"trio":1,"trifecta":1},
             "limitations": ["No historical pre-race odds feature; NAR monthly odds are confirmed odds and are not used.",
                             "All payout rows for dead-heat races are retained and matched across every winning combination.",
-                            "Only a fixed, transparent ticket policy is tested; scores are heuristic, not calibrated probabilities.",
+                            "Ticket ranks use field-size-normalized historical finishes; probabilities are temperature-calibrated and evaluated in rolling holdout folds.",
                             "Missing or incomplete historical rows are excluded where necessary."]
         },
         "metrics": metrics,
@@ -661,7 +661,7 @@ def main():
     OUT.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
     validated_weights = learned_weights
     live_model = {
-        "model_version": "nar-chronological-v6-calibrated-walk-forward",
+        "model_version": "nar-chronological-v7-fieldsize-calibrated",
         "generated_at": result["generated_at"],
         "training_period": result["period"],
         "updates": learning_updates,
