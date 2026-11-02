@@ -8,6 +8,7 @@ odds ZIP and records the capture timestamp alongside every race snapshot.
 from __future__ import annotations
 
 import csv
+import gzip
 import datetime as dt
 import io
 import json
@@ -135,17 +136,23 @@ def main():
             continue
         date_name = race_date.isoformat()
         SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
-        path = SNAPSHOT_DIR / f"{date_name}.json"
-        payload = {"date": date_name, "timezone": "Asia/Tokyo", "races": {}}
+        path = SNAPSHOT_DIR / f"{date_name}.jsonl.gz"
+        race_key_text = "|".join(key)
+        seen = set()
         if path.exists():
             try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError):
+                with gzip.open(path, "rt", encoding="utf-8") as existing:
+                    for line in existing:
+                        try:
+                            seen.add(json.loads(line).get("race_key"))
+                        except json.JSONDecodeError:
+                            continue
+            except OSError:
                 pass
-        race_key_text = "|".join(key)
-        if race_key_text in payload.setdefault("races", {}):
+        if race_key_text in seen:
             continue
-        payload["races"][race_key_text] = {
+        record = {
+            "race_key": race_key_text,
             "venue": race["venue"],
             "date": race["date"],
             "race": race["race"],
@@ -154,7 +161,10 @@ def main():
             "minutes_to_post": round(minutes, 2),
             "odds": entries,
         }
-        path.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+        # Append a separate gzip member per race. Existing compressed bytes stay
+        # unchanged, keeping Git history compact as the daily archive grows.
+        with gzip.open(path, "ab", compresslevel=9) as output:
+            output.write((json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\\n").encode("utf-8"))
         additions += 1
     print(f"Captured {additions} pre-off race snapshots at {now.isoformat()}")
 
