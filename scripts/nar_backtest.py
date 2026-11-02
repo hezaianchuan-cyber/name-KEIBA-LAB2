@@ -375,12 +375,14 @@ def holdout_validation(races, horses, payouts):
             for h in ranked[:3]:
                 m["place_stake"]+=100
                 m["place_return"]+=next((pay or 0 for no,pay in p["place"] if no==h["no"]),0)
-            top2={ranked[0]["no"],ranked[1]["no"]}
-            m["wide_stake"]+=100
+            wide_pairs=[{ranked[0]["no"],ranked[1]["no"]},
+                         {ranked[0]["no"],ranked[2]["no"]},
+                         {ranked[1]["no"],ranked[2]["no"]}]
+            m["wide_stake"]+=300
             for a,b,pay in p["wide"]:
-                nums=[re.sub(r"\D","",a),re.sub(r"\D","",b)]
-                if pay and top2==set(nums):
-                    m["wide_return"]+=pay;break
+                nums={re.sub(r"\D","",a),re.sub(r"\D","",b)}
+                if pay and nums in wide_pairs:
+                    m["wide_return"]+=pay
         pending.append((field,race))
     if pending:commit(pending)
     out={}
@@ -395,7 +397,7 @@ def holdout_validation(races, horses, payouts):
     return {"status":"ok","train_end":dates[split_index-1].isoformat(),
             "test_start":split_date.isoformat(),"test_end":dates[-1].isoformat(),
             "train_races":len(train_races),"test_races":len(ordered),
-            "training_updates":updates,"models":out,
+            "training_updates":updates,"trained_weights":learned,"models":out,
             "selection_rule":"Model weights frozen at the train/test boundary. Test-day results are added only after every race on that date is scored."}
 
 def main():
