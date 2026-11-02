@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-02T23:28:44.468905+00:00",
+  "generated_at": "2026-11-02T23:29:21.407198+00:00",
   "period": {
     "start": "2025-11-02",
     "end": "2026-11-01"
@@ -1193,11 +1193,107 @@
   "odds_snapshot_archive": {
     "snapshot_files": 0,
     "races": 0,
+    "predicted_races": 0,
     "odds_rows": 0,
     "first_date": null,
     "last_date": null,
     "last_captured_at": null,
-    "note": "Only timestamped official pre-off daily odds snapshots are eligible for future value backtests; monthly confirmed odds are excluded."
+    "model_versions": [],
+    "note": "Only timestamped official pre-off odds and predictions are eligible for value backtests; monthly confirmed odds are excluded."
+  },
+  "preoff_value_backtest": {
+    "status": "awaiting_snapshots",
+    "snapshot_races": 0,
+    "settled_evaluated_races": 0,
+    "model_versions": [],
+    "thresholds": {
+      "1.00": {
+        "races_with_bets": 0,
+        "tickets": 0,
+        "hits": 0,
+        "stake": 0,
+        "return": 0,
+        "ev_sum": 0.0,
+        "odds_sum": 0.0,
+        "hit_rate": null,
+        "roi": null,
+        "profit": 0,
+        "average_expected_value": null,
+        "average_snapshot_odds": null
+      },
+      "1.05": {
+        "races_with_bets": 0,
+        "tickets": 0,
+        "hits": 0,
+        "stake": 0,
+        "return": 0,
+        "ev_sum": 0.0,
+        "odds_sum": 0.0,
+        "hit_rate": null,
+        "roi": null,
+        "profit": 0,
+        "average_expected_value": null,
+        "average_snapshot_odds": null
+      },
+      "1.10": {
+        "races_with_bets": 0,
+        "tickets": 0,
+        "hits": 0,
+        "stake": 0,
+        "return": 0,
+        "ev_sum": 0.0,
+        "odds_sum": 0.0,
+        "hit_rate": null,
+        "roi": null,
+        "profit": 0,
+        "average_expected_value": null,
+        "average_snapshot_odds": null
+      },
+      "1.15": {
+        "races_with_bets": 0,
+        "tickets": 0,
+        "hits": 0,
+        "stake": 0,
+        "return": 0,
+        "ev_sum": 0.0,
+        "odds_sum": 0.0,
+        "hit_rate": null,
+        "roi": null,
+        "profit": 0,
+        "average_expected_value": null,
+        "average_snapshot_odds": null
+      },
+      "1.20": {
+        "races_with_bets": 0,
+        "tickets": 0,
+        "hits": 0,
+        "stake": 0,
+        "return": 0,
+        "ev_sum": 0.0,
+        "odds_sum": 0.0,
+        "hit_rate": null,
+        "roi": null,
+        "profit": 0,
+        "average_expected_value": null,
+        "average_snapshot_odds": null
+      },
+      "1.30": {
+        "races_with_bets": 0,
+        "tickets": 0,
+        "hits": 0,
+        "stake": 0,
+        "return": 0,
+        "ev_sum": 0.0,
+        "odds_sum": 0.0,
+        "hit_rate": null,
+        "roi": null,
+        "profit": 0,
+        "average_expected_value": null,
+        "average_snapshot_odds": null
+      }
+    },
+    "policy": "Flat 100-yen win bets only when calibrated win probability multiplied by timestamped pre-off win odds meets the threshold. Returns use official settled 100-yen payouts.",
+    "note": "This evaluation begins only after captured pre-off odds snapshots can be joined to official settled results. It never substitutes final monthly odds for pre-race odds."
   },
   "online_learning": {
     "updates": 15406,
