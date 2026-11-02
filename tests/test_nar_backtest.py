@@ -141,6 +141,9 @@ class PreoffValueBacktestTests(unittest.TestCase):
                 record = {
                     "race_key":"大井|20261103|10",
                     "date":"20261103",
+                    "captured_at":"2026-11-03T15:27:00+09:00",
+                    "scheduled_post_time":"2026-11-03T15:30:00+09:00",
+                    "minutes_to_post":3,
                     "model_version":"test-model",
                     "predictions":[
                         {"horse_no":"1","win_probability":0.5,"win_odds":2.5,"expected_value":1.25},
