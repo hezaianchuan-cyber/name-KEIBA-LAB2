@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-02T23:26:11.486314+00:00",
+  "generated_at": "2026-11-02T23:27:25.334874+00:00",
   "period": {
     "start": "2025-11-02",
     "end": "2026-11-01"
@@ -68,6 +68,7 @@
   "method": {
     "prediction_order": "date-batched chronological; every race on a date is predicted before any result from that date updates history or model weights",
     "odds_feature": false,
+    "market_value_policy": "Simulate win bets only when calibrated model probability multiplied by timestamped official pre-off win odds meets a fixed threshold; thresholds are reported independently and not selected on test folds.",
     "probability_calibration": "temperature fitted on chronological prequential training predictions; out-of-sample calibration reported per walk-forward fold",
     "ticket_policy": "fixed top-rank tickets per race; 100 JPY per ticket; not a betting recommendation",
     "ticket_counts_per_race": {
@@ -160,7 +161,7 @@
   },
   "out_of_sample_validation": {
     "status": "ok",
-    "method": "three rolling-origin folds with non-overlapping test windows; weights frozen within each test window; prior results added only after all races on a date are scored",
+    "method": "three rolling-origin folds with non-overlapping test windows; weights frozen within each test window; prior results added only after all races on a date are scored; market-value bets use timestamped official pre-off odds snapshots",
     "folds": [
       {
         "fold": 1,
@@ -350,6 +351,74 @@
             "win_roi": 67.96,
             "place_roi": 75.81,
             "wide_roi": 66.16
+          }
+        },
+        "market_value": {
+          "1.0": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          },
+          "1.05": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          },
+          "1.1": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          },
+          "1.15": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          },
+          "1.2": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          },
+          "1.3": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
           }
         }
       },
@@ -542,6 +611,74 @@
             "place_roi": 76.71,
             "wide_roi": 66.7
           }
+        },
+        "market_value": {
+          "1.0": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          },
+          "1.05": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          },
+          "1.1": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          },
+          "1.15": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          },
+          "1.2": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          },
+          "1.3": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          }
         }
       },
       {
@@ -732,6 +869,74 @@
             "win_roi": 72.45,
             "place_roi": 75.84,
             "wide_roi": 66.53
+          }
+        },
+        "market_value": {
+          "1.0": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          },
+          "1.05": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          },
+          "1.1": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          },
+          "1.15": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          },
+          "1.2": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
+          },
+          "1.3": {
+            "snapshot_races": 0,
+            "selected_races": 0,
+            "bets": 0,
+            "hits": 0,
+            "stake": 0,
+            "return": 0,
+            "hit_rate": null,
+            "roi": null,
+            "profit": 0
           }
         }
       }
