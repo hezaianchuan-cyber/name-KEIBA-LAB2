@@ -22,5 +22,17 @@ jobs:
           python-version: "3.12"
       - name: Compile backtest
         run: python -m py_compile scripts/*.py
+      - name: Check embedded app JavaScript syntax
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          html = Path("index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script[^>]*>(.*?)</script>", html, flags=re.I | re.S)
+          if not scripts:
+              raise SystemExit("No inline JavaScript found")
+          Path("/tmp/keiba-lab.js").write_text("\\n".join(scripts), encoding="utf-8")
+          PY
+          node --check /tmp/keiba-lab.js
       - name: Run regression tests
         run: python -m unittest discover -s tests -v
