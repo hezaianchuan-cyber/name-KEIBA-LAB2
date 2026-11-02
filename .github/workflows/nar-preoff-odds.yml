@@ -1,0 +1,74 @@
+name: Capture NAR pre-off odds every five minutes
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nar-preoff-odds-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download current official NAR race and odds archives
+        shell: bash
+        run: |
+          set +e
+          mkdir -p data
+          BASE="https://www.keiba.go.jp/KeibaWeb/DataDownload"
+          fetch_zip() {
+            name="$1"
+            endpoint="$2"
+            tmp="data/${name}.zip.tmp"
+            out="data/${name}.zip"
+            if curl -fLsS --retry 1 --retry-delay 2 --max-time 45 "$BASE/$endpoint" -o "$tmp" && unzip -t "$tmp" >/dev/null 2>&1; then
+              mv "$tmp" "$out"
+              echo "$name=updated"
+            else
+              rm -f "$tmp" "$out"
+              echo "$name=unavailable"
+            fi
+          }
+          fetch_zip latest-race "RaceDataDownload?type=daily"
+          fetch_zip latest-odds "OddsDataDownload?type=daily"
+
+      - name: Capture timestamped pre-off snapshots
+        run: python3 scripts/capture_nar_odds.py
+
+      - name: Commit new snapshots only
+        shell: bash
+        run: |
+          set -e
+          if [ ! -d data/odds-snapshots ]; then
+            echo "No snapshot directory created; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            git add data/odds-snapshots
+            if git diff --cached --quiet; then
+              echo "No new pre-off snapshots."
+              exit 0
+            fi
+            git commit -m "Archive official pre-off odds snapshots"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Snapshot push conflict; retry $attempt"
+            sleep 2
+          done
+          echo "Could not archive pre-off snapshots after five attempts."
+          exit 1
