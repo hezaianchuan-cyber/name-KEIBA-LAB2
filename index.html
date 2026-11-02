@@ -393,6 +393,31 @@ $('analyzeBtn').onclick=analyze;$('demoBtn').onclick=demo;
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='keiba-lab-local-data.json';a.click();URL.revokeObjectURL(a.href)};
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));if(b.dataset.tab==='settings')renderWeights();if(b.dataset.tab==='history')updateHistory()});
 if('serviceWorker' in navigator && location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+
+async function loadHistoricalBacktest(){
+ const section=document.getElementById('history');
+ if(!section)return;
+ const card=document.createElement('div');
+ card.className='card';
+ card.id='historicalBacktest';
+ card.innerHTML='<h2>過去1年・全券種バックテスト</h2><p class="sub">NAR公式の月次レース情報・払戻データを時系列で検証します。結果がまだ公開されていない場合は、GitHub Actionsで初回実行してください。</p><div id="historicalBacktestBody" class="sub">検証レポートを確認中…</div>';
+ const notice=section.querySelector('.notice');
+ if(notice)notice.before(card);else section.append(card);
+ try{
+  const response=await fetch('./data/backtest-summary.json?v='+Date.now(),{cache:'no-store'});
+  if(!response.ok)throw new Error('レポート未作成');
+  const report=await response.json();
+  const metrics=report.metrics||{};
+  const labels={win:'単勝',place:'複勝',wide:'ワイド',quinella:'馬連',exacta:'馬単',trio:'3連複',trifecta:'3連単'};
+  const rows=Object.keys(labels).map(k=>{const m=metrics[k]||{};return '<tr><td>'+labels[k]+'</td><td>'+Number(m.races||0).toLocaleString()+'</td><td>'+Number(m.tickets||0).toLocaleString()+'</td><td>'+((m.hit_rate==null)?'—':m.hit_rate+'%')+'</td><td>'+((m.roi==null)?'—':m.roi+'%')+'</td><td>'+Number(m.profit||0).toLocaleString()+'円</td></tr>';}).join('');
+  const generated=report.generated_at?new Date(report.generated_at).toLocaleString('ja-JP'):'—';
+  $('historicalBacktestBody').innerHTML='<p><b>対象期間：</b>'+esc(report.period?.start||'—')+' ～ '+esc(report.period?.end||'—')+'<br><b>生成日時：</b>'+esc(generated)+'<br><b>レース：</b>'+Number(report.race_count||0).toLocaleString()+'件　<b>出馬表行：</b>'+Number(report.horse_rows||0).toLocaleString()+'件　<b>払戻照合対象：</b>'+Number(report.payout_races||0).toLocaleString()+'レース</p><div class="tablewrap"><table><thead><tr><th>券種</th><th>照合R</th><th>点数</th><th>的中率</th><th>回収率</th><th>収支</th></tr></thead><tbody>'+rows+'</tbody></table></div><p class="sub">1点100円の固定条件での仮想検証です。オッズは予測特徴に使用せず、予測対象レースの結果を学習に混ぜない時系列方式です。実際の購入成績・将来の利益を示すものではありません。</p>';
+ }catch(e){
+  $('historicalBacktestBody').innerHTML='まだ検証レポートはありません。<br><a href="https://github.com/hezaianchuan-cyber/name-KEIBA-LAB2/actions/workflows/nar-historical-backtest.yml" target="_blank" rel="noopener">過去1年バックテストを実行する（GitHub Actions）</a>';
+ }
+}
+window.addEventListener('load',loadHistoricalBacktest);
+
 dedupeImportedData();refreshRaceChoices();updateHistory();$('importCounts').textContent='\u51FA\u99AC\u8868 '+db.horses.length+'\u4EF6\u3001\u30EC\u30FC\u30B9\u4E00\u89A7 '+db.races.length+'\u4EF6\u3001\u30AA\u30C3\u30BA '+db.odds.length+'\u4EF6\u3001\u6255\u623B '+db.payouts.length+'\u4EF6';if(db.horses.length){$('dataStatus').textContent='\u4FDD\u5B58\u6E08\u307F\u30C7\u30FC\u30BF\uFF1A\u51FA\u99AC\u8868 '+db.horses.length+'\u4EF6';$('dataDot').className='dot ok'}
 // KEIBA LAB 全券種・予算無制限の買い目生成
 const ticketBox=document.createElement('div');
