@@ -1,0 +1,76 @@
+name: Fetch NAR official data for PC
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  fetch-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout website
+        uses: actions/checkout@v4
+
+      - name: Download latest official NAR ZIP files
+        shell: bash
+        run: |
+          set +e
+          mkdir -p data
+          BASE="https://www.keiba.go.jp/KeibaWeb/DataDownload"
+          PAGES="https://hezaianchuan-cyber.github.io/name-KEIBA-LAB2/data"
+          fetch_zip() {
+            name="$1"
+            endpoint="$2"
+            tmp="data/${name}.zip.tmp"
+            out="data/${name}.zip"
+            if curl -fLsS --retry 2 --retry-delay 3 --max-time 90 "$BASE/$endpoint" -o "$tmp" && unzip -t "$tmp" >/dev/null 2>&1; then
+              mv "$tmp" "$out"
+              echo "$name=updated"
+            else
+              rm -f "$tmp"
+              if curl -fLsS --max-time 45 "$PAGES/${name}.zip" -o "$out" && unzip -t "$out" >/dev/null 2>&1; then
+                echo "$name=kept_previous"
+              else
+                rm -f "$out"
+                echo "$name=unavailable"
+              fi
+            fi
+          }
+          fetch_zip latest-race "RaceDataDownload?type=daily"
+          fetch_zip latest-odds "OddsDataDownload?type=daily"
+          python - <<'PY'
+          import json, os, datetime
+          names = ["latest-race", "latest-odds"]
+          state = {}
+          for name in names:
+              path = f"data/{name}.zip"
+              state[name] = {"available": os.path.isfile(path), "bytes": os.path.getsize(path) if os.path.isfile(path) else 0}
+          state["updatedAtUtc"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+          with open("data/status.json", "w", encoding="utf-8") as f:
+              json.dump(state, f, ensure_ascii=False)
+          print(json.dumps(state, ensure_ascii=False))
+          PY
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload website and latest data
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy website and data
+        id: deployment
+        uses: actions/deploy-pages@v4
