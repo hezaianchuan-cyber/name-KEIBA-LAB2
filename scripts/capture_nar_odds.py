@@ -192,12 +192,14 @@ def predict_horses(race, horses, odds_rows, model_context):
 def append_snapshot(path: Path, record: dict) -> bool:
     """Append a race once as a concatenated gzip member; return whether it was new."""
     race_key_text = record.get("race_key")
+    capture_time = record.get("captured_at")
     if path.exists():
         try:
             with gzip.open(path, "rt", encoding="utf-8") as existing:
                 for line in existing:
                     try:
-                        if json.loads(line).get("race_key") == race_key_text:
+                        previous = json.loads(line)
+                        if previous.get("race_key") == race_key_text and previous.get("captured_at") == capture_time:
                             return False
                     except json.JSONDecodeError:
                         continue
