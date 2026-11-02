@@ -5,7 +5,7 @@ Raw NAR CSV/ZIP files are processed in the ephemeral runner only. Only aggregate
 metrics and a small set of race-level examples are written to data/backtest-summary.json.
 """
 from __future__ import annotations
-import csv, datetime as dt, gzip, io, json, math, os, re, sys, time, urllib.parse, urllib.request, zipfile
+import csv, datetime as dt, gzip, io, json, math, os, random, re, sys, time, urllib.parse, urllib.request, zipfile
 from collections import defaultdict
 from pathlib import Path
 
@@ -608,16 +608,13 @@ def odds_snapshot_inventory():
 def preoff_value_backtest(payouts):
     records = list(load_odds_snapshots().values())
     thresholds = (1.00, 1.05, 1.10, 1.15, 1.20, 1.30)
-    stats = {threshold:{"races_with_bets":0,"tickets":0,"hits":0,"stake":0,
-                        "return":0,"ev_sum":0.0,"odds_sum":0.0}
-             for threshold in thresholds}
-    evaluated = 0
+    eligible_records = []
     model_versions = set()
     for record in records:
-        key_parts = str(record.get("race_key") or "").split("|")
-        if len(key_parts) != 3:
+        parts = str(record.get("race_key") or "").split("|")
+        if len(parts) != 3:
             continue
-        key = race_key(key_parts[0], key_parts[1], key_parts[2])
+        key = race_key(parts[0], parts[1], parts[2])
         if not key:
             continue
         try:
@@ -626,58 +623,119 @@ def preoff_value_backtest(payouts):
             minutes = float(record["minutes_to_post"])
         except (KeyError, TypeError, ValueError):
             continue
-        if captured.tzinfo is None or scheduled.tzinfo is None or captured >= scheduled or not 0 <= minutes <= 20:
+        if (captured.tzinfo is None or scheduled.tzinfo is None or captured >= scheduled
+                or not 0 <= minutes <= 20):
             continue
         payout = payouts.get(key)
-        if not payout or not payout.get("win"):
-            continue
         predictions = record.get("predictions") or []
-        if not predictions:
+        if not payout or not payout.get("win") or not predictions:
             continue
-        evaluated += 1
+        eligible_records.append((str(record.get("date") or key[1]), record, payout))
         if record.get("model_version"):
             model_versions.add(str(record["model_version"]))
-        for threshold in thresholds:
-            current_race_bets = 0
-            bucket = stats[threshold]
-            for prediction in predictions:
-                ev = number(prediction.get("expected_value"))
-                odds_value = number(prediction.get("win_odds"))
-                horse_no = re.sub(r"\D", "", str(prediction.get("horse_no") or ""))
-                if not horse_no or ev is None or odds_value is None or ev < threshold:
-                    continue
-                current_race_bets += 1
-                bucket["tickets"] += 1
-                bucket["stake"] += 100
-                bucket["ev_sum"] += ev
-                bucket["odds_sum"] += odds_value
-                returned = payout_for("win", [str(int(horse_no))], payout) or 0
-                if returned:
-                    bucket["hits"] += 1
-                    bucket["return"] += returned
-            if current_race_bets:
-                bucket["races_with_bets"] += 1
-    output = {}
-    for threshold, bucket in stats.items():
-        tickets = bucket["tickets"]
-        output[f"{threshold:.2f}"] = {
-            **bucket,
-            "hit_rate": round(100*bucket["hits"]/tickets, 2) if tickets else None,
-            "roi": round(100*bucket["return"]/bucket["stake"], 2) if bucket["stake"] else None,
-            "profit": bucket["return"]-bucket["stake"],
-            "average_expected_value": round(bucket["ev_sum"]/tickets, 4) if tickets else None,
-            "average_snapshot_odds": round(bucket["odds_sum"]/tickets, 2) if tickets else None,
-        }
-    return {
-        "status": "ok" if evaluated else ("awaiting_settled_snapshots" if records else "awaiting_snapshots"),
-        "snapshot_races": len(records),
-        "settled_evaluated_races": evaluated,
-        "model_versions": sorted(model_versions),
-        "thresholds": output,
-        "policy": "Flat 100-yen win bets only when calibrated win probability multiplied by timestamped pre-off win odds meets the threshold. Returns use official settled 100-yen payouts.",
-        "note": "This evaluation begins only after captured pre-off odds snapshots can be joined to official settled results. It never substitutes final monthly odds for pre-race odds."
-    }
 
+    def summarize(subset):
+        stats = {threshold:{"races_with_bets":0,"tickets":0,"hits":0,"stake":0,
+                            "return":0,"ev_sum":0.0,"odds_sum":0.0,"race_results":[]}
+                 for threshold in thresholds}
+        for _, record, payout in subset:
+            predictions = record.get("predictions") or []
+            for threshold in thresholds:
+                bucket = stats[threshold]
+                race_stake = race_return = race_bets = 0
+                for prediction in predictions:
+                    ev = number(prediction.get("expected_value"))
+                    odds_value = number(prediction.get("win_odds"))
+                    horse_no = re.sub(r"\\D", "", str(prediction.get("horse_no") or ""))
+                    if not horse_no or ev is None or odds_value is None or ev < threshold:
+                        continue
+                    race_bets += 1
+                    bucket["tickets"] += 1
+                    bucket["stake"] += 100
+                    bucket["ev_sum"] += ev
+                    bucket["odds_sum"] += odds_value
+                    race_stake += 100
+                    returned = payout_for("win", [str(int(horse_no))], payout) or 0
+                    if returned:
+                        bucket["hits"] += 1
+                        bucket["return"] += returned
+                        race_return += returned
+                if race_bets:
+                    bucket["races_with_bets"] += 1
+                    bucket["race_results"].append((race_stake, race_return))
+        output = {}
+        for threshold, bucket in stats.items():
+            tickets = bucket["tickets"]
+            race_results = bucket.pop("race_results")
+            ci_low = ci_high = None
+            if len(race_results) >= 30:
+                rng = random.Random(20261103 + int(round(threshold*100)))
+                samples = []
+                count = len(race_results)
+                for _ in range(1000):
+                    chosen = [race_results[rng.randrange(count)] for _ in range(count)]
+                    stake = sum(x[0] for x in chosen)
+                    returned = sum(x[1] for x in chosen)
+                    if stake:
+                        samples.append(100*returned/stake)
+                samples.sort()
+                if samples:
+                    ci_low = round(samples[int(0.025*(len(samples)-1))], 2)
+                    ci_high = round(samples[int(0.975*(len(samples)-1))], 2)
+            enough = bucket["races_with_bets"] >= 100 and tickets >= 300
+            output[f"{threshold:.2f}"] = {
+                **bucket,
+                "hit_rate": round(100*bucket["hits"]/tickets, 2) if tickets else None,
+                "roi": round(100*bucket["return"]/bucket["stake"], 2) if bucket["stake"] else None,
+                "profit": bucket["return"]-bucket["stake"],
+                "average_expected_value": round(bucket["ev_sum"]/tickets, 4) if tickets else None,
+                "average_snapshot_odds": round(bucket["odds_sum"]/tickets, 2) if tickets else None,
+                "roi_ci95_low": ci_low,
+                "roi_ci95_high": ci_high,
+                "minimum_sample_met": enough,
+                "candidate_pass": bool(enough and ci_low is not None and ci_low > 100),
+            }
+        return output
+
+    eligible_records.sort(key=lambda item:(item[0],str(item[1].get("scheduled_post_time") or "")))
+    overall = summarize(eligible_records)
+    dates = sorted({item[0] for item in eligible_records})
+    development = {}
+    holdout = {}
+    selected_threshold = None
+    selected_holdout = None
+    if len(dates) >= 10:
+        split = max(1, min(len(dates)-1, int(len(dates)*0.70)))
+        development_dates = set(dates[:split])
+        development_records = [item for item in eligible_records if item[0] in development_dates]
+        holdout_records = [item for item in eligible_records if item[0] not in development_dates]
+        development = summarize(development_records)
+        holdout = summarize(holdout_records)
+        eligible_thresholds = [(float(key), value) for key, value in development.items()
+                               if value["minimum_sample_met"]]
+        if eligible_thresholds:
+            selected_threshold = f"{max(eligible_thresholds, key=lambda item:item[1]['roi'] or 0)[0]:.2f}"
+            selected_holdout = holdout.get(selected_threshold)
+    validation_status = "ready" if selected_threshold is not None else (
+        "awaiting_sample_size" if len(dates) >= 10 else "awaiting_more_dates")
+    return {
+        "status": "ok" if eligible_records else ("awaiting_settled_snapshots" if records else "awaiting_snapshots"),
+        "snapshot_races": len(records),
+        "settled_evaluated_races": len(eligible_records),
+        "date_count": len(dates),
+        "development_date_count": len(dates[:max(1, int(len(dates)*0.70))]) if len(dates) >= 10 else 0,
+        "holdout_date_count": len(dates)-len(dates[:max(1, int(len(dates)*0.70))]) if len(dates) >= 10 else 0,
+        "model_versions": sorted(model_versions),
+        "thresholds": overall,
+        "development": development,
+        "holdout": holdout,
+        "selected_threshold": selected_threshold,
+        "selected_holdout": selected_holdout,
+        "validation_status": validation_status,
+        "minimum_sample_rule": "At least 100 races with bets and 300 tickets per threshold; a candidate additionally needs the race-cluster bootstrap 95% lower ROI bound above 100%. Threshold selection uses the first 70% of dates only; the last 30% remains untouched holdout.",
+        "policy": "Flat 100-yen win bets only when saved calibrated win probability multiplied by timestamped pre-off win odds meets the threshold. Returns use official settled 100-yen payouts.",
+        "note": "Only the closest valid pre-off snapshot per race is evaluated. No monthly confirmed odds are substituted."
+    }
 
 
 def holdout_validation(races, horses, payouts):
