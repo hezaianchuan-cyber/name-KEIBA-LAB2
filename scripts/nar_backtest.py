@@ -197,6 +197,67 @@ def update_model(field, parts_by_no, model_weights):
     for k in model_weights: model_weights[k] /= total
     return True
 
+def softmax_probabilities(scores, temperature):
+    temperature = max(0.005, float(temperature or 0.18))
+    peak = max(scores) if scores else 0.0
+    values = [math.exp(max(-700.0, (score-peak)/temperature)) for score in scores]
+    total = sum(values) or 1.0
+    return [value/total for value in values]
+
+
+def fit_temperature(records):
+    usable = [r for r in records if r.get("scores") and r.get("winner_indices")]
+    if not usable:
+        return 0.18
+    candidates = [0.02 + i*0.005 for i in range(97)]
+    best_temperature, best_loss = 0.18, float("inf")
+    for temperature in candidates:
+        loss = 0.0
+        for record in usable:
+            probs = softmax_probabilities(record["scores"], temperature)
+            mass = sum(probs[i] for i in record["winner_indices"] if 0 <= i < len(probs))
+            loss -= math.log(max(1e-12, mass))
+        loss /= len(usable)
+        if loss < best_loss:
+            best_temperature, best_loss = temperature, loss
+    return best_temperature
+
+
+def calibration_metrics(records, temperature):
+    usable = [r for r in records if r.get("scores") and r.get("winner_indices")]
+    if not usable:
+        return {"races": 0, "temperature": temperature, "log_loss": None,
+                "brier": None, "top1_accuracy": None, "ece": None}
+    log_loss = brier = top1 = 0.0
+    bins = [{"count":0,"confidence":0.0,"accuracy":0.0} for _ in range(10)]
+    for record in usable:
+        probs = softmax_probabilities(record["scores"], temperature)
+        winners = {i for i in record["winner_indices"] if 0 <= i < len(probs)}
+        if not winners:
+            continue
+        mass = sum(probs[i] for i in winners)
+        log_loss -= math.log(max(1e-12, mass))
+        target = 1.0 / len(winners)
+        brier += sum((prob-(target if i in winners else 0.0))**2 for i,prob in enumerate(probs))
+        best = max(range(len(probs)), key=lambda i: probs[i])
+        correct = 1.0 if best in winners else 0.0
+        top1 += correct
+        confidence = probs[best]
+        bucket = min(9, int(confidence*10))
+        bins[bucket]["count"] += 1
+        bins[bucket]["confidence"] += confidence
+        bins[bucket]["accuracy"] += correct
+    count = len(usable)
+    ece = 0.0
+    for bucket in bins:
+        if bucket["count"]:
+            ece += bucket["count"]/count * abs(
+                bucket["confidence"]/bucket["count"] - bucket["accuracy"]/bucket["count"])
+    return {"races": count, "temperature": round(float(temperature), 4),
+            "log_loss": round(log_loss/count, 5), "brier": round(brier/count, 5),
+            "top1_accuracy": round(100*top1/count, 2), "ece": round(ece, 5)}
+
+
 def split_nums(s):
     return [re.sub(r"\D", "", x) for x in re.split(r"[-－ー,／/ ]+", str(s or "")) if re.sub(r"\D", "", x)]
 
@@ -224,6 +285,7 @@ def run_backtest(races, horses, payouts):
     jockey_stats = defaultdict(lambda: {"runs":0,"top3":0})
     metrics = {k: {"races":0,"tickets":0,"hits":0,"stake":0,"return":0} for k in ("win","place","wide","quinella","exacta","trio","trifecta")}
     examples = []
+    calibration_records = []
     model_weights = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
     learning_updates = 0
     ordered = sorted((r for r in races.values()), key=lambda r:(r["date"],r["venue"],int(r["race"])))
@@ -263,6 +325,10 @@ def run_backtest(races, horses, payouts):
             score, parts = score_runner(h,history,sire_stats,jockey_stats,race,model_weights)
             scored.append((score,h))
             parts_by_no[h["no"]] = parts
+        winner_indices = [i for i,h in enumerate(field) if h.get("finish") == 1]
+        if winner_indices:
+            calibration_records.append({"scores":[score for score,_ in scored],
+                                        "winner_indices":winner_indices})
         ranked = [h for score,h in sorted(scored,key=lambda item:item[0],reverse=True)]
         top = ranked[:6]
         if len(top) < 3: continue
@@ -304,7 +370,7 @@ def run_backtest(races, horses, payouts):
         summary[kind] = {**m, "hit_rate": round(100*m["hits"]/m["tickets"],2) if m["tickets"] else None,
                          "roi": round(100*m["return"]/m["stake"],2) if m["stake"] else None,
                          "profit": m["return"]-m["stake"]}
-    return summary, examples, len(ordered), model_weights, learning_updates
+    return summary, examples, len(ordered), model_weights, learning_updates, calibration_records
 
 def build_live_history(races, horses):
     horse_history = defaultdict(list)
@@ -341,7 +407,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     test_races = {k:r for k,r in races.items() if r["date"] in test_set}
     train_horses = {k:v for k,v in horses.items() if k in train_races}
     train_payouts = {k:v for k,v in payouts.items() if k in train_races}
-    _, _, _, learned, updates = run_backtest(train_races, train_horses, train_payouts)
+    _, _, _, learned, updates, train_calibration_records = run_backtest(train_races, train_horses, train_payouts)
+    temperature = fit_temperature(train_calibration_records)
     baseline = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
     models = {"baseline":baseline, "trained":learned}
     kinds = ("win","place","wide","quinella","exacta","trio","trifecta")
@@ -370,6 +437,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
 
     ordered = sorted(test_races.values(), key=lambda r:(r["date"],r["venue"],int(r["race"])))
     pending=[]; current=None
+    test_calibration_records=[]
     def commit(items):
         for field,race in items:
             for h in field:
@@ -398,6 +466,11 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
         if not winners: continue
         for model_name,weights in models.items():
             scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights)[0],h) for h in field]
+            if model_name == "trained":
+                winner_indices=[i for i,h in enumerate(field) if h.get("finish") == 1]
+                if winner_indices:
+                    test_calibration_records.append({"scores":[score for score,_ in scored],
+                                                     "winner_indices":winner_indices})
             ranked=[h for _,h in sorted(scored,key=lambda x:x[0],reverse=True)]
             if len(ranked)<3: continue
             m=results[model_name]; m["races"]+=1
@@ -442,7 +515,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     return {"train_start":min(train_dates).isoformat(),"train_end":max(train_dates).isoformat(),
             "test_start":min(test_dates).isoformat(),"test_end":max(test_dates).isoformat(),
             "train_races":len(train_races),"test_races":len(ordered),
-            "training_updates":updates,"trained_weights":learned,"models":out}
+            "training_updates":updates,"trained_weights":learned,"temperature":round(temperature,4),\n            "calibration":calibration_metrics(test_calibration_records,temperature),"models":out}
 
 
 def odds_snapshot_inventory():
@@ -533,7 +606,7 @@ def holdout_validation(races, horses, payouts):
 def main():
     print(f"Backtest range: {START} through {END}", flush=True)
     races, horses, payouts, months = load_archives()
-    metrics, examples, race_count, learned_weights, learning_updates = run_backtest(races, horses, payouts)
+    metrics, examples, race_count, learned_weights, learning_updates, calibration_records = run_backtest(races, horses, payouts)\n    production_temperature = fit_temperature(calibration_records)\n    production_calibration = calibration_metrics(calibration_records, production_temperature)
     validation = holdout_validation(races, horses, payouts)
     result = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
@@ -548,7 +621,7 @@ def main():
         "evaluated": sum(v["races"] for v in metrics.values()),
         "method": {
             "prediction_order": "date-batched chronological; every race on a date is predicted before any result from that date updates history or model weights",
-            "odds_feature": False,
+            "odds_feature": False,\n            "probability_calibration": "temperature fitted on chronological prequential training predictions; out-of-sample calibration reported per walk-forward fold",
             "ticket_policy": "fixed top-rank tickets per race; 100 JPY per ticket; not a betting recommendation",
             "ticket_counts_per_race": {"win":1,"place":3,"wide":3,"quinella":1,"exacta":1,"trio":1,"trifecta":1},
             "limitations": ["No historical pre-race odds feature; NAR monthly odds are confirmed odds and are not used.",
@@ -559,20 +632,20 @@ def main():
         "metrics": metrics,
         "out_of_sample_validation": validation,
         "odds_snapshot_archive": odds_snapshot_inventory(),
-        "online_learning": {"updates": learning_updates, "final_weights": learned_weights,
+        "online_learning": {"updates": learning_updates, "final_weights": learned_weights,\n                            "temperature": round(production_temperature,4), "calibration": production_calibration,
                             "note": "Daily batch learning: all races on a date are scored before that date's results update weights for later dates."},
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
     validated_weights = learned_weights
     live_model = {
-        "model_version": "nar-chronological-v5-walk-forward",
+        "model_version": "nar-chronological-v6-calibrated-walk-forward",
         "generated_at": result["generated_at"],
         "training_period": result["period"],
         "updates": learning_updates,
         "validation": validation,
         "feature_schema": ["form", "venue", "distance", "sire", "jockey", "age"],
-        "weights": validated_weights,
+        "weights": validated_weights,\n        "temperature": production_temperature,\n        "calibration": production_calibration,
         "prediction_policy": "Scores use only races strictly earlier than the target race date; current-race finish/popularity/payout are excluded. All races on a date are predicted before any results from that date update the model."
     }
     (OUT.parent / "live-model.json").write_text(json.dumps(live_model,ensure_ascii=False,indent=2),encoding="utf-8")
