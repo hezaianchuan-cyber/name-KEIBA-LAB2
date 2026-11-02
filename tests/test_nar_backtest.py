@@ -3,6 +3,7 @@ import gzip
 import json
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -76,6 +77,35 @@ class OddsSnapshotParsingTests(unittest.TestCase):
             with gzip.open(path, "rt", encoding="utf-8") as stream:
                 rows = [json.loads(line) for line in stream]
             self.assertEqual([row["race_key"] for row in rows], [first["race_key"], second["race_key"]])
+
+
+class OddsSnapshotBacktestTests(unittest.TestCase):
+    def test_loader_keeps_closest_valid_preoff_snapshot(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            folder = root / "data" / "odds-snapshots"
+            folder.mkdir(parents=True)
+            path = folder / "2026-11-03.jsonl.gz"
+            rows = [
+                {"race_key":"大井|20261103|10","captured_at":"2026-11-03T15:20:00+09:00",
+                 "scheduled_post_time":"2026-11-03T15:30:00+09:00","minutes_to_post":10,
+                 "odds":[{"type":"単勝","n1":"1","odds":2.4}]},
+                {"race_key":"大井|20261103|10","captured_at":"2026-11-03T15:27:00+09:00",
+                 "scheduled_post_time":"2026-11-03T15:30:00+09:00","minutes_to_post":3,
+                 "odds":[{"type":"単勝","n1":"1","odds":2.1}]},
+                {"race_key":"大井|20261103|10","captured_at":"2026-11-03T15:31:00+09:00",
+                 "scheduled_post_time":"2026-11-03T15:30:00+09:00","minutes_to_post":-1,
+                 "odds":[{"type":"単勝","n1":"1","odds":1.8}]},
+            ]
+            with gzip.open(path, "wt", encoding="utf-8") as stream:
+                for row in rows:
+                    stream.write(json.dumps(row, ensure_ascii=False) + "\\n")
+            with mock.patch.object(nb, "ROOT", root):
+                loaded = nb.load_odds_snapshots()
+            key = ("大井", "20261103", "10")
+            self.assertIn(key, loaded)
+            self.assertEqual(loaded[key]["minutes_to_post"], 3)
+            self.assertEqual(loaded[key]["odds"][0]["odds"], 2.1)
 
 
 class FieldSizeNormalizationTests(unittest.TestCase):
