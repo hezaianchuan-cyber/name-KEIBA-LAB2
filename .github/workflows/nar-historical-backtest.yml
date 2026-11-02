@@ -1,6 +1,11 @@
 name: NAR one-year historical backtest
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/nar_backtest.py'
+      - '.github/workflows/nar-historical-backtest.yml'
   workflow_dispatch:
   schedule:
     - cron: "30 18 3 * *"
@@ -16,6 +21,9 @@ concurrency:
 
 jobs:
   backtest:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
