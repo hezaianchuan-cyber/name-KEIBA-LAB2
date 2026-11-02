@@ -147,8 +147,8 @@ class OddsSnapshotBacktestTests(unittest.TestCase):
                 {"race_key":"大井|20261103|10","captured_at":"2026-11-03T15:20:00+09:00",
                  "scheduled_post_time":"2026-11-03T15:30:00+09:00","minutes_to_post":10,
                  "odds":[{"type":"単勝","n1":"1","odds":2.4}]},
-                {"race_key":"大井|20261103|10","captured_at":"2026-11-03T15:27:00+09:00",
-                 "scheduled_post_time":"2026-11-03T15:30:00+09:00","minutes_to_post":3,
+                {"race_key":"大井|20261103|10","captured_at":"2026-11-03T15:25:00+09:00",
+                 "scheduled_post_time":"2026-11-03T15:30:00+09:00","minutes_to_post":5,
                  "odds":[{"type":"単勝","n1":"1","odds":2.1}]},
                 {"race_key":"大井|20261103|10","captured_at":"2026-11-03T15:31:00+09:00",
                  "scheduled_post_time":"2026-11-03T15:30:00+09:00","minutes_to_post":-1,
@@ -161,7 +161,7 @@ class OddsSnapshotBacktestTests(unittest.TestCase):
                 loaded = nb.load_odds_snapshots()
             key = ("大井", "20261103", "10")
             self.assertIn(key, loaded)
-            self.assertEqual(loaded[key]["minutes_to_post"], 3)
+            self.assertEqual(loaded[key]["minutes_to_post"], 5)
             self.assertEqual(loaded[key]["odds"][0]["odds"], 2.1)
 
 
@@ -176,9 +176,9 @@ class PreoffValueBacktestTests(unittest.TestCase):
                 record = {
                     "race_key":"大井|20261103|10",
                     "date":"20261103",
-                    "captured_at":"2026-11-03T15:27:00+09:00",
+                    "captured_at":"2026-11-03T15:25:00+09:00",
                     "scheduled_post_time":"2026-11-03T15:30:00+09:00",
-                    "minutes_to_post":3,
+                    "minutes_to_post":5,
                     "model_version":"test-model",
                     "minutes_to_post":3,
                     "predictions":[
