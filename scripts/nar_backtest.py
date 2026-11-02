@@ -608,7 +608,8 @@ def main():
     print(f"Backtest range: {START} through {END}", flush=True)
     races, horses, payouts, months = load_archives()
     metrics, examples, race_count, learned_weights, learning_updates, calibration_records = run_backtest(races, horses, payouts)
-    production_temperature = fit_temperature(calibration_records)\n    production_calibration = calibration_metrics(calibration_records, production_temperature)
+    production_temperature = fit_temperature(calibration_records)
+    production_calibration = calibration_metrics(calibration_records, production_temperature)
     validation = holdout_validation(races, horses, payouts)
     result = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
@@ -623,7 +624,8 @@ def main():
         "evaluated": sum(v["races"] for v in metrics.values()),
         "method": {
             "prediction_order": "date-batched chronological; every race on a date is predicted before any result from that date updates history or model weights",
-            "odds_feature": False,\n            "probability_calibration": "temperature fitted on chronological prequential training predictions; out-of-sample calibration reported per walk-forward fold",
+            "odds_feature": False,
+            "probability_calibration": "temperature fitted on chronological prequential training predictions; out-of-sample calibration reported per walk-forward fold",
             "ticket_policy": "fixed top-rank tickets per race; 100 JPY per ticket; not a betting recommendation",
             "ticket_counts_per_race": {"win":1,"place":3,"wide":3,"quinella":1,"exacta":1,"trio":1,"trifecta":1},
             "limitations": ["No historical pre-race odds feature; NAR monthly odds are confirmed odds and are not used.",
@@ -634,7 +636,8 @@ def main():
         "metrics": metrics,
         "out_of_sample_validation": validation,
         "odds_snapshot_archive": odds_snapshot_inventory(),
-        "online_learning": {"updates": learning_updates, "final_weights": learned_weights,\n                            "temperature": round(production_temperature,4), "calibration": production_calibration,
+        "online_learning": {"updates": learning_updates, "final_weights": learned_weights,
+                            "temperature": round(production_temperature,4), "calibration": production_calibration,
                             "note": "Daily batch learning: all races on a date are scored before that date's results update weights for later dates."},
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -647,7 +650,9 @@ def main():
         "updates": learning_updates,
         "validation": validation,
         "feature_schema": ["form", "venue", "distance", "sire", "jockey", "age"],
-        "weights": validated_weights,\n        "temperature": production_temperature,\n        "calibration": production_calibration,
+        "weights": validated_weights,
+        "temperature": production_temperature,
+        "calibration": production_calibration,
         "prediction_policy": "Scores use only races strictly earlier than the target race date; current-race finish/popularity/payout are excluded. All races on a date are predicted before any results from that date update the model."
     }
     (OUT.parent / "live-model.json").write_text(json.dumps(live_model,ensure_ascii=False,indent=2),encoding="utf-8")
