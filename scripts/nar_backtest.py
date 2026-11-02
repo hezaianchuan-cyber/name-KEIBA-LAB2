@@ -445,6 +445,34 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             "training_updates":updates,"trained_weights":learned,"models":out}
 
 
+def odds_snapshot_inventory():
+    directory = ROOT / "data" / "odds-snapshots"
+    files = sorted(directory.glob("*.json")) if directory.exists() else []
+    race_count = odds_count = 0
+    dates = []
+    captured = []
+    for path in files:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        dates.append(str(payload.get("date") or path.stem))
+        for race in (payload.get("races") or {}).values():
+            race_count += 1
+            odds_count += len(race.get("odds") or [])
+            if race.get("captured_at"):
+                captured.append(str(race["captured_at"]))
+    return {
+        "snapshot_files": len(files),
+        "races": race_count,
+        "odds_rows": odds_count,
+        "first_date": min(dates) if dates else None,
+        "last_date": max(dates) if dates else None,
+        "last_captured_at": max(captured) if captured else None,
+        "note": "Only timestamped official pre-off daily odds snapshots are eligible for future value backtests; monthly confirmed odds are excluded."
+    }
+
+
 def holdout_validation(races, horses, payouts):
     dates=sorted({r["date"] for r in races.values()})
     if len(dates)<60:
@@ -524,7 +552,7 @@ def main():
                             "Missing or incomplete historical rows are excluded where necessary."]
         },
         "metrics": metrics,
-        "out_of_sample_validation": validation,
+        "out_of_sample_validation": validation,\n        "odds_snapshot_archive": odds_snapshot_inventory(),
         "online_learning": {"updates": learning_updates, "final_weights": learned_weights,
                             "note": "Daily batch learning: all races on a date are scored before that date's results update weights for later dates."},
     }
