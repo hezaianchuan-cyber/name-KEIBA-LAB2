@@ -134,7 +134,7 @@ def margin_score(value):
     m = re.search(r"(\d+(?:\.\d+)?)", s)
     return float(m.group(1)) if m else None
 
-def score_runner(h, history, sire_stats, jockey_stats, race):
+def score_runner(h, history, sire_stats, jockey_stats, race, model_weights):
     past = history.get(h["name"], [])[-5:]
     if past:
         ranks = [x["finish"] for x in past if x.get("finish")]
@@ -153,7 +153,28 @@ def score_runner(h, history, sire_stats, jockey_stats, race):
     jockey_score = j["top3"]/j["runs"]*100 if h["jockey"] and j["runs"] >= 5 else 50
     age = h.get("age")
     age_score = 72 if age is not None and 4 <= age <= 6 else 58 if age in (3,7) else 45
-    return .55*form + .12*venue_score + .12*distance_score + .10*sire_score + .07*jockey_score + .04*age_score
+    parts = {"form":form/100,"venue":venue_score/100,"distance":distance_score/100,
+             "sire":sire_score/100,"jockey":jockey_score/100,"age":age_score/100}
+    score = sum(model_weights[k]*v for k,v in parts.items())
+    return score, parts
+
+def update_model(field, parts_by_no, model_weights):
+    valid = [h for h in field if h.get("finish") and h["no"] in parts_by_no]
+    if len(valid) < 3: return False
+    scores = [sum(model_weights[k]*parts_by_no[h["no"]][k] for k in model_weights) for h in valid]
+    peak = max(scores)
+    expv = [math.exp((x-peak)*8) for x in scores]
+    denom = sum(expv) or 1
+    probs = [x/denom for x in expv]
+    winner = next((i for i,h in enumerate(valid) if h["finish"] == 1), None)
+    if winner is None: return False
+    lr = 0.025
+    for k in model_weights:
+        grad = sum(((1.0 if i == winner else 0.0)-probs[i])*parts_by_no[h["no"]][k] for i,h in enumerate(valid))
+        model_weights[k] = max(0.01, min(0.8, model_weights[k] + lr*grad))
+    total = sum(model_weights.values()) or 1
+    for k in model_weights: model_weights[k] /= total
+    return True
 
 def split_nums(s):
     return [re.sub(r"\D", "", x) for x in re.split(r"[-－ー,／/ ]+", str(s or "")) if re.sub(r"\D", "", x)]
@@ -191,13 +212,21 @@ def run_backtest(races, horses, payouts):
     jockey_stats = defaultdict(lambda: {"runs":0,"top3":0})
     metrics = {k: {"races":0,"tickets":0,"hits":0,"stake":0,"return":0} for k in ("win","place","wide","quinella","exacta","trio","trifecta")}
     examples = []
+    model_weights = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
+    learning_updates = 0
     ordered = sorted((r for r in races.values()), key=lambda r:(r["date"],r["venue"],int(r["race"])))
     for race in ordered:
         key = race["key"]
         field = horses.get(key, [])
         if len(field) < 3: continue
         # Predict BEFORE adding any current-race results to history or trainer/jockey/sire aggregates.
-        ranked = sorted(field, key=lambda h:score_runner(h,history,sire_stats,jockey_stats,race), reverse=True)
+        scored = []
+        parts_by_no = {}
+        for h in field:
+            score, parts = score_runner(h,history,sire_stats,jockey_stats,race,model_weights)
+            scored.append((score,h))
+            parts_by_no[h["no"]] = parts
+        ranked = [h for score,h in sorted(scored,key=lambda item:item[0],reverse=True)]
         top = ranked[:6]
         if len(top) < 3: continue
         nos = [h["no"] for h in top]
@@ -229,6 +258,9 @@ def run_backtest(races, horses, payouts):
                     "tickets": {k:["-".join(x) for x in v] for k,v in t.items()},
                     "winner": payout["win"][0],
                 })
+        # Learn from this race only after its predictions and ticket returns are fixed.
+        if update_model(field, parts_by_no, model_weights):
+            learning_updates += 1
         # After evaluation, append the actual result for use by later races only.
         for h in field:
             if h.get("finish"):
@@ -247,12 +279,12 @@ def run_backtest(races, horses, payouts):
         summary[kind] = {**m, "hit_rate": round(100*m["hits"]/m["tickets"],2) if m["tickets"] else None,
                          "roi": round(100*m["return"]/m["stake"],2) if m["stake"] else None,
                          "profit": m["return"]-m["stake"]}
-    return summary, examples, len(ordered)
+    return summary, examples, len(ordered), model_weights, learning_updates
 
 def main():
     print(f"Backtest range: {START} through {END}", flush=True)
     races, horses, payouts, months = load_archives()
-    metrics, examples, race_count = run_backtest(races, horses, payouts)
+    metrics, examples, race_count, learned_weights, learning_updates = run_backtest(races, horses, payouts)
     result = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "period": {"start":START.isoformat(),"end":END.isoformat()},
@@ -272,11 +304,12 @@ def main():
                             "Missing or incomplete historical rows are excluded where necessary."]
         },
         "metrics": metrics,
-        "examples": examples,
+        "online_learning": {"updates": learning_updates, "final_weights": learned_weights,
+                            "note": "Each race is scored first; its result updates weights only for subsequent races."},
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
-    print(json.dumps({"races":race_count,"horse_rows":result["horse_rows"],"payout_races":len(payouts),"metrics":metrics},ensure_ascii=False),flush=True)
+    print(json.dumps({"races":race_count,"horse_rows":result["horse_rows"],"payout_races":len(payouts),"metrics":metrics,"learning_updates":learning_updates,"final_weights":learned_weights},ensure_ascii=False),flush=True)
     if race_count == 0 or not payouts:
         raise RuntimeError("No usable historical race/payout data parsed; refusing to publish an empty backtest.")
 
