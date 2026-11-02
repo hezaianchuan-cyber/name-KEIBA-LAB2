@@ -1,6 +1,13 @@
 name: Deploy KEIBA LAB Web
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'sw.js'
+      - 'manifest.webmanifest'
+      - '.github/workflows/web.yml'
   workflow_dispatch:
 
 permissions:
