@@ -216,7 +216,7 @@ function isPreOffRace(race){
   const today=localDateKey();
   if(!date||date<today)return false;
   if(date>today)return true;
-  const digits=String(race.time||'').replace(/\\D/g,'');
+  const digits=String(race.time||'').replace(/\D/g,'');
   if(!digits)return false;
   const t=digits.padStart(4,'0');
   const hour=Number(t.slice(0,2)),minute=Number(t.slice(2,4));
