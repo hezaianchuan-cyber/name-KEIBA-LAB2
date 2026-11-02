@@ -115,9 +115,7 @@ a{color:inherit}
     <div class="card">
       <h2>&#x5730;&#x65B9;&#x7AF6;&#x99AC;&#x516C;&#x5F0F;&#x30C7;&#x30FC;&#x30BF;&#x3092;&#x53D6;&#x308A;&#x8FBC;&#x3080;</h2>
       <p class="sub">NAR&#x516C;&#x5F0F;ZIP&#x306B;&#x52A0;&#x3048;&#x3001;&#x4ECA;&#x56DE;&#x306E;&#x6708;&#x6B21;&#x30AA;&#x30C3;&#x30BA;CSV&#xFF08;202610_01_odds.csv&#xFF09;&#x306B;&#x5BFE;&#x5FDC;&#x3002;&#x30AA;&#x30C3;&#x30BA;CSV&#x3060;&#x3051;&#x3067;&#x3082;&#x958B;&#x50AC;&#x65E5;&#x30FB;&#x7AF6;&#x99AC;&#x5834;&#x30FB;&#x30EC;&#x30FC;&#x30B9;&#x3092;&#x9078;&#x3073;&#x3001;&#x4EBA;&#x6C17;&#x9806;&#x30FB;&#x5E02;&#x5834;&#x63A8;&#x5B9A;&#x78BA;&#x7387;&#x30FB;&#x5238;&#x7A2E;&#x5225;&#x30AA;&#x30C3;&#x30BA;&#x3092;&#x78BA;&#x8A8D;&#x3067;&#x304D;&#x307E;&#x3059;&#x3002;&#x5927;&#x91CF;&#x30C7;&#x30FC;&#x30BF;&#x306F;&#x30D6;&#x30E9;&#x30A6;&#x30B6;&#x5185;&#x3067;&#x89E3;&#x6790;&#x3057;&#x3001;&#x5BB9;&#x91CF;&#x5236;&#x9650;&#x306E;&#x3042;&#x308B;localStorage&#x306B;&#x306F;&#x4FDD;&#x5B58;&#x3057;&#x307E;&#x305B;&#x3093;&#x3002;</p>
-      <label style="margin-top:14px">&#x516C;&#x5F0F;ZIP / &#x6708;&#x6B21;&#x30AA;&#x30C3;&#x30BA;CSV&#xFF08;&#x8907;&#x6570;&#x9078;&#x629E;&#x53EF;&#xFF09;</label>
-      <input id="zipInput" type="file" accept=".zip,.csv,text/csv" multiple>
-      <div class="actions"><button class="btn accent full" id="importBtn">ZIP / CSV&#x3092;&#x8AAD;&#x307F;&#x8FBC;&#x3080;</button><button class="btn primary full" id="autoFetchBtn">NAR公式データを今すぐ取得</button></div><p class="sub">PC版はGitHub Actionsが5分ごとにNAR公式の当日レース情報・オッズZIPを取得し、この画面を開くと自動で取り込みます。Android版は従来どおり公式ZIPの手動取り込みです。</p>
+      <div class="actions"><button class="btn primary full" id="autoFetchBtn">NAR公式データを今すぐ更新</button></div><p class="sub">PC版は起動時にNAR公式データを自動取得し、以後5分ごとに更新します。手動でのCSV・ZIP取り込みは不要です。</p>
       <div class="status"><i class="dot" id="importDot"></i><span id="importStatus">&#x672A;&#x53D6;&#x8FBC;</span></div>
     </div>
     <div class="card">
@@ -266,6 +264,7 @@ let pcOfficialFetchBusy=false;
 async function fetchPcOfficialData(showStatus=true){
   if(pcOfficialFetchBusy)return;
   pcOfficialFetchBusy=true;
+  if(showStatus){$('importStatus').textContent='NAR公式データを自動取得中…';$('importDot').className='dot';}
   try{
     const targets=[['レース情報','./data/latest-race.zip'],['オッズ情報','./data/latest-odds.zip']];
     let total=0,details=[],available=0;
@@ -280,7 +279,7 @@ async function fetchPcOfficialData(showStatus=true){
       if(count>0){available++;total+=count;details.push(label+': '+count+'件');}
       else details.push(label+': 新規データなし');
     }
-    if(!available)throw new Error('公式データがまだ公開されていないか、取得できません');
+    if(!available)throw new Error('取得したZIPに読み込めるデータがありません。'+details.join(' / '));
     dedupeImportedData();
     const learned=applyResultLearning();
     save();refreshRaceChoices();updateHistory();
@@ -289,7 +288,7 @@ async function fetchPcOfficialData(showStatus=true){
     $('dataStatus').textContent='PC版自動取得済み：出馬表 '+db.horses.length+'頭 / レース '+db.races.length+'件 / オッズ '+db.odds.length+'件 / 払戻 '+db.payouts.length+'件';
     $('importCounts').textContent='出馬表 '+db.horses.length+'件 / レース '+db.races.length+'件 / オッズ '+db.odds.length+'件 / 払戻 '+db.payouts.length+'件 / 学習済み予想 '+db.predictions.filter(x=>x.learned).length+'件';
   }catch(e){
-    if(showStatus){$('importStatus').textContent='PC版自動取得：'+e.message;$('importDot').className='dot';}
+    $('importStatus').textContent='PC版自動取得に失敗：'+e.message;$('importDot').className='dot';$('dataDot').className='dot';
   }finally{pcOfficialFetchBusy=false;}
 }
 function autoFetchOfficialData(){
@@ -301,7 +300,7 @@ function autoFetchOfficialData(){
 }
 $('autoFetchBtn').onclick=autoFetchOfficialData;
 if(!window.AndroidBridge){
-  window.addEventListener('load',()=>fetchPcOfficialData(false));
+  window.addEventListener('load',()=>fetchPcOfficialData(true));
   setInterval(()=>fetchPcOfficialData(false),5*60*1000);
 }
 function refreshRaceChoices(){const date=$('raceDate').value.replaceAll('-',''),venue=$('venue').value;const known=[...new Set([...oddsRaceIndex.map(r=>r.venue),...db.races.map(r=>r.venue)])].sort((a,b)=>a.localeCompare(b,'ja'));const vs=$('venue');const current=venue;const opts=['<option value="">\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044</option>',...known.map(v=>'<option>'+esc(v)+'</option>')].join('');if(known.length){vs.innerHTML=opts;if(known.includes(current))vs.value=current;}
@@ -390,7 +389,7 @@ function updateHistory(){
   $('hSettled').textContent=n;$('hTop1').textContent=n?(100*top1/n).toFixed(1)+'%':'—';$('hTop3').textContent=n?(100*top3/n).toFixed(1)+'%':'—';$('hRoi').textContent=n?(100*returned/stake).toFixed(1)+'%':'—';
   $('hEvalNote').textContent=n+'レースを照合済み。仮想投資額 '+stake.toLocaleString()+'円／仮想払戻 '+returned.toLocaleString()+'円。実際の購入・収支ではありません。学習は未学習の結果が20レース以上まとまった場合のみ実行します。';
 }
-$('importBtn').onclick=importFiles;$('analyzeBtn').onclick=analyze;$('demoBtn').onclick=demo;
+$('analyzeBtn').onclick=analyze;$('demoBtn').onclick=demo;
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='keiba-lab-local-data.json';a.click();URL.revokeObjectURL(a.href)};
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));if(b.dataset.tab==='settings')renderWeights();if(b.dataset.tab==='history')updateHistory()});
 if('serviceWorker' in navigator && location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
