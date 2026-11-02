@@ -51,6 +51,16 @@ public class MainActivity extends Activity {
 
     private class OfficialDataBridge {
         @JavascriptInterface
+        public void openOfficialDataPage() {
+            runOnUiThread(() -> {
+                Intent intent = new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("https://www.keiba.go.jp/KeibaWeb/TodayRaceInfo/TodayRaceInfoTop"));
+                startActivity(intent);
+            });
+        }
+
+
+        @JavascriptInterface
         public void downloadDailyData() {
             downloadExecutor.execute(() -> {
                 JSONObject response = new JSONObject();
