@@ -144,6 +144,32 @@ a{color:inherit}
 </main>
 </div>
 <script>
+/* Navigation bootstrap: keep tab navigation independent of the main app script. */
+(function () {
+  function activateTab(button) {
+    var target = button && button.getAttribute('data-tab');
+    if (!target) return;
+    document.querySelectorAll('.tabs button[data-tab]').forEach(function (tab) {
+      var active = tab === button;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('.panel').forEach(function (panel) {
+      panel.classList.toggle('active', panel.id === target);
+    });
+  }
+  document.addEventListener('click', function (event) {
+    var button = event.target.closest && event.target.closest('.tabs button[data-tab]');
+    if (button) activateTab(button);
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    var button = event.target.closest && event.target.closest('.tabs button[data-tab]');
+    if (button) activateTab(button);
+  });
+})();
+</script>
+<script>
 const $=id=>document.getElementById(id);
 const today=new Date();$('raceDate').value=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
 let db={races:[],horses:[],odds:[],payouts:[],predictions:[],sourceFiles:[]};
