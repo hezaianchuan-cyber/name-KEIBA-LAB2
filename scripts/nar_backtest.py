@@ -610,37 +610,103 @@ def load_odds_snapshots():
     return snapshots
 
 
-def odds_snapshot_inventory():
+def load_odds_snapshot_records():
     directory = ROOT / "data" / "odds-snapshots"
+    records = []
     files = sorted(directory.glob("*.jsonl.gz")) if directory.exists() else []
-    race_count = odds_count = 0
-    dates = []
-    captured = []
     for path in files:
         try:
             with gzip.open(path, "rt", encoding="utf-8") as source:
                 for line in source:
                     try:
-                        race = json.loads(line)
+                        records.append(json.loads(line))
                     except json.JSONDecodeError:
                         continue
-                    race_count += 1
-                    odds_count += len(race.get("odds") or [])
-                    if race.get("date"):
-                        dates.append(str(race["date"]).replace("-", ""))
-                    if race.get("captured_at"):
-                        captured.append(str(race["captured_at"]))
         except OSError:
             continue
+    return files, records
+
+
+def odds_snapshot_inventory():
+    files, records = load_odds_snapshot_records()
+    dates = [str(r.get("date") or "").replace("-", "") for r in records if r.get("date")]
+    captured = [str(r.get("captured_at")) for r in records if r.get("captured_at")]
     return {
         "snapshot_files": len(files),
-        "races": race_count,
-        "odds_rows": odds_count,
+        "races": len(records),
+        "predicted_races": sum(1 for r in records if r.get("predictions")),
+        "odds_rows": sum(len(r.get("odds") or []) for r in records),
         "first_date": min(dates) if dates else None,
         "last_date": max(dates) if dates else None,
         "last_captured_at": max(captured) if captured else None,
-        "note": "Only timestamped official pre-off daily odds snapshots are eligible for future value backtests; monthly confirmed odds are excluded."
+        "model_versions": sorted({str(r.get("model_version")) for r in records if r.get("model_version")}),
+        "note": "Only timestamped official pre-off odds and predictions are eligible for value backtests; monthly confirmed odds are excluded."
     }
+
+
+def preoff_value_backtest(payouts):
+    _, records = load_odds_snapshot_records()
+    thresholds = (1.00, 1.05, 1.10, 1.15, 1.20, 1.30)
+    stats = {threshold:{"races_with_bets":0,"tickets":0,"hits":0,"stake":0,
+                        "return":0,"ev_sum":0.0,"odds_sum":0.0}
+             for threshold in thresholds}
+    evaluated = 0
+    model_versions = set()
+    for record in records:
+        key_parts = str(record.get("race_key") or "").split("|")
+        if len(key_parts) != 3:
+            continue
+        key = (key_parts[0], key_parts[1], key_parts[2])
+        payout = payouts.get(key)
+        if not payout or not payout.get("win"):
+            continue
+        predictions = record.get("predictions") or []
+        if not predictions:
+            continue
+        evaluated += 1
+        if record.get("model_version"):
+            model_versions.add(str(record["model_version"]))
+        for threshold in thresholds:
+            current_race_bets = 0
+            bucket = stats[threshold]
+            for prediction in predictions:
+                ev = number(prediction.get("expected_value"))
+                odds_value = number(prediction.get("win_odds"))
+                horse_no = re.sub(r"\\D", "", str(prediction.get("horse_no") or ""))
+                if not horse_no or ev is None or odds_value is None or ev < threshold:
+                    continue
+                current_race_bets += 1
+                bucket["tickets"] += 1
+                bucket["stake"] += 100
+                bucket["ev_sum"] += ev
+                bucket["odds_sum"] += odds_value
+                returned = payout_for("win", [str(int(horse_no))], payout) or 0
+                if returned:
+                    bucket["hits"] += 1
+                    bucket["return"] += returned
+            if current_race_bets:
+                bucket["races_with_bets"] += 1
+    output = {}
+    for threshold, bucket in stats.items():
+        tickets = bucket["tickets"]
+        output[f"{threshold:.2f}"] = {
+            **bucket,
+            "hit_rate": round(100*bucket["hits"]/tickets, 2) if tickets else None,
+            "roi": round(100*bucket["return"]/bucket["stake"], 2) if bucket["stake"] else None,
+            "profit": bucket["return"]-bucket["stake"],
+            "average_expected_value": round(bucket["ev_sum"]/tickets, 4) if tickets else None,
+            "average_snapshot_odds": round(bucket["odds_sum"]/tickets, 2) if tickets else None,
+        }
+    return {
+        "status": "ok" if evaluated else ("awaiting_settled_snapshots" if records else "awaiting_snapshots"),
+        "snapshot_races": len(records),
+        "settled_evaluated_races": evaluated,
+        "model_versions": sorted(model_versions),
+        "thresholds": output,
+        "policy": "Flat 100-yen win bets only when calibrated win probability multiplied by timestamped pre-off win odds meets the threshold. Returns use official settled 100-yen payouts.",
+        "note": "This evaluation begins only after captured pre-off odds snapshots can be joined to official settled results. It never substitutes final monthly odds for pre-race odds."
+    }
+
 
 
 def holdout_validation(races, horses, payouts, odds_snapshots=None):
@@ -744,7 +810,7 @@ def main():
         },
         "metrics": metrics,
         "out_of_sample_validation": validation,
-        "odds_snapshot_archive": odds_snapshot_inventory(),
+        "odds_snapshot_archive": odds_snapshot_inventory(),\n        "preoff_value_backtest": preoff_value_backtest(payouts),
         "online_learning": {"updates": learning_updates, "final_weights": learned_weights,
                             "temperature": round(production_temperature,4), "calibration": production_calibration,
                             "note": "Daily batch learning: all races on a date are scored before that date's results update weights for later dates."},
