@@ -373,7 +373,14 @@ ticketBox.style.marginTop='16px';
 ticketBox.innerHTML='<h2>買い目自動生成</h2><p class="sub">予算上限なし。分析順位から全券種の候補を生成します。確率は現行モデルの参考推定で、的中や利益を保証しません。</p><button class="btn primary" id="makeTickets">全券種の買い目を生成</button><div id="ticketResult" class="sub" style="margin-top:12px"></div>';
 $('runnerList').parentElement.after(ticketBox);
 $('makeTickets').onclick=()=>{
- const horses=[...currentRunners].filter(h=>/^\d+$/.test(String(h.horseNo??''))).sort((a,b)=>(Number(b.score)||Number(b.prob)||0)-(Number(a.score)||Number(a.prob)||0)).slice(0,6);
+ const source=[...(currentRunners||[])];
+ const horseMap=new Map();
+ source.forEach((h,index)=>{
+   const parts=String(h.horseNo??'').split(/[-,]/).map(x=>x.trim()).filter(x=>/^\d+$/.test(x));
+   parts.forEach(no=>{if(!horseMap.has(no))horseMap.set(no,{...h,horseNo:no,name:/^\d+$/.test(String(h.horseNo??''))?(h.name||no+'番'):no+'番',score:Number(h.score)||Math.max(1,100-index*4),prob:Number(h.prob)||0});});
+ });
+ let horses=[...horseMap.values()].sort((a,b)=>(Number(b.score)||Number(b.prob)||0)-(Number(a.score)||Number(a.prob)||0)).slice(0,6);
+ if(horses.length<3){const id=$('raceSelect').value;const saved=(db.horses||[]).filter(h=>h.id===id&&/^\d+$/.test(String(h.horseNo??'')));if(saved.length>=3)horses=saved.map(h=>scoreRunner(h,saved)).sort((a,b)=>b.score-a.score).slice(0,6);}
  const out=$('ticketResult');
  if(horses.length<3){out.textContent='買い目生成には、馬番ごとの出馬表と分析結果が3頭以上必要です。オッズ組合せ一覧だけでは生成できません。';return;}
  const prob=h=>Math.max(0.001,Math.min(0.999,(Number(h.prob)||0)/100));
