@@ -574,7 +574,7 @@ function generateTickets(){
  const mainHtml='<h3>本線の買い目</h3><div class="tablewrap"><table><thead><tr><th>券種</th><th>買い目</th><th>位置づけ</th></tr></thead><tbody>'+
  main.map((x,i)=>'<tr><td>'+x[0]+'</td><td><b>'+x[1]+'</b></td><td>'+(i<4?'軸候補':i<8?'相手候補':'組合せ候補')+'</td></tr>').join('')+
  '</tbody></table></div>';
- const horseHtml='<h3>予想上位馬</h3><div class="tablewrap"><table><thead><tr><th>順位</th><th>馬番・馬名</th><th>評価点</th><th>モデル推定勝率</th><th>単勝オッズ</th></tr></thead><tbody>'+
+ const horseHtml='<h3>予想上位馬</h3><div class="tablewrap"><table><thead><tr><th>順位</th><th>馬番・馬名</th><th>評価点</th><th>'+(learnedModelLoaded?'学習モデル推定勝率':'参考スコア比率')+'</th><th>単勝オッズ</th></tr></thead><tbody>'+
  horses.map((h,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(h.horseNo+'番 '+(h.name||''))+'</td><td>'+(Number(h.score)||0).toFixed(1)+'</td><td>'+(h.modelProb*100).toFixed(1)+'%</td><td>'+(Number(h.odds)>0?Number(h.odds).toFixed(1)+'倍':'未取得')+'</td></tr>').join('')+
  '</tbody></table></div>';
  const allHtml=groups.map(type=>{
@@ -584,7 +584,7 @@ function generateTickets(){
    '</tbody></table></div>';
  }).join('');
  out.innerHTML=horseHtml+mainHtml+'<details style="margin-top:12px"><summary>券種別の候補一覧を開く</summary>'+allHtml+'</details>'+
- '<p>合計候補 '+candidates.length+' 点。組合せ順位指数は候補の並べ替え用で、的中確率や期待値を保証する数値ではありません。単勝の推定勝率も学習モデルの推定値です。実際の期待値判定には発走5分前までの取得オッズが必要です。</p>';
+ '<p>合計候補 '+candidates.length+' 点。組合せ順位指数は候補の並べ替え用で、的中確率や期待値を保証する数値ではありません。勝率欄は学習モデル読込時のみ学習モデル推定値で、未読込時は参考スコア比率です。実際の期待値判定には発走5分前までの取得オッズが必要です。</p>';
 }
 function dedupeRunnerRows(rows) {
   const map = new Map();
