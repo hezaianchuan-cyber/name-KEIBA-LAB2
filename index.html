@@ -383,7 +383,9 @@ $('makeTickets').onclick=()=>{
  if(horses.length<3){const id=$('raceSelect').value;const saved=(db.horses||[]).filter(h=>h.id===id&&/^\d+$/.test(String(h.horseNo??'')));if(saved.length>=3)horses=saved.map(h=>scoreRunner(h,saved)).sort((a,b)=>b.score-a.score).slice(0,6);}
  const out=$('ticketResult');
  if(horses.length<3){out.textContent='買い目生成には、馬番ごとの出馬表と分析結果が3頭以上必要です。オッズ組合せ一覧だけでは生成できません。';return;}
- const prob=h=>Math.max(0.001,Math.min(0.999,(Number(h.prob)||0)/100));
+ const maxScore=Math.max(...horses.map(h=>Number(h.score)||0));
+ const scoreTotal=horses.reduce((sum,h)=>sum+Math.exp(((Number(h.score)||0)-maxScore)/18),0)||1;
+ const prob=h=>{const p=Number(h.prob);if(p>0)return Math.max(0.001,Math.min(0.999,p/100));return Math.max(0.001,Math.min(0.999,Math.exp(((Number(h.score)||0)-maxScore)/18)/scoreTotal));};
  const fmt=arr=>arr.map(h=>String(h.horseNo)).join('-');
  const rows=[];
  const add=(type,comb,p)=>rows.push({type,comb:fmt(comb),p});
