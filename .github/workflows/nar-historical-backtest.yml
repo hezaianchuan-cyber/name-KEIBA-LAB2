@@ -35,15 +35,29 @@ jobs:
 
       - name: Publish aggregate report only
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/backtest-summary.json data/live-model.json data/live-history.json
-          if git diff --cached --quiet; then
-            echo "No report changes"
-          else
+          mkdir -p /tmp/keiba-report
+          cp data/backtest-summary.json data/live-model.json data/live-history.json /tmp/keiba-report/
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/keiba-report/* data/
+            git add data/backtest-summary.json data/live-model.json data/live-history.json
+            if git diff --cached --quiet; then
+              echo "No report changes"
+              exit 0
+            fi
             git commit -m "Update NAR one-year backtest summary"
-            git push
-          fi
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push conflict; retrying against latest main (attempt $attempt)"
+            sleep 2
+          done
+          echo "Could not publish report after 5 attempts"
+          exit 1
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
