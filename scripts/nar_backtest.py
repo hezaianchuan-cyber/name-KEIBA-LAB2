@@ -553,25 +553,60 @@ def load_odds_snapshot_records():
     return files, records
 
 
+def load_odds_snapshots():
+    """Select the closest valid pre-off snapshot for each race; discard post-off records."""
+    _, records = load_odds_snapshot_records()
+    selected = {}
+    for record in records:
+        parts = str(record.get("race_key") or "").split("|")
+        if len(parts) != 3:
+            continue
+        key = (parts[0], parts[1], parts[2])
+        minutes = number(record.get("minutes_to_post"))
+        if minutes is None:
+            try:
+                captured = dt.datetime.fromisoformat(str(record["captured_at"]))
+                scheduled = dt.datetime.fromisoformat(str(record["scheduled_post_time"]))
+                minutes = (scheduled-captured).total_seconds()/60
+            except (KeyError, TypeError, ValueError):
+                continue
+        if minutes < 0 or minutes > 30:
+            continue
+        previous = selected.get(key)
+        previous_minutes = number(previous.get("minutes_to_post")) if previous else None
+        if previous and previous_minutes is None:
+            try:
+                previous_minutes = (dt.datetime.fromisoformat(str(previous["scheduled_post_time"]))-
+                                     dt.datetime.fromisoformat(str(previous["captured_at"]))).total_seconds()/60
+            except (KeyError, TypeError, ValueError):
+                previous_minutes = float("inf")
+        if previous is None or minutes < previous_minutes:
+            selected[key] = record
+    return selected
+
+
 def odds_snapshot_inventory():
     files, records = load_odds_snapshot_records()
-    dates = [str(r.get("date") or "").replace("-", "") for r in records if r.get("date")]
+    selected = load_odds_snapshots()
+    dates = [str(r.get("date") or "").replace("-", "") for r in selected.values() if r.get("date")]
     captured = [str(r.get("captured_at")) for r in records if r.get("captured_at")]
     return {
         "snapshot_files": len(files),
-        "races": len(records),
-        "predicted_races": sum(1 for r in records if r.get("predictions")),
-        "odds_rows": sum(len(r.get("odds") or []) for r in records),
+        "snapshot_records": len(records),
+        "races": len(selected),
+        "predicted_races": sum(1 for r in selected.values() if r.get("predictions")),
+        "odds_rows": sum(len(r.get("odds") or []) for r in selected.values()),
         "first_date": min(dates) if dates else None,
         "last_date": max(dates) if dates else None,
         "last_captured_at": max(captured) if captured else None,
-        "model_versions": sorted({str(r.get("model_version")) for r in records if r.get("model_version")}),
-        "note": "Only timestamped official pre-off odds and predictions are eligible for value backtests; monthly confirmed odds are excluded."
+        "model_versions": sorted({str(r.get("model_version")) for r in selected.values() if r.get("model_version")}),
+        "note": "The closest valid pre-off snapshot per race is used; post-off records and monthly confirmed odds are excluded."
     }
 
 
+
 def preoff_value_backtest(payouts):
-    _, records = load_odds_snapshot_records()
+    records = list(load_odds_snapshots().values())
     thresholds = (1.00, 1.05, 1.10, 1.15, 1.20, 1.30)
     stats = {threshold:{"races_with_bets":0,"tickets":0,"hits":0,"stake":0,
                         "return":0,"ev_sum":0.0,"odds_sum":0.0}
