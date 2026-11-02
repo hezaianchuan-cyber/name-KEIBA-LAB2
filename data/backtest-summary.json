@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-02T13:22:30.400920+00:00",
+  "generated_at": "2026-11-02T13:23:28.510714+00:00",
   "period": {
     "start": "2025-11-02",
     "end": "2026-11-01"
@@ -64,7 +64,7 @@
   "payout_races": 15491,
   "evaluated": 108437,
   "method": {
-    "prediction_order": "chronological; each race is predicted before its results enter horse/jockey/sire history",
+    "prediction_order": "date-batched chronological; every race on a date is predicted before any result from that date updates history or model weights",
     "odds_feature": false,
     "ticket_policy": "fixed top-rank tickets per race; 100 JPY per ticket; not a betting recommendation",
     "ticket_counts_per_race": {
@@ -86,84 +86,84 @@
     "win": {
       "races": 15491,
       "tickets": 15491,
-      "hits": 4503,
+      "hits": 4493,
       "stake": 1549100,
-      "return": 1154980.0,
-      "hit_rate": 29.07,
-      "roi": 74.56,
-      "profit": -394120.0
+      "return": 1155660.0,
+      "hit_rate": 29.0,
+      "roi": 74.6,
+      "profit": -393440.0
     },
     "place": {
       "races": 15491,
       "tickets": 46473,
-      "hits": 22527,
+      "hits": 22473,
       "stake": 4647300,
-      "return": 3502510.0,
-      "hit_rate": 48.47,
-      "roi": 75.37,
-      "profit": -1144790.0
+      "return": 3490030.0,
+      "hit_rate": 48.36,
+      "roi": 75.1,
+      "profit": -1157270.0
     },
     "wide": {
       "races": 15491,
       "tickets": 46473,
-      "hits": 10154,
+      "hits": 10124,
       "stake": 4647300,
-      "return": 3114330.0,
-      "hit_rate": 21.85,
-      "roi": 67.01,
-      "profit": -1532970.0
+      "return": 3111530.0,
+      "hit_rate": 21.78,
+      "roi": 66.95,
+      "profit": -1535770.0
     },
     "quinella": {
       "races": 15491,
       "tickets": 15491,
-      "hits": 1996,
+      "hits": 1992,
       "stake": 1549100,
-      "return": 940910.0,
-      "hit_rate": 12.88,
-      "roi": 60.74,
-      "profit": -608190.0
+      "return": 948930.0,
+      "hit_rate": 12.86,
+      "roi": 61.26,
+      "profit": -600170.0
     },
     "exacta": {
       "races": 15491,
       "tickets": 15491,
-      "hits": 1148,
+      "hits": 1156,
       "stake": 1549100,
-      "return": 943590.0,
-      "hit_rate": 7.41,
-      "roi": 60.91,
-      "profit": -605510.0
+      "return": 952820.0,
+      "hit_rate": 7.46,
+      "roi": 61.51,
+      "profit": -596280.0
     },
     "trio": {
       "races": 15491,
       "tickets": 15491,
-      "hits": 1158,
+      "hits": 1157,
       "stake": 1549100,
-      "return": 976200.0,
-      "hit_rate": 7.48,
-      "roi": 63.02,
-      "profit": -572900.0
+      "return": 943490.0,
+      "hit_rate": 7.47,
+      "roi": 60.91,
+      "profit": -605610.0
     },
     "trifecta": {
       "races": 15491,
       "tickets": 15491,
-      "hits": 301,
+      "hits": 304,
       "stake": 1549100,
-      "return": 1126520.0,
-      "hit_rate": 1.94,
-      "roi": 72.72,
-      "profit": -422580.0
+      "return": 967630.0,
+      "hit_rate": 1.96,
+      "roi": 62.46,
+      "profit": -581470.0
     }
   },
   "online_learning": {
     "updates": 15406,
     "final_weights": {
-      "form": 0.13379335855011606,
-      "venue": 0.2003730345771109,
-      "distance": 0.0753201495080792,
-      "sire": 0.18725127704829728,
-      "jockey": 0.3911390702936168,
-      "age": 0.012123110022779824
+      "form": 0.13378295458304607,
+      "venue": 0.19977038090689206,
+      "distance": 0.07552692570991326,
+      "sire": 0.18658777584895758,
+      "jockey": 0.39219226889732234,
+      "age": 0.012139694053868626
     },
-    "note": "Each race is scored first; its result updates weights only for subsequent races."
+    "note": "Daily batch learning: all races on a date are scored before that date's results update weights for later dates."
   }
 }
