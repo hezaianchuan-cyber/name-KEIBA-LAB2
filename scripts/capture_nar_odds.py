@@ -167,7 +167,7 @@ def main():
             "odds": entries,
         }
         if append_snapshot(path, record):
-        additions += 1
+            additions += 1
     print(f"Captured {additions} pre-off race snapshots at {now.isoformat()}")
 
 
