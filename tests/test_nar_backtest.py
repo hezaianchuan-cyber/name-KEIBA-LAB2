@@ -1,4 +1,7 @@
 import sys
+import gzip
+import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -61,6 +64,18 @@ class OddsSnapshotParsingTests(unittest.TestCase):
         self.assertEqual(capture.post_time("1540").hour, 15)
         self.assertEqual(capture.post_time("940").minute, 40)
         self.assertIsNone(capture.post_time("2561"))
+
+    def test_gzip_snapshot_appends_once_and_preserves_prior_records(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "2026-11-03.jsonl.gz"
+            first = {"race_key":"大井|20261103|10","odds":[{"type":"単勝","odds":2.5}]}
+            second = {"race_key":"大井|20261103|11","odds":[{"type":"単勝","odds":3.2}]}
+            self.assertTrue(capture.append_snapshot(path, first))
+            self.assertFalse(capture.append_snapshot(path, first))
+            self.assertTrue(capture.append_snapshot(path, second))
+            with gzip.open(path, "rt", encoding="utf-8") as stream:
+                rows = [json.loads(line) for line in stream]
+            self.assertEqual([row["race_key"] for row in rows], [first["race_key"], second["race_key"]])
 
 
 class ProbabilityCalibrationTests(unittest.TestCase):
