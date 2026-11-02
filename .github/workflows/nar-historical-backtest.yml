@@ -12,8 +12,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
   group: nar-historical-backtest
@@ -21,9 +19,6 @@ concurrency:
 
 jobs:
   backtest:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -59,16 +54,3 @@ jobs:
           echo "Could not publish report after 5 attempts"
           exit 1
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
-      - name: Upload website with aggregate report
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-
-      - name: Deploy updated website
-        id: deployment
-        uses: actions/deploy-pages@v4
