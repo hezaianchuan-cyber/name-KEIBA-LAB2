@@ -3,12 +3,14 @@ name: Fetch NAR official data for PC
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "data/odds-snapshots/**"
   workflow_dispatch:
   schedule:
     - cron: "*/5 * * * *"
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -83,6 +85,32 @@ jobs:
               json.dump(state, f, ensure_ascii=False)
           print(json.dumps(state, ensure_ascii=False))
           PY
+
+      - name: Capture pre-off odds snapshots
+        run: |
+          python3 scripts/capture_nar_odds.py
+          if [ -d data/odds-snapshots ]; then
+            cp -a data/odds-snapshots /tmp/odds-snapshots
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            for attempt in 1 2 3 4 5; do
+              git fetch origin main
+              git reset --hard origin/main
+              mkdir -p data
+              cp -a /tmp/odds-snapshots data/
+              git add data/odds-snapshots
+              if git diff --cached --quiet; then
+                echo "No new pre-off odds snapshots"
+                break
+              fi
+              git commit -m "Archive official pre-off odds snapshots"
+              if git push origin HEAD:main; then
+                break
+              fi
+              echo "Snapshot push conflict; retry $attempt"
+              sleep 2
+            done
+          fi
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
