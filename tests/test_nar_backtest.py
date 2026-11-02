@@ -4,6 +4,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import nar_backtest as nb
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+import capture_nar_odds as capture
 
 
 class PayoutParsingTests(unittest.TestCase):
@@ -49,6 +51,16 @@ class PayoutParsingTests(unittest.TestCase):
         nb.merge_payout_row(payouts, key, row)
         self.assertEqual(len(payouts[key]["win"]), 1)
         self.assertEqual(payouts[key]["source_rows"], 2)
+
+
+class OddsSnapshotParsingTests(unittest.TestCase):
+    def test_race_id_normalizes_race_number(self):
+        self.assertEqual(capture.race_id("大井", "20261103", "010"), ("大井", "20261103", "10"))
+
+    def test_post_time_parses_hhmm_and_rejects_invalid_values(self):
+        self.assertEqual(capture.post_time("1540").hour, 15)
+        self.assertEqual(capture.post_time("940").minute, 40)
+        self.assertIsNone(capture.post_time("2561"))
 
 
 if __name__ == "__main__":
