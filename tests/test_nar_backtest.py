@@ -3,6 +3,7 @@ import gzip
 import json
 import tempfile
 import unittest
+from collections import defaultdict
 from unittest import mock
 from pathlib import Path
 
@@ -77,6 +78,27 @@ class OddsSnapshotParsingTests(unittest.TestCase):
             with gzip.open(path, "rt", encoding="utf-8") as stream:
                 rows = [json.loads(line) for line in stream]
             self.assertEqual([row["race_key"] for row in rows], [first["race_key"], second["race_key"]])
+
+    def test_preoff_snapshot_stores_calibrated_win_probability_and_ev(self):
+        model = {"model_version":"test-model","temperature":0.18}
+        history = defaultdict(list)
+        sire_stats = defaultdict(lambda: {"runs":0,"top3":0})
+        jockey_stats = defaultdict(lambda: {"runs":0,"top3":0})
+        weights = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
+        context = (model, history, sire_stats, jockey_stats, weights)
+        race = {"venue":"大井","distance":1600,"field_size":3}
+        horses = [
+            {"no":"1","name":"A","age":4,"sire":"S1","jockey":"J1"},
+            {"no":"2","name":"B","age":5,"sire":"S2","jockey":"J2"},
+            {"no":"3","name":"C","age":7,"sire":"S3","jockey":"J3"},
+        ]
+        odds = [{"type":"単勝","n1":"1","odds":2.5}]
+        predictions = capture.predict_horses(race, horses, odds, context)
+        self.assertEqual(len(predictions), 3)
+        self.assertAlmostEqual(sum(p["win_probability"] for p in predictions), 1.0, places=6)
+        first = next(p for p in predictions if p["horse_no"] == "1")
+        self.assertEqual(first["win_odds"], 2.5)
+        self.assertAlmostEqual(first["expected_value"], first["win_probability"]*2.5, places=5)
 
 
 class OddsSnapshotBacktestTests(unittest.TestCase):
