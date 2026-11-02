@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 SNAPSHOT_DIR = DATA / "odds-snapshots"
 JST = ZoneInfo("Asia/Tokyo")
-CAPTURE_WINDOW_MINUTES = 7
+CAPTURE_WINDOW_MINUTES = 15
 
 
 def decode(raw: bytes) -> str:
@@ -215,7 +215,7 @@ def main():
     now = dt.datetime.now(JST)
     races, horses_by_race, odds = read_archives()
     if not races or not odds:
-        print("No current official odds rows; no snapshot written.")
+        print(f"No current official race/odds rows; race_rows={len(races)} odds_races={len(odds)}")
         return
     candidates = []
     for key, race in races.items():
@@ -236,7 +236,7 @@ def main():
             continue
         candidates.append((key, race, race_date, post, minutes, entries, field))
     if not candidates:
-        print(f"No race with odds inside the {CAPTURE_WINDOW_MINUTES}-minute pre-off window.")
+        print(f"No race inside {CAPTURE_WINDOW_MINUTES}-minute pre-off window; race_rows={len(races)} odds_races={len(odds)}")
         return
     model_context = load_model_context()
     additions = 0
@@ -259,7 +259,7 @@ def main():
         }
         if append_snapshot(path, record):
             additions += 1
-    print(f"Captured {additions} pre-off race snapshots at {now.isoformat()}")
+    print(f"Captured {additions} pre-off race snapshots at {now.isoformat()}; candidates={len(candidates)} model_available={model_context is not None}")
 
 
 if __name__ == "__main__":
