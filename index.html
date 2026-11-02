@@ -523,14 +523,14 @@ function generateTickets(){
    return;
  }
  const raceId=$('raceSelect')?.value;
- let horses=source.filter(h=>/^\d+$/.test(String(h.horseNo??'').trim()));
+ let horses=source.filter(h=>/^\d+$/.test(String(h.horseNo??'').trim())).map(h=>({...h,modelProb:Number(h.prob)>0?Number(h.prob)/100:null}));
  if(horses.length<3){
    const saved=(db.horses||[]).filter(h=>h.id===raceId&&/^\d+$/.test(String(h.horseNo??'').trim()));
    if(saved.length>=3)horses=saved.map(h=>scoreRunner(h,saved));
  }
  const unique=new Map();
  horses.forEach(h=>{const no=String(h.horseNo).trim();if(!unique.has(no))unique.set(no,h);});
- horses=[...unique.values()].sort((a,b)=>(Number(b.score)||0)-(Number(a.score)||0)).slice(0,6);
+ horses=[...unique.values()].sort((a,b)=>(Number(b.score)||0)-(Number(a.score)||0));
  if(horses.length<3){
    out.innerHTML='<p>買い目を作るには、馬番が確認できる出走馬データが3頭以上必要です。オッズの組合せ一覧だけでは予想を作りません。</p>';
    return;
@@ -539,7 +539,7 @@ function generateTickets(){
  const temp=Math.max(2,Number(learnedTemperature)||18);
  const raw=horses.map(h=>Math.exp(Math.max(-50,((Number(h.score)||0)-peak)/temp)));
  const total=raw.reduce((a,b)=>a+b,0)||1;
- horses=horses.map((h,i)=>({...h,modelProb:raw[i]/total}));
+ horses=horses.map((h,i)=>({...h,modelProb:Number.isFinite(h.modelProb)&&h.modelProb>0?h.modelProb:raw[i]/total})).slice(0,6);
  const fmt=arr=>arr.map(h=>String(h.horseNo)).join('-');
  const candidates=[];
  const add=(type,comb,rankScore)=>candidates.push({type,comb:fmt(comb),score:rankScore});
