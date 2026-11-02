@@ -277,7 +277,7 @@ def run_backtest(races, horses, payouts):
             "trifecta":[nos[:3]],
         }
         payout = payouts.get(key)
-        if payout:
+        if payout and payout.get("win"):
             for kind, tickets in t.items():
                 m = metrics[kind]
                 m["races"] += 1
@@ -509,7 +509,7 @@ def main():
         "downloaded_months": months,
         "race_count": race_count,
         "horse_rows": sum(len(v) for v in horses.values()),
-        "payout_races": len(payouts),
+        "payout_races": sum(1 for p in payouts.values() if p.get("win")),
         "payout_rows": sum(p.get("source_rows", 0) for p in payouts.values()),
         "multi_row_payout_races": sum(1 for p in payouts.values() if p.get("source_rows", 0) > 1),
         "evaluated": sum(v["races"] for v in metrics.values()),
@@ -544,8 +544,8 @@ def main():
     (OUT.parent / "live-model.json").write_text(json.dumps(live_model,ensure_ascii=False,indent=2),encoding="utf-8")
     live_history = build_live_history(races, horses)
     (OUT.parent / "live-history.json").write_text(json.dumps(live_history,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
-    print(json.dumps({"races":race_count,"horse_rows":result["horse_rows"],"payout_races":len(payouts),"metrics":metrics,"learning_updates":learning_updates,"final_weights":learned_weights},ensure_ascii=False),flush=True)
-    if race_count == 0 or not payouts:
+    print(json.dumps({"races":race_count,"horse_rows":result["horse_rows"],"payout_races":sum(1 for p in payouts.values() if p.get("win")),"metrics":metrics,"learning_updates":learning_updates,"final_weights":learned_weights},ensure_ascii=False),flush=True)
+    if race_count == 0 or not any(p.get("win") for p in payouts.values()):
         raise RuntimeError("No usable historical race/payout data parsed; refusing to publish an empty backtest.")
 
 if __name__ == "__main__":
