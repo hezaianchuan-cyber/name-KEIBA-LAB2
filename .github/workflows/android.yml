@@ -31,6 +31,7 @@ jobs:
           cp AndroidManifest.xml app/src/main/
           cp index.html app/src/main/assets/
           cp styles.xml app/src/main/res/values/
+          echo "Bundling model: $(python3 -c 'import json; print(json.load(open(\"data/live-model.json\"))[\"model_version\"])')"
           python3 - <<'PY'
           import json
           from pathlib import Path
