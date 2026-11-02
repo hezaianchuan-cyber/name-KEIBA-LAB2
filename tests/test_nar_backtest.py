@@ -99,7 +99,7 @@ class OddsSnapshotBacktestTests(unittest.TestCase):
             ]
             with gzip.open(path, "wt", encoding="utf-8") as stream:
                 for row in rows:
-                    stream.write(json.dumps(row, ensure_ascii=False) + "\\n")
+                    stream.write(json.dumps(row, ensure_ascii=False) + "\n")
             with mock.patch.object(nb, "ROOT", root):
                 loaded = nb.load_odds_snapshots()
             key = ("大井", "20261103", "10")
