@@ -417,8 +417,7 @@ def build_live_history(races, horses):
         "note": "Snapshot through period end; only use for target dates after training_period.end."
     }
 
-def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, odds_snapshots=None):
-    odds_snapshots = odds_snapshots or {}
+def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     train_set = set(train_dates)
     test_set = set(test_dates)
     train_races = {k:r for k,r in races.items() if r["date"] in train_set}
@@ -433,10 +432,6 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, odds_
     results = {name:{"races":0,"winner_top1":0,"winner_top3":0,
                      "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0}
                                   for kind in kinds}} for name in models}
-    ev_thresholds = (1.00, 1.05, 1.10, 1.15, 1.20, 1.30)
-    market_value = {threshold:{"snapshot_races":0,"selected_races":0,"bets":0,
-                               "hits":0,"stake":0,"return":0}
-                    for threshold in ev_thresholds}
 
     history = defaultdict(list)
     sire_stats = defaultdict(lambda:{"runs":0,"top3":0})
@@ -495,31 +490,6 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, odds_
                                                      "winner_indices":winner_indices})
             ranked=[h for _,h in sorted(scored,key=lambda x:x[0],reverse=True)]
             if len(ranked)<3: continue
-            if model_name == "trained" and key in odds_snapshots:
-                win_odds = {}
-                for item in odds_snapshots[key].get("odds", []):
-                    if "単勝" not in norm(item.get("type")):
-                        continue
-                    no = re.sub(r"\\D", "", str(item.get("n1") or ""))
-                    value = number(item.get("odds"))
-                    if no and value and value > 1:
-                        win_odds[no] = value
-                if win_odds:
-                    probs = softmax_probabilities([score for score, _ in scored], temperature)
-                    prob_by_no = {h["no"]: probs[i] for i, (_, h) in enumerate(scored)}
-                    for threshold, vm in market_value.items():
-                        vm["snapshot_races"] += 1
-                        selected = [(no, value) for no, value in win_odds.items()
-                                    if no in prob_by_no and prob_by_no[no] * value >= threshold]
-                        if selected:
-                            vm["selected_races"] += 1
-                        for no, value in selected:
-                            vm["bets"] += 1
-                            vm["stake"] += 100
-                            ret = payout_for("win", [no], payout) or 0
-                            if ret:
-                                vm["hits"] += 1
-                                vm["return"] += ret
             m=results[model_name]; m["races"]+=1
             if ranked[0]["no"] in winners: m["winner_top1"]+=1
             if any(h["no"] in winners for h in ranked[:3]): m["winner_top3"]+=1
@@ -559,55 +529,11 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, odds_
           "wide_stake":bet_summary["wide"]["stake"],"wide_return":bet_summary["wide"]["return"],
           "win_roi":bet_summary["win"]["roi"],"place_roi":bet_summary["place"]["roi"],
           "wide_roi":bet_summary["wide"]["roi"]}
-    market_value_summary = {}
-    for threshold, vm in market_value.items():
-        market_value_summary[str(threshold)] = {**vm,
-            "hit_rate":round(100*vm["hits"]/vm["bets"],2) if vm["bets"] else None,
-            "roi":round(100*vm["return"]/vm["stake"],2) if vm["stake"] else None,
-            "profit":vm["return"]-vm["stake"]}
     return {"train_start":min(train_dates).isoformat(),"train_end":max(train_dates).isoformat(),
             "test_start":min(test_dates).isoformat(),"test_end":max(test_dates).isoformat(),
             "train_races":len(train_races),"test_races":len(ordered),
             "training_updates":updates,"trained_weights":learned,"temperature":round(temperature,4),
-            "calibration":calibration_metrics(test_calibration_records,temperature),"models":out,
-            "market_value":market_value_summary}
-
-
-def load_odds_snapshots():
-    """Load only timestamped official pre-off odds; retain the closest capture per race."""
-    directory = ROOT / "data" / "odds-snapshots"
-    snapshots = {}
-    for path in sorted(directory.glob("*.jsonl.gz")) if directory.exists() else []:
-        try:
-            with gzip.open(path, "rt", encoding="utf-8") as source:
-                for line in source:
-                    try:
-                        record = json.loads(line)
-                        parts = str(record.get("race_key") or "").split("|")
-                        if len(parts) != 3:
-                            continue
-                        key = race_key(parts[0], parts[1], parts[2])
-                        captured = dt.datetime.fromisoformat(str(record["captured_at"]))
-                        scheduled = dt.datetime.fromisoformat(str(record["scheduled_post_time"]))
-                        minutes = float(record["minutes_to_post"])
-                    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
-                        continue
-                    if not key or captured.tzinfo is None or scheduled.tzinfo is None:
-                        continue
-                    if captured >= scheduled or not 0 <= minutes <= 20:
-                        continue
-                    entries = [x for x in record.get("odds", [])
-                               if number(x.get("odds")) and number(x.get("odds")) > 0]
-                    if not entries:
-                        continue
-                    candidate = {**record, "odds": entries, "minutes_to_post": minutes}
-                    old = snapshots.get(key)
-                    if old is None or (minutes, str(record["captured_at"])) < (
-                            old["minutes_to_post"], str(old["captured_at"])):
-                        snapshots[key] = candidate
-        except OSError:
-            continue
-    return snapshots
+            "calibration":calibration_metrics(test_calibration_records,temperature),"models":out}
 
 
 def load_odds_snapshot_records():
@@ -656,7 +582,17 @@ def preoff_value_backtest(payouts):
         key_parts = str(record.get("race_key") or "").split("|")
         if len(key_parts) != 3:
             continue
-        key = (key_parts[0], key_parts[1], key_parts[2])
+        key = race_key(key_parts[0], key_parts[1], key_parts[2])
+        if not key:
+            continue
+        try:
+            captured = dt.datetime.fromisoformat(str(record["captured_at"]))
+            scheduled = dt.datetime.fromisoformat(str(record["scheduled_post_time"]))
+            minutes = float(record["minutes_to_post"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if captured.tzinfo is None or scheduled.tzinfo is None or captured >= scheduled or not 0 <= minutes <= 20:
+            continue
         payout = payouts.get(key)
         if not payout or not payout.get("win"):
             continue
@@ -709,8 +645,7 @@ def preoff_value_backtest(payouts):
 
 
 
-def holdout_validation(races, horses, payouts, odds_snapshots=None):
-    odds_snapshots = odds_snapshots or {}
+def holdout_validation(races, horses, payouts):
     dates=sorted({r["date"] for r in races.values()})
     if len(dates)<60:
         return {"status":"insufficient_dates","available_dates":len(dates)}
@@ -725,7 +660,7 @@ def holdout_validation(races, horses, payouts, odds_snapshots=None):
         train_dates=dates[:train_end]
         test_dates=dates[train_end:test_end]
         if not train_dates or not test_dates: continue
-        folds.append({"fold":index,**evaluate_holdout_fold(races,horses,payouts,train_dates,test_dates,odds_snapshots)})
+        folds.append({"fold":index,**evaluate_holdout_fold(races,horses,payouts,train_dates,test_dates)})
     if len(folds)<2:
         return {"status":"insufficient_folds","folds":folds}
 
@@ -754,22 +689,8 @@ def holdout_validation(races, horses, payouts, odds_snapshots=None):
             "winner_top3_rate":round(100*total["winner_top3"]/n,2),
             "win_roi":bet_summary["win"]["roi"],"place_roi":bet_summary["place"]["roi"],
             "wide_roi":bet_summary["wide"]["roi"]}
-    market_aggregate = {}
-    thresholds = sorted({key for fold in folds for key in fold.get("market_value", {})}, key=float)
-    for threshold in thresholds:
-        total = {"snapshot_races":0,"selected_races":0,"bets":0,"hits":0,"stake":0,"return":0}
-        for fold in folds:
-            item = fold.get("market_value", {}).get(threshold, {})
-            for key in total:
-                total[key] += item.get(key, 0)
-        market_aggregate[threshold] = {**total,
-            "hit_rate":round(100*total["hits"]/total["bets"],2) if total["bets"] else None,
-            "roi":round(100*total["return"]/total["stake"],2) if total["stake"] else None,
-            "profit":total["return"]-total["stake"],
-            "folds_above_100_roi":sum(1 for fold in folds
-                if (fold.get("market_value", {}).get(threshold, {}).get("roi") or 0) >= 100)}
     return {"status":"ok","method":"three rolling-origin folds with non-overlapping test windows; weights frozen within each test window; prior results added only after all races on a date are scored; market-value bets use timestamped official pre-off odds snapshots",
-            "folds":folds,"market_value":market_aggregate,
+            "folds":folds,
             "test_races":sum(x["models"]["trained"]["races"] for x in folds),
             "test_start":folds[0]["test_start"],"test_end":folds[-1]["test_end"],
             "train_end":folds[-1]["train_end"],"models":aggregate,
@@ -783,8 +704,7 @@ def main():
     metrics, examples, race_count, learned_weights, learning_updates, calibration_records = run_backtest(races, horses, payouts)
     production_temperature = fit_temperature(calibration_records)
     production_calibration = calibration_metrics(calibration_records, production_temperature)
-    odds_snapshots = load_odds_snapshots()
-    validation = holdout_validation(races, horses, payouts, odds_snapshots)
+    validation = holdout_validation(races, horses, payouts)
     result = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "period": {"start":START.isoformat(),"end":END.isoformat()},
