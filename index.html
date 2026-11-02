@@ -336,8 +336,8 @@ function scoreRunner(h,all){
   const sireScore=sireRows.length>=5?100*sireRows.filter(x=>Number(x.lastRank)<=3).length/sireRows.length:50;
   const jockeyRows=prior.filter(x=>h.jockey&&norm(x.jockey)===norm(h.jockey));
   const jockeyScore=jockeyRows.length>=5?100*jockeyRows.filter(x=>Number(x.lastRank)<=3).length/jockeyRows.length:50;
-  const age=h.age==null?58:(h.age>=4&&h.age<=6?72:(h.age===3||h.age===7?58:45));
-  const parts={form,venue:venueScore,distance:distanceScore,sire:sireScore,jockey:jockeyScore,age};
+  const age=h.age==null?45:(h.age>=4&&h.age<=6?72:(h.age===3||h.age===7?58:45));
+  const parts={form,venue:venueScore,distance:distanceScore,sire:sireScore,pedigree:sireScore,jockey:jockeyScore,age};
   const learned={form:weights.form||0,venue:weights.venue||0,distance:weights.distance||0,sire:weights.pedigree||0,jockey:weights.jockey||0,age:weights.age||0};
   const totalWeight=Object.values(learned).reduce((a,b)=>a+b,0)||1;
   const score=Object.keys(learned).reduce((sum,k)=>sum+parts[k]*learned[k],0)/totalWeight;
@@ -376,7 +376,7 @@ function analyze(){
   $('ranking').textContent='出馬表データ待ち';$('runnerList').textContent='出馬表が未取込です。';$('kRunners').textContent='0';$('kValue').textContent='—';$('kSkip').textContent='—';return;
  }
  const odds=db.odds.filter(o=>o.id===id);
- runners=runners.map(h=>({...h,odds:(odds.find(o=>norm(o.type).includes('単勝')&&norm(o.n1)===norm(h.horseNo))||{}).odds}));
+ runners=runners.map(h=>({...h,distance:race?.distance,odds:(odds.find(o=>norm(o.type).includes('単勝')&&norm(o.n1)===norm(h.horseNo))||{}).odds}));
  renderAnalysis(runners,race);
 }
 function renderMarketAnalysis(rows,race,bet){const single=bet==='\u5358\u52DD';$('kRunners').textContent=single?rows.length:rows.length;$('kValue').textContent='\u2014';$('kSkip').textContent='\u2014';$('summary').textContent=(race?race.venue+' '+race.date+' '+race.race+'R':'')+' \u00B7 '+bet+'\u306E\u30AA\u30C3\u30BA\u9806\u4F4D\u3002'+(single?'\u5E02\u5834\u63A8\u5B9A\u78BA\u7387\u306F\u5358\u52DD\u30AA\u30C3\u30BA\u306E\u9006\u6570\u3092\u6B63\u898F\u5316\u3057\u305F\u53C2\u8003\u5024\u3067\u3059\u3002':'\u4EBA\u6C17\u30FB\u30AA\u30C3\u30BA\u9806\u306E\u4E00\u89A7\u3067\u3059\u3002')+' \u72EC\u81EA\u306E\u52DD\u7387\u4E88\u6E2C\u3067\u306F\u3042\u308A\u307E\u305B\u3093\u3002';$('ranking').innerHTML=rows.slice(0,5).map((h,i)=>`<div class="runner"><div class="number">${i+1}</div><div><div class="runner-name">${esc(h.name)}</div><div class="runner-meta">${single?'\u4EBA\u6C17 '+(h.popularity??'\u2014')+' \u00B7 \u5E02\u5834\u63A8\u5B9A '+(h.prob==null?'\u2014':h.prob.toFixed(1)+'%'):'\u4EBA\u6C17 '+(h.popularity??'\u2014')}</div><div class="bar"><i style="width:${Math.max(2,h.score)}%"></i></div></div><div class="score">${h.odds}<small>\u500D</small></div></div>`).join('');$('runnerList').innerHTML=`<div class="tablewrap"><table><thead><tr><th>\u9806\u4F4D</th><th>\u99AC\u756A\u30FB\u7D44\u756A</th><th>\u4EBA\u6C17</th><th>\u30AA\u30C3\u30BA</th>${single?'<th>\u5E02\u5834\u63A8\u5B9A\u78BA\u7387</th>':''}</tr></thead><tbody>${rows.map((h,i)=>`<tr><td>${i+1}</td><td>${esc(h.name)}</td><td>${h.popularity??'\u2014'}</td><td>${h.odds}</td>${single?`<td>${h.prob.toFixed(2)}%</td>`:''}</tr>`).join('')}</tbody></table></div>`;currentRunners=rows;generateTickets();}
