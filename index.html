@@ -195,6 +195,89 @@ $('importBtn').onclick=importFiles;$('analyzeBtn').onclick=analyze;$('demoBtn').
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='keiba-lab-local-data.json';a.click();URL.revokeObjectURL(a.href)};
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));if(b.dataset.tab==='settings')renderWeights();if(b.dataset.tab==='history')updateHistory()});
 refreshRaceChoices();updateHistory();$('importCounts').textContent='\u51FA\u99AC\u8868 '+db.horses.length+'\u4EF6\u3001\u30EC\u30FC\u30B9\u4E00\u89A7 '+db.races.length+'\u4EF6\u3001\u30AA\u30C3\u30BA '+db.odds.length+'\u4EF6\u3001\u6255\u623B '+db.payouts.length+'\u4EF6';if(db.horses.length){$('dataStatus').textContent='\u4FDD\u5B58\u6E08\u307F\u30C7\u30FC\u30BF\uFF1A\u51FA\u99AC\u8868 '+db.horses.length+'\u4EF6';$('dataDot').className='dot ok'}
+// KEIBA LAB 買い目自動生成
+const ticketBox = document.createElement('div');
+ticketBox.className = 'card';
+ticketBox.style.marginTop = '16px';
+ticketBox.innerHTML = `
+<h2>買い目自動生成</h2>
+<p class="sub">分析ランキングをもとに買い目を作成します。</p>
+<label>予算（円）</label>
+<input id="ticketBudget" type="number" min="100" step="100" value="1000">
+<label>券種</label>
+<select id="ticketType">
+<option value="単勝">単勝</option>
+<option value="複勝">複勝</option>
+<option value="ワイド">ワイド</option>
+<option value="馬連">馬連</option>
+<option value="馬単">馬単</option>
+<option value="3連複">3連複</option>
+<option value="3連単">3連単</option>
+</select>
+<button class="btn primary" id="makeTickets">買い目を作る</button>
+<div id="ticketResult" class="sub" style="margin-top:12px"></div>
+`;
+$('runnerList').parentElement.after(ticketBox);
+
+$('makeTickets').onclick = () => {
+  const budget = Math.floor(Number($('ticketBudget').value) / 100) * 100;
+  const type = $('ticketType').value;
+  const horses = [...currentRunners]
+    .filter(h => h.horseNo && h.horseNo !== '-')
+    .sort((a,b) => (b.score ?? b.prob ?? 0) - (a.score ?? a.prob ?? 0))
+    .slice(0,5);
+
+  if (!Number.isFinite(budget) || budget < 100) {
+    $('ticketResult').textContent = '予算は100円以上で入力してください。';
+    return;
+  }
+  if (horses.length < 1) {
+    $('ticketResult').textContent = '先にレースを分析してください。';
+    return;
+  }
+
+  let picks = [];
+  const add = (...h) => picks.push(h.map(x => x.horseNo).join('-'));
+
+  if (type === '単勝' || type === '複勝') {
+    horses.slice(0, type === '単勝' ? 1 : 3).forEach(h => add(h));
+  } else if (type === 'ワイド' || type === '馬連') {
+    for (let i=0;i<Math.min(4,horses.length);i++)
+      for (let j=i+1;j<Math.min(4,horses.length);j++)
+        add(horses[i],horses[j]);
+  } else if (type === '馬単') {
+    if (horses.length >= 2) {
+      add(horses[0],horses[1]);
+      add(horses[0],horses[2] || horses[1]);
+      add(horses[1],horses[0]);
+    }
+  } else if (type === '3連複') {
+    if (horses.length >= 3) add(horses[0],horses[1],horses[2]);
+  } else if (type === '3連単') {
+    if (horses.length >= 3) {
+      add(horses[0],horses[1],horses[2]);
+      add(horses[0],horses[2],horses[1]);
+      add(horses[1],horses[0],horses[2]);
+    }
+  }
+
+  if (!picks.length) {
+    $('ticketResult').textContent = 'データ不足のため見送りです。';
+    return;
+  }
+
+  const unit = Math.floor(budget / picks.length / 100) * 100;
+  if (unit < 100) {
+    $('ticketResult').textContent = '予算が買い目数に対して少なすぎます。予算を増やすか券種を変えてください。';
+    return;
+  }
+
+  $('ticketResult').innerHTML =
+    '<b>提案買い目（的中・利益を保証するものではありません）</b><br>' +
+    picks.map((p,i) => `${i+1}. ${type} ${p}　${unit}円`).join('<br>') +
+    `<br><br>合計：${unit*picks.length}円` +
+    '<br>※オッズや組合せの適合を確認してから購入してください。';
+};
 </script>
 </body>
 </html>
