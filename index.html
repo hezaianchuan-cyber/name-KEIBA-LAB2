@@ -237,11 +237,12 @@ function refreshRaceChoices(){const date=$('raceDate').value.replaceAll('-',''),
 const map=new Map();for(const r of [...db.races,...oddsRaceIndex])if((!date||norm(r.date)===date)&&(!venue||r.venue===venue))map.set(r.id,r);const races=[...map.values()].sort((a,b)=>Number(a.race)-Number(b.race));const select=$('raceSelect');const old=select.value;select.innerHTML='<option value="">\u30EC\u30FC\u30B9\u3092\u9078\u629E</option>';races.forEach(r=>{const o=document.createElement('option');o.value=r.id;o.textContent=r.race+'R '+(r.time||'')+' '+(r.name||'')+(r.count?' \u00B7 '+r.count+'\u4EF6':'');select.append(o)});if(races.some(r=>r.id===old))select.value=old;}
 $('raceDate').addEventListener('change',refreshRaceChoices);$('venue').addEventListener('change',refreshRaceChoices);
 function percentile(v,arr){if(v==null||!arr.length)return 50;const clean=arr.filter(x=>x!=null).sort((a,b)=>a-b);if(!clean.length)return 50;return 100*clean.filter(x=>x<=v).length/clean.length}
+function parseMarginValue(value){const s=String(value??'').replace(/[\\s\\u3000]/g,'');if(!s)return null;const mixed=s.match(/^(\\d+)(\\d+)\\/(\\d+)$/);if(mixed)return Number(mixed[1])+Number(mixed[2])/Number(mixed[3]);const fraction=s.match(/^(\\d+)\\/(\\d+)$/);if(fraction)return Number(fraction[1])/Number(fraction[2]);const m=s.match(/\\d+(?:\\.\\d+)?/);return m?Number(m[0]):null;}
 function scoreRunner(h,all){
   const rankScore=h.lastRank==null?50:Math.max(5,100-(h.lastRank-1)*11);
   const marginText=String(h.margin??'').trim();
-  const marginNumber=num(marginText.replace(/[^0-9.]/g,''));
-  const marginScore=/大差|失格|中止/.test(marginText)?5:marginNumber==null?50:Math.max(5,Math.min(100,100-marginNumber*24));
+  const marginNumber=parseMarginValue(marginText);
+  const marginScore=/大差|失格|中止/.test(marginText)?5:/ハナ/.test(marginText)?97:/アタマ/.test(marginText)?94:/クビ/.test(marginText)?91:marginNumber==null?50:Math.max(5,Math.min(100,100-marginNumber*24));
   const popularityScore=h.popularity==null||h.lastRank==null?50:Math.max(5,Math.min(100,50+(h.popularity-h.lastRank)*8));
   const form=Math.round(rankScore*.60+marginScore*.25+popularityScore*.15);
   const venue=h.venueRecord&&/^\d+-\d+-\d+-\d+/.test(h.venueRecord)?Math.min(100,45+parseInt(h.venueRecord)*12):50;
