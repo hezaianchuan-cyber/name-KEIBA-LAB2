@@ -63,5 +63,21 @@ class OddsSnapshotParsingTests(unittest.TestCase):
         self.assertIsNone(capture.post_time("2561"))
 
 
+class ProbabilityCalibrationTests(unittest.TestCase):
+    def test_softmax_probabilities_sum_to_one(self):
+        probs = nb.softmax_probabilities([0.2, 0.4, 0.1], 0.18)
+        self.assertAlmostEqual(sum(probs), 1.0, places=10)
+        self.assertGreater(probs[1], probs[0])
+        self.assertGreater(probs[0], probs[2])
+
+    def test_temperature_fit_uses_only_prediction_scores_and_targets(self):
+        records = [{"scores":[0.9,0.2,0.1],"winner_indices":[0]} for _ in range(25)]
+        temperature = nb.fit_temperature(records)
+        self.assertLessEqual(temperature, 0.10)
+        metrics = nb.calibration_metrics(records, temperature)
+        self.assertEqual(metrics["races"], 25)
+        self.assertEqual(metrics["top1_accuracy"], 100.0)
+
+
 if __name__ == "__main__":
     unittest.main()
