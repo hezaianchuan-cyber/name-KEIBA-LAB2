@@ -164,7 +164,7 @@ def main():
         # Append a separate gzip member per race. Existing compressed bytes stay
         # unchanged, keeping Git history compact as the daily archive grows.
         with gzip.open(path, "ab", compresslevel=9) as output:
-            output.write((json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\\n").encode("utf-8"))
+            output.write((json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8"))
         additions += 1
     print(f"Captured {additions} pre-off race snapshots at {now.isoformat()}")
 
