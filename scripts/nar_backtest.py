@@ -375,6 +375,9 @@ def holdout_validation(races, horses, payouts):
             commit(pending);pending=[]
         current=race["date"]
         key=race["key"];field=horses.get(key,[])
+        # Buffer every test-day race result, even when payout data is missing.
+        # The buffer is committed only after all races on that date are scored.
+        pending.append((field,race))
         if len(field)<3: continue
         p=payouts.get(key)
         if not p: continue
@@ -405,7 +408,6 @@ def holdout_validation(races, horses, payouts):
                     if ret:
                         bm["hits"]+=1
                         bm["return"]+=ret
-        pending.append((field,race))
     if pending:commit(pending)
     out={}
     for name,m in results.items():
