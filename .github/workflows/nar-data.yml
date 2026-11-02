@@ -91,6 +91,8 @@ jobs:
           python3 scripts/capture_nar_odds.py
           if [ -d data/odds-snapshots ]; then
             cp -a data/odds-snapshots /tmp/odds-snapshots
+            mkdir -p /tmp/keiba-latest-data
+            cp -a data/latest-race.zip data/latest-odds.zip data/status.json /tmp/keiba-latest-data/
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             push_success=0
@@ -98,6 +100,7 @@ jobs:
               git fetch origin main
               git reset --hard origin/main
               mkdir -p data
+              cp -a /tmp/keiba-latest-data/* data/
               cp -a /tmp/odds-snapshots data/
               git add data/odds-snapshots
               if git diff --cached --quiet; then
