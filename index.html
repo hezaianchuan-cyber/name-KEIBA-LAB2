@@ -441,13 +441,18 @@ window.addEventListener('load',loadHistoricalBacktest);
 async function loadLearnedModel(){
  if(hasCustomWeights)return;
  try{
-  const stamp='?v='+Date.now();
-  const [modelResponse,historyResponse]=await Promise.all([
-   fetch('./data/live-model.json'+stamp,{cache:'no-store'}),
-   fetch('./data/live-history.json'+stamp,{cache:'no-store'})
-  ]);
-  if(!modelResponse.ok||!historyResponse.ok)throw new Error('学習モデルまたは過去成績データ未公開');
-  const model=await modelResponse.json();learnedHistory=await historyResponse.json();
+  let model;
+  if(window.KEIBA_LAB_LEARNED_MODEL&&window.KEIBA_LAB_LEARNED_HISTORY){
+   model=window.KEIBA_LAB_LEARNED_MODEL;learnedHistory=window.KEIBA_LAB_LEARNED_HISTORY;
+  }else{
+   const stamp='?v='+Date.now();
+   const [modelResponse,historyResponse]=await Promise.all([
+    fetch('./data/live-model.json'+stamp,{cache:'no-store'}),
+    fetch('./data/live-history.json'+stamp,{cache:'no-store'})
+   ]);
+   if(!modelResponse.ok||!historyResponse.ok)throw new Error('学習モデルまたは過去成績データ未公開');
+   model=await modelResponse.json();learnedHistory=await historyResponse.json();
+  }
   learnedModelEnd=String(model.training_period?.end||'');
   const w=model.weights||{};
   const mapped={form:w.form*100,venue:w.venue*100,distance:w.distance*100,jockey:w.jockey*100,pedigree:w.sire*100,age:w.age*100,weight:0,gate:0,odds:0};
