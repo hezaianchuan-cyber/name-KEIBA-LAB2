@@ -294,6 +294,34 @@ def run_backtest(races, horses, payouts):
                          "profit": m["return"]-m["stake"]}
     return summary, examples, len(ordered), model_weights, learning_updates
 
+def build_live_history(races, horses):
+    horse_history = defaultdict(list)
+    sire_stats = defaultdict(lambda: {"runs": 0, "top3": 0})
+    jockey_stats = defaultdict(lambda: {"runs": 0, "top3": 0})
+    ordered = sorted(races.values(), key=lambda r:(r["date"],r["venue"],int(r["race"])))
+    for race in ordered:
+        for h in horses.get(race["key"], []):
+            finish = h.get("finish")
+            if not finish:
+                continue
+            item = {"date": race["date"].isoformat(), "venue": race["venue"],
+                    "distance": race.get("distance"), "finish": finish,
+                    "margin": h.get("margin", ""), "last3f": h.get("last3f")}
+            horse_history[norm(h["name"])].append(item)
+            if h.get("sire"):
+                sire_stats[norm(h["sire"])]["runs"] += 1
+                sire_stats[norm(h["sire"])]["top3"] += int(finish <= 3)
+            if h.get("jockey"):
+                jockey_stats[norm(h["jockey"])]["runs"] += 1
+                jockey_stats[norm(h["jockey"])]["top3"] += int(finish <= 3)
+    return {
+        "training_period": {"start": START.isoformat(), "end": END.isoformat()},
+        "horse_history": {name: runs[-5:] for name, runs in horse_history.items()},
+        "sire_stats": dict(sire_stats),
+        "jockey_stats": dict(jockey_stats),
+        "note": "Snapshot through period end; only use for target dates after training_period.end."
+    }
+
 def main():
     print(f"Backtest range: {START} through {END}", flush=True)
     races, horses, payouts, months = load_archives()
@@ -332,6 +360,8 @@ def main():
         "prediction_policy": "Scores use only races strictly earlier than the target race date; current-race finish/popularity/payout are excluded. All races on a date are predicted before any results from that date update the model."
     }
     (OUT.parent / "live-model.json").write_text(json.dumps(live_model,ensure_ascii=False,indent=2),encoding="utf-8")
+    live_history = build_live_history(races, horses)
+    (OUT.parent / "live-history.json").write_text(json.dumps(live_history,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
     print(json.dumps({"races":race_count,"horse_rows":result["horse_rows"],"payout_races":len(payouts),"metrics":metrics,"learning_updates":learning_updates,"final_weights":learned_weights},ensure_ascii=False),flush=True)
     if race_count == 0 or not payouts:
         raise RuntimeError("No usable historical race/payout data parsed; refusing to publish an empty backtest.")
