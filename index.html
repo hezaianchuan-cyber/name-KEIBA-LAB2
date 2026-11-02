@@ -5,6 +5,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101a2b">
+<meta name="application-name" content="KEIBA LAB LOCAL">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="KEIBA LAB">
+<link rel="manifest" href="./manifest.webmanifest">
 <title>KEIBA LAB LOCAL</title>
 <style>
 :root{
@@ -113,7 +117,7 @@ a{color:inherit}
       <p class="sub">NAR&#x516C;&#x5F0F;ZIP&#x306B;&#x52A0;&#x3048;&#x3001;&#x4ECA;&#x56DE;&#x306E;&#x6708;&#x6B21;&#x30AA;&#x30C3;&#x30BA;CSV&#xFF08;202610_01_odds.csv&#xFF09;&#x306B;&#x5BFE;&#x5FDC;&#x3002;&#x30AA;&#x30C3;&#x30BA;CSV&#x3060;&#x3051;&#x3067;&#x3082;&#x958B;&#x50AC;&#x65E5;&#x30FB;&#x7AF6;&#x99AC;&#x5834;&#x30FB;&#x30EC;&#x30FC;&#x30B9;&#x3092;&#x9078;&#x3073;&#x3001;&#x4EBA;&#x6C17;&#x9806;&#x30FB;&#x5E02;&#x5834;&#x63A8;&#x5B9A;&#x78BA;&#x7387;&#x30FB;&#x5238;&#x7A2E;&#x5225;&#x30AA;&#x30C3;&#x30BA;&#x3092;&#x78BA;&#x8A8D;&#x3067;&#x304D;&#x307E;&#x3059;&#x3002;&#x5927;&#x91CF;&#x30C7;&#x30FC;&#x30BF;&#x306F;&#x30D6;&#x30E9;&#x30A6;&#x30B6;&#x5185;&#x3067;&#x89E3;&#x6790;&#x3057;&#x3001;&#x5BB9;&#x91CF;&#x5236;&#x9650;&#x306E;&#x3042;&#x308B;localStorage&#x306B;&#x306F;&#x4FDD;&#x5B58;&#x3057;&#x307E;&#x305B;&#x3093;&#x3002;</p>
       <label style="margin-top:14px">&#x516C;&#x5F0F;ZIP / &#x6708;&#x6B21;&#x30AA;&#x30C3;&#x30BA;CSV&#xFF08;&#x8907;&#x6570;&#x9078;&#x629E;&#x53EF;&#xFF09;</label>
       <input id="zipInput" type="file" accept=".zip,.csv,text/csv" multiple>
-      <div class="actions"><button class="btn accent full" id="importBtn">ZIP / CSV&#x3092;&#x8AAD;&#x307F;&#x8FBC;&#x3080;</button><button class="btn primary full" id="autoFetchBtn">公式データを自動取得・更新</button></div><p class="sub">Androidアプリでは起動時に自動取得し、アプリを開いている間は約2分ごとに出馬表・オッズ・払戻を更新します。</p>
+      <div class="actions"><button class="btn accent full" id="importBtn">ZIP / CSV&#x3092;&#x8AAD;&#x307F;&#x8FBC;&#x3080;</button><button class="btn primary full" id="autoFetchBtn">公式データを自動取得・更新</button></div><p class="sub">Windows・Macはブラウザから利用できます。パソコンではZIP / CSVを選んで取り込みます。Androidアプリは起動時と約2分ごとに公式データを自動取得します。</p>
       <div class="status"><i class="dot" id="importDot"></i><span id="importStatus">&#x672A;&#x53D6;&#x8FBC;</span></div>
     </div>
     <div class="card">
@@ -272,6 +276,7 @@ function updateHistory(){$('hRaces').textContent=db.races.length;$('hPred').text
 $('importBtn').onclick=importFiles;$('analyzeBtn').onclick=analyze;$('demoBtn').onclick=demo;
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='keiba-lab-local-data.json';a.click();URL.revokeObjectURL(a.href)};
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));if(b.dataset.tab==='settings')renderWeights();if(b.dataset.tab==='history')updateHistory()});
+if('serviceWorker' in navigator && location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
 dedupeImportedData();refreshRaceChoices();updateHistory();$('importCounts').textContent='\u51FA\u99AC\u8868 '+db.horses.length+'\u4EF6\u3001\u30EC\u30FC\u30B9\u4E00\u89A7 '+db.races.length+'\u4EF6\u3001\u30AA\u30C3\u30BA '+db.odds.length+'\u4EF6\u3001\u6255\u623B '+db.payouts.length+'\u4EF6';if(window.AndroidBridge&&AndroidBridge.downloadDailyData){setTimeout(autoFetchOfficialData,1200);setInterval(autoFetchOfficialData,120000);}if(db.horses.length){$('dataStatus').textContent='\u4FDD\u5B58\u6E08\u307F\u30C7\u30FC\u30BF\uFF1A\u51FA\u99AC\u8868 '+db.horses.length+'\u4EF6';$('dataDot').className='dot ok'}
 // KEIBA LAB 買い目自動生成
 const ticketBox = document.createElement('div');
