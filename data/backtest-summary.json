@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-02T23:31:28.785736+00:00",
+  "generated_at": "2026-11-02T23:32:51.760122+00:00",
   "period": {
     "start": "2025-11-02",
     "end": "2026-11-01"
@@ -928,6 +928,9 @@
     "status": "awaiting_snapshots",
     "snapshot_races": 0,
     "settled_evaluated_races": 0,
+    "date_count": 0,
+    "development_date_count": 0,
+    "holdout_date_count": 0,
     "model_versions": [],
     "thresholds": {
       "1.00": {
@@ -942,7 +945,11 @@
         "roi": null,
         "profit": 0,
         "average_expected_value": null,
-        "average_snapshot_odds": null
+        "average_snapshot_odds": null,
+        "roi_ci95_low": null,
+        "roi_ci95_high": null,
+        "minimum_sample_met": false,
+        "candidate_pass": false
       },
       "1.05": {
         "races_with_bets": 0,
@@ -956,7 +963,11 @@
         "roi": null,
         "profit": 0,
         "average_expected_value": null,
-        "average_snapshot_odds": null
+        "average_snapshot_odds": null,
+        "roi_ci95_low": null,
+        "roi_ci95_high": null,
+        "minimum_sample_met": false,
+        "candidate_pass": false
       },
       "1.10": {
         "races_with_bets": 0,
@@ -970,7 +981,11 @@
         "roi": null,
         "profit": 0,
         "average_expected_value": null,
-        "average_snapshot_odds": null
+        "average_snapshot_odds": null,
+        "roi_ci95_low": null,
+        "roi_ci95_high": null,
+        "minimum_sample_met": false,
+        "candidate_pass": false
       },
       "1.15": {
         "races_with_bets": 0,
@@ -984,7 +999,11 @@
         "roi": null,
         "profit": 0,
         "average_expected_value": null,
-        "average_snapshot_odds": null
+        "average_snapshot_odds": null,
+        "roi_ci95_low": null,
+        "roi_ci95_high": null,
+        "minimum_sample_met": false,
+        "candidate_pass": false
       },
       "1.20": {
         "races_with_bets": 0,
@@ -998,7 +1017,11 @@
         "roi": null,
         "profit": 0,
         "average_expected_value": null,
-        "average_snapshot_odds": null
+        "average_snapshot_odds": null,
+        "roi_ci95_low": null,
+        "roi_ci95_high": null,
+        "minimum_sample_met": false,
+        "candidate_pass": false
       },
       "1.30": {
         "races_with_bets": 0,
@@ -1012,11 +1035,21 @@
         "roi": null,
         "profit": 0,
         "average_expected_value": null,
-        "average_snapshot_odds": null
+        "average_snapshot_odds": null,
+        "roi_ci95_low": null,
+        "roi_ci95_high": null,
+        "minimum_sample_met": false,
+        "candidate_pass": false
       }
     },
-    "policy": "Flat 100-yen win bets only when calibrated win probability multiplied by timestamped pre-off win odds meets the threshold. Returns use official settled 100-yen payouts.",
-    "note": "This evaluation begins only after captured pre-off odds snapshots can be joined to official settled results. It never substitutes final monthly odds for pre-race odds."
+    "development": {},
+    "holdout": {},
+    "selected_threshold": null,
+    "selected_holdout": null,
+    "validation_status": "awaiting_more_dates",
+    "minimum_sample_rule": "At least 100 races with bets and 300 tickets per threshold; a candidate additionally needs the race-cluster bootstrap 95% lower ROI bound above 100%. Threshold selection uses the first 70% of dates only; the last 30% remains untouched holdout.",
+    "policy": "Flat 100-yen win bets only when saved calibrated win probability multiplied by timestamped pre-off win odds meets the threshold. Returns use official settled 100-yen payouts.",
+    "note": "Only the closest valid pre-off snapshot per race is evaluated. No monthly confirmed odds are substituted."
   },
   "online_learning": {
     "updates": 15406,
