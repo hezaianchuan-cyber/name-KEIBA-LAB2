@@ -672,7 +672,7 @@ def preoff_value_backtest(payouts):
             for prediction in predictions:
                 ev = number(prediction.get("expected_value"))
                 odds_value = number(prediction.get("win_odds"))
-                horse_no = re.sub(r"\\D", "", str(prediction.get("horse_no") or ""))
+                horse_no = re.sub(r"\D", "", str(prediction.get("horse_no") or ""))
                 if not horse_no or ev is None or odds_value is None or ev < threshold:
                     continue
                 current_race_bets += 1
