@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "backtest-summary.json"
 END = dt.date.today() - dt.timedelta(days=1)
-START = END - dt.timedelta(days=364)
+START = END - dt.timedelta(days=1095)  # approximately 3 years of official monthly history
 UA = "Mozilla/5.0 (compatible; KEIBA-LAB-backtest/1.0)"
 
 def norm(s):
@@ -803,7 +803,7 @@ def main():
     result = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "period": {"start":START.isoformat(),"end":END.isoformat()},
-        "source": "NAR official monthly race data; raw archives are not retained",
+        "source": "NAR official monthly race data (approximately 3 years); raw archives are not retained",
         "downloaded_months": months,
         "race_count": race_count,
         "horse_rows": sum(len(v) for v in horses.values()),
