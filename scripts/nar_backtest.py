@@ -215,7 +215,32 @@ def run_backtest(races, horses, payouts):
     model_weights = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
     learning_updates = 0
     ordered = sorted((r for r in races.values()), key=lambda r:(r["date"],r["venue"],int(r["race"])))
+    daily_pending = []
+    current_date = None
+
+    def commit_day(items):
+        nonlocal learning_updates
+        for pending_field, pending_parts, pending_race in items:
+            if update_model(pending_field, pending_parts, model_weights):
+                learning_updates += 1
+            for runner in pending_field:
+                if runner.get("finish"):
+                    history[runner["name"]].append({
+                        "date":pending_race["date"],"venue":pending_race["venue"],"distance":pending_race.get("distance"),
+                        "finish":runner["finish"],"margin":margin_score(runner.get("margin")),"last3f":runner.get("last3f")
+                    })
+                    if runner.get("sire"):
+                        sire_stats[runner["sire"]]["runs"] += 1
+                        sire_stats[runner["sire"]]["top3"] += int(runner["finish"] <= 3)
+                    if runner.get("jockey"):
+                        jockey_stats[runner["jockey"]]["runs"] += 1
+                        jockey_stats[runner["jockey"]]["top3"] += int(runner["finish"] <= 3)
+
     for race in ordered:
+        if current_date is not None and race["date"] != current_date:
+            commit_day(daily_pending)
+            daily_pending = []
+        current_date = race["date"]
         key = race["key"]
         field = horses.get(key, [])
         if len(field) < 3: continue
@@ -258,22 +283,10 @@ def run_backtest(races, horses, payouts):
                     "tickets": {k:["-".join(x) for x in v] for k,v in t.items()},
                     "winner": payout["win"][0],
                 })
-        # Learn from this race only after its predictions and ticket returns are fixed.
-        if update_model(field, parts_by_no, model_weights):
-            learning_updates += 1
-        # After evaluation, append the actual result for use by later races only.
-        for h in field:
-            if h.get("finish"):
-                history[h["name"]].append({
-                    "date":race["date"],"venue":race["venue"],"distance":race.get("distance"),
-                    "finish":h["finish"],"margin":margin_score(h.get("margin")),"last3f":h.get("last3f")
-                })
-                if h.get("sire"):
-                    sire_stats[h["sire"]]["runs"] += 1
-                    sire_stats[h["sire"]]["top3"] += int(h["finish"] <= 3)
-                if h.get("jockey"):
-                    jockey_stats[h["jockey"]]["runs"] += 1
-                    jockey_stats[h["jockey"]]["top3"] += int(h["finish"] <= 3)
+        # Keep today's results buffered: no race on the same date can learn from another race's result.
+        daily_pending.append((field, parts_by_no, race))
+    if daily_pending:
+        commit_day(daily_pending)
     summary = {}
     for kind,m in metrics.items():
         summary[kind] = {**m, "hit_rate": round(100*m["hits"]/m["tickets"],2) if m["tickets"] else None,
@@ -295,7 +308,7 @@ def main():
         "payout_races": len(payouts),
         "evaluated": sum(v["races"] for v in metrics.values()),
         "method": {
-            "prediction_order": "chronological; each race is predicted before its results enter horse/jockey/sire history",
+            "prediction_order": "date-batched chronological; every race on a date is predicted before any result from that date updates history or model weights",
             "odds_feature": False,
             "ticket_policy": "fixed top-rank tickets per race; 100 JPY per ticket; not a betting recommendation",
             "ticket_counts_per_race": {"win":1,"place":3,"wide":3,"quinella":1,"exacta":1,"trio":1,"trifecta":1},
@@ -305,7 +318,7 @@ def main():
         },
         "metrics": metrics,
         "online_learning": {"updates": learning_updates, "final_weights": learned_weights,
-                            "note": "Each race is scored first; its result updates weights only for subsequent races."},
+                            "note": "Daily batch learning: all races on a date are scored before that date's results update weights for later dates."},
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
