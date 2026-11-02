@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-02T23:21:45.539453+00:00",
+  "generated_at": "2026-11-02T23:23:13.223768+00:00",
   "period": {
     "start": "2025-11-02",
     "end": "2026-11-01"
@@ -90,72 +90,72 @@
     "win": {
       "races": 15406,
       "tickets": 15406,
-      "hits": 4514,
+      "hits": 4591,
       "stake": 1540600,
-      "return": 1161300.0,
-      "hit_rate": 29.3,
-      "roi": 75.38,
-      "profit": -379300.0
+      "return": 1168580.0,
+      "hit_rate": 29.8,
+      "roi": 75.85,
+      "profit": -372020.0
     },
     "place": {
       "races": 15406,
       "tickets": 46218,
-      "hits": 22585,
+      "hits": 22805,
       "stake": 4621800,
-      "return": 3508740.0,
-      "hit_rate": 48.87,
-      "roi": 75.92,
-      "profit": -1113060.0
+      "return": 3518290.0,
+      "hit_rate": 49.34,
+      "roi": 76.12,
+      "profit": -1103510.0
     },
     "wide": {
       "races": 15406,
       "tickets": 46218,
-      "hits": 10184,
+      "hits": 10437,
       "stake": 4621800,
-      "return": 3129150.0,
-      "hit_rate": 22.03,
-      "roi": 67.7,
-      "profit": -1492650.0
+      "return": 3131500.0,
+      "hit_rate": 22.58,
+      "roi": 67.75,
+      "profit": -1490300.0
     },
     "quinella": {
       "races": 15406,
       "tickets": 15406,
-      "hits": 1997,
+      "hits": 2049,
       "stake": 1540600,
-      "return": 955020.0,
-      "hit_rate": 12.96,
-      "roi": 61.99,
-      "profit": -585580.0
+      "return": 945580.0,
+      "hit_rate": 13.3,
+      "roi": 61.38,
+      "profit": -595020.0
     },
     "exacta": {
       "races": 15406,
       "tickets": 15406,
-      "hits": 1159,
+      "hits": 1188,
       "stake": 1540600,
-      "return": 957970.0,
-      "hit_rate": 7.52,
-      "roi": 62.18,
-      "profit": -582630.0
+      "return": 957550.0,
+      "hit_rate": 7.71,
+      "roi": 62.15,
+      "profit": -583050.0
     },
     "trio": {
       "races": 15406,
       "tickets": 15406,
-      "hits": 1164,
+      "hits": 1232,
       "stake": 1540600,
-      "return": 945830.0,
-      "hit_rate": 7.56,
-      "roi": 61.39,
-      "profit": -594770.0
+      "return": 930340.0,
+      "hit_rate": 8.0,
+      "roi": 60.39,
+      "profit": -610260.0
     },
     "trifecta": {
       "races": 15406,
       "tickets": 15406,
-      "hits": 305,
+      "hits": 318,
       "stake": 1540600,
-      "return": 974810.0,
-      "hit_rate": 1.98,
-      "roi": 63.27,
-      "profit": -565790.0
+      "return": 895300.0,
+      "hit_rate": 2.06,
+      "roi": 58.11,
+      "profit": -645300.0
     }
   },
   "out_of_sample_validation": {
@@ -172,184 +172,184 @@
         "test_races": 2446,
         "training_updates": 7246,
         "trained_weights": {
-          "form": 0.039179619260922414,
-          "venue": 0.2327634875101055,
-          "distance": 0.11844714143150253,
-          "sire": 0.14318762577781877,
-          "jockey": 0.4071561560199094,
-          "age": 0.05926596999974136
+          "form": 0.2687733122511319,
+          "venue": 0.13055185108020412,
+          "distance": 0.031468860743523584,
+          "sire": 0.1303646760753106,
+          "jockey": 0.38058643130776887,
+          "age": 0.05825486854206104
         },
         "temperature": 0.13,
         "calibration": {
           "races": 2435,
           "temperature": 0.13,
-          "log_loss": 1.96094,
-          "brier": 0.81785,
-          "top1_accuracy": 28.79,
-          "ece": 0.0216
+          "log_loss": 1.94142,
+          "brier": 0.8139,
+          "top1_accuracy": 29.94,
+          "ece": 0.01482
         },
         "models": {
           "baseline": {
             "races": 2435,
-            "winner_top1": 710,
-            "winner_top3": 1425,
+            "winner_top1": 746,
+            "winner_top3": 1461,
             "bet_types": {
               "win": {
                 "tickets": 2435,
-                "hits": 710,
+                "hits": 746,
                 "stake": 243500,
-                "return": 166660.0,
-                "hit_rate": 29.16,
-                "roi": 68.44,
-                "profit": -76840.0
+                "return": 176660.0,
+                "hit_rate": 30.64,
+                "roi": 72.55,
+                "profit": -66840.0
               },
               "place": {
                 "tickets": 7305,
-                "hits": 3499,
+                "hits": 3583,
                 "stake": 730500,
-                "return": 543510.0,
-                "hit_rate": 47.9,
-                "roi": 74.4,
-                "profit": -186990.0
-              },
-              "wide": {
-                "tickets": 7305,
-                "hits": 1541,
-                "stake": 730500,
-                "return": 475160.0,
-                "hit_rate": 21.1,
-                "roi": 65.05,
-                "profit": -255340.0
-              },
-              "quinella": {
-                "tickets": 2435,
-                "hits": 283,
-                "stake": 243500,
-                "return": 126020.0,
-                "hit_rate": 11.62,
-                "roi": 51.75,
-                "profit": -117480.0
-              },
-              "exacta": {
-                "tickets": 2435,
-                "hits": 161,
-                "stake": 243500,
-                "return": 117860.0,
-                "hit_rate": 6.61,
-                "roi": 48.4,
-                "profit": -125640.0
-              },
-              "trio": {
-                "tickets": 2435,
-                "hits": 176,
-                "stake": 243500,
-                "return": 166690.0,
-                "hit_rate": 7.23,
-                "roi": 68.46,
-                "profit": -76810.0
-              },
-              "trifecta": {
-                "tickets": 2435,
-                "hits": 35,
-                "stake": 243500,
-                "return": 106380.0,
-                "hit_rate": 1.44,
-                "roi": 43.69,
-                "profit": -137120.0
-              }
-            },
-            "winner_top1_rate": 29.16,
-            "winner_top3_rate": 58.52,
-            "win_stake": 243500,
-            "win_return": 166660.0,
-            "place_stake": 730500,
-            "place_return": 543510.0,
-            "wide_stake": 730500,
-            "wide_return": 475160.0,
-            "win_roi": 68.44,
-            "place_roi": 74.4,
-            "wide_roi": 65.05
-          },
-          "trained": {
-            "races": 2435,
-            "winner_top1": 701,
-            "winner_top3": 1494,
-            "bet_types": {
-              "win": {
-                "tickets": 2435,
-                "hits": 701,
-                "stake": 243500,
-                "return": 168150.0,
-                "hit_rate": 28.79,
-                "roi": 69.06,
-                "profit": -75350.0
-              },
-              "place": {
-                "tickets": 7305,
-                "hits": 3611,
-                "stake": 730500,
-                "return": 553620.0,
-                "hit_rate": 49.43,
-                "roi": 75.79,
-                "profit": -176880.0
+                "return": 544900.0,
+                "hit_rate": 49.05,
+                "roi": 74.59,
+                "profit": -185600.0
               },
               "wide": {
                 "tickets": 7305,
                 "hits": 1642,
                 "stake": 730500,
-                "return": 485790.0,
+                "return": 485340.0,
                 "hit_rate": 22.48,
-                "roi": 66.5,
-                "profit": -244710.0
+                "roi": 66.44,
+                "profit": -245160.0
               },
               "quinella": {
                 "tickets": 2435,
-                "hits": 302,
+                "hits": 327,
                 "stake": 243500,
-                "return": 137260.0,
-                "hit_rate": 12.4,
-                "roi": 56.37,
-                "profit": -106240.0
+                "return": 149160.0,
+                "hit_rate": 13.43,
+                "roi": 61.26,
+                "profit": -94340.0
               },
               "exacta": {
                 "tickets": 2435,
-                "hits": 184,
+                "hits": 190,
                 "stake": 243500,
-                "return": 156560.0,
-                "hit_rate": 7.56,
-                "roi": 64.3,
-                "profit": -86940.0
+                "return": 157470.0,
+                "hit_rate": 7.8,
+                "roi": 64.67,
+                "profit": -86030.0
               },
               "trio": {
                 "tickets": 2435,
-                "hits": 187,
+                "hits": 198,
                 "stake": 243500,
-                "return": 135830.0,
-                "hit_rate": 7.68,
-                "roi": 55.78,
-                "profit": -107670.0
+                "return": 186270.0,
+                "hit_rate": 8.13,
+                "roi": 76.5,
+                "profit": -57230.0
               },
               "trifecta": {
                 "tickets": 2435,
-                "hits": 49,
+                "hits": 47,
                 "stake": 243500,
-                "return": 157430.0,
-                "hit_rate": 2.01,
-                "roi": 64.65,
-                "profit": -86070.0
+                "return": 165670.0,
+                "hit_rate": 1.93,
+                "roi": 68.04,
+                "profit": -77830.0
               }
             },
-            "winner_top1_rate": 28.79,
-            "winner_top3_rate": 61.36,
+            "winner_top1_rate": 30.64,
+            "winner_top3_rate": 60.0,
             "win_stake": 243500,
-            "win_return": 168150.0,
+            "win_return": 176660.0,
             "place_stake": 730500,
-            "place_return": 553620.0,
+            "place_return": 544900.0,
             "wide_stake": 730500,
-            "wide_return": 485790.0,
-            "win_roi": 69.06,
-            "place_roi": 75.79,
-            "wide_roi": 66.5
+            "wide_return": 485340.0,
+            "win_roi": 72.55,
+            "place_roi": 74.59,
+            "wide_roi": 66.44
+          },
+          "trained": {
+            "races": 2435,
+            "winner_top1": 729,
+            "winner_top3": 1505,
+            "bet_types": {
+              "win": {
+                "tickets": 2435,
+                "hits": 729,
+                "stake": 243500,
+                "return": 165480.0,
+                "hit_rate": 29.94,
+                "roi": 67.96,
+                "profit": -78020.0
+              },
+              "place": {
+                "tickets": 7305,
+                "hits": 3648,
+                "stake": 730500,
+                "return": 553800.0,
+                "hit_rate": 49.94,
+                "roi": 75.81,
+                "profit": -176700.0
+              },
+              "wide": {
+                "tickets": 7305,
+                "hits": 1673,
+                "stake": 730500,
+                "return": 483330.0,
+                "hit_rate": 22.9,
+                "roi": 66.16,
+                "profit": -247170.0
+              },
+              "quinella": {
+                "tickets": 2435,
+                "hits": 332,
+                "stake": 243500,
+                "return": 148880.0,
+                "hit_rate": 13.63,
+                "roi": 61.14,
+                "profit": -94620.0
+              },
+              "exacta": {
+                "tickets": 2435,
+                "hits": 194,
+                "stake": 243500,
+                "return": 161190.0,
+                "hit_rate": 7.97,
+                "roi": 66.2,
+                "profit": -82310.0
+              },
+              "trio": {
+                "tickets": 2435,
+                "hits": 191,
+                "stake": 243500,
+                "return": 160490.0,
+                "hit_rate": 7.84,
+                "roi": 65.91,
+                "profit": -83010.0
+              },
+              "trifecta": {
+                "tickets": 2435,
+                "hits": 45,
+                "stake": 243500,
+                "return": 95140.0,
+                "hit_rate": 1.85,
+                "roi": 39.07,
+                "profit": -148360.0
+              }
+            },
+            "winner_top1_rate": 29.94,
+            "winner_top3_rate": 61.81,
+            "win_stake": 243500,
+            "win_return": 165480.0,
+            "place_stake": 730500,
+            "place_return": 553800.0,
+            "wide_stake": 730500,
+            "wide_return": 483330.0,
+            "win_roi": 67.96,
+            "place_roi": 75.81,
+            "wide_roi": 66.16
           }
         }
       },
@@ -363,184 +363,184 @@
         "test_races": 2434,
         "training_updates": 9681,
         "trained_weights": {
-          "form": 0.09465209610888384,
-          "venue": 0.1967257207438917,
-          "distance": 0.16636702510533768,
-          "sire": 0.10402458145197506,
-          "jockey": 0.3544503260108751,
-          "age": 0.08378025057903664
+          "form": 0.23873798076754466,
+          "venue": 0.13077709473958324,
+          "distance": 0.11594914445572951,
+          "sire": 0.09160663944080166,
+          "jockey": 0.33658411644605213,
+          "age": 0.08634502415028879
         },
         "temperature": 0.125,
         "calibration": {
           "races": 2422,
           "temperature": 0.125,
-          "log_loss": 1.94596,
-          "brier": 0.81482,
-          "top1_accuracy": 30.68,
-          "ece": 0.01942
+          "log_loss": 1.93446,
+          "brier": 0.81142,
+          "top1_accuracy": 30.22,
+          "ece": 0.00753
         },
         "models": {
           "baseline": {
             "races": 2422,
-            "winner_top1": 699,
-            "winner_top3": 1431,
+            "winner_top1": 709,
+            "winner_top3": 1470,
             "bet_types": {
               "win": {
                 "tickets": 2422,
-                "hits": 699,
+                "hits": 709,
                 "stake": 242200,
-                "return": 168790.0,
-                "hit_rate": 28.86,
-                "roi": 69.69,
-                "profit": -73410.0
+                "return": 169760.0,
+                "hit_rate": 29.27,
+                "roi": 70.09,
+                "profit": -72440.0
               },
               "place": {
                 "tickets": 7266,
-                "hits": 3430,
+                "hits": 3481,
                 "stake": 726600,
-                "return": 539160.0,
-                "hit_rate": 47.21,
-                "roi": 74.2,
-                "profit": -187440.0
+                "return": 538890.0,
+                "hit_rate": 47.91,
+                "roi": 74.17,
+                "profit": -187710.0
               },
               "wide": {
                 "tickets": 7266,
-                "hits": 1513,
+                "hits": 1561,
                 "stake": 726600,
-                "return": 475280.0,
-                "hit_rate": 20.82,
-                "roi": 65.41,
-                "profit": -251320.0
+                "return": 463540.0,
+                "hit_rate": 21.48,
+                "roi": 63.8,
+                "profit": -263060.0
               },
               "quinella": {
                 "tickets": 2422,
-                "hits": 261,
+                "hits": 292,
                 "stake": 242200,
-                "return": 140780.0,
-                "hit_rate": 10.78,
-                "roi": 58.13,
-                "profit": -101420.0
+                "return": 149000.0,
+                "hit_rate": 12.06,
+                "roi": 61.52,
+                "profit": -93200.0
               },
               "exacta": {
                 "tickets": 2422,
-                "hits": 150,
+                "hits": 160,
                 "stake": 242200,
-                "return": 141480.0,
-                "hit_rate": 6.19,
-                "roi": 58.41,
-                "profit": -100720.0
+                "return": 165100.0,
+                "hit_rate": 6.61,
+                "roi": 68.17,
+                "profit": -77100.0
               },
               "trio": {
                 "tickets": 2422,
-                "hits": 159,
+                "hits": 169,
                 "stake": 242200,
-                "return": 133540.0,
-                "hit_rate": 6.56,
-                "roi": 55.14,
-                "profit": -108660.0
+                "return": 137450.0,
+                "hit_rate": 6.98,
+                "roi": 56.75,
+                "profit": -104750.0
               },
               "trifecta": {
                 "tickets": 2422,
                 "hits": 44,
                 "stake": 242200,
-                "return": 175400.0,
+                "return": 160710.0,
                 "hit_rate": 1.82,
-                "roi": 72.42,
-                "profit": -66800.0
+                "roi": 66.35,
+                "profit": -81490.0
               }
             },
-            "winner_top1_rate": 28.86,
-            "winner_top3_rate": 59.08,
+            "winner_top1_rate": 29.27,
+            "winner_top3_rate": 60.69,
             "win_stake": 242200,
-            "win_return": 168790.0,
+            "win_return": 169760.0,
             "place_stake": 726600,
-            "place_return": 539160.0,
+            "place_return": 538890.0,
             "wide_stake": 726600,
-            "wide_return": 475280.0,
-            "win_roi": 69.69,
-            "place_roi": 74.2,
-            "wide_roi": 65.41
+            "wide_return": 463540.0,
+            "win_roi": 70.09,
+            "place_roi": 74.17,
+            "wide_roi": 63.8
           },
           "trained": {
             "races": 2422,
-            "winner_top1": 743,
-            "winner_top3": 1519,
+            "winner_top1": 732,
+            "winner_top3": 1549,
             "bet_types": {
               "win": {
                 "tickets": 2422,
-                "hits": 743,
+                "hits": 732,
                 "stake": 242200,
-                "return": 186660.0,
-                "hit_rate": 30.68,
-                "roi": 77.07,
-                "profit": -55540.0
+                "return": 171890.0,
+                "hit_rate": 30.22,
+                "roi": 70.97,
+                "profit": -70310.0
               },
               "place": {
                 "tickets": 7266,
-                "hits": 3596,
+                "hits": 3623,
                 "stake": 726600,
-                "return": 558870.0,
-                "hit_rate": 49.49,
-                "roi": 76.92,
-                "profit": -167730.0
+                "return": 557340.0,
+                "hit_rate": 49.86,
+                "roi": 76.71,
+                "profit": -169260.0
               },
               "wide": {
                 "tickets": 7266,
-                "hits": 1672,
+                "hits": 1685,
                 "stake": 726600,
-                "return": 498600.0,
-                "hit_rate": 23.01,
-                "roi": 68.62,
-                "profit": -228000.0
+                "return": 484610.0,
+                "hit_rate": 23.19,
+                "roi": 66.7,
+                "profit": -241990.0
               },
               "quinella": {
                 "tickets": 2422,
-                "hits": 297,
+                "hits": 313,
                 "stake": 242200,
-                "return": 136480.0,
-                "hit_rate": 12.26,
-                "roi": 56.35,
-                "profit": -105720.0
+                "return": 146080.0,
+                "hit_rate": 12.92,
+                "roi": 60.31,
+                "profit": -96120.0
               },
               "exacta": {
                 "tickets": 2422,
-                "hits": 176,
+                "hits": 178,
                 "stake": 242200,
-                "return": 147220.0,
-                "hit_rate": 7.27,
-                "roi": 60.78,
-                "profit": -94980.0
+                "return": 143900.0,
+                "hit_rate": 7.35,
+                "roi": 59.41,
+                "profit": -98300.0
               },
               "trio": {
                 "tickets": 2422,
-                "hits": 189,
+                "hits": 196,
                 "stake": 242200,
-                "return": 134040.0,
-                "hit_rate": 7.8,
-                "roi": 55.34,
-                "profit": -108160.0
+                "return": 129550.0,
+                "hit_rate": 8.09,
+                "roi": 53.49,
+                "profit": -112650.0
               },
               "trifecta": {
                 "tickets": 2422,
-                "hits": 54,
+                "hits": 49,
                 "stake": 242200,
-                "return": 140720.0,
-                "hit_rate": 2.23,
-                "roi": 58.1,
-                "profit": -101480.0
+                "return": 121540.0,
+                "hit_rate": 2.02,
+                "roi": 50.18,
+                "profit": -120660.0
               }
             },
-            "winner_top1_rate": 30.68,
-            "winner_top3_rate": 62.72,
+            "winner_top1_rate": 30.22,
+            "winner_top3_rate": 63.96,
             "win_stake": 242200,
-            "win_return": 186660.0,
+            "win_return": 171890.0,
             "place_stake": 726600,
-            "place_return": 558870.0,
+            "place_return": 557340.0,
             "wide_stake": 726600,
-            "wide_return": 498600.0,
-            "win_roi": 77.07,
-            "place_roi": 76.92,
-            "wide_roi": 68.62
+            "wide_return": 484610.0,
+            "win_roi": 70.97,
+            "place_roi": 76.71,
+            "wide_roi": 66.7
           }
         }
       },
@@ -554,184 +554,184 @@
         "test_races": 3314,
         "training_updates": 12103,
         "trained_weights": {
-          "form": 0.05169138067080857,
-          "venue": 0.24715358500681858,
-          "distance": 0.09915694348643961,
-          "sire": 0.16828129531328262,
-          "jockey": 0.3739476584849415,
-          "age": 0.059769137037709155
+          "form": 0.16740186186175843,
+          "venue": 0.19717805581218134,
+          "distance": 0.07740281687424748,
+          "sire": 0.15643281488805483,
+          "jockey": 0.35049964613514545,
+          "age": 0.05108480442861248
         },
         "temperature": 0.125,
         "calibration": {
           "races": 3303,
           "temperature": 0.125,
-          "log_loss": 1.95393,
-          "brier": 0.81236,
-          "top1_accuracy": 30.76,
-          "ece": 0.02715
+          "log_loss": 1.94152,
+          "brier": 0.80891,
+          "top1_accuracy": 31.37,
+          "ece": 0.02909
         },
         "models": {
           "baseline": {
             "races": 3303,
             "winner_top1": 948,
-            "winner_top3": 1932,
+            "winner_top3": 1966,
             "bet_types": {
               "win": {
                 "tickets": 3303,
                 "hits": 948,
                 "stake": 330300,
-                "return": 228230.0,
+                "return": 218520.0,
                 "hit_rate": 28.7,
-                "roi": 69.1,
-                "profit": -102070.0
+                "roi": 66.16,
+                "profit": -111780.0
               },
               "place": {
                 "tickets": 9909,
-                "hits": 4757,
+                "hits": 4828,
                 "stake": 990900,
-                "return": 739860.0,
-                "hit_rate": 48.01,
-                "roi": 74.67,
-                "profit": -251040.0
+                "return": 737710.0,
+                "hit_rate": 48.72,
+                "roi": 74.45,
+                "profit": -253190.0
               },
               "wide": {
                 "tickets": 9909,
-                "hits": 2143,
+                "hits": 2212,
                 "stake": 990900,
-                "return": 635510.0,
-                "hit_rate": 21.63,
-                "roi": 64.13,
-                "profit": -355390.0
+                "return": 635560.0,
+                "hit_rate": 22.32,
+                "roi": 64.14,
+                "profit": -355340.0
               },
               "quinella": {
                 "tickets": 3303,
-                "hits": 429,
+                "hits": 445,
                 "stake": 330300,
-                "return": 223480.0,
-                "hit_rate": 12.99,
-                "roi": 67.66,
-                "profit": -106820.0
+                "return": 199790.0,
+                "hit_rate": 13.47,
+                "roi": 60.49,
+                "profit": -130510.0
               },
               "exacta": {
                 "tickets": 3303,
-                "hits": 248,
+                "hits": 259,
                 "stake": 330300,
-                "return": 224700.0,
-                "hit_rate": 7.51,
-                "roi": 68.03,
-                "profit": -105600.0
+                "return": 192090.0,
+                "hit_rate": 7.84,
+                "roi": 58.16,
+                "profit": -138210.0
               },
               "trio": {
                 "tickets": 3303,
-                "hits": 244,
+                "hits": 259,
                 "stake": 330300,
-                "return": 181010.0,
-                "hit_rate": 7.39,
-                "roi": 54.8,
-                "profit": -149290.0
+                "return": 156950.0,
+                "hit_rate": 7.84,
+                "roi": 47.52,
+                "profit": -173350.0
               },
               "trifecta": {
                 "tickets": 3303,
-                "hits": 57,
+                "hits": 67,
                 "stake": 330300,
-                "return": 247960.0,
-                "hit_rate": 1.73,
-                "roi": 75.07,
-                "profit": -82340.0
+                "return": 122420.0,
+                "hit_rate": 2.03,
+                "roi": 37.06,
+                "profit": -207880.0
               }
             },
             "winner_top1_rate": 28.7,
-            "winner_top3_rate": 58.49,
+            "winner_top3_rate": 59.52,
             "win_stake": 330300,
-            "win_return": 228230.0,
+            "win_return": 218520.0,
             "place_stake": 990900,
-            "place_return": 739860.0,
+            "place_return": 737710.0,
             "wide_stake": 990900,
-            "wide_return": 635510.0,
-            "win_roi": 69.1,
-            "place_roi": 74.67,
-            "wide_roi": 64.13
+            "wide_return": 635560.0,
+            "win_roi": 66.16,
+            "place_roi": 74.45,
+            "wide_roi": 64.14
           },
           "trained": {
             "races": 3303,
-            "winner_top1": 1016,
-            "winner_top3": 2052,
+            "winner_top1": 1036,
+            "winner_top3": 2065,
             "bet_types": {
               "win": {
                 "tickets": 3303,
-                "hits": 1016,
+                "hits": 1036,
                 "stake": 330300,
-                "return": 237650.0,
-                "hit_rate": 30.76,
-                "roi": 71.95,
-                "profit": -92650.0
+                "return": 239290.0,
+                "hit_rate": 31.37,
+                "roi": 72.45,
+                "profit": -91010.0
               },
               "place": {
                 "tickets": 9909,
-                "hits": 4954,
+                "hits": 4971,
                 "stake": 990900,
-                "return": 757920.0,
-                "hit_rate": 49.99,
-                "roi": 76.49,
-                "profit": -232980.0
+                "return": 751510.0,
+                "hit_rate": 50.17,
+                "roi": 75.84,
+                "profit": -239390.0
               },
               "wide": {
                 "tickets": 9909,
-                "hits": 2293,
+                "hits": 2327,
                 "stake": 990900,
-                "return": 672190.0,
-                "hit_rate": 23.14,
-                "roi": 67.84,
-                "profit": -318710.0
+                "return": 659290.0,
+                "hit_rate": 23.48,
+                "roi": 66.53,
+                "profit": -331610.0
               },
               "quinella": {
                 "tickets": 3303,
-                "hits": 468,
+                "hits": 484,
                 "stake": 330300,
-                "return": 207850.0,
-                "hit_rate": 14.17,
-                "roi": 62.93,
-                "profit": -122450.0
+                "return": 215040.0,
+                "hit_rate": 14.65,
+                "roi": 65.1,
+                "profit": -115260.0
               },
               "exacta": {
                 "tickets": 3303,
-                "hits": 275,
+                "hits": 292,
                 "stake": 330300,
-                "return": 200810.0,
-                "hit_rate": 8.33,
-                "roi": 60.8,
-                "profit": -129490.0
+                "return": 212360.0,
+                "hit_rate": 8.84,
+                "roi": 64.29,
+                "profit": -117940.0
               },
               "trio": {
                 "tickets": 3303,
-                "hits": 269,
+                "hits": 278,
                 "stake": 330300,
-                "return": 195820.0,
-                "hit_rate": 8.14,
-                "roi": 59.29,
-                "profit": -134480.0
+                "return": 178600.0,
+                "hit_rate": 8.42,
+                "roi": 54.07,
+                "profit": -151700.0
               },
               "trifecta": {
                 "tickets": 3303,
-                "hits": 75,
+                "hits": 81,
                 "stake": 330300,
-                "return": 165190.0,
-                "hit_rate": 2.27,
-                "roi": 50.01,
-                "profit": -165110.0
+                "return": 225200.0,
+                "hit_rate": 2.45,
+                "roi": 68.18,
+                "profit": -105100.0
               }
             },
-            "winner_top1_rate": 30.76,
-            "winner_top3_rate": 62.13,
+            "winner_top1_rate": 31.37,
+            "winner_top3_rate": 62.52,
             "win_stake": 330300,
-            "win_return": 237650.0,
+            "win_return": 239290.0,
             "place_stake": 990900,
-            "place_return": 757920.0,
+            "place_return": 751510.0,
             "wide_stake": 990900,
-            "wide_return": 672190.0,
-            "win_roi": 71.95,
-            "place_roi": 76.49,
-            "wide_roi": 67.84
+            "wide_return": 659290.0,
+            "win_roi": 72.45,
+            "place_roi": 75.84,
+            "wide_roi": 66.53
           }
         }
       }
@@ -743,162 +743,162 @@
     "models": {
       "baseline": {
         "races": 8160,
-        "winner_top1": 2357,
-        "winner_top3": 4788,
+        "winner_top1": 2403,
+        "winner_top3": 4897,
         "bet_types": {
           "win": {
             "tickets": 8160,
-            "hits": 2357,
+            "hits": 2403,
             "stake": 816000,
-            "return": 563680.0,
-            "hit_rate": 28.88,
-            "roi": 69.08,
-            "profit": -252320.0
+            "return": 564940.0,
+            "hit_rate": 29.45,
+            "roi": 69.23,
+            "profit": -251060.0
           },
           "place": {
             "tickets": 24480,
-            "hits": 11686,
+            "hits": 11892,
             "stake": 2448000,
-            "return": 1822530.0,
-            "hit_rate": 47.74,
-            "roi": 74.45,
-            "profit": -625470.0
+            "return": 1821500.0,
+            "hit_rate": 48.58,
+            "roi": 74.41,
+            "profit": -626500.0
           },
           "wide": {
             "tickets": 24480,
-            "hits": 5197,
+            "hits": 5415,
             "stake": 2448000,
-            "return": 1585950.0,
-            "hit_rate": 21.23,
-            "roi": 64.79,
-            "profit": -862050.0
+            "return": 1584440.0,
+            "hit_rate": 22.12,
+            "roi": 64.72,
+            "profit": -863560.0
           },
           "quinella": {
             "tickets": 8160,
-            "hits": 973,
+            "hits": 1064,
             "stake": 816000,
-            "return": 490280.0,
-            "hit_rate": 11.92,
-            "roi": 60.08,
-            "profit": -325720.0
+            "return": 497950.0,
+            "hit_rate": 13.04,
+            "roi": 61.02,
+            "profit": -318050.0
           },
           "exacta": {
             "tickets": 8160,
-            "hits": 559,
+            "hits": 609,
             "stake": 816000,
-            "return": 484040.0,
-            "hit_rate": 6.85,
-            "roi": 59.32,
-            "profit": -331960.0
+            "return": 514660.0,
+            "hit_rate": 7.46,
+            "roi": 63.07,
+            "profit": -301340.0
           },
           "trio": {
             "tickets": 8160,
-            "hits": 579,
+            "hits": 626,
             "stake": 816000,
-            "return": 481240.0,
-            "hit_rate": 7.1,
-            "roi": 58.98,
-            "profit": -334760.0
+            "return": 480670.0,
+            "hit_rate": 7.67,
+            "roi": 58.91,
+            "profit": -335330.0
           },
           "trifecta": {
             "tickets": 8160,
-            "hits": 136,
+            "hits": 158,
             "stake": 816000,
-            "return": 529740.0,
-            "hit_rate": 1.67,
-            "roi": 64.92,
-            "profit": -286260.0
+            "return": 448800.0,
+            "hit_rate": 1.94,
+            "roi": 55.0,
+            "profit": -367200.0
           }
         },
-        "winner_top1_rate": 28.88,
-        "winner_top3_rate": 58.68,
-        "win_roi": 69.08,
-        "place_roi": 74.45,
-        "wide_roi": 64.79
+        "winner_top1_rate": 29.45,
+        "winner_top3_rate": 60.01,
+        "win_roi": 69.23,
+        "place_roi": 74.41,
+        "wide_roi": 64.72
       },
       "trained": {
         "races": 8160,
-        "winner_top1": 2460,
-        "winner_top3": 5065,
+        "winner_top1": 2497,
+        "winner_top3": 5119,
         "bet_types": {
           "win": {
             "tickets": 8160,
-            "hits": 2460,
+            "hits": 2497,
             "stake": 816000,
-            "return": 592460.0,
-            "hit_rate": 30.15,
-            "roi": 72.61,
-            "profit": -223540.0
+            "return": 576660.0,
+            "hit_rate": 30.6,
+            "roi": 70.67,
+            "profit": -239340.0
           },
           "place": {
             "tickets": 24480,
-            "hits": 12161,
+            "hits": 12242,
             "stake": 2448000,
-            "return": 1870410.0,
-            "hit_rate": 49.68,
-            "roi": 76.41,
-            "profit": -577590.0
+            "return": 1862650.0,
+            "hit_rate": 50.01,
+            "roi": 76.09,
+            "profit": -585350.0
           },
           "wide": {
             "tickets": 24480,
-            "hits": 5607,
+            "hits": 5685,
             "stake": 2448000,
-            "return": 1656580.0,
-            "hit_rate": 22.9,
-            "roi": 67.67,
-            "profit": -791420.0
+            "return": 1627230.0,
+            "hit_rate": 23.22,
+            "roi": 66.47,
+            "profit": -820770.0
           },
           "quinella": {
             "tickets": 8160,
-            "hits": 1067,
+            "hits": 1129,
             "stake": 816000,
-            "return": 481590.0,
-            "hit_rate": 13.08,
-            "roi": 59.02,
-            "profit": -334410.0
+            "return": 510000.0,
+            "hit_rate": 13.84,
+            "roi": 62.5,
+            "profit": -306000.0
           },
           "exacta": {
             "tickets": 8160,
-            "hits": 635,
+            "hits": 664,
             "stake": 816000,
-            "return": 504590.0,
-            "hit_rate": 7.78,
-            "roi": 61.84,
-            "profit": -311410.0
+            "return": 517450.0,
+            "hit_rate": 8.14,
+            "roi": 63.41,
+            "profit": -298550.0
           },
           "trio": {
             "tickets": 8160,
-            "hits": 645,
+            "hits": 665,
             "stake": 816000,
-            "return": 465690.0,
-            "hit_rate": 7.9,
-            "roi": 57.07,
-            "profit": -350310.0
+            "return": 468640.0,
+            "hit_rate": 8.15,
+            "roi": 57.43,
+            "profit": -347360.0
           },
           "trifecta": {
             "tickets": 8160,
-            "hits": 178,
+            "hits": 175,
             "stake": 816000,
-            "return": 463340.0,
-            "hit_rate": 2.18,
-            "roi": 56.78,
-            "profit": -352660.0
+            "return": 441880.0,
+            "hit_rate": 2.14,
+            "roi": 54.15,
+            "profit": -374120.0
           }
         },
-        "winner_top1_rate": 30.15,
-        "winner_top3_rate": 62.07,
-        "win_roi": 72.61,
-        "place_roi": 76.41,
-        "wide_roi": 67.67
+        "winner_top1_rate": 30.6,
+        "winner_top3_rate": 62.73,
+        "win_roi": 70.67,
+        "place_roi": 76.09,
+        "wide_roi": 66.47
       }
     },
     "trained_weights": {
-      "form": 0.05169138067080857,
-      "venue": 0.24715358500681858,
-      "distance": 0.09915694348643961,
-      "sire": 0.16828129531328262,
-      "jockey": 0.3739476584849415,
-      "age": 0.059769137037709155
+      "form": 0.16740186186175843,
+      "venue": 0.19717805581218134,
+      "distance": 0.07740281687424748,
+      "sire": 0.15643281488805483,
+      "jockey": 0.35049964613514545,
+      "age": 0.05108480442861248
     },
     "folds_above_100_roi": {
       "win": 0,
@@ -923,21 +923,21 @@
   "online_learning": {
     "updates": 15406,
     "final_weights": {
-      "form": 0.13272080504519526,
-      "venue": 0.19756138321505587,
-      "distance": 0.0754589169490994,
-      "sire": 0.18746191071074741,
-      "jockey": 0.394729325749702,
-      "age": 0.012067658330200048
+      "form": 0.27904910682039447,
+      "venue": 0.13652968529922688,
+      "distance": 0.06541351752606582,
+      "sire": 0.1556951573759385,
+      "jockey": 0.3512109234597101,
+      "age": 0.012101609518664187
     },
-    "temperature": 0.125,
+    "temperature": 0.12,
     "calibration": {
       "races": 15406,
-      "temperature": 0.125,
-      "log_loss": 1.98045,
-      "brier": 0.82131,
-      "top1_accuracy": 29.3,
-      "ece": 0.00983
+      "temperature": 0.12,
+      "log_loss": 1.96912,
+      "brier": 0.8187,
+      "top1_accuracy": 29.8,
+      "ece": 0.01142
     },
     "note": "Daily batch learning: all races on a date are scored before that date's results update weights for later dates."
   }
