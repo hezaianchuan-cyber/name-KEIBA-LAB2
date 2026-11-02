@@ -174,7 +174,7 @@ const $=id=>document.getElementById(id);
 const today=new Date();$('raceDate').value=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
 let db={races:[],horses:[],odds:[],payouts:[],predictions:[],sourceFiles:[]};
 let currentRunners=[];let sampleMode=false;let oddsCsvText='';let oddsRaceIndex=[];let oddsCsvName='';
-const defaultWeights={form:28,venue:18,distance:14,jockey:12,weight:8,gate:6,age:4,odds:10};
+const defaultWeights={form:25,venue:16,distance:13,jockey:11,weight:7,gate:5,age:4,odds:8,pedigree:11};
 let weights={...defaultWeights};
 const saved=localStorage.getItem('keibaLabLocalDB');if(saved){try{db=JSON.parse(saved)}catch(e){}}
 // Remove legacy records whose Japanese text was already corrupted in an older import.
@@ -192,7 +192,7 @@ function num(v){const n=parseFloat(String(v??'').replace(/[\uFF0C,]/g,''));retur
 function norm(s){return String(s??'').replace(/[\s\u3000]/g,'').replace(/[\uFF10-\uFF19]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));}
 function normDate(v){const s=norm(v);const m=s.match(/^(\d{4})[\/-]?(\d{2})[\/-]?(\d{2})$/);return m?m[1]+m[2]+m[3]:s}function key(v,d,r){return [norm(v),normDate(d),norm(r).replace(/R$/i,'')].join('|')}
 function classify(name){const n=String(name||'').replace(/\\/g,'/').split('/').pop().replace(/^\uFEFF/,'').normalize('NFKC').toLowerCase();if(/horselist|horse.?list|\u51FA\u99AC\u8868/.test(n))return 'horses';if(/racelist|race.?list|\u30EC\u30FC\u30B9\u4E00\u89A7/.test(n))return 'races';if(/odds|\u30AA\u30C3\u30BA/.test(n))return 'odds';if(/payback|payout|\u6255\u623B/.test(n))return 'payouts';return null}
-function parseOfficial(name,text){const type=classify(name);if(!type)return 0;const rows=csvRows(text);let added=0;for(const a of rows){if(!a.length)continue;const venue=a[0]||'',date=a[1]||'',race=a[2]||'';if(!venue||!date||!race||!/^\d{8}$/.test(normDate(date)))continue;const id=key(venue,date,race);const dateKey=normDate(date);if(type==='horses'){const obj={id,venue,date:dateKey,race,frame:a[3],horseNo:a[5],name:a[6],sex:a[7],age:num(a[8]),jockey:a[14],weight:num(a[16]),bodyWeight:num(a[22]),bodyDiff:num(a[23]),record:a[24],venueRecord:a[27],distanceRecord:a[28],bestTime:a[29],lastRank:num(a[31]),lastTime:a[32],margin:a[33],last3f:num(a[34]),popularity:num(a[35])};if(obj.name&&obj.horseNo){db.horses.push(obj);added++}}
+function parseOfficial(name,text){const type=classify(name);if(!type)return 0;const rows=csvRows(text);let added=0;for(const a of rows){if(!a.length)continue;const venue=a[0]||'',date=a[1]||'',race=a[2]||'';if(!venue||!date||!race||!/^\d{8}$/.test(normDate(date)))continue;const id=key(venue,date,race);const dateKey=normDate(date);if(type==='horses'){const obj={id,venue,date:dateKey,race,frame:a[3],horseNo:a[5],name:a[6],sex:a[7],age:num(a[8]),sire:a[11],dam:a[12],broodmareSire:a[13],jockey:a[14],weight:num(a[16]),bodyWeight:num(a[22]),bodyDiff:num(a[23]),record:a[24],venueRecord:a[27],distanceRecord:a[28],bestTime:a[29],lastRank:num(a[31]),lastTime:a[32],margin:a[33],last3f:num(a[34]),popularity:num(a[35])};if(obj.name&&obj.horseNo){db.horses.push(obj);added++}}
 else if(type==='races'){const obj={id,venue,date:dateKey,race,time:a[3],grade:a[4],name:a[5],surface:a[21],turn:a[22],distance:num(a[23]),weather:a[24],going:a[25],fieldSize:num(a[26]),condition:a[27]};db.races.push(obj);added++}
 else if(type==='odds'){const obj={id,venue,date:dateKey,race,type:a[3],n1:a[4],n2:a[5],n3:a[6],odds:num(a[7]),maxOdds:num(a[8]),popularity:num(a[9])};db.odds.push(obj);added++}
 else if(type==='payouts'){db.payouts.push({id,venue,date:dateKey,race,winNo:a[4],winPay:num(a[5]),winPop:num(a[6]),place1:a[7],placePay1:num(a[8]),place2:a[10],placePay2:num(a[11]),place3:a[13],placePay3:num(a[14]),quinella1:a[24],quinella2:a[25],quinellaPay:num(a[26]),exacta1:a[28],exacta2:a[29],exactaPay:num(a[30]),wide1a:a[32],wide1b:a[33],widePay1:num(a[34]),wide2a:a[36],wide2b:a[37],widePay2:num(a[38]),wide3a:a[40],wide3b:a[41],widePay3:num(a[42]),trio1:a[44],trio2:a[45],trio3:a[46],trioPay:num(a[47]),trifecta1:a[49],trifecta2:a[50],trifecta3:a[51],trifectaPay:num(a[52])});added++}}
@@ -268,13 +268,22 @@ const map=new Map();for(const r of [...db.races,...oddsRaceIndex])if((!date||nor
 $('raceDate').addEventListener('change',refreshRaceChoices);$('venue').addEventListener('change',refreshRaceChoices);
 function percentile(v,arr){if(v==null||!arr.length)return 50;const clean=arr.filter(x=>x!=null).sort((a,b)=>a-b);if(!clean.length)return 50;return 100*clean.filter(x=>x<=v).length/clean.length}
 function parseMarginValue(value){const s=String(value??'').replace(/[\s\u3000]/g,'');if(!s)return null;const mixed=s.match(/^(\d+)(\d+)\/(\d+)$/);if(mixed)return Number(mixed[1])+Number(mixed[2])/Number(mixed[3]);const fraction=s.match(/^(\d+)\/(\d+)$/);return fraction?Number(fraction[1])/Number(fraction[2]):(s.match(/\d+(?:\.\d+)?/)||[])[0]!==undefined?Number((s.match(/\d+(?:\.\d+)?/)||[])[0]):null;}
+function getRecentRuns(h){
+  const cutoff=String(h.date||'');
+  const same=(db.horses||[]).filter(x=>norm(x.name)===norm(h.name)&&String(x.date||'')<cutoff&&x.lastRank!=null);
+  const unique=new Map();for(const x of same.sort((a,b)=>String(a.date).localeCompare(String(b.date))))unique.set(String(x.date),x);
+  return [...unique.values()].slice(-5).reverse();
+}
 function scoreRunner(h,all){
+  const history=getRecentRuns(h);
   const rankScore=h.lastRank==null?50:Math.max(5,100-(h.lastRank-1)*11);
   const marginText=String(h.margin??'').trim();
   const marginNumber=parseMarginValue(marginText);
   const marginScore=/大差|失格|中止/.test(marginText)?5:/ハナ/.test(marginText)?97:/アタマ/.test(marginText)?94:/クビ/.test(marginText)?91:marginNumber==null?50:Math.max(5,Math.min(100,100-marginNumber*24));
   const popularityScore=h.popularity==null||h.lastRank==null?50:Math.max(5,Math.min(100,50+(h.popularity-h.lastRank)*8));
-  const form=Math.round(rankScore*.60+marginScore*.25+popularityScore*.15);
+  const recentScores=history.map(x=>Math.max(5,100-((Number(x.lastRank)||5)-1)*11));
+  const historyScore=recentScores.length?recentScores.reduce((a,b)=>a+b,0)/recentScores.length:50;
+  const form=Math.round((rankScore*.45+marginScore*.20+popularityScore*.10+historyScore*.25));
   const venue=h.venueRecord&&/^\d+-\d+-\d+-\d+/.test(h.venueRecord)?Math.min(100,45+parseInt(h.venueRecord)*12):50;
   const dist=h.distanceRecord&&/^\d+-\d+-\d+-\d+/.test(h.distanceRecord)?Math.min(100,45+parseInt(h.distanceRecord)*14):50;
   const jockey=h.jockey?55:45;
@@ -282,9 +291,11 @@ function scoreRunner(h,all){
   const gate=50;
   const age=h.age==null?50:(h.age>=4&&h.age<=6?75:h.age===3||h.age===7?60:45);
   const odds=h.odds?Math.max(10,Math.min(95,90-Math.log(h.odds)*18)):50;
-  const parts={form,venue,distance:dist,jockey,weight,gate,age,odds};
+  const lineage=history.length>=3?(history.reduce((s,x)=>s+(x.sire&&norm(x.sire)===norm(h.sire)?Math.max(5,100-((Number(x.lastRank)||5)-1)*11):50),0)/history.length):50;
+  const pedigree=h.sire?Math.min(90,Math.max(10,lineage)):50;
+  const parts={form,venue,distance:dist,jockey,weight,gate,age,odds,pedigree};
   let total=0,w=0;for(const [k,v] of Object.entries(parts)){total+=v*(weights[k]||0);w+=weights[k]||0}
-  return {...h,parts,score:w?total/w:50,previousRun:{rank:h.lastRank??null,margin:h.margin??null,last3f:h.last3f??null,popularity:h.popularity??null,score:form}};
+  return {...h,parts,score:w?total/w:50,recentRuns:history.map(x=>({date:x.date,rank:x.lastRank,margin:x.margin,last3f:x.last3f,venue:x.venue,distance:x.distance})),previousRun:{rank:h.lastRank??null,margin:h.margin??null,last3f:h.last3f??null,popularity:h.popularity??null,score:form},pedigreeScore:pedigree};
 }
 function analyze(){sampleMode=false;const id=$('raceSelect').value;let race=db.races.find(r=>r.id===id)||oddsRaceIndex.find(r=>r.id===id);let runners=db.horses.filter(h=>h.id===id);if(!runners.length&&oddsCsvText){const date=race?.date||'',venue=race?.venue||'',raceNo=race?.race||'';const lines=oddsCsvText.split(/\r?\n/);const selected=[];for(let i=1;i<lines.length;i++){const a=lines[i].split(',');if(a.length<10||a[0]!==venue||normDate(a[1])!==date||norm(a[2])!==norm(raceNo))continue;selected.push({id,venue,date,race:raceNo,type:a[3],n1:a[4],n2:a[5],n3:a[6],odds:num(a[7]),maxOdds:num(a[8]),popularity:num(a[9])});}
 const bet=$('betType').value;const aliases={'\u99AC\u9023':'\u99AC\u8907','3\u9023\u8907':'\uFF13\u9023\u8907','3\u9023\u5358':'\uFF13\u9023\u5358'};const wanted=aliases[bet]||bet;const rows=selected.filter(o=>norm(o.type)===norm(wanted));if(!rows.length){$('summary').textContent='\u3053\u306E\u30EC\u30FC\u30B9\u306E'+bet+'\u30AA\u30C3\u30BA\u306F\u3042\u308A\u307E\u305B\u3093\u3002\u5225\u306E\u5238\u7A2E\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044\u3002';$('ranking').textContent='\u8A72\u5F53\u30AA\u30C3\u30BA\u306A\u3057';$('runnerList').textContent='\u30C7\u30FC\u30BF\u306A\u3057';$('kRunners').textContent='0';$('kValue').textContent='\u2014';$('kSkip').textContent='\u2014';return;}
