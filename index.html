@@ -182,7 +182,7 @@ db.races=(db.races||[]).filter(x=>!hasBrokenText(x));
 db.horses=(db.horses||[]).filter(x=>!hasBrokenText(x));
 
 const savedW=localStorage.getItem('keibaLabLocalWeights');if(savedW){try{weights={...defaultWeights,...JSON.parse(savedW)}}catch(e){}}
-const hasCustomWeights=!!savedW;
+let hasCustomWeights=localStorage.getItem('keibaLabUseCustomWeights')==='1'&&!!savedW;
 let learnedModelLoaded=false;
 let learnedHistory=null;
 let learnedModelEnd='';
