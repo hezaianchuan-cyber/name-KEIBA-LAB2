@@ -176,7 +176,7 @@ let db={races:[],horses:[],odds:[],payouts:[],predictions:[],sourceFiles:[]};
 let currentRunners=[];let sampleMode=false;let oddsCsvText='';let oddsRaceIndex=[];let oddsCsvName='';
 const defaultWeights={form:25,venue:16,distance:13,jockey:11,weight:7,gate:5,age:4,odds:8,pedigree:11};
 let weights={...defaultWeights};
-const saved=localStorage.getItem('keibaLabLocalDB');if(saved){try{db=JSON.parse(saved)}catch(e){}}
+const saved=localStorage.getItem('keibaLabLocalDB');if(saved){try{const parsed=JSON.parse(saved);if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed))db={...db,...parsed};}catch(e){console.warn('保存データを読み込めません。初期データで起動します。',e);}}for(const k of ['races','horses','odds','payouts','predictions','sourceFiles'])if(!Array.isArray(db[k]))db[k]=[];
 // Remove legacy records whose Japanese text was already corrupted in an older import.
 // This prevents bad saved race/horse names from contaminating the dropdowns.
 function hasBrokenText(v){if(typeof v==='string')return v.includes('\\uFFFD');if(Array.isArray(v))return v.some(hasBrokenText);if(v&&typeof v==='object')return Object.values(v).some(hasBrokenText);return false;}
