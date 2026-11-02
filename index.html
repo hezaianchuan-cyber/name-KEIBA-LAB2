@@ -289,21 +289,7 @@ function dedupeRunnerRows(rows) {
       map.set(no, { ...map.get(no), ...h });
     }
   }
-  return [...map.values()];
-}
-function dedupeRunnerRows(rows) {
-  const map = new Map();
-  for (const h of rows || []) {
-    const no = String(h.horseNo ?? '').trim();
-    if (!/^\d+$/.test(no)) continue;
-    if (!map.has(no)) {
-      map.set(no, h);
-    } else {
-      map.set(no, { ...map.get(no), ...h });
-    }
-  }
-  return [...map.values()];
-}
+  return [...map.values()
 </script>
 </body>
 </html>
