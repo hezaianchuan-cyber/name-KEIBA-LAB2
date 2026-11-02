@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-02T23:23:13.223768+00:00",
+  "generated_at": "2026-11-02T23:24:10.252054+00:00",
   "period": {
     "start": "2025-11-02",
     "end": "2026-11-01"
@@ -82,7 +82,7 @@
     "limitations": [
       "No historical pre-race odds feature; NAR monthly odds are confirmed odds and are not used.",
       "All payout rows for dead-heat races are retained and matched across every winning combination.",
-      "Only a fixed, transparent ticket policy is tested; scores are heuristic, not calibrated probabilities.",
+      "Ticket ranks use field-size-normalized historical finishes; probabilities are temperature-calibrated and evaluated in rolling holdout folds.",
       "Missing or incomplete historical rows are excluded where necessary."
     ]
   },
