@@ -128,7 +128,7 @@ def append_snapshot(path: Path, record: dict) -> bool:
             pass
     path.parent.mkdir(parents=True, exist_ok=True)
     with gzip.open(path, "ab", compresslevel=9) as output:
-        output.write((json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\\n").encode("utf-8"))
+        output.write((json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8"))
     return True
 
 
