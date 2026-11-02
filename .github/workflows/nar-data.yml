@@ -50,6 +50,27 @@ jobs:
           }
           fetch_zip latest-race "RaceDataDownload?type=daily"
           fetch_zip latest-odds "OddsDataDownload?type=daily"
+          echo "=== ZIP entry diagnostics ==="
+          for archive in data/*.zip; do
+            [ -f "$archive" ] || continue
+            echo "--- $archive ---"
+            unzip -Z1 "$archive" | head -40
+          done
+          python - <<'PY'
+          import zipfile, glob, re, unicodedata
+          for path in glob.glob("data/*.zip"):
+              print("INSPECT", path)
+              try:
+                  with zipfile.ZipFile(path) as z:
+                      for name in z.namelist():
+                          base=name.replace("\\\\","/").split("/")[-1]
+                          n=unicodedata.normalize("NFKC",base).lower()
+                          kind=("horses" if re.search(r"horselist|horse.?list|出馬表",n) else "races" if re.search(r"racelist|race.?list|レース一覧",n) else "odds" if re.search(r"odds|オッズ",n) else "payouts" if re.search(r"payback|payout|払戻",n) else "-")
+                          if base and not name.endswith("/"):
+                              print("ENTRY", repr(name), "CLASS", kind, "SIZE", z.getinfo(name).file_size)
+              except Exception as e:
+                  print("ZIP_ERROR", repr(e))
+          PY
           python - <<'PY'
           import json, os, datetime
           names = ["latest-race", "latest-odds"]
