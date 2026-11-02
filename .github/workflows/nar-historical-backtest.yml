@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: nar-historical-backtest
@@ -34,3 +36,17 @@ jobs:
             git commit -m "Update NAR one-year backtest summary"
             git push
           fi
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload website with aggregate report
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy updated website
+        id: deployment
+        uses: actions/deploy-pages@v4
