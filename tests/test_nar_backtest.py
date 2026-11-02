@@ -130,6 +130,41 @@ class OddsSnapshotBacktestTests(unittest.TestCase):
             self.assertEqual(loaded[key]["odds"][0]["odds"], 2.1)
 
 
+class PreoffValueBacktestTests(unittest.TestCase):
+    def test_value_threshold_uses_snapshot_odds_and_settled_payout(self):
+        original_root = nb.ROOT
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                nb.ROOT = Path(tmp)
+                directory = Path(tmp) / "data" / "odds-snapshots"
+                directory.mkdir(parents=True)
+                record = {
+                    "race_key":"大井|20261103|10",
+                    "date":"20261103",
+                    "model_version":"test-model",
+                    "predictions":[
+                        {"horse_no":"1","win_probability":0.5,"win_odds":2.5,"expected_value":1.25},
+                        {"horse_no":"2","win_probability":0.2,"win_odds":3.0,"expected_value":0.6},
+                    ],
+                    "odds":[{"type":"単勝","n1":"1","odds":2.5}],
+                }
+                with gzip.open(directory / "2026-11-03.jsonl.gz", "wt", encoding="utf-8") as stream:
+                    stream.write(json.dumps(record, ensure_ascii=False) + "\\n")
+                payouts = {("大井","20261103","10"): {
+                    "win":[(["1"],250)],"place":[],"quinella":[],"exacta":[],
+                    "wide":[],"trio":[],"trifecta":[]
+                }}
+                result = nb.preoff_value_backtest(payouts)
+                self.assertEqual(result["status"], "ok")
+                self.assertEqual(result["settled_evaluated_races"], 1)
+                self.assertEqual(result["thresholds"]["1.10"]["tickets"], 1)
+                self.assertEqual(result["thresholds"]["1.10"]["roi"], 250.0)
+                self.assertEqual(result["thresholds"]["1.30"]["tickets"], 0)
+        finally:
+            nb.ROOT = original_root
+
+
+
 class FieldSizeNormalizationTests(unittest.TestCase):
     def test_finish_rank_is_normalized_by_field_size(self):
         self.assertEqual(nb.rank_quality(1, 16), 100.0)
