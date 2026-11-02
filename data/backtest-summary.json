@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-02T23:17:20.169248+00:00",
+  "generated_at": "2026-11-02T23:18:38.606022+00:00",
   "period": {
     "start": "2025-11-02",
     "end": "2026-11-01"
@@ -68,6 +68,7 @@
   "method": {
     "prediction_order": "date-batched chronological; every race on a date is predicted before any result from that date updates history or model weights",
     "odds_feature": false,
+    "probability_calibration": "temperature fitted on chronological prequential training predictions; out-of-sample calibration reported per walk-forward fold",
     "ticket_policy": "fixed top-rank tickets per race; 100 JPY per ticket; not a betting recommendation",
     "ticket_counts_per_race": {
       "win": 1,
@@ -177,6 +178,15 @@
           "sire": 0.14318762577781877,
           "jockey": 0.4071561560199094,
           "age": 0.05926596999974136
+        },
+        "temperature": 0.13,
+        "calibration": {
+          "races": 2435,
+          "temperature": 0.13,
+          "log_loss": 1.96094,
+          "brier": 0.81785,
+          "top1_accuracy": 28.79,
+          "ece": 0.0216
         },
         "models": {
           "baseline": {
@@ -360,6 +370,15 @@
           "jockey": 0.3544503260108751,
           "age": 0.08378025057903664
         },
+        "temperature": 0.125,
+        "calibration": {
+          "races": 2422,
+          "temperature": 0.125,
+          "log_loss": 1.94596,
+          "brier": 0.81482,
+          "top1_accuracy": 30.68,
+          "ece": 0.01942
+        },
         "models": {
           "baseline": {
             "races": 2422,
@@ -541,6 +560,15 @@
           "sire": 0.16828129531328262,
           "jockey": 0.3739476584849415,
           "age": 0.059769137037709155
+        },
+        "temperature": 0.125,
+        "calibration": {
+          "races": 3303,
+          "temperature": 0.125,
+          "log_loss": 1.95393,
+          "brier": 0.81236,
+          "top1_accuracy": 30.76,
+          "ece": 0.02715
         },
         "models": {
           "baseline": {
@@ -901,6 +929,15 @@
       "sire": 0.18746191071074741,
       "jockey": 0.394729325749702,
       "age": 0.012067658330200048
+    },
+    "temperature": 0.125,
+    "calibration": {
+      "races": 15406,
+      "temperature": 0.125,
+      "log_loss": 1.98045,
+      "brier": 0.82131,
+      "top1_accuracy": 29.3,
+      "ece": 0.00983
     },
     "note": "Daily batch learning: all races on a date are scored before that date's results update weights for later dates."
   }

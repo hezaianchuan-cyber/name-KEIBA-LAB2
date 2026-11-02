@@ -1,6 +1,6 @@
 {
-  "model_version": "nar-chronological-v5-walk-forward",
-  "generated_at": "2026-11-02T23:17:20.169248+00:00",
+  "model_version": "nar-chronological-v6-calibrated-walk-forward",
+  "generated_at": "2026-11-02T23:18:38.606022+00:00",
   "training_period": {
     "start": "2025-11-02",
     "end": "2026-11-01"
@@ -26,6 +26,15 @@
           "sire": 0.14318762577781877,
           "jockey": 0.4071561560199094,
           "age": 0.05926596999974136
+        },
+        "temperature": 0.13,
+        "calibration": {
+          "races": 2435,
+          "temperature": 0.13,
+          "log_loss": 1.96094,
+          "brier": 0.81785,
+          "top1_accuracy": 28.79,
+          "ece": 0.0216
         },
         "models": {
           "baseline": {
@@ -209,6 +218,15 @@
           "jockey": 0.3544503260108751,
           "age": 0.08378025057903664
         },
+        "temperature": 0.125,
+        "calibration": {
+          "races": 2422,
+          "temperature": 0.125,
+          "log_loss": 1.94596,
+          "brier": 0.81482,
+          "top1_accuracy": 30.68,
+          "ece": 0.01942
+        },
         "models": {
           "baseline": {
             "races": 2422,
@@ -390,6 +408,15 @@
           "sire": 0.16828129531328262,
           "jockey": 0.3739476584849415,
           "age": 0.059769137037709155
+        },
+        "temperature": 0.125,
+        "calibration": {
+          "races": 3303,
+          "temperature": 0.125,
+          "log_loss": 1.95393,
+          "brier": 0.81236,
+          "top1_accuracy": 30.76,
+          "ece": 0.02715
         },
         "models": {
           "baseline": {
@@ -747,6 +774,15 @@
     "sire": 0.18746191071074741,
     "jockey": 0.394729325749702,
     "age": 0.012067658330200048
+  },
+  "temperature": 0.125,
+  "calibration": {
+    "races": 15406,
+    "temperature": 0.125,
+    "log_loss": 1.98045,
+    "brier": 0.82131,
+    "top1_accuracy": 29.3,
+    "ece": 0.00983
   },
   "prediction_policy": "Scores use only races strictly earlier than the target race date; current-race finish/popularity/payout are excluded. All races on a date are predicted before any results from that date update the model."
 }
