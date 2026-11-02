@@ -322,6 +322,16 @@ def main():
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
+    live_model = {
+        "model_version": "nar-chronological-v2",
+        "generated_at": result["generated_at"],
+        "training_period": result["period"],
+        "updates": learning_updates,
+        "feature_schema": ["form", "venue", "distance", "sire", "jockey", "age"],
+        "weights": learned_weights,
+        "prediction_policy": "Scores use only races strictly earlier than the target race date; current-race finish/popularity/payout are excluded. All races on a date are predicted before any results from that date update the model."
+    }
+    (OUT.parent / "live-model.json").write_text(json.dumps(live_model,ensure_ascii=False,indent=2),encoding="utf-8")
     print(json.dumps({"races":race_count,"horse_rows":result["horse_rows"],"payout_races":len(payouts),"metrics":metrics,"learning_updates":learning_updates,"final_weights":learned_weights},ensure_ascii=False),flush=True)
     if race_count == 0 or not payouts:
         raise RuntimeError("No usable historical race/payout data parsed; refusing to publish an empty backtest.")
