@@ -184,6 +184,8 @@ db.horses=(db.horses||[]).filter(x=>!hasBrokenText(x));
 const savedW=localStorage.getItem('keibaLabLocalWeights');if(savedW){try{weights={...defaultWeights,...JSON.parse(savedW)}}catch(e){}}
 const hasCustomWeights=!!savedW;
 let learnedModelLoaded=false;
+let learnedHistory=null;
+let learnedModelEnd='';
 function save(){try{localStorage.setItem('keibaLabLocalDB',JSON.stringify(db));}catch(e){console.warn('\u4FDD\u5B58\u5BB9\u91CF\u3092\u8D85\u3048\u307E\u3057\u305F\u3002CSV\u672C\u4F53\u306F\u4FDD\u5B58\u5BFE\u8C61\u5916\u3067\u3059\u3002',e)}}
 function csvRows(text){let rows=[],row=[],cell='',q=false;for(let i=0;i<text.length;i++){let c=text[i];if(c==='"'){if(q&&text[i+1]==='"'){cell+='"';i++}else q=!q}else if(c===','&&!q){row.push(cell);cell=''}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(x=>x!==''))rows.push(row);row=[];cell=''}else cell+=c}if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows;}
 function txt(buf){const bytes=buf instanceof Uint8Array?buf:new Uint8Array(buf);if(bytes.length>=3&&bytes[0]===0xEF&&bytes[1]===0xBB&&bytes[2]===0xBF)return new TextDecoder('utf-8').decode(bytes);if(bytes.length>=2&&bytes[0]===0xFF&&bytes[1]===0xFE)return new TextDecoder('utf-16le').decode(bytes);if(bytes.length>=2&&bytes[0]===0xFE&&bytes[1]===0xFF)return new TextDecoder('utf-16be').decode(bytes);try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes)}catch(e){try{return new TextDecoder('shift_jis').decode(bytes)}catch(e2){return new TextDecoder('utf-8').decode(bytes)}}}
@@ -318,7 +320,7 @@ function getRecentRuns(h){
 }
 function scoreRunner(h,all){
   const cutoff=String(h.date||'');
-  const history=getRecentRuns(h);
+  let history=getRecentRuns(h);
   const ranks=history.map(x=>Number(x.lastRank)).filter(x=>Number.isFinite(x)&&x>0);
   const formRanks=ranks.slice(0,5);
   let form=45;
@@ -332,10 +334,23 @@ function scoreRunner(h,all){
   const distanceRuns=history.filter(x=>h.distance&&x.distance&&Math.abs(Number(x.distance)-Number(h.distance))<=200&&Number(x.lastRank)>0);
   const distanceScore=distanceRuns.length?Math.max(10,100-(distanceRuns.reduce((s,x)=>s+Number(x.lastRank),0)/distanceRuns.length-1)*12):48;
   const prior=(db.horses||[]).filter(x=>String(x.date||'')<cutoff&&Number(x.lastRank)>0);
-  const sireRows=prior.filter(x=>h.sire&&norm(x.sire)===norm(h.sire));
-  const sireScore=sireRows.length>=5?100*sireRows.filter(x=>Number(x.lastRank)<=3).length/sireRows.length:50;
-  const jockeyRows=prior.filter(x=>h.jockey&&norm(x.jockey)===norm(h.jockey));
-  const jockeyScore=jockeyRows.length>=5?100*jockeyRows.filter(x=>Number(x.lastRank)<=3).length/jockeyRows.length:50;
+  const useSnapshot=!!(learnedModelLoaded&&learnedHistory&&learnedModelEnd&&cutoff>learnedModelEnd);
+  if(useSnapshot){
+    const baseRuns=learnedHistory.horse_history?.[norm(h.name)]||[];
+    const newRuns=prior.filter(x=>String(x.date||'')>learnedModelEnd&&norm(x.name)===norm(h.name)).map(x=>({...x,distance:x.distance??db.races.find(r=>r.id===x.id)?.distance}));
+    const byDate=new Map([...baseRuns,...newRuns].map(x=>[String(x.date),x]));
+    history=[...byDate.values()].sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,5);
+  }
+  const sireRows=prior.filter(x=>h.sire&&norm(x.sire)===norm(h.sire)&&(useSnapshot?String(x.date||'')>learnedModelEnd:true));
+  const sireBase=useSnapshot?(learnedHistory.sire_stats?.[norm(h.sire)]||{runs:0,top3:0}):{runs:0,top3:0};
+  const sireRuns=sireBase.runs+sireRows.length;
+  const sireTop3=sireBase.top3+sireRows.filter(x=>Number(x.lastRank)<=3).length;
+  const sireScore=sireRuns>=5?100*sireTop3/sireRuns:50;
+  const jockeyRows=prior.filter(x=>h.jockey&&norm(x.jockey)===norm(h.jockey)&&(useSnapshot?String(x.date||'')>learnedModelEnd:true));
+  const jockeyBase=useSnapshot?(learnedHistory.jockey_stats?.[norm(h.jockey)]||{runs:0,top3:0}):{runs:0,top3:0};
+  const jockeyRuns=jockeyBase.runs+jockeyRows.length;
+  const jockeyTop3=jockeyBase.top3+jockeyRows.filter(x=>Number(x.lastRank)<=3).length;
+  const jockeyScore=jockeyRuns>=5?100*jockeyTop3/jockeyRuns:50;
   const age=h.age==null?45:(h.age>=4&&h.age<=6?72:(h.age===3||h.age===7?58:45));
   const parts={form,venue:venueScore,distance:distanceScore,sire:sireScore,pedigree:sireScore,jockey:jockeyScore,age};
   const learned={form:weights.form||0,venue:weights.venue||0,distance:weights.distance||0,sire:weights.pedigree||0,jockey:weights.jockey||0,age:weights.age||0};
@@ -426,9 +441,15 @@ window.addEventListener('load',loadHistoricalBacktest);
 async function loadLearnedModel(){
  if(hasCustomWeights)return;
  try{
-  const response=await fetch('./data/live-model.json?v='+Date.now(),{cache:'no-store'});
-  if(!response.ok)throw new Error('学習モデル未公開');
-  const model=await response.json();const w=model.weights||{};
+  const stamp='?v='+Date.now();
+  const [modelResponse,historyResponse]=await Promise.all([
+   fetch('./data/live-model.json'+stamp,{cache:'no-store'}),
+   fetch('./data/live-history.json'+stamp,{cache:'no-store'})
+  ]);
+  if(!modelResponse.ok||!historyResponse.ok)throw new Error('学習モデルまたは過去成績データ未公開');
+  const model=await modelResponse.json();learnedHistory=await historyResponse.json();
+  learnedModelEnd=String(model.training_period?.end||'');
+  const w=model.weights||{};
   const mapped={form:w.form*100,venue:w.venue*100,distance:w.distance*100,jockey:w.jockey*100,pedigree:w.sire*100,age:w.age*100,weight:0,gate:0,odds:0};
   const sum=Object.values(mapped).reduce((a,b)=>a+(Number(b)||0),0);
   if(!sum||!model.feature_schema||!model.feature_schema.includes('sire'))throw new Error('モデル形式が不正');
