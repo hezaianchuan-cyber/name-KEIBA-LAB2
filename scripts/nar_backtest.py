@@ -703,7 +703,8 @@ def holdout_validation(races, horses, payouts, odds_snapshots=None):
             "folds_above_100_roi":sum(1 for fold in folds
                 if (fold.get("market_value", {}).get(threshold, {}).get("roi") or 0) >= 100)}
     return {"status":"ok","method":"three rolling-origin folds with non-overlapping test windows; weights frozen within each test window; prior results added only after all races on a date are scored; market-value bets use timestamped official pre-off odds snapshots",
-            "folds":folds,"test_races":sum(x["models"]["trained"]["races"] for x in folds),
+            "folds":folds,"market_value":market_aggregate,
+            "test_races":sum(x["models"]["trained"]["races"] for x in folds),
             "test_start":folds[0]["test_start"],"test_end":folds[-1]["test_end"],
             "train_end":folds[-1]["train_end"],"models":aggregate,
             "trained_weights":folds[-1]["trained_weights"],
