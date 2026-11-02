@@ -149,7 +149,7 @@ class PreoffValueBacktestTests(unittest.TestCase):
                     "odds":[{"type":"単勝","n1":"1","odds":2.5}],
                 }
                 with gzip.open(directory / "2026-11-03.jsonl.gz", "wt", encoding="utf-8") as stream:
-                    stream.write(json.dumps(record, ensure_ascii=False) + "\\n")
+                    stream.write(json.dumps(record, ensure_ascii=False) + "\n")
                 payouts = {("大井","20261103","10"): {
                     "win":[(["1"],250)],"place":[],"quinella":[],"exacta":[],
                     "wide":[],"trio":[],"trifecta":[]
