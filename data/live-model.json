@@ -1,6 +1,6 @@
 {
-  "model_version": "nar-chronological-v3-validated",
-  "generated_at": "2026-11-02T13:49:02.245223+00:00",
+  "model_version": "nar-chronological-v4-holdout-seeded",
+  "generated_at": "2026-11-02T13:57:04.970921+00:00",
   "training_period": {
     "start": "2025-11-02",
     "end": "2026-11-01"
@@ -25,35 +25,165 @@
     "models": {
       "baseline": {
         "races": 4078,
-        "winner_top1": 939,
-        "winner_top3": 2071,
+        "winner_top1": 1155,
+        "winner_top3": 2378,
+        "bet_types": {
+          "win": {
+            "tickets": 4078,
+            "hits": 1155,
+            "stake": 407800,
+            "return": 277480.0,
+            "hit_rate": 28.32,
+            "roi": 68.04,
+            "profit": -130320.0
+          },
+          "place": {
+            "tickets": 12234,
+            "hits": 5827,
+            "stake": 1223400,
+            "return": 908240.0,
+            "hit_rate": 47.63,
+            "roi": 74.24,
+            "profit": -315160.0
+          },
+          "wide": {
+            "tickets": 12234,
+            "hits": 2604,
+            "stake": 1223400,
+            "return": 784070.0,
+            "hit_rate": 21.28,
+            "roi": 64.09,
+            "profit": -439330.0
+          },
+          "quinella": {
+            "tickets": 4078,
+            "hits": 510,
+            "stake": 407800,
+            "return": 271520.0,
+            "hit_rate": 12.51,
+            "roi": 66.58,
+            "profit": -136280.0
+          },
+          "exacta": {
+            "tickets": 4078,
+            "hits": 296,
+            "stake": 407800,
+            "return": 274180.0,
+            "hit_rate": 7.26,
+            "roi": 67.23,
+            "profit": -133620.0
+          },
+          "trio": {
+            "tickets": 4078,
+            "hits": 288,
+            "stake": 407800,
+            "return": 227450.0,
+            "hit_rate": 7.06,
+            "roi": 55.77,
+            "profit": -180350.0
+          },
+          "trifecta": {
+            "tickets": 4078,
+            "hits": 69,
+            "stake": 407800,
+            "return": 303440.0,
+            "hit_rate": 1.69,
+            "roi": 74.41,
+            "profit": -104360.0
+          }
+        },
+        "winner_top1_rate": 28.32,
+        "winner_top3_rate": 58.31,
         "win_stake": 407800,
-        "win_return": 271420.0,
+        "win_return": 277480.0,
         "place_stake": 1223400,
-        "place_return": 891290.0,
+        "place_return": 908240.0,
         "wide_stake": 1223400,
-        "wide_return": 797700.0,
-        "winner_top1_rate": 23.03,
-        "winner_top3_rate": 50.78,
-        "win_roi": 66.56,
-        "place_roi": 72.85,
-        "wide_roi": 65.2
+        "wide_return": 784070.0,
+        "win_roi": 68.04,
+        "place_roi": 74.24,
+        "wide_roi": 64.09
       },
       "trained": {
         "races": 4078,
-        "winner_top1": 1007,
-        "winner_top3": 2221,
+        "winner_top1": 1237,
+        "winner_top3": 2532,
+        "bet_types": {
+          "win": {
+            "tickets": 4078,
+            "hits": 1237,
+            "stake": 407800,
+            "return": 293870.0,
+            "hit_rate": 30.33,
+            "roi": 72.06,
+            "profit": -113930.0
+          },
+          "place": {
+            "tickets": 12234,
+            "hits": 6072,
+            "stake": 1223400,
+            "return": 935530.0,
+            "hit_rate": 49.63,
+            "roi": 76.47,
+            "profit": -287870.0
+          },
+          "wide": {
+            "tickets": 12234,
+            "hits": 2812,
+            "stake": 1223400,
+            "return": 835060.0,
+            "hit_rate": 22.99,
+            "roi": 68.26,
+            "profit": -388340.0
+          },
+          "quinella": {
+            "tickets": 4078,
+            "hits": 559,
+            "stake": 407800,
+            "return": 256480.0,
+            "hit_rate": 13.71,
+            "roi": 62.89,
+            "profit": -151320.0
+          },
+          "exacta": {
+            "tickets": 4078,
+            "hits": 327,
+            "stake": 407800,
+            "return": 254640.0,
+            "hit_rate": 8.02,
+            "roi": 62.44,
+            "profit": -153160.0
+          },
+          "trio": {
+            "tickets": 4078,
+            "hits": 334,
+            "stake": 407800,
+            "return": 267830.0,
+            "hit_rate": 8.19,
+            "roi": 65.68,
+            "profit": -139970.0
+          },
+          "trifecta": {
+            "tickets": 4078,
+            "hits": 89,
+            "stake": 407800,
+            "return": 191540.0,
+            "hit_rate": 2.18,
+            "roi": 46.97,
+            "profit": -216260.0
+          }
+        },
+        "winner_top1_rate": 30.33,
+        "winner_top3_rate": 62.09,
         "win_stake": 407800,
-        "win_return": 282450.0,
+        "win_return": 293870.0,
         "place_stake": 1223400,
-        "place_return": 921180.0,
+        "place_return": 935530.0,
         "wide_stake": 1223400,
-        "wide_return": 814830.0,
-        "winner_top1_rate": 24.69,
-        "winner_top3_rate": 54.46,
-        "win_roi": 69.26,
-        "place_roi": 75.3,
-        "wide_roi": 66.6
+        "wide_return": 835060.0,
+        "win_roi": 72.06,
+        "place_roi": 76.47,
+        "wide_roi": 68.26
       }
     },
     "selection_rule": "Model weights frozen at the train/test boundary. Test-day results are added only after every race on that date is scored."
