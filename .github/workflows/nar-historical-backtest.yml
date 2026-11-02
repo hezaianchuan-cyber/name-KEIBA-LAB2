@@ -1,4 +1,4 @@
-name: NAR one-year historical backtest
+name: NAR three-year historical backtest
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run one-year backtest
+      - name: Run three-year backtest
         run: python3 scripts/nar_backtest.py
 
       - name: Publish aggregate report only
@@ -44,7 +44,7 @@ jobs:
               echo "No report changes"
               exit 0
             fi
-            git commit -m "Update NAR one-year backtest summary"
+            git commit -m "Update NAR three-year backtest summary"
             if git push origin HEAD:main; then
               exit 0
             fi
