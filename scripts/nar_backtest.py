@@ -334,12 +334,28 @@ def holdout_validation(races, horses, payouts):
     _, _, _, learned, updates = run_backtest(train_races, train_horses, train_payouts)
     baseline = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
     models = {"baseline":baseline, "trained":learned}
+    bet_kinds = ("win","place","wide","quinella","exacta","trio","trifecta")
     results = {name:{"races":0,"winner_top1":0,"winner_top3":0,
-                     "win_stake":0,"win_return":0,"place_stake":0,"place_return":0,
-                     "wide_stake":0,"wide_return":0} for name in models}
+                     "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0}
+                                  for kind in bet_kinds}} for name in models}
     history = defaultdict(list)
     sire_stats = defaultdict(lambda:{"runs":0,"top3":0})
     jockey_stats = defaultdict(lambda:{"runs":0,"top3":0})
+    train_ordered = sorted(train_races.values(),
+                           key=lambda r:(r["date"],r["venue"],int(r["race"])))
+    for train_race in train_ordered:
+        for h in train_horses.get(train_race["key"], []):
+            if not h.get("finish"):
+                continue
+            history[h["name"]].append({"date":train_race["date"],"venue":train_race["venue"],
+                "distance":train_race.get("distance"),"finish":h["finish"],
+                "margin":margin_score(h.get("margin")),"last3f":h.get("last3f")})
+            if h.get("sire"):
+                sire_stats[h["sire"]]["runs"] += 1
+                sire_stats[h["sire"]]["top3"] += int(h["finish"] <= 3)
+            if h.get("jockey"):
+                jockey_stats[h["jockey"]]["runs"] += 1
+                jockey_stats[h["jockey"]]["top3"] += int(h["finish"] <= 3)
     ordered = sorted((r for r in races.values() if r["date"] >= split_date),
                      key=lambda r:(r["date"],r["venue"],int(r["race"])))
     pending=[]; current=None
@@ -370,30 +386,44 @@ def holdout_validation(races, horses, payouts):
             winner=p["win"][0]
             if ranked[0]["no"]==winner:m["winner_top1"]+=1
             if winner in [h["no"] for h in ranked[:3]]:m["winner_top3"]+=1
-            m["win_stake"]+=100
-            if ranked[0]["no"]==winner:m["win_return"]+=p["win"][1] or 0
-            for h in ranked[:3]:
-                m["place_stake"]+=100
-                m["place_return"]+=next((pay or 0 for no,pay in p["place"] if no==h["no"]),0)
-            wide_pairs=[{ranked[0]["no"],ranked[1]["no"]},
-                         {ranked[0]["no"],ranked[2]["no"]},
-                         {ranked[1]["no"],ranked[2]["no"]}]
-            m["wide_stake"]+=300
-            for a,b,pay in p["wide"]:
-                nums={re.sub(r"\D","",a),re.sub(r"\D","",b)}
-                if pay and nums in wide_pairs:
-                    m["wide_return"]+=pay
+            n=[h["no"] for h in ranked[:3]]
+            ticket_map={
+                "win":[[n[0]]],
+                "place":[[x] for x in n],
+                "wide":[[n[0],n[1]],[n[0],n[2]],[n[1],n[2]]],
+                "quinella":[[n[0],n[1]]],
+                "exacta":[[n[0],n[1]]],
+                "trio":[n[:3]],
+                "trifecta":[n[:3]],
+            }
+            for kind,tickets in ticket_map.items():
+                bm=m["bet_types"][kind]
+                for ticket in tickets:
+                    bm["tickets"]+=1
+                    bm["stake"]+=100
+                    ret=payout_for(kind,ticket,p) or 0
+                    if ret:
+                        bm["hits"]+=1
+                        bm["return"]+=ret
         pending.append((field,race))
     if pending:commit(pending)
     out={}
     for name,m in results.items():
         n=m["races"] or 1
-        out[name]={**m,
+        bet_summary={}
+        for kind,bm in m["bet_types"].items():
+            bet_summary[kind]={**bm,
+                "hit_rate":round(100*bm["hits"]/bm["tickets"],2) if bm["tickets"] else None,
+                "roi":round(100*bm["return"]/bm["stake"],2) if bm["stake"] else None,
+                "profit":bm["return"]-bm["stake"]}
+        out[name]={**m,"bet_types":bet_summary,
           "winner_top1_rate":round(100*m["winner_top1"]/n,2),
           "winner_top3_rate":round(100*m["winner_top3"]/n,2),
-          "win_roi":round(100*m["win_return"]/m["win_stake"],2) if m["win_stake"] else None,
-          "place_roi":round(100*m["place_return"]/m["place_stake"],2) if m["place_stake"] else None,
-          "wide_roi":round(100*m["wide_return"]/m["wide_stake"],2) if m["wide_stake"] else None}
+          "win_stake":bet_summary["win"]["stake"],"win_return":bet_summary["win"]["return"],
+          "place_stake":bet_summary["place"]["stake"],"place_return":bet_summary["place"]["return"],
+          "wide_stake":bet_summary["wide"]["stake"],"wide_return":bet_summary["wide"]["return"],
+          "win_roi":bet_summary["win"]["roi"],"place_roi":bet_summary["place"]["roi"],
+          "wide_roi":bet_summary["wide"]["roi"]}
     return {"status":"ok","train_end":dates[split_index-1].isoformat(),
             "test_start":split_date.isoformat(),"test_end":dates[-1].isoformat(),
             "train_races":len(train_races),"test_races":len(ordered),
@@ -432,7 +462,7 @@ def main():
     OUT.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
     validated_weights = validation.get("trained_weights", learned_weights) if validation.get("status") == "ok" else learned_weights
     live_model = {
-        "model_version": "nar-chronological-v3-validated",
+        "model_version": "nar-chronological-v4-holdout-seeded",
         "generated_at": result["generated_at"],
         "training_period": result["period"],
         "updates": validation.get("training_updates", learning_updates),
