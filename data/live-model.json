@@ -1,0 +1,26 @@
+{
+  "model_version": "nar-chronological-v2",
+  "generated_at": "2026-11-02T13:29:07.249683+00:00",
+  "training_period": {
+    "start": "2025-11-02",
+    "end": "2026-11-01"
+  },
+  "updates": 15406,
+  "feature_schema": [
+    "form",
+    "venue",
+    "distance",
+    "sire",
+    "jockey",
+    "age"
+  ],
+  "weights": {
+    "form": 0.13378295458304607,
+    "venue": 0.19977038090689206,
+    "distance": 0.07552692570991326,
+    "sire": 0.18658777584895758,
+    "jockey": 0.39219226889732234,
+    "age": 0.012139694053868626
+  },
+  "prediction_policy": "Scores use only races strictly earlier than the target race date; current-race finish/popularity/payout are excluded. All races on a date are predicted before any results from that date update the model."
+}
