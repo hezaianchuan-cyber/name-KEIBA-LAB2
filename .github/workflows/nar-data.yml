@@ -92,7 +92,9 @@ jobs:
           if [ -d data/odds-snapshots ]; then
             cp -a data/odds-snapshots /tmp/odds-snapshots
             mkdir -p /tmp/keiba-latest-data
-            for file in latest-race.zip latest-odds.zip status.json; do\n              [ -f "data/$file" ] && cp -a "data/$file" /tmp/keiba-latest-data/ || true\n            done
+            for file in latest-race.zip latest-odds.zip status.json; do
+              [ -f "data/$file" ] && cp -a "data/$file" /tmp/keiba-latest-data/ || true
+            done
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             push_success=0
