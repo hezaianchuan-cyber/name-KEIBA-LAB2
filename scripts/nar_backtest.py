@@ -126,6 +126,7 @@ def load_archives():
                             "key": key, "date": date, "venue": row[0], "race": key[2],
                             "name": row[5] if len(row) > 5 else "",
                             "distance": number(row[23]) if len(row) > 23 else None,
+                            "field_size": number(row[26]) if len(row) > 26 else None,
                             "surface": row[21] if len(row) > 21 else "",
                             "going": row[25] if len(row) > 25 else "",
                         }
@@ -154,20 +155,36 @@ def margin_score(value):
     m = re.search(r"(\d+(?:\.\d+)?)", s)
     return float(m.group(1)) if m else None
 
+def rank_quality(finish, field_size=None):
+    rank = number(finish)
+    if rank is None or rank <= 0:
+        return None
+    size = number(field_size)
+    if size is not None and size > 1:
+        return max(0.0, min(100.0, 100.0*(size-rank)/(size-1)))
+    return max(5.0, 100.0-(rank-1)*8.0)
+
+
 def score_runner(h, history, sire_stats, jockey_stats, race, model_weights):
     past = history.get(h["name"], [])[-5:]
     if past:
-        ranks = [x["finish"] for x in past if x.get("finish")]
-        form = max(5, 100 - (sum(ranks)/len(ranks)-1)*12) if ranks else 45
+        quality_rows = [rank_quality(x.get("finish"), x.get("field_size")) for x in past]
+        quality_rows = [q for q in quality_rows if q is not None]
+        recency_weights = list(range(1, len(quality_rows)+1))
+        weighted_form = (sum(q*w for q,w in zip(quality_rows,recency_weights))/sum(recency_weights)) if quality_rows else 45
         recent = past[-3:]
         top3 = sum(1 for x in recent if x.get("finish") and x["finish"] <= 3) / len(recent)
-        form = min(100, form + top3*12)
+        form = 0.75*weighted_form + 0.25*top3*100 if quality_rows else 45
     else:
         form = 45
     venue_runs = [x for x in past if x.get("venue") == race["venue"] and x.get("finish")]
-    venue_score = max(10, 100-(sum(x["finish"] for x in venue_runs)/len(venue_runs)-1)*12) if venue_runs else 48
+    venue_quality = [rank_quality(x.get("finish"), x.get("field_size")) for x in venue_runs]
+    venue_quality = [q for q in venue_quality if q is not None]
+    venue_score = sum(venue_quality)/len(venue_quality) if venue_quality else 48
     distance_runs = [x for x in past if race.get("distance") and x.get("distance") and abs(x["distance"]-race["distance"]) <= 200 and x.get("finish")]
-    distance_score = max(10, 100-(sum(x["finish"] for x in distance_runs)/len(distance_runs)-1)*12) if distance_runs else 48
+    distance_quality = [rank_quality(x.get("finish"), x.get("field_size")) for x in distance_runs]
+    distance_quality = [q for q in distance_quality if q is not None]
+    distance_score = sum(distance_quality)/len(distance_quality) if distance_quality else 48
     sire_score = sire_stats[h["sire"]]["top3"]/sire_stats[h["sire"]]["runs"]*100 if h["sire"] and sire_stats[h["sire"]]["runs"] >= 5 else 50
     j = jockey_stats[h["jockey"]]
     jockey_score = j["top3"]/j["runs"]*100 if h["jockey"] and j["runs"] >= 5 else 50
@@ -300,7 +317,7 @@ def run_backtest(races, horses, payouts):
             for runner in pending_field:
                 if runner.get("finish"):
                     history[runner["name"]].append({
-                        "date":pending_race["date"],"venue":pending_race["venue"],"distance":pending_race.get("distance"),
+                        "date":pending_race["date"],"venue":pending_race["venue"],"distance":pending_race.get("distance"),"field_size":pending_race.get("field_size"),
                         "finish":runner["finish"],"margin":margin_score(runner.get("margin")),"last3f":runner.get("last3f")
                     })
                     if runner.get("sire"):
@@ -383,7 +400,7 @@ def build_live_history(races, horses):
             if not finish:
                 continue
             item = {"date": race["date"].isoformat(), "venue": race["venue"],
-                    "distance": race.get("distance"), "finish": finish,
+                    "distance": race.get("distance"), "field_size": race.get("field_size"), "finish": finish,
                     "margin": h.get("margin", ""), "last3f": h.get("last3f")}
             horse_history[norm(h["name"])].append(item)
             if h.get("sire"):
@@ -426,7 +443,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             if not h.get("finish"):
                 continue
             history[h["name"]].append({"date":train_race["date"],"venue":train_race["venue"],
-                "distance":train_race.get("distance"),"finish":h["finish"],
+                "distance":train_race.get("distance"),"field_size":train_race.get("field_size"),"finish":h["finish"],
                 "margin":margin_score(h.get("margin")),"last3f":h.get("last3f")})
             if h.get("sire"):
                 sire_stats[h["sire"]]["runs"] += 1
@@ -443,7 +460,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             for h in field:
                 if not h.get("finish"): continue
                 history[h["name"]].append({"date":race["date"],"venue":race["venue"],
-                    "distance":race.get("distance"),"finish":h["finish"],
+                    "distance":race.get("distance"),"field_size":race.get("field_size"),"finish":h["finish"],
                     "margin":margin_score(h.get("margin")),"last3f":h.get("last3f")})
                 if h.get("sire"):
                     sire_stats[h["sire"]]["runs"]+=1
