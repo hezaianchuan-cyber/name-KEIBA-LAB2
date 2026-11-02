@@ -1,11 +1,63 @@
 {
-  "model_version": "nar-chronological-v2",
-  "generated_at": "2026-11-02T13:47:10.637067+00:00",
+  "model_version": "nar-chronological-v3-validated",
+  "generated_at": "2026-11-02T13:49:02.245223+00:00",
   "training_period": {
     "start": "2025-11-02",
     "end": "2026-11-01"
   },
-  "updates": 15406,
+  "updates": 11339,
+  "validation": {
+    "status": "ok",
+    "train_end": "2026-08-02",
+    "test_start": "2026-08-03",
+    "test_end": "2026-11-01",
+    "train_races": 11413,
+    "test_races": 4078,
+    "training_updates": 11339,
+    "trained_weights": {
+      "form": 0.020900414888254303,
+      "venue": 0.23295044758113678,
+      "distance": 0.1459207683685361,
+      "sire": 0.14108440114039017,
+      "jockey": 0.39865208922426815,
+      "age": 0.06049187879741448
+    },
+    "models": {
+      "baseline": {
+        "races": 4078,
+        "winner_top1": 939,
+        "winner_top3": 2071,
+        "win_stake": 407800,
+        "win_return": 271420.0,
+        "place_stake": 1223400,
+        "place_return": 891290.0,
+        "wide_stake": 1223400,
+        "wide_return": 797700.0,
+        "winner_top1_rate": 23.03,
+        "winner_top3_rate": 50.78,
+        "win_roi": 66.56,
+        "place_roi": 72.85,
+        "wide_roi": 65.2
+      },
+      "trained": {
+        "races": 4078,
+        "winner_top1": 1007,
+        "winner_top3": 2221,
+        "win_stake": 407800,
+        "win_return": 282450.0,
+        "place_stake": 1223400,
+        "place_return": 921180.0,
+        "wide_stake": 1223400,
+        "wide_return": 814830.0,
+        "winner_top1_rate": 24.69,
+        "winner_top3_rate": 54.46,
+        "win_roi": 69.26,
+        "place_roi": 75.3,
+        "wide_roi": 66.6
+      }
+    },
+    "selection_rule": "Model weights frozen at the train/test boundary. Test-day results are added only after every race on that date is scored."
+  },
   "feature_schema": [
     "form",
     "venue",
@@ -15,12 +67,12 @@
     "age"
   ],
   "weights": {
-    "form": 0.13378295458304607,
-    "venue": 0.19977038090689206,
-    "distance": 0.07552692570991326,
-    "sire": 0.18658777584895758,
-    "jockey": 0.39219226889732234,
-    "age": 0.012139694053868626
+    "form": 0.020900414888254303,
+    "venue": 0.23295044758113678,
+    "distance": 0.1459207683685361,
+    "sire": 0.14108440114039017,
+    "jockey": 0.39865208922426815,
+    "age": 0.06049187879741448
   },
   "prediction_policy": "Scores use only races strictly earlier than the target race date; current-race finish/popularity/payout are excluded. All races on a date are predicted before any results from that date update the model."
 }
