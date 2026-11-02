@@ -1,4 +1,4 @@
-const CACHE_NAME = "keiba-lab-web-v6";
+const CACHE_NAME = "keiba-lab-web-v7";
 const CORE = ["./", "./index.html", "./manifest.webmanifest"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
@@ -11,6 +11,7 @@ self.addEventListener("fetch", event => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.includes("/data/")) { event.respondWith(fetch(request, { cache: "no-store" })); return; }
   event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => {
     if (response.ok) {
       const copy = response.clone();
