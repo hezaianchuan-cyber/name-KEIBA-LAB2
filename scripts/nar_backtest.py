@@ -515,7 +515,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     return {"train_start":min(train_dates).isoformat(),"train_end":max(train_dates).isoformat(),
             "test_start":min(test_dates).isoformat(),"test_end":max(test_dates).isoformat(),
             "train_races":len(train_races),"test_races":len(ordered),
-            "training_updates":updates,"trained_weights":learned,"temperature":round(temperature,4),\n            "calibration":calibration_metrics(test_calibration_records,temperature),"models":out}
+            "training_updates":updates,"trained_weights":learned,"temperature":round(temperature,4),
+            "calibration":calibration_metrics(test_calibration_records,temperature),"models":out}
 
 
 def odds_snapshot_inventory():
@@ -606,7 +607,8 @@ def holdout_validation(races, horses, payouts):
 def main():
     print(f"Backtest range: {START} through {END}", flush=True)
     races, horses, payouts, months = load_archives()
-    metrics, examples, race_count, learned_weights, learning_updates, calibration_records = run_backtest(races, horses, payouts)\n    production_temperature = fit_temperature(calibration_records)\n    production_calibration = calibration_metrics(calibration_records, production_temperature)
+    metrics, examples, race_count, learned_weights, learning_updates, calibration_records = run_backtest(races, horses, payouts)
+    production_temperature = fit_temperature(calibration_records)\n    production_calibration = calibration_metrics(calibration_records, production_temperature)
     validation = holdout_validation(races, horses, payouts)
     result = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
