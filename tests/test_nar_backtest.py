@@ -1,6 +1,9 @@
 import sys
+import csv
 import gzip
+import io
 import json
+import zipfile
 import tempfile
 import unittest
 from collections import defaultdict
@@ -99,6 +102,38 @@ class OddsSnapshotParsingTests(unittest.TestCase):
         first = next(p for p in predictions if p["horse_no"] == "1")
         self.assertEqual(first["win_odds"], 2.5)
         self.assertAlmostEqual(first["expected_value"], first["win_probability"]*2.5, places=5)
+
+    def test_daily_official_zip_parser_reads_races_horses_and_odds(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp) / "data"
+            data.mkdir()
+            race_row = [""] * 27
+            race_row[0], race_row[1], race_row[2], race_row[3] = "大井", "20261103", "10", "1540"
+            race_row[5], race_row[21], race_row[23], race_row[25], race_row[26] = "サンプル", "ダ", "1600", "良", "3"
+            horse_rows = []
+            for no, name, age in [("1","馬A","4"),("2","馬B","5"),("3","馬C","6")]:
+                row = [""] * 36
+                row[0], row[1], row[2], row[5], row[6], row[8], row[11], row[14] = "大井", "20261103", "10", no, name, age, "父", "騎手"
+                horse_rows.append(row)
+            odds_row = [""] * 10
+            odds_row[0], odds_row[1], odds_row[2], odds_row[3], odds_row[4], odds_row[7], odds_row[9] = "大井", "20261103", "10", "単勝", "1", "2.5", "1"
+            def csv_text(rows):
+                buffer = io.StringIO()
+                writer = csv.writer(buffer)
+                writer.writerows(rows)
+                return buffer.getvalue().encode("utf-8")
+            with zipfile.ZipFile(data / "latest-race.zip", "w") as archive:
+                archive.writestr("20261103_racelist.csv", csv_text([race_row]))
+                archive.writestr("20261103_horselist.csv", csv_text(horse_rows))
+            with zipfile.ZipFile(data / "latest-odds.zip", "w") as archive:
+                archive.writestr("20261103_odds.csv", csv_text([odds_row]))
+            with mock.patch.object(capture, "DATA", data):
+                races, horses, odds = capture.read_archives()
+            key = ("大井", "20261103", "10")
+            self.assertEqual(races[key]["distance"], 1600)
+            self.assertEqual(len(horses[key]), 3)
+            self.assertEqual(odds[key][0]["type"], "単勝")
+            self.assertEqual(odds[key][0]["odds"], 2.5)
 
 
 class OddsSnapshotBacktestTests(unittest.TestCase):
