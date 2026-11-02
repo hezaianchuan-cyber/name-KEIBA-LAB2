@@ -77,6 +77,34 @@ def classify(name):
     if any(x in n for x in ("payback", "payout", "払戻")): return "payouts"
     return None
 
+def merge_payout_row(payouts, key, row):
+    """Merge one official payout CSV row; a dead heat may produce several rows."""
+    payout = payouts.setdefault(key, {
+        "win": [], "place": [], "quinella": [], "exacta": [],
+        "wide": [], "trio": [], "trifecta": [], "source_rows": 0,
+    })
+    payout["source_rows"] += 1
+
+    def add_pay(target, values, amount):
+        numbers = [re.sub(r"\\D", "", str(value or "")) for value in values]
+        pay = number(amount)
+        if all(numbers) and pay is not None and pay > 0:
+            item = (numbers, pay)
+            if item not in payout[target]:
+                payout[target].append(item)
+
+    add_pay("win", [row[4]], row[5])
+    for i in (7, 10, 13):
+        add_pay("place", [row[i]], row[i+1])
+    add_pay("quinella", [row[24], row[25]], row[26])
+    add_pay("exacta", [row[28], row[29]], row[30])
+    for i in (32, 36, 40):
+        add_pay("wide", [row[i], row[i+1]], row[i+2])
+    add_pay("trio", [row[44], row[45], row[46]], row[47])
+    add_pay("trifecta", [row[49], row[50], row[51]], row[52])
+    return payout
+
+
 def load_archives():
     races, horses, payouts = {}, defaultdict(list), {}
     downloaded = []
@@ -113,31 +141,7 @@ def load_archives():
                             "last3f": number(row[34]) if len(row) > 34 else None,
                         })
                     elif kind == "payouts" and len(row) > 52:
-                        # Dead heats are represented by multiple rows for one race.
-                        # Preserve every valid winning combination instead of overwriting
-                        # the previous row (which silently discarded earlier payouts).
-                        payout = payouts.setdefault(key, {
-                            "win": [], "place": [], "quinella": [], "exacta": [],
-                            "wide": [], "trio": [], "trifecta": [], "source_rows": 0,
-                        })
-                        payout["source_rows"] += 1
-                        def add_pay(target, numbers, amount):
-                            nums = [re.sub(r"\\D", "", str(x or "")) for x in numbers]
-                            pay = number(amount)
-                            if all(nums) and pay is not None and pay > 0:
-                                item = (nums, pay)
-                                if item not in payout[target]:
-                                    payout[target].append(item)
-                        add_pay("win", [row[4]], row[5])
-                        for i in (7, 10, 13):
-                            add_pay("place", [row[i]], row[i+1])
-                        add_pay("quinella", [row[24], row[25]], row[26])
-                        add_pay("exacta", [row[28], row[29]], row[30])
-                        for i in (32, 36, 40):
-                            add_pay("wide", [row[i], row[i+1]], row[i+2])
-                        add_pay("trio", [row[44], row[45], row[46]], row[47])
-                        add_pay("trifecta", [row[49], row[50], row[51]], row[52])
-
+                        merge_payout_row(payouts, key, row)
     return races, horses, payouts, downloaded
 
 def margin_score(value):
