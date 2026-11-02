@@ -496,7 +496,6 @@ function generateTickets(){
  });
  let horses=[...horseMap.values()].sort((a,b)=>(Number(b.score)||Number(b.prob)||0)-(Number(a.score)||Number(a.prob)||0)).slice(0,6);
  if(horses.length<3){const id=$('raceSelect').value;const saved=(db.horses||[]).filter(h=>h.id===id&&/^\d+$/.test(String(h.horseNo??'')));if(saved.length>=3)horses=saved.map(h=>scoreRunner(h,saved)).sort((a,b)=>b.score-a.score).slice(0,6);}
- const out=$('ticketResult');
  if(horses.length<3){out.textContent='買い目生成には、馬番ごとの出馬表と分析結果が3頭以上必要です。オッズ組合せ一覧だけでは生成できません。';return;}
  const maxScore=Math.max(...horses.map(h=>Number(h.score)||0));
  const scoreTotal=horses.reduce((sum,h)=>sum+Math.exp(((Number(h.score)||0)-maxScore)/18),0)||1;
