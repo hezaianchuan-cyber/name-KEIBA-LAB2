@@ -182,6 +182,8 @@ db.races=(db.races||[]).filter(x=>!hasBrokenText(x));
 db.horses=(db.horses||[]).filter(x=>!hasBrokenText(x));
 
 const savedW=localStorage.getItem('keibaLabLocalWeights');if(savedW){try{weights={...defaultWeights,...JSON.parse(savedW)}}catch(e){}}
+const hasCustomWeights=!!savedW;
+let learnedModelLoaded=false;
 function save(){try{localStorage.setItem('keibaLabLocalDB',JSON.stringify(db));}catch(e){console.warn('\u4FDD\u5B58\u5BB9\u91CF\u3092\u8D85\u3048\u307E\u3057\u305F\u3002CSV\u672C\u4F53\u306F\u4FDD\u5B58\u5BFE\u8C61\u5916\u3067\u3059\u3002',e)}}
 function csvRows(text){let rows=[],row=[],cell='',q=false;for(let i=0;i<text.length;i++){let c=text[i];if(c==='"'){if(q&&text[i+1]==='"'){cell+='"';i++}else q=!q}else if(c===','&&!q){row.push(cell);cell=''}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(x=>x!==''))rows.push(row);row=[];cell=''}else cell+=c}if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows;}
 function txt(buf){const bytes=buf instanceof Uint8Array?buf:new Uint8Array(buf);if(bytes.length>=3&&bytes[0]===0xEF&&bytes[1]===0xBB&&bytes[2]===0xBF)return new TextDecoder('utf-8').decode(bytes);if(bytes.length>=2&&bytes[0]===0xFF&&bytes[1]===0xFE)return new TextDecoder('utf-16le').decode(bytes);if(bytes.length>=2&&bytes[0]===0xFE&&bytes[1]===0xFF)return new TextDecoder('utf-16be').decode(bytes);try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes)}catch(e){try{return new TextDecoder('shift_jis').decode(bytes)}catch(e2){return new TextDecoder('utf-8').decode(bytes)}}}
@@ -315,29 +317,32 @@ function getRecentRuns(h){
   return [...unique.values()].slice(-5).reverse();
 }
 function scoreRunner(h,all){
+  const cutoff=String(h.date||'');
   const history=getRecentRuns(h);
-  const rankScore=h.lastRank==null?50:Math.max(5,100-(h.lastRank-1)*11);
-  const marginText=String(h.margin??'').trim();
-  const marginNumber=parseMarginValue(marginText);
-  const marginScore=/大差|失格|中止/.test(marginText)?5:/ハナ/.test(marginText)?97:/アタマ/.test(marginText)?94:/クビ/.test(marginText)?91:marginNumber==null?50:Math.max(5,Math.min(100,100-marginNumber*24));
-  const popularityScore=h.popularity==null||h.lastRank==null?50:Math.max(5,Math.min(100,50+(h.popularity-h.lastRank)*8));
-  const recentScores=history.map(x=>Math.max(5,100-((Number(x.lastRank)||5)-1)*11));
-  const historyScore=recentScores.length?recentScores.reduce((a,b)=>a+b,0)/recentScores.length:50;
-  const form=Math.round((rankScore*.45+marginScore*.20+popularityScore*.10+historyScore*.25));
-  const venue=h.venueRecord&&/^\d+-\d+-\d+-\d+/.test(h.venueRecord)?Math.min(100,45+parseInt(h.venueRecord)*12):50;
-  const dist=h.distanceRecord&&/^\d+-\d+-\d+-\d+/.test(h.distanceRecord)?Math.min(100,45+parseInt(h.distanceRecord)*14):50;
-  const jockey=h.jockey?55:45;
-  const weight=h.weight==null?50:Math.max(25,Math.min(85,75-Math.abs(h.weight-56)*3));
-  const gate=50;
-  const age=h.age==null?50:(h.age>=4&&h.age<=6?75:h.age===3||h.age===7?60:45);
+  const ranks=history.map(x=>Number(x.lastRank)).filter(x=>Number.isFinite(x)&&x>0);
+  const formRanks=ranks.slice(0,5);
+  let form=45;
+  if(formRanks.length){
+    form=Math.max(5,100-(formRanks.reduce((a,b)=>a+b,0)/formRanks.length-1)*12);
+    const recent=formRanks.slice(0,3);
+    form=Math.min(100,form+recent.filter(x=>x<=3).length/recent.length*12);
+  }
+  const venueRuns=history.filter(x=>norm(x.venue)===norm(h.venue)&&Number(x.lastRank)>0);
+  const venueScore=venueRuns.length?Math.max(10,100-(venueRuns.reduce((s,x)=>s+Number(x.lastRank),0)/venueRuns.length-1)*12):48;
+  const distanceRuns=history.filter(x=>h.distance&&x.distance&&Math.abs(Number(x.distance)-Number(h.distance))<=200&&Number(x.lastRank)>0);
+  const distanceScore=distanceRuns.length?Math.max(10,100-(distanceRuns.reduce((s,x)=>s+Number(x.lastRank),0)/distanceRuns.length-1)*12):48;
+  const prior=(db.horses||[]).filter(x=>String(x.date||'')<cutoff&&Number(x.lastRank)>0);
+  const sireRows=prior.filter(x=>h.sire&&norm(x.sire)===norm(h.sire));
+  const sireScore=sireRows.length>=5?100*sireRows.filter(x=>Number(x.lastRank)<=3).length/sireRows.length:50;
+  const jockeyRows=prior.filter(x=>h.jockey&&norm(x.jockey)===norm(h.jockey));
+  const jockeyScore=jockeyRows.length>=5?100*jockeyRows.filter(x=>Number(x.lastRank)<=3).length/jockeyRows.length:50;
+  const age=h.age==null?58:(h.age>=4&&h.age<=6?72:(h.age===3||h.age===7?58:45));
+  const parts={form,venue:venueScore,distance:distanceScore,sire:sireScore,jockey:jockeyScore,age};
+  const learned={form:weights.form||0,venue:weights.venue||0,distance:weights.distance||0,sire:weights.pedigree||0,jockey:weights.jockey||0,age:weights.age||0};
+  const totalWeight=Object.values(learned).reduce((a,b)=>a+b,0)||1;
+  const score=Object.keys(learned).reduce((sum,k)=>sum+parts[k]*learned[k],0)/totalWeight;
   const odds=h.odds?Math.max(10,Math.min(95,90-Math.log(h.odds)*18)):50;
-  const sireRows=(db.horses||[]).filter(x=>norm(x.name)!==norm(h.name)&&x.lastRank!=null&&((h.sire&&norm(x.sire)===norm(h.sire))||(h.broodmareSire&&norm(x.sire)===norm(h.broodmareSire))));
-  const pedigreeSampleSize=sireRows.length;
-  const lineage=sireRows.length>=3?sireRows.reduce((s,x)=>s+Math.max(5,100-((Number(x.lastRank)||5)-1)*11),0)/sireRows.length:50;
-  const pedigree=(h.sire||h.broodmareSire)?Math.min(90,Math.max(10,lineage)):50;
-  const parts={form,venue,distance:dist,jockey,weight,gate,age,odds,pedigree};
-  let total=0,w=0;for(const [k,v] of Object.entries(parts)){total+=v*(weights[k]||0);w+=weights[k]||0}
-  return {...h,parts,score:w?total/w:50,recentRuns:history.map(x=>({date:x.date,rank:x.lastRank,margin:x.margin,last3f:x.last3f,venue:x.venue,distance:x.distance})),pedigreeSampleSize,previousRun:{rank:h.lastRank??null,margin:h.margin??null,last3f:h.last3f??null,popularity:h.popularity??null,score:form},pedigreeScore:pedigree};
+  return {...h,parts:{...parts,odds},score,recentRuns:history.map(x=>({date:x.date,rank:x.lastRank,margin:x.margin,last3f:x.last3f,venue:x.venue,distance:x.distance})),pedigreeSampleSize:sireRows.length,previousRun:{rank:history[0]?.lastRank??null,margin:history[0]?.margin??null,last3f:history[0]?.last3f??null,popularity:null,score:form},pedigreeScore:sireScore,modelSource:learnedModelLoaded?'学習済みモデル':'標準モデル'};
 }
 function analyze(){
  sampleMode=false;
@@ -417,6 +422,25 @@ async function loadHistoricalBacktest(){
  }
 }
 window.addEventListener('load',loadHistoricalBacktest);
+
+async function loadLearnedModel(){
+ if(hasCustomWeights)return;
+ try{
+  const response=await fetch('./data/live-model.json?v='+Date.now(),{cache:'no-store'});
+  if(!response.ok)throw new Error('学習モデル未公開');
+  const model=await response.json();const w=model.weights||{};
+  const mapped={form:w.form*100,venue:w.venue*100,distance:w.distance*100,jockey:w.jockey*100,pedigree:w.sire*100,age:w.age*100,weight:0,gate:0,odds:0};
+  const sum=Object.values(mapped).reduce((a,b)=>a+(Number(b)||0),0);
+  if(!sum||!model.feature_schema||!model.feature_schema.includes('sire'))throw new Error('モデル形式が不正');
+  weights=mapped;learnedModelLoaded=true;
+  localStorage.setItem('keibaLabLearnedModelVersion',model.model_version||'');
+  const status=document.getElementById('dataStatus');
+  if(status)status.textContent='NAR時系列学習モデル適用済み（'+(model.updates||0).toLocaleString()+'回更新）';
+  if(document.querySelector('.tabs button.active')?.dataset.tab==='settings')renderWeights();
+ }catch(e){console.warn('学習済みモデルを読み込めません。標準配点で予想します。',e);}
+}
+window.addEventListener('load',loadLearnedModel);
+
 
 dedupeImportedData();refreshRaceChoices();updateHistory();$('importCounts').textContent='\u51FA\u99AC\u8868 '+db.horses.length+'\u4EF6\u3001\u30EC\u30FC\u30B9\u4E00\u89A7 '+db.races.length+'\u4EF6\u3001\u30AA\u30C3\u30BA '+db.odds.length+'\u4EF6\u3001\u6255\u623B '+db.payouts.length+'\u4EF6';if(db.horses.length){$('dataStatus').textContent='\u4FDD\u5B58\u6E08\u307F\u30C7\u30FC\u30BF\uFF1A\u51FA\u99AC\u8868 '+db.horses.length+'\u4EF6';$('dataDot').className='dot ok'}
 // KEIBA LAB 全券種・予算無制限の買い目生成
