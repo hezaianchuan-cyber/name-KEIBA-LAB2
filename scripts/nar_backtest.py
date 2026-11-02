@@ -186,11 +186,12 @@ def update_model(field, parts_by_no, model_weights):
     expv = [math.exp((x-peak)*8) for x in scores]
     denom = sum(expv) or 1
     probs = [x/denom for x in expv]
-    winner = next((i for i,h in enumerate(valid) if h["finish"] == 1), None)
-    if winner is None: return False
+    winners = {i for i,h in enumerate(valid) if h["finish"] == 1}
+    if not winners: return False
+    target = 1.0 / len(winners)
     lr = 0.025
     for k in model_weights:
-        grad = sum(((1.0 if i == winner else 0.0)-probs[i])*parts_by_no[h["no"]][k] for i,h in enumerate(valid))
+        grad = sum(((target if i in winners else 0.0)-probs[i])*parts_by_no[h["no"]][k] for i,h in enumerate(valid))
         model_weights[k] = max(0.01, min(0.8, model_weights[k] + lr*grad))
     total = sum(model_weights.values()) or 1
     for k in model_weights: model_weights[k] /= total
@@ -292,7 +293,7 @@ def run_backtest(races, horses, payouts):
                     "date": race["date"].isoformat(), "venue": race["venue"], "race": race["race"],
                     "name": race.get("name",""), "ranked": [{"no":h["no"],"name":h["name"]} for h in ranked[:6]],
                     "tickets": {k:["-".join(x) for x in v] for k,v in t.items()},
-                    "winner": payout["win"][0],
+                    "winner": [numbers[0] for numbers, _ in payout["win"]],
                 })
         # Keep today's results buffered: no race on the same date can learn from another race's result.
         daily_pending.append((field, parts_by_no, race))
@@ -333,22 +334,21 @@ def build_live_history(races, horses):
         "note": "Snapshot through period end; only use for target dates after training_period.end."
     }
 
-def holdout_validation(races, horses, payouts):
-    dates = sorted({r["date"] for r in races.values()})
-    if len(dates) < 30:
-        return {"status":"insufficient_dates"}
-    split_index = max(1, min(len(dates)-1, int(len(dates)*0.75)))
-    split_date = dates[split_index]
-    train_races = {k:r for k,r in races.items() if r["date"] < split_date}
+def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
+    train_set = set(train_dates)
+    test_set = set(test_dates)
+    train_races = {k:r for k,r in races.items() if r["date"] in train_set}
+    test_races = {k:r for k,r in races.items() if r["date"] in test_set}
     train_horses = {k:v for k,v in horses.items() if k in train_races}
     train_payouts = {k:v for k,v in payouts.items() if k in train_races}
     _, _, _, learned, updates = run_backtest(train_races, train_horses, train_payouts)
     baseline = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
     models = {"baseline":baseline, "trained":learned}
-    bet_kinds = ("win","place","wide","quinella","exacta","trio","trifecta")
+    kinds = ("win","place","wide","quinella","exacta","trio","trifecta")
     results = {name:{"races":0,"winner_top1":0,"winner_top3":0,
                      "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0}
-                                  for kind in bet_kinds}} for name in models}
+                                  for kind in kinds}} for name in models}
+
     history = defaultdict(list)
     sire_stats = defaultdict(lambda:{"runs":0,"top3":0})
     jockey_stats = defaultdict(lambda:{"runs":0,"top3":0})
@@ -367,8 +367,8 @@ def holdout_validation(races, horses, payouts):
             if h.get("jockey"):
                 jockey_stats[h["jockey"]]["runs"] += 1
                 jockey_stats[h["jockey"]]["top3"] += int(h["finish"] <= 3)
-    ordered = sorted((r for r in races.values() if r["date"] >= split_date),
-                     key=lambda r:(r["date"],r["venue"],int(r["race"])))
+
+    ordered = sorted(test_races.values(), key=lambda r:(r["date"],r["venue"],int(r["race"])))
     pending=[]; current=None
     def commit(items):
         for field,race in items:
@@ -378,28 +378,31 @@ def holdout_validation(races, horses, payouts):
                     "distance":race.get("distance"),"finish":h["finish"],
                     "margin":margin_score(h.get("margin")),"last3f":h.get("last3f")})
                 if h.get("sire"):
-                    sire_stats[h["sire"]]["runs"]+=1;sire_stats[h["sire"]]["top3"]+=int(h["finish"]<=3)
+                    sire_stats[h["sire"]]["runs"]+=1
+                    sire_stats[h["sire"]]["top3"]+=int(h["finish"]<=3)
                 if h.get("jockey"):
-                    jockey_stats[h["jockey"]]["runs"]+=1;jockey_stats[h["jockey"]]["top3"]+=int(h["finish"]<=3)
+                    jockey_stats[h["jockey"]]["runs"]+=1
+                    jockey_stats[h["jockey"]]["top3"]+=int(h["finish"]<=3)
+
     for race in ordered:
         if current is not None and race["date"] != current:
-            commit(pending);pending=[]
+            commit(pending); pending=[]
         current=race["date"]
-        key=race["key"];field=horses.get(key,[])
-        # Buffer every test-day race result, even when payout data is missing.
-        # The buffer is committed only after all races on that date are scored.
+        key=race["key"]; field=horses.get(key,[])
+        # Add every race to the daily buffer, regardless of payout availability.
         pending.append((field,race))
         if len(field)<3: continue
-        p=payouts.get(key)
-        if not p: continue
+        payout=payouts.get(key)
+        if not payout: continue
+        winners={numbers[0] for numbers, _ in payout.get("win", [])}
+        if not winners: continue
         for model_name,weights in models.items():
             scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights)[0],h) for h in field]
             ranked=[h for _,h in sorted(scored,key=lambda x:x[0],reverse=True)]
             if len(ranked)<3: continue
-            m=results[model_name];m["races"]+=1
-            winner=p["win"][0]
-            if ranked[0]["no"]==winner:m["winner_top1"]+=1
-            if winner in [h["no"] for h in ranked[:3]]:m["winner_top3"]+=1
+            m=results[model_name]; m["races"]+=1
+            if ranked[0]["no"] in winners: m["winner_top1"]+=1
+            if any(h["no"] in winners for h in ranked[:3]): m["winner_top3"]+=1
             n=[h["no"] for h in ranked[:3]]
             ticket_map={
                 "win":[[n[0]]],
@@ -413,13 +416,12 @@ def holdout_validation(races, horses, payouts):
             for kind,tickets in ticket_map.items():
                 bm=m["bet_types"][kind]
                 for ticket in tickets:
-                    bm["tickets"]+=1
-                    bm["stake"]+=100
-                    ret=payout_for(kind,ticket,p) or 0
+                    bm["tickets"]+=1; bm["stake"]+=100
+                    ret=payout_for(kind,ticket,payout) or 0
                     if ret:
-                        bm["hits"]+=1
-                        bm["return"]+=ret
-    if pending:commit(pending)
+                        bm["hits"]+=1; bm["return"]+=ret
+
+    if pending: commit(pending)
     out={}
     for name,m in results.items():
         n=m["races"] or 1
@@ -437,11 +439,63 @@ def holdout_validation(races, horses, payouts):
           "wide_stake":bet_summary["wide"]["stake"],"wide_return":bet_summary["wide"]["return"],
           "win_roi":bet_summary["win"]["roi"],"place_roi":bet_summary["place"]["roi"],
           "wide_roi":bet_summary["wide"]["roi"]}
-    return {"status":"ok","train_end":dates[split_index-1].isoformat(),
-            "test_start":split_date.isoformat(),"test_end":dates[-1].isoformat(),
+    return {"train_start":min(train_dates).isoformat(),"train_end":max(train_dates).isoformat(),
+            "test_start":min(test_dates).isoformat(),"test_end":max(test_dates).isoformat(),
             "train_races":len(train_races),"test_races":len(ordered),
-            "training_updates":updates,"trained_weights":learned,"models":out,
-            "selection_rule":"Model weights frozen at the train/test boundary. Test-day results are added only after every race on that date is scored."}
+            "training_updates":updates,"trained_weights":learned,"models":out}
+
+
+def holdout_validation(races, horses, payouts):
+    dates=sorted({r["date"] for r in races.values()})
+    if len(dates)<60:
+        return {"status":"insufficient_dates","available_dates":len(dates)}
+    # Three non-overlapping forward test windows. Each fold trains only on dates
+    # strictly before its test window and keeps weights frozen throughout that window.
+    bounds=[(0.50,0.65),(0.65,0.80),(0.80,1.00)]
+    folds=[]
+    for index,(train_fraction,test_end_fraction) in enumerate(bounds,1):
+        train_end=max(1,int(len(dates)*train_fraction))
+        test_end=max(train_end+1,int(len(dates)*test_end_fraction))
+        test_end=min(len(dates),test_end)
+        train_dates=dates[:train_end]
+        test_dates=dates[train_end:test_end]
+        if not train_dates or not test_dates: continue
+        folds.append({"fold":index,**evaluate_holdout_fold(races,horses,payouts,train_dates,test_dates)})
+    if len(folds)<2:
+        return {"status":"insufficient_folds","folds":folds}
+
+    kinds=("win","place","wide","quinella","exacta","trio","trifecta")
+    aggregate={}
+    for model_name in ("baseline","trained"):
+        total={"races":0,"winner_top1":0,"winner_top3":0,
+               "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0} for kind in kinds}}
+        for fold in folds:
+            fm=fold["models"][model_name]
+            total["races"]+=fm["races"]
+            total["winner_top1"]+=fm["winner_top1"]
+            total["winner_top3"]+=fm["winner_top3"]
+            for kind in kinds:
+                for key in ("tickets","hits","stake","return"):
+                    total["bet_types"][kind][key]+=fm["bet_types"][kind][key]
+        bet_summary={}
+        for kind,bm in total["bet_types"].items():
+            bet_summary[kind]={**bm,
+                "hit_rate":round(100*bm["hits"]/bm["tickets"],2) if bm["tickets"] else None,
+                "roi":round(100*bm["return"]/bm["stake"],2) if bm["stake"] else None,
+                "profit":bm["return"]-bm["stake"]}
+        n=total["races"] or 1
+        aggregate[model_name]={**total,"bet_types":bet_summary,
+            "winner_top1_rate":round(100*total["winner_top1"]/n,2),
+            "winner_top3_rate":round(100*total["winner_top3"]/n,2),
+            "win_roi":bet_summary["win"]["roi"],"place_roi":bet_summary["place"]["roi"],
+            "wide_roi":bet_summary["wide"]["roi"]}
+    return {"status":"ok","method":"three rolling-origin folds with non-overlapping test windows; weights frozen within each test window; prior results added only after all races on a date are scored",
+            "folds":folds,"test_races":sum(x["models"]["trained"]["races"] for x in folds),
+            "test_start":folds[0]["test_start"],"test_end":folds[-1]["test_end"],
+            "train_end":folds[-1]["train_end"],"models":aggregate,
+            "trained_weights":folds[-1]["trained_weights"],
+            "folds_above_100_roi":{kind:sum(1 for fold in folds if (fold["models"]["trained"]["bet_types"][kind]["roi"] or 0)>=100) for kind in kinds},
+            "selection_rule":"Each fold uses only strictly earlier training data; test weights remain fixed and race results are added to history only after the entire date is scored."}
 
 def main():
     print(f"Backtest range: {START} through {END}", flush=True)
@@ -476,12 +530,12 @@ def main():
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
-    validated_weights = validation.get("trained_weights", learned_weights) if validation.get("status") == "ok" else learned_weights
+    validated_weights = learned_weights
     live_model = {
-        "model_version": "nar-chronological-v4-holdout-seeded",
+        "model_version": "nar-chronological-v5-walk-forward",
         "generated_at": result["generated_at"],
         "training_period": result["period"],
-        "updates": validation.get("training_updates", learning_updates),
+        "updates": learning_updates,
         "validation": validation,
         "feature_schema": ["form", "venue", "distance", "sire", "jockey", "age"],
         "weights": validated_weights,
