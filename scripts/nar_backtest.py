@@ -113,15 +113,31 @@ def load_archives():
                             "last3f": number(row[34]) if len(row) > 34 else None,
                         })
                     elif kind == "payouts" and len(row) > 52:
-                        payouts[key] = {
-                            "win": (re.sub(r"\D", "", row[4]), number(row[5])),
-                            "place": [(re.sub(r"\D", "", row[i]), number(row[i+1])) for i in (7,10,13) if len(row)>i+1],
-                            "quinella": (row[24], row[25], number(row[26])),
-                            "exacta": (row[28], row[29], number(row[30])),
-                            "wide": [(row[i], row[i+1], number(row[i+2])) for i in (32,36,40) if len(row)>i+2],
-                            "trio": (row[44], row[45], row[46], number(row[47])),
-                            "trifecta": (row[49], row[50], row[51], number(row[52])),
-                        }
+                        # Dead heats are represented by multiple rows for one race.
+                        # Preserve every valid winning combination instead of overwriting
+                        # the previous row (which silently discarded earlier payouts).
+                        payout = payouts.setdefault(key, {
+                            "win": [], "place": [], "quinella": [], "exacta": [],
+                            "wide": [], "trio": [], "trifecta": [], "source_rows": 0,
+                        })
+                        payout["source_rows"] += 1
+                        def add_pay(target, numbers, amount):
+                            nums = [re.sub(r"\\D", "", str(x or "")) for x in numbers]
+                            pay = number(amount)
+                            if all(nums) and pay is not None and pay > 0:
+                                item = (nums, pay)
+                                if item not in payout[target]:
+                                    payout[target].append(item)
+                        add_pay("win", [row[4]], row[5])
+                        for i in (7, 10, 13):
+                            add_pay("place", [row[i]], row[i+1])
+                        add_pay("quinella", [row[24], row[25]], row[26])
+                        add_pay("exacta", [row[28], row[29]], row[30])
+                        for i in (32, 36, 40):
+                            add_pay("wide", [row[i], row[i+1]], row[i+2])
+                        add_pay("trio", [row[44], row[45], row[46]], row[47])
+                        add_pay("trifecta", [row[49], row[50], row[51]], row[52])
+
     return races, horses, payouts, downloaded
 
 def margin_score(value):
@@ -183,27 +199,18 @@ def same_unordered(a, b):
     return sorted(a) == sorted(b)
 
 def payout_for(kind, ticket, p):
-    if not p: return 0
-    if kind == "win":
-        return p["win"][1] or 0 if ticket[0] == p["win"][0] else 0
-    if kind == "place":
-        return next((pay or 0 for no,pay in p["place"] if no == ticket[0]), 0)
-    if kind == "quinella":
-        a,b,pay = p["quinella"]
-        return (pay or 0) if same_unordered(ticket, split_nums(a)+split_nums(b)) and len(split_nums(a)+split_nums(b)) == 2 else (pay or 0) if same_unordered(ticket, [re.sub(r"\D","",a),re.sub(r"\D","",b)]) else 0
-    if kind == "exacta":
-        a,b,pay = p["exacta"]
-        return (pay or 0) if ticket == [re.sub(r"\D","",a),re.sub(r"\D","",b)] else 0
-    if kind == "wide":
-        for a,b,pay in p["wide"]:
-            if pay and same_unordered(ticket,[re.sub(r"\D","",a),re.sub(r"\D","",b)]): return pay
+    """Return the official 100-yen payout for a ticket, including dead heats."""
+    if not p:
         return 0
-    if kind == "trio":
-        a,b,c,pay = p["trio"]
-        return (pay or 0) if pay and same_unordered(ticket,[re.sub(r"\D","",a),re.sub(r"\D","",b),re.sub(r"\D","",c)]) else 0
-    if kind == "trifecta":
-        a,b,c,pay = p["trifecta"]
-        return (pay or 0) if ticket == [re.sub(r"\D","",a),re.sub(r"\D","",b),re.sub(r"\D","",c)] else 0
+    for numbers, pay in p.get(kind, []):
+        if kind in ("win", "place"):
+            matched = len(ticket) == 1 and ticket[0] == numbers[0]
+        elif kind in ("quinella", "wide", "trio"):
+            matched = same_unordered(ticket, numbers)
+        else:  # exacta and trifecta are order-sensitive
+            matched = ticket == numbers
+        if matched:
+            return pay or 0
     return 0
 
 def run_backtest(races, horses, payouts):
@@ -445,6 +452,8 @@ def main():
         "race_count": race_count,
         "horse_rows": sum(len(v) for v in horses.values()),
         "payout_races": len(payouts),
+        "payout_rows": sum(p.get("source_rows", 0) for p in payouts.values()),
+        "multi_row_payout_races": sum(1 for p in payouts.values() if p.get("source_rows", 0) > 1),
         "evaluated": sum(v["races"] for v in metrics.values()),
         "method": {
             "prediction_order": "date-batched chronological; every race on a date is predicted before any result from that date updates history or model weights",
@@ -452,6 +461,7 @@ def main():
             "ticket_policy": "fixed top-rank tickets per race; 100 JPY per ticket; not a betting recommendation",
             "ticket_counts_per_race": {"win":1,"place":3,"wide":3,"quinella":1,"exacta":1,"trio":1,"trifecta":1},
             "limitations": ["No historical pre-race odds feature; NAR monthly odds are confirmed odds and are not used.",
+                            "All payout rows for dead-heat races are retained and matched across every winning combination.",
                             "Only a fixed, transparent ticket policy is tested; scores are heuristic, not calibrated probabilities.",
                             "Missing or incomplete historical rows are excluded where necessary."]
         },
