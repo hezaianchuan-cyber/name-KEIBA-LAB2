@@ -267,7 +267,7 @@ function refreshRaceChoices(){const date=$('raceDate').value.replaceAll('-',''),
 const map=new Map();for(const r of [...db.races,...oddsRaceIndex])if((!date||norm(r.date)===date)&&(!venue||r.venue===venue))map.set(r.id,r);const races=[...map.values()].sort((a,b)=>Number(a.race)-Number(b.race));const select=$('raceSelect');const old=select.value;select.innerHTML='<option value="">\u30EC\u30FC\u30B9\u3092\u9078\u629E</option>';races.forEach(r=>{const o=document.createElement('option');o.value=r.id;o.textContent=r.race+'R '+(r.time||'')+' '+(r.name||'')+(r.count?' \u00B7 '+r.count+'\u4EF6':'');select.append(o)});if(races.some(r=>r.id===old))select.value=old;}
 $('raceDate').addEventListener('change',refreshRaceChoices);$('venue').addEventListener('change',refreshRaceChoices);
 function percentile(v,arr){if(v==null||!arr.length)return 50;const clean=arr.filter(x=>x!=null).sort((a,b)=>a-b);if(!clean.length)return 50;return 100*clean.filter(x=>x<=v).length/clean.length}
-function parseMarginValue(value){const s=String(value??'').replace(/[\\s\\u3000]/g,'');if(!s)return null;const mixed=s.match(/^(\\d+)(\\d+)\\/(\\d+)$/);if(mixed)return Number(mixed[1])+Number(mixed[2])/Number(mixed[3]);const fraction=s.match(/^(\\d+)\\/(\\d+)$/);if(fraction)return Number(fraction[1])/Number(fraction[2]);const m=s.match(/\\d+(?:\\.\\d+)?/);return m?Number(m[0]):null;}
+function parseMarginValue(value){const s=String(value??'').replace(/[\s\u3000]/g,'');if(!s)return null;const mixed=s.match(/^(\d+)(\d+)\/(\d+)$/);if(mixed)return Number(mixed[1])+Number(mixed[2])/Number(mixed[3]);const fraction=s.match(/^(\d+)\/(\d+)$/);return fraction?Number(fraction[1])/Number(fraction[2]):(s.match(/\d+(?:\.\d+)?/)||[])[0]!==undefined?Number((s.match(/\d+(?:\.\d+)?/)||[])[0]):null;}
 function scoreRunner(h,all){
   const rankScore=h.lastRank==null?50:Math.max(5,100-(h.lastRank-1)*11);
   const marginText=String(h.margin??'').trim();
@@ -304,88 +304,39 @@ $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(db,null,2)],{typ
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));if(b.dataset.tab==='settings')renderWeights();if(b.dataset.tab==='history')updateHistory()});
 if('serviceWorker' in navigator && location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
 dedupeImportedData();refreshRaceChoices();updateHistory();$('importCounts').textContent='\u51FA\u99AC\u8868 '+db.horses.length+'\u4EF6\u3001\u30EC\u30FC\u30B9\u4E00\u89A7 '+db.races.length+'\u4EF6\u3001\u30AA\u30C3\u30BA '+db.odds.length+'\u4EF6\u3001\u6255\u623B '+db.payouts.length+'\u4EF6';if(window.AndroidBridge&&AndroidBridge.downloadDailyData){setTimeout(autoFetchOfficialData,1200);setInterval(autoFetchOfficialData,120000);}if(db.horses.length){$('dataStatus').textContent='\u4FDD\u5B58\u6E08\u307F\u30C7\u30FC\u30BF\uFF1A\u51FA\u99AC\u8868 '+db.horses.length+'\u4EF6';$('dataDot').className='dot ok'}
-// KEIBA LAB 買い目自動生成
-const ticketBox = document.createElement('div');
-ticketBox.className = 'card';
-ticketBox.style.marginTop = '16px';
-ticketBox.innerHTML = `
-<h2>買い目自動生成</h2>
-<p class="sub">分析ランキングをもとに買い目を作成します。</p>
-<label>予算（円）</label>
-<input id="ticketBudget" type="number" min="100" step="100" value="1000">
-<label>券種</label>
-<select id="ticketType">
-<option value="単勝">単勝</option>
-<option value="複勝">複勝</option>
-<option value="ワイド">ワイド</option>
-<option value="馬連">馬連</option>
-<option value="馬単">馬単</option>
-<option value="3連複">3連複</option>
-<option value="3連単">3連単</option>
-</select>
-<button class="btn primary" id="makeTickets">買い目を作る</button>
-<div id="ticketResult" class="sub" style="margin-top:12px"></div>
-`;
+// KEIBA LAB 全券種・予算無制限の買い目生成
+const ticketBox=document.createElement('div');
+ticketBox.className='card';
+ticketBox.style.marginTop='16px';
+ticketBox.innerHTML='<h2>買い目自動生成</h2><p class="sub">予算上限なし。分析順位から全券種の候補を生成します。確率は現行モデルの参考推定で、的中や利益を保証しません。</p><button class="btn primary" id="makeTickets">全券種の買い目を生成</button><div id="ticketResult" class="sub" style="margin-top:12px"></div>';
 $('runnerList').parentElement.after(ticketBox);
-
-$('makeTickets').onclick = () => {
-  const budget = Math.floor(Number($('ticketBudget').value) / 100) * 100;
-  const type = $('ticketType').value;
-  const horses = [...currentRunners]
-    .filter(h => h.horseNo && h.horseNo !== '-')
-    .sort((a,b) => (b.score ?? b.prob ?? 0) - (a.score ?? a.prob ?? 0))
-    .slice(0,5);
-
-  if (!Number.isFinite(budget) || budget < 100) {
-    $('ticketResult').textContent = '予算は100円以上で入力してください。';
-    return;
-  }
-  if (horses.length < 1) {
-    $('ticketResult').textContent = '先にレースを分析してください。';
-    return;
-  }
-
-  let picks = [];
-  const add = (...h) => picks.push(h.map(x => x.horseNo).join('-'));
-
-  if (type === '単勝' || type === '複勝') {
-    horses.slice(0, type === '単勝' ? 1 : 3).forEach(h => add(h));
-  } else if (type === 'ワイド' || type === '馬連') {
-    for (let i=0;i<Math.min(4,horses.length);i++)
-      for (let j=i+1;j<Math.min(4,horses.length);j++)
-        add(horses[i],horses[j]);
-  } else if (type === '馬単') {
-    if (horses.length >= 2) {
-      add(horses[0],horses[1]);
-      add(horses[0],horses[2] || horses[1]);
-      add(horses[1],horses[0]);
-    }
-  } else if (type === '3連複') {
-    if (horses.length >= 3) add(horses[0],horses[1],horses[2]);
-  } else if (type === '3連単') {
-    if (horses.length >= 3) {
-      add(horses[0],horses[1],horses[2]);
-      add(horses[0],horses[2],horses[1]);
-      add(horses[1],horses[0],horses[2]);
-    }
-  }
-
-  if (!picks.length) {
-    $('ticketResult').textContent = 'データ不足のため見送りです。';
-    return;
-  }
-
-  const unit = Math.floor(budget / picks.length / 100) * 100;
-  if (unit < 100) {
-    $('ticketResult').textContent = '予算が買い目数に対して少なすぎます。予算を増やすか券種を変えてください。';
-    return;
-  }
-
-  $('ticketResult').innerHTML =
-    '<b>提案買い目（的中・利益を保証するものではありません）</b><br>' +
-    picks.map((p,i) => `${i+1}. ${type} ${p}　${unit}円`).join('<br>') +
-    `<br><br>合計：${unit*picks.length}円` +
-    '<br>※オッズや組合せの適合を確認してから購入してください。';
+$('makeTickets').onclick=()=>{
+ const horses=[...currentRunners].filter(h=>/^\d+$/.test(String(h.horseNo??''))).sort((a,b)=>(Number(b.score)||Number(b.prob)||0)-(Number(a.score)||Number(a.prob)||0)).slice(0,6);
+ const out=$('ticketResult');
+ if(horses.length<3){out.textContent='買い目生成には、馬番ごとの出馬表と分析結果が3頭以上必要です。オッズ組合せ一覧だけでは生成できません。';return;}
+ const prob=h=>Math.max(0.001,Math.min(0.999,(Number(h.prob)||0)/100));
+ const fmt=arr=>arr.map(h=>String(h.horseNo)).join('-');
+ const rows=[];
+ const add=(type,comb,p)=>rows.push({type,comb:fmt(comb),p});
+ horses.slice(0,5).forEach(h=>add('単勝',[h],prob(h)));
+ horses.slice(0,5).forEach(h=>add('複勝',[h],Math.min(.95,prob(h)*2.2)));
+ const top=horses.slice(0,6);
+ for(let i=0;i<top.length;i++)for(let j=i+1;j<top.length;j++){
+   const p=Math.min(.95,prob(top[i])*prob(top[j])*2.4);
+   add('ワイド',[top[i],top[j]],p);add('馬連',[top[i],top[j]],prob(top[i])*prob(top[j])*1.4);
+   add('馬単',[top[i],top[j]],prob(top[i])*prob(top[j])*.8);
+   add('馬単',[top[j],top[i]],prob(top[j])*prob(top[i])*.8);
+ }
+ const triples=[];
+ for(let i=0;i<top.length;i++)for(let j=i+1;j<top.length;j++)for(let k=j+1;k<top.length;k++)triples.push([top[i],top[j],top[k]]);
+ triples.forEach(c=>add('3連複',c,prob(c[0])*prob(c[1])*prob(c[2])*6));
+ const perm=(a,n,prefix=[])=>{if(prefix.length===n){p(prefix);return;}for(let i=0;i<a.length;i++)if(!prefix.includes(a[i]))perm(a,n,[...prefix,a[i]]);};
+ perm(top,3,c=>add('3連単',c,prob(c[0])*prob(c[1])*prob(c[2])));
+ rows.sort((a,b)=>b.p-a.p);
+ const groups=['単勝','複勝','ワイド','馬連','馬単','3連複','3連単'];
+ out.innerHTML='<p><b>候補馬：</b>'+horses.map((h,i)=>(i+1)+'位 '+h.horseNo+'番 '+esc(h.name||'')+'（推定 '+(Number(h.prob)||0).toFixed(1)+'%）').join(' ／ ')+'</p>'+
+ groups.map(type=>{const list=rows.filter(x=>x.type===type).sort((a,b)=>b.p-a.p);return '<h3>'+type+'（'+list.length+'点）</h3><div class="tablewrap"><table><thead><tr><th>買い目</th><th>モデル参考スコア</th></tr></thead><tbody>'+list.map(x=>'<tr><td>'+type+' '+x.comb+'</td><td>'+(x.p*100).toFixed(2)+'%</td></tr>').join('')+'</tbody></table></div>';}).join('')+
+ '<p>合計 '+rows.length+' 点。予算・購入金額は計算していません。組合せ確率は独立近似による参考値で、券種ごとの実測精度・オッズ期待値とは異なります。</p>';
 };
 function dedupeRunnerRows(rows) {
   const map = new Map();
