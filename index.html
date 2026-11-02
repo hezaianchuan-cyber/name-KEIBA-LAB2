@@ -314,7 +314,7 @@ function getRecentRuns(h){
   const cutoff=String(h.date||'');
   const same=(db.horses||[]).filter(x=>norm(x.name)===norm(h.name)&&String(x.date||'')<cutoff&&x.lastRank!=null);
   const unique=new Map();for(const x of same.sort((a,b)=>String(a.date).localeCompare(String(b.date))))unique.set(String(x.date),x);
-  return [...unique.values()].slice(-5).reverse();
+  return [...unique.values()].slice(-5).reverse().map(x=>({...x,distance:x.distance??db.races.find(r=>r.id===x.id)?.distance}));
 }
 function scoreRunner(h,all){
   const cutoff=String(h.date||'');
