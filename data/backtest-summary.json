@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-02T13:36:02.217854+00:00",
+  "generated_at": "2026-11-02T13:45:17.559074+00:00",
   "period": {
     "start": "2025-11-02",
     "end": "2026-11-01"
@@ -153,6 +153,50 @@
       "roi": 62.46,
       "profit": -581470.0
     }
+  },
+  "out_of_sample_validation": {
+    "status": "ok",
+    "train_end": "2026-08-02",
+    "test_start": "2026-08-03",
+    "test_end": "2026-11-01",
+    "train_races": 11413,
+    "test_races": 4078,
+    "training_updates": 11339,
+    "models": {
+      "baseline": {
+        "races": 4078,
+        "winner_top1": 939,
+        "winner_top3": 2071,
+        "win_stake": 407800,
+        "win_return": 271420.0,
+        "place_stake": 1223400,
+        "place_return": 891290.0,
+        "wide_stake": 407800,
+        "wide_return": 272140.0,
+        "winner_top1_rate": 23.03,
+        "winner_top3_rate": 50.78,
+        "win_roi": 66.56,
+        "place_roi": 72.85,
+        "wide_roi": 66.73
+      },
+      "trained": {
+        "races": 4078,
+        "winner_top1": 1007,
+        "winner_top3": 2221,
+        "win_stake": 407800,
+        "win_return": 282450.0,
+        "place_stake": 1223400,
+        "place_return": 921180.0,
+        "wide_stake": 407800,
+        "wide_return": 257160.0,
+        "winner_top1_rate": 24.69,
+        "winner_top3_rate": 54.46,
+        "win_roi": 69.26,
+        "place_roi": 75.3,
+        "wide_roi": 63.06
+      }
+    },
+    "selection_rule": "Model weights frozen at the train/test boundary. Test-day results are added only after every race on that date is scored."
   },
   "online_learning": {
     "updates": 15406,
