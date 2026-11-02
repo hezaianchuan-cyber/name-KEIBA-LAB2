@@ -112,6 +112,26 @@ def read_archives():
     return race_rows, odds_rows
 
 
+def append_snapshot(path: Path, record: dict) -> bool:
+    """Append a race once as a concatenated gzip member; return whether it was new."""
+    race_key_text = record.get("race_key")
+    if path.exists():
+        try:
+            with gzip.open(path, "rt", encoding="utf-8") as existing:
+                for line in existing:
+                    try:
+                        if json.loads(line).get("race_key") == race_key_text:
+                            return False
+                    except json.JSONDecodeError:
+                        continue
+        except OSError:
+            pass
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with gzip.open(path, "ab", compresslevel=9) as output:
+        output.write((json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\\n").encode("utf-8"))
+    return True
+
+
 def main():
     now = dt.datetime.now(JST)
     races, odds = read_archives()
@@ -135,24 +155,9 @@ def main():
         if not entries:
             continue
         date_name = race_date.isoformat()
-        SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
         path = SNAPSHOT_DIR / f"{date_name}.jsonl.gz"
-        race_key_text = "|".join(key)
-        seen = set()
-        if path.exists():
-            try:
-                with gzip.open(path, "rt", encoding="utf-8") as existing:
-                    for line in existing:
-                        try:
-                            seen.add(json.loads(line).get("race_key"))
-                        except json.JSONDecodeError:
-                            continue
-            except OSError:
-                pass
-        if race_key_text in seen:
-            continue
         record = {
-            "race_key": race_key_text,
+            "race_key": "|".join(key),
             "venue": race["venue"],
             "date": race["date"],
             "race": race["race"],
@@ -161,10 +166,7 @@ def main():
             "minutes_to_post": round(minutes, 2),
             "odds": entries,
         }
-        # Append a separate gzip member per race. Existing compressed bytes stay
-        # unchanged, keeping Git history compact as the daily archive grows.
-        with gzip.open(path, "ab", compresslevel=9) as output:
-            output.write((json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8"))
+        if append_snapshot(path, record):
         additions += 1
     print(f"Captured {additions} pre-off race snapshots at {now.isoformat()}")
 
