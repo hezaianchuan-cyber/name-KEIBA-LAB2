@@ -430,13 +430,15 @@ def main():
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
+    validated_weights = validation.get("trained_weights", learned_weights) if validation.get("status") == "ok" else learned_weights
     live_model = {
-        "model_version": "nar-chronological-v2",
+        "model_version": "nar-chronological-v3-validated",
         "generated_at": result["generated_at"],
         "training_period": result["period"],
-        "updates": learning_updates,
+        "updates": validation.get("training_updates", learning_updates),
+        "validation": validation,
         "feature_schema": ["form", "venue", "distance", "sire", "jockey", "age"],
-        "weights": learned_weights,
+        "weights": validated_weights,
         "prediction_policy": "Scores use only races strictly earlier than the target race date; current-race finish/popularity/payout are excluded. All races on a date are predicted before any results from that date update the model."
     }
     (OUT.parent / "live-model.json").write_text(json.dumps(live_model,ensure_ascii=False,indent=2),encoding="utf-8")
