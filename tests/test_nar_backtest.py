@@ -199,6 +199,9 @@ class PreoffValueBacktestTests(unittest.TestCase):
                 self.assertEqual(result["thresholds"]["1.10"]["tickets"], 1)
                 self.assertEqual(result["thresholds"]["1.10"]["roi"], 250.0)
                 self.assertEqual(result["thresholds"]["1.30"]["tickets"], 0)
+                self.assertEqual(result["validation_status"], "awaiting_more_dates")
+                self.assertFalse(result["thresholds"]["1.10"]["minimum_sample_met"])
+                self.assertIsNone(result["thresholds"]["1.10"]["roi_ci95_low"])
         finally:
             nb.ROOT = original_root
 
