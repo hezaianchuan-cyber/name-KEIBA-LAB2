@@ -180,7 +180,7 @@ class PreoffValueBacktestTests(unittest.TestCase):
                     "scheduled_post_time":"2026-11-03T15:30:00+09:00",
                     "minutes_to_post":5,
                     "model_version":"test-model",
-                    "minutes_to_post":3,
+                    "minutes_to_post":5,
                     "predictions":[
                         {"horse_no":"1","win_probability":0.5,"win_odds":2.5,"expected_value":1.25},
                         {"horse_no":"2","win_probability":0.2,"win_odds":3.0,"expected_value":0.6},
