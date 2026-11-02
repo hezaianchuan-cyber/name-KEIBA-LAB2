@@ -5,7 +5,7 @@ Raw NAR CSV/ZIP files are processed in the ephemeral runner only. Only aggregate
 metrics and a small set of race-level examples are written to data/backtest-summary.json.
 """
 from __future__ import annotations
-import csv, datetime as dt, io, json, math, os, re, sys, time, urllib.parse, urllib.request, zipfile
+import csv, datetime as dt, gzip, io, json, math, os, re, sys, time, urllib.parse, urllib.request, zipfile
 from collections import defaultdict
 from pathlib import Path
 
@@ -447,21 +447,26 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
 
 def odds_snapshot_inventory():
     directory = ROOT / "data" / "odds-snapshots"
-    files = sorted(directory.glob("*.json")) if directory.exists() else []
+    files = sorted(directory.glob("*.jsonl.gz")) if directory.exists() else []
     race_count = odds_count = 0
     dates = []
     captured = []
     for path in files:
         try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+            with gzip.open(path, "rt", encoding="utf-8") as source:
+                for line in source:
+                    try:
+                        race = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    race_count += 1
+                    odds_count += len(race.get("odds") or [])
+                    if race.get("date"):
+                        dates.append(str(race["date"]).replace("-", ""))
+                    if race.get("captured_at"):
+                        captured.append(str(race["captured_at"]))
+        except OSError:
             continue
-        dates.append(str(payload.get("date") or path.stem))
-        for race in (payload.get("races") or {}).values():
-            race_count += 1
-            odds_count += len(race.get("odds") or [])
-            if race.get("captured_at"):
-                captured.append(str(race["captured_at"]))
     return {
         "snapshot_files": len(files),
         "races": race_count,
