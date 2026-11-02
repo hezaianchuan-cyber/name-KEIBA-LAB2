@@ -552,7 +552,8 @@ def main():
                             "Missing or incomplete historical rows are excluded where necessary."]
         },
         "metrics": metrics,
-        "out_of_sample_validation": validation,\n        "odds_snapshot_archive": odds_snapshot_inventory(),
+        "out_of_sample_validation": validation,
+        "odds_snapshot_archive": odds_snapshot_inventory(),
         "online_learning": {"updates": learning_updates, "final_weights": learned_weights,
                             "note": "Daily batch learning: all races on a date are scored before that date's results update weights for later dates."},
     }
