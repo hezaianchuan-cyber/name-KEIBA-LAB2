@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture one official pre-off odds snapshot per NAR race shortly before post time.
+"""Capture official NAR odds snapshots from 15 to 5 minutes before post time.
 
 The monthly NAR odds archive contains confirmed odds and must not be used as
 pre-race information. This collector uses only the frequently refreshed daily
@@ -26,6 +26,7 @@ DATA = ROOT / "data"
 SNAPSHOT_DIR = DATA / "odds-snapshots"
 JST = ZoneInfo("Asia/Tokyo")
 CAPTURE_WINDOW_MINUTES = 15
+STOP_BEFORE_POST_MINUTES = 5
 
 
 def decode(raw: bytes) -> str:
@@ -228,7 +229,7 @@ def main():
             continue
         post = dt.datetime.combine(race_date, start, tzinfo=JST)
         minutes = (post - now).total_seconds() / 60
-        if not (0 <= minutes <= CAPTURE_WINDOW_MINUTES):
+        if not (STOP_BEFORE_POST_MINUTES <= minutes <= CAPTURE_WINDOW_MINUTES):
             continue
         entries = odds.get(key, [])
         field = horses_by_race.get(key, [])
@@ -236,7 +237,7 @@ def main():
             continue
         candidates.append((key, race, race_date, post, minutes, entries, field))
     if not candidates:
-        print(f"No race inside {CAPTURE_WINDOW_MINUTES}-minute pre-off window; race_rows={len(races)} odds_races={len(odds)}")
+        print(f"No race inside {CAPTURE_WINDOW_MINUTES}-to-{STOP_BEFORE_POST_MINUTES}-minute pre-off window; race_rows={len(races)} odds_races={len(odds)}")
         return
     model_context = load_model_context()
     additions = 0
@@ -252,6 +253,7 @@ def main():
             "scheduled_post_time": post.isoformat(),
             "captured_at": now.isoformat(),
             "minutes_to_post": round(minutes, 2),
+            "capture_policy": {"window_start_minutes": CAPTURE_WINDOW_MINUTES, "stop_before_post_minutes": STOP_BEFORE_POST_MINUTES},
             "model_version": model.get("model_version"),
             "model_temperature": model.get("temperature"),
             "predictions": predictions,
@@ -259,7 +261,7 @@ def main():
         }
         if append_snapshot(path, record):
             additions += 1
-    print(f"Captured {additions} pre-off race snapshots at {now.isoformat()}; candidates={len(candidates)} model_available={model_context is not None}")
+    print(f"Captured {additions} pre-off race snapshots at {now.isoformat()}; candidates={len(candidates)} window={CAPTURE_WINDOW_MINUTES}-{STOP_BEFORE_POST_MINUTES}min model_available={model_context is not None}")
 
 
 if __name__ == "__main__":
