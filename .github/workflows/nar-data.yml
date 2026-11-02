@@ -93,6 +93,7 @@ jobs:
             cp -a data/odds-snapshots /tmp/odds-snapshots
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            push_success=0
             for attempt in 1 2 3 4 5; do
               git fetch origin main
               git reset --hard origin/main
@@ -101,15 +102,18 @@ jobs:
               git add data/odds-snapshots
               if git diff --cached --quiet; then
                 echo "No new pre-off odds snapshots"
+                push_success=1
                 break
               fi
               git commit -m "Archive official pre-off odds snapshots"
               if git push origin HEAD:main; then
+                push_success=1
                 break
               fi
               echo "Snapshot push conflict; retry $attempt"
               sleep 2
             done
+            [ "$push_success" -eq 1 ] || { echo "Could not archive odds snapshots"; exit 1; }
           fi
 
       - name: Configure GitHub Pages
