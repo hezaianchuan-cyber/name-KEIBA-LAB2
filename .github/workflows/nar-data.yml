@@ -7,7 +7,7 @@ on:
       - "data/odds-snapshots/**"
   workflow_dispatch:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/15 * * * *"
 
 permissions:
   contents: write
@@ -85,41 +85,6 @@ jobs:
               json.dump(state, f, ensure_ascii=False)
           print(json.dumps(state, ensure_ascii=False))
           PY
-
-      - name: Capture pre-off odds snapshots
-        run: |
-          python3 scripts/capture_nar_odds.py
-          if [ -d data/odds-snapshots ]; then
-            cp -a data/odds-snapshots /tmp/odds-snapshots
-            mkdir -p /tmp/keiba-latest-data
-            for file in latest-race.zip latest-odds.zip status.json; do
-              [ -f "data/$file" ] && cp -a "data/$file" /tmp/keiba-latest-data/ || true
-            done
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            push_success=0
-            for attempt in 1 2 3 4 5; do
-              git fetch origin main
-              git reset --hard origin/main
-              mkdir -p data
-              if [ -d /tmp/keiba-latest-data ]; then cp -a /tmp/keiba-latest-data/. data/; fi
-              cp -a /tmp/odds-snapshots data/
-              git add data/odds-snapshots
-              if git diff --cached --quiet; then
-                echo "No new pre-off odds snapshots"
-                push_success=1
-                break
-              fi
-              git commit -m "Archive official pre-off odds snapshots"
-              if git push origin HEAD:main; then
-                push_success=1
-                break
-              fi
-              echo "Snapshot push conflict; retry $attempt"
-              sleep 2
-            done
-            [ "$push_success" -eq 1 ] || { echo "Could not archive odds snapshots"; exit 1; }
-          fi
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
