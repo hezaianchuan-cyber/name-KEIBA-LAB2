@@ -209,10 +209,9 @@ function settledPredictions(){
 function applyResultLearning(){
   if(!Array.isArray(db.predictions))db.predictions=[];
   const pending=settledPredictions().filter(x=>!x.p.learned);
-  // Avoid adapting model weights to a single race: learn only from a batch of 20 settled races.
   if(pending.length<20)return 0;
   const keys=Object.keys(defaultWeights),gradient={};keys.forEach(k=>gradient[k]=0);
-  let used=0;
+  const valid=[];
   for(const {p,result} of pending){
     const winner=p.runners.find(x=>norm(x.no)===norm(result.winNo));
     if(!winner)continue;
@@ -220,16 +219,16 @@ function applyResultLearning(){
     const totalProb=p.runners.reduce((a,h)=>a+Math.max(0,Number(h.prob)||0),0)||1;
     for(const h of p.runners){const prob=Math.max(0,Number(h.prob)||0)/totalProb;for(const k of keys)expected[k]+=(Number(h.parts?.[k])||50)*prob;}
     for(const k of keys)gradient[k]+=((Number(winner.parts?.[k])||50)-expected[k])/10;
-    p.winnerNo=result.winNo;p.learned=true;p.learnedAt=new Date().toISOString();used++;
+    valid.push({p,result});
   }
-  if(used>=20){
-    for(const k of keys)weights[k]=Math.max(1,Math.min(35,(Number(weights[k])||0)+0.004*gradient[k]/used));
-    const sum=keys.reduce((a,k)=>a+weights[k],0)||1;
-    for(const k of keys)weights[k]=Math.round(weights[k]/sum*1000)/10;
-    localStorage.setItem('keibaLabLocalWeights',JSON.stringify(weights));
-    $('dataStatus').textContent+=' / 20レース以上の結果をまとめて学習 '+used+'レース';
-  }
-  return used;
+  if(valid.length<20)return 0;
+  for(const {p,result} of valid){p.winnerNo=result.winNo;p.learned=true;p.learnedAt=new Date().toISOString();}
+  for(const k of keys)weights[k]=Math.max(1,Math.min(35,(Number(weights[k])||0)+0.004*gradient[k]/valid.length));
+  const sum=keys.reduce((a,k)=>a+weights[k],0)||1;
+  for(const k of keys)weights[k]=Math.round(weights[k]/sum*1000)/10;
+  localStorage.setItem('keibaLabLocalWeights',JSON.stringify(weights));
+  $('dataStatus').textContent+=' / 20レース以上の結果をまとめて学習 '+valid.length+'レース';
+  return valid.length;
 }
 function dedupeImportedData(){
   const merge=(rows,keyFn)=>{const m=new Map();for(const x of rows||[]){const k=keyFn(x);m.set(k,{...(m.get(k)||{}),...x});}return [...m.values()];};
