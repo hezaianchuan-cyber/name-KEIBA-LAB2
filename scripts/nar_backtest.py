@@ -2421,6 +2421,35 @@ def main():
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
+    # Publish a compact, directly retrievable report for the trifecta-only
+    # research loop. Keep every fold separate so candidate comparisons cannot
+    # silently pool tuning and evaluation data.
+    validation_folds = validation.get("folds", []) if isinstance(validation, dict) else []
+    research_folds = []
+    for fold in validation_folds:
+        trained = (fold.get("models") or {}).get("trained") or {}
+        research_folds.append({
+            "fold": fold.get("fold"),
+            "train_end": fold.get("train_end"),
+            "test_start": fold.get("test_start"),
+            "test_end": fold.get("test_end"),
+            "races": trained.get("races"),
+            "finish_position_diagnostics": trained.get("finish_position_diagnostics"),
+            "role_trifecta_diagnostics": trained.get("role_trifecta_diagnostics"),
+            "trifecta_diagnostics": trained.get("trifecta_diagnostics"),
+        })
+    research_report = {
+        "generated_at": result["generated_at"],
+        "period": result["period"],
+        "source_races": race_count,
+        "out_of_sample_races": validation.get("test_races") if isinstance(validation, dict) else None,
+        "folds": research_folds,
+        "walk_forward_selection": (validation.get("auto_improvement_loop") or {}) if isinstance(validation, dict) else {},
+        "interpretation": "Fold-specific results are preserved. Formation/blend grids are exploratory unless selected using prior-fold data and evaluated on a later untouched fold. No result is a betting recommendation.",
+    }
+    (OUT.parent / "trifecta-research.json").write_text(
+        json.dumps(research_report, ensure_ascii=False, indent=2), encoding="utf-8")
+
     validated_weights = learned_weights
     live_model = {
         "model_version": "nar-chronological-v7-fieldsize-calibrated",
