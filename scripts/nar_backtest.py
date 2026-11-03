@@ -573,7 +573,7 @@ def summarize_trifecta_diagnostics(bucket):
             "tickets_per_race": round(stats["tickets"] / n, 2) if n else None,
         }
     output["structures"] = structures
-    output["interpretation"] = "Role coverage measures whether actual 1st/2nd/3rd horses are inside each rank pool. Structure hit rate and ROI also depend on order and ticket count; wider pools are not assumed better."
+    output["interpretation"] = "hit_rate is winning tickets divided by tickets; race_hit_rate is races with at least one winning ticket divided by races. ROI confidence intervals use a race-level normal ratio approximation and are diagnostic, not a promotion guarantee. Role coverage and ticket ROI are reported separately."
     return output
 
 
@@ -661,7 +661,7 @@ def summarize_trio_diagnostics(bucket):
             "tickets_per_race": round(stats["tickets"] / n, 2) if n else None,
         }
     output["structures"] = structures
-    output["interpretation"] = "Trio tickets are unordered combinations. Top-N coverage and ticket ROI are reported separately; top5 is the unchanged fixed baseline."
+    output["interpretation"] = "Trio tickets are unordered combinations. hit_rate is winning tickets divided by tickets; race_hit_rate is races with at least one winning ticket divided by races. ROI confidence intervals use a race-level normal ratio approximation and are diagnostic, not a promotion guarantee. Top5 is the unchanged fixed baseline."
     return output
 
 
