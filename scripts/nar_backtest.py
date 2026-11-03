@@ -2084,6 +2084,58 @@ def preoff_ticket_type_backtest(payouts):
     }
 
 
+def strategy_risk_diagnostics(race_results):
+    """Summarize drawdown and losing-streak risk from race outcomes."""
+    equity = peak = max_drawdown = 0
+    losing_streak = max_losing_streak = 0
+    losing_streak_loss = max_losing_streak_loss = 0
+    losing_races = total_stake = total_return = 0
+    rolling = []
+    worst_10_race_roi = None
+    bet_races = 0
+    for stake_value, return_value in race_results:
+        stake_value = max(0, int(stake_value))
+        return_value = max(0, int(return_value))
+        if stake_value <= 0:
+            continue
+        bet_races += 1
+        total_stake += stake_value
+        total_return += return_value
+        net = return_value - stake_value
+        equity += net
+        peak = max(peak, equity)
+        max_drawdown = max(max_drawdown, peak - equity)
+        if net < 0:
+            losing_races += 1
+            losing_streak += 1
+            losing_streak_loss += -net
+            max_losing_streak = max(max_losing_streak, losing_streak)
+            max_losing_streak_loss = max(max_losing_streak_loss, losing_streak_loss)
+        else:
+            losing_streak = 0
+            losing_streak_loss = 0
+        rolling.append((stake_value, return_value))
+        if len(rolling) > 10:
+            rolling.pop(0)
+        if len(rolling) == 10:
+            rolling_stake = sum(x[0] for x in rolling)
+            rolling_return = sum(x[1] for x in rolling)
+            roi = 100 * rolling_return / rolling_stake if rolling_stake else None
+            if roi is not None and (worst_10_race_roi is None or roi < worst_10_race_roi):
+                worst_10_race_roi = roi
+    return {
+        "bet_races": bet_races,
+        "losing_races": losing_races,
+        "losing_race_rate": round(100 * losing_races / bet_races, 2) if bet_races else None,
+        "max_drawdown_jpy": max_drawdown,
+        "max_losing_streak_races": max_losing_streak,
+        "max_losing_streak_loss_jpy": max_losing_streak_loss,
+        "worst_10_consecutive_race_roi_percent": round(worst_10_race_roi, 2) if worst_10_race_roi is not None else None,
+        "net_profit_jpy": total_return - total_stake,
+        "note": "Drawdown is measured from the running peak of cumulative net profit, starting at zero; no assumed starting bankroll is used."
+    }
+
+
 def race_budget_auto_strategy_backtest(payouts, type_validation):
     """Choose one validated bet type per race, allow skips, and cap stake at JPY 2,000.
 
@@ -2276,6 +2328,7 @@ def race_budget_auto_strategy_backtest(payouts, type_validation):
         "max_race_stake_jpy": max_race_stake,
         "race_stake_cap_jpy": 2000,
         "selected_bet_type_race_counts": selected_type_counts,
+        "risk_diagnostics": strategy_risk_diagnostics(race_results),
         "stake_rule": "Up to 20 qualified tickets; target stake is 100 JPY per qualified ticket (max 2,000 JPY), allocated proportionally by max(0.0001, (EV-1) * sqrt(probability)) in 100-yen units. Unused budget is not forced into a race.",
         "selection_rule": "Use only bet-type thresholds that passed development-date validation. For each holdout race, choose the eligible bet type with the highest mean expected value using same-snapshot pre-off odds; if none qualifies, skip the race.",
         "profitability_rule": "At least 100 holdout races with bets and 300 tickets, plus a race-cluster bootstrap 95% ROI lower bound above 100%.",
