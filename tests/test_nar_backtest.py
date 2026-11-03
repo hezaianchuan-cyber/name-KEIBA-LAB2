@@ -180,6 +180,34 @@ class OddsSnapshotParsingTests(unittest.TestCase):
         self.assertEqual(first["win_odds"], 2.5)
         self.assertAlmostEqual(first["expected_value"], first["win_probability"]*2.5, places=5)
 
+    def test_preoff_D_uses_C_features_and_race_pace_before_odds_overlay(self):
+        model = {"model_version":"test-model","temperature":0.18}
+        context = (
+            model, defaultdict(list),
+            defaultdict(lambda: {"runs":0,"top3":0}),
+            defaultdict(lambda: {"runs":0,"top3":0}),
+            {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04},
+        )
+        race = {"venue":"大井","distance":1600,"field_size":3,"going":"良","surface":"ダート"}
+        horses = [
+            {"no":"1","name":"A","age":4,"sire":"S1","jockey":"J1"},
+            {"no":"2","name":"B","age":5,"sire":"S2","jockey":"J2"},
+            {"no":"3","name":"C","age":7,"sire":"S3","jockey":"J3"},
+        ]
+        with mock.patch.object(nb, "score_runner_performance", side_effect=[0.20, 0.30, 0.40]) as scorer, \
+             mock.patch.object(nb, "pace_adjustments", return_value=(None, None, {"1":0.10,"2":0.05,"3":0.0})) as pace:
+            predictions = capture.predict_horses(race, horses, [], context)
+        self.assertEqual(scorer.call_count, 3)
+        self.assertEqual(scorer.call_args.kwargs["margin_weight"], 0.10)
+        self.assertEqual(scorer.call_args.kwargs["closing_weight"], 0.10)
+        self.assertEqual(scorer.call_args.kwargs["time_weight"], 0.10)
+        self.assertEqual(scorer.call_args.kwargs["going_weight"], 0.10)
+        pace.assert_called_once_with(horses, context[1])
+        by_no = {p["horse_no"]:p for p in predictions}
+        self.assertAlmostEqual(by_no["1"]["score"], 0.30, places=6)
+        self.assertAlmostEqual(by_no["2"]["score"], 0.35, places=6)
+        self.assertAlmostEqual(by_no["3"]["score"], 0.40, places=6)
+
     def test_daily_official_zip_parser_reads_races_horses_and_odds(self):
         with tempfile.TemporaryDirectory() as tmp:
             data = Path(tmp) / "data"
