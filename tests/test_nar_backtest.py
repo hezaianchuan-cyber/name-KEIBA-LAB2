@@ -350,15 +350,18 @@ class PerBetTypeProbabilityTests(unittest.TestCase):
         ]
         odds = [
             {"type":"単勝","n1":"01","odds":2.5},
+            {"type":"複勝","n1":"01","odds":1.3},
+            {"type":"ワイド","n1":"01","n2":"02","odds":3.0},
             {"type":"馬連","n1":"01","n2":"02","odds":4.0},
+            {"type":"馬単","n1":"01","n2":"02","odds":5.0},
             {"type":"3連複","n1":"01","n2":"02","n3":"03","odds":8.0},
             {"type":"3連単","n1":"01","n2":"02","n3":"03","odds":15.0},
         ]
         result = capture.predict_combinations(odds, horses)
         counts = {kind:sum(1 for x in result if x["bet_type"] == kind)
-                  for kind in ("wide","exacta","trio","trifecta")}
-        self.assertEqual(counts,{"wide":3,"exacta":4,"trio":1,"trifecta":4})
-        self.assertFalse(any(x["bet_type"] in {"win","place","quinella"} for x in result))
+                  for kind in ("win","place","wide","quinella","exacta","trio","trifecta")}
+        self.assertEqual(counts,{"win":3,"place":3,"wide":3,"quinella":3,
+                                 "exacta":4,"trio":1,"trifecta":4})
         self.assertTrue(all(x["odds_status"] in ("取得済み","オッズ待ち") for x in result))
         self.assertTrue(any(x["expected_value"] is None for x in result))
 
