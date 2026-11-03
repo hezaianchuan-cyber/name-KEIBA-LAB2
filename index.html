@@ -588,14 +588,14 @@ function generateTickets(){
  const groups=['単勝','複勝','ワイド','馬連','馬単','3連複','3連単'];
  const typeKeys={'単勝':'win','複勝':'place','ワイド':'wide','馬連':'quinella','馬単':'exacta','3連複':'trio','3連単':'trifecta'};
  const thresholdFor=type=>Number(verifiedTicketThresholds[typeKeys[type]])||1.05;
- const decision=x=>x.ev==null?'オッズ待ち':x.ev>=thresholdFor(x.type)?'券種別基準候補':'見送り';
- const ranked=type=>candidates.filter(x=>x.type===type).sort((a,b)=>a.ev!=null&&b.ev!=null?b.ev-a.ev:a.ev!=null?-1:b.ev!=null?1:b.probability-a.probability);
+ const decision=x=>x.ev==null?'オッズ待ち':x.ev>=thresholdFor(x.type)?'期待値基準クリア':'見送り';
+ const ranked=type=>candidates.filter(x=>x.type===type).sort((a,b)=>{const p=b.probability-a.probability;if(Math.abs(p)>1e-9)return p;return (b.ev??-1)-(a.ev??-1);});
  const pct=v=>(v*100).toFixed(2)+'%',odds=v=>v==null?'未取得':v.toFixed(1)+'倍',ev=v=>v==null?'—':v.toFixed(3);
  const main=groups.map(type=>ranked(type)[0]).filter(Boolean);
- const mainHtml='<h3>券種別の最上位候補</h3><div class="tablewrap"><table><thead><tr><th>券種</th><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+main.map(x=>'<tr><td>'+x.type+'</td><td><b>'+x.comb+'</b></td><td>'+pct(x.probability)+'</td><td>'+odds(x.odds)+'</td><td>'+ev(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';
+ const mainHtml='<h3>的中率優先・券種別候補</h3><div class="tablewrap"><table><thead><tr><th>券種</th><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+main.map(x=>'<tr><td>'+x.type+'</td><td><b>'+x.comb+'</b></td><td>'+pct(x.probability)+'</td><td>'+odds(x.odds)+'</td><td>'+ev(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';
  const horseHtml='<h3>予想上位馬</h3><div class="tablewrap"><table><thead><tr><th>順位</th><th>馬番・馬名</th><th>評価点</th><th>'+(learnedModelLoaded?'学習モデル推定勝率':'参考スコア比率')+'</th><th>単勝オッズ</th></tr></thead><tbody>'+top.map((h,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(h.horseNo+'番 '+(h.name||''))+'</td><td>'+(Number(h.score)||0).toFixed(1)+'</td><td>'+pct(h.modelProb)+'</td><td>'+odds(Number(h.odds)>0?Number(h.odds):null)+'</td></tr>').join('')+'</tbody></table></div>';
  const allHtml=groups.map(type=>{const list=ranked(type).slice(0,type==='3連単'?12:10);return '<h3>'+type+'（上位'+list.length+'点）</h3><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+list.map(x=>'<tr><td><b>'+type+' '+x.comb+'</b></td><td>'+pct(x.probability)+'</td><td>'+odds(x.odds)+'</td><td>'+ev(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';}).join('');
- out.innerHTML=horseHtml+mainHtml+'<details style="margin-top:12px"><summary>券種別の候補一覧を開く</summary>'+allHtml+'</details><p>全出走馬の勝率を正規化し、Plackett–Luce方式で各券種の組合せ確率を近似しています。複勝・ワイドは全出走馬を対象に上位3着以内確率を計算。選択レースの公式オッズと照合し、オッズがない場合はEVを出しません。券種別ホールドアウト検証で合格した基準がある場合はその閾値を使用し、未合格の券種はEV1.05を暫定基準とします。実測回収率の検証と確率校正が完了するまでは利益を保証しません。候補 '+candidates.length+'点 / オッズ照合済み '+candidates.filter(x=>x.ev!=null).length+'点。</p>';
+ out.innerHTML=horseHtml+mainHtml+'<details style="margin-top:12px"><summary>券種別の候補一覧を開く</summary>'+allHtml+'</details><p>全出走馬の勝率を正規化し、Plackett–Luce方式で各券種の組合せ確率を近似しています。複勝・ワイドは全出走馬を対象に上位3着以内確率を計算。買い目の並び順は期待値ではなく推定的中確率を最優先し、期待値は買い目の採否を確認する補助基準として使用します。オッズがない場合は期待値判定を行いません。券種別ホールドアウト検証で合格した基準がある場合はその閾値を使用し、未合格の券種はEV1.05を暫定基準とします。実測回収率の検証と確率校正が完了するまでは利益を保証しません。候補 '+candidates.length+'点 / オッズ照合済み '+candidates.filter(x=>x.ev!=null).length+'点。</p>';
 }
 function dedupeRunnerRows(rows) {
   const map = new Map();
