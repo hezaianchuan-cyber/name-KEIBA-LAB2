@@ -91,6 +91,7 @@ a{color:inherit}
     <button class="active" data-tab="home">&#x30EC;&#x30FC;&#x30B9;&#x5206;&#x6790;</button>
     <button data-tab="import">&#x30C7;&#x30FC;&#x30BF;&#x53D6;&#x8FBC;</button>
     <button data-tab="history">&#x691C;&#x8A3C;&#x30FB;&#x6210;&#x7E3E;</button>
+    <button data-tab="payouts">日別払戻</button>
     <button data-tab="settings">&#x30E2;&#x30C7;&#x30EB;&#x8A2D;&#x5B9A;</button>
   </nav>
   <section id="home" class="panel active">
@@ -136,6 +137,22 @@ a{color:inherit}
     <div class="card" id="oddsCapturePanel"><h2>発走前オッズの更新状況</h2><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>最新公開データを確認</b><span id="oddsCaptureBadge">確認中</span></div><div id="oddsCaptureDetails" class="sub" style="margin-top:8px">取得状況を読み込んでいます。</div><p class="sub">画面は1分ごとに最新公開データを確認します。取得元データの収集・公開は現在5分ごとのため、オッズ自体が毎分変わるわけではありません。</p></div><div class="card"><h2>今日の予想結果</h2><p class="sub">今日記録した予想を公式払戻データと照合します。的中率の分母は結果が確定したレースのみです。</p><div class="kpis"><div class="kpi"><span>今日の確定レース</span><b id="hTodaySettled">0</b></div><div class="kpi"><span>予想1位の的中数</span><b id="hTodayHits">0</b></div><div class="kpi"><span>今日の1位的中率</span><b id="hTodayRate">—</b></div><div class="kpi"><span>上位3頭内の勝馬率</span><b id="hTodayTop3">—</b></div></div><div id="todayPredictionRows" class="sub" style="margin-top:12px">今日の予想はまだ保存されていません。レースを分析すると自動で記録します。</div></div>
     <div class="card"><h2>&#x6B21;&#x306E;&#x691C;&#x8A3C;&#x3067;&#x898B;&#x308B;&#x6307;&#x6A19;</h2><div class="runner"><div class="number">01</div><div><div class="runner-name">&#x56DE;&#x53CE;&#x7387;</div><div class="runner-meta">&#x4E88;&#x6E2C;&#x78BA;&#x7387;&#x3068;&#x5B9F;&#x969B;&#x306E;&#x6255;&#x623B;&#x306E;&#x4E56;&#x96E2;</div></div><div class="score">ROI</div></div><div class="runner"><div class="number">02</div><div><div class="runner-name">&#x78BA;&#x7387;&#x6821;&#x6B63;</div><div class="runner-meta">&#x52DD;&#x7387;20%&#x3068;&#x8A55;&#x4FA1;&#x3057;&#x305F;&#x99AC;&#x304C;&#x5B9F;&#x969B;&#x306B;&#x7D04;20%&#x52DD;&#x3064;&#x304B;</div></div><div class="score">CAL</div></div><div class="runner"><div class="number">03</div><div><div class="runner-name">&#x6761;&#x4EF6;&#x5225;&#x6210;&#x7E3E;</div><div class="runner-meta">&#x7AF6;&#x99AC;&#x5834;&#x30FB;&#x8DDD;&#x96E2;&#x30FB;&#x99AC;&#x5834;&#x30FB;&#x4EBA;&#x6C17;&#x5E2F;&#x3054;&#x3068;&#x306E;&#x6210;&#x7E3E;</div></div><div class="score">SEG</div></div></div>
     <div class="notice">&#x30B5;&#x30F3;&#x30D7;&#x30EB;&#x30C7;&#x30FC;&#x30BF;&#x306F;&#x5B9F;&#x969B;&#x306E;&#x6210;&#x7E3E;&#x3067;&#x306F;&#x3042;&#x308A;&#x307E;&#x305B;&#x3093;&#x3002;&#x7684;&#x4E2D;&#x7387;&#x30FB;&#x56DE;&#x53CE;&#x7387;&#x3092;&#x8868;&#x793A;&#x3059;&#x308B;&#x5834;&#x5408;&#x306F;&#x3001;&#x5B9F;&#x30C7;&#x30FC;&#x30BF;&#x3067;&#x691C;&#x8A3C;&#x3057;&#x305F;&#x5024;&#x3060;&#x3051;&#x3092;&#x8868;&#x793A;&#x3057;&#x307E;&#x3059;&#x3002;</div>
+  </section>
+  <section id="payouts" class="panel">
+    <div class="card">
+      <h2>日別・公式払戻一覧</h2>
+      <p class="sub">NAR公式の確定払戻を日付ごとに表示します。各金額は100円あたりの払戻金です。実際の購入額や個人の収支ではありません。</p>
+      <div class="grid">
+        <div><label for="dailyPayoutDate">開催日</label><select id="dailyPayoutDate"><option value="">払戻データを読み込み中…</option></select></div>
+        <div><label>データ更新</label><div id="dailyPayoutUpdated" class="sub" style="padding:11px 0">確認中…</div></div>
+      </div>
+      <div class="kpis" style="margin-top:12px">
+        <div class="kpi"><span>確定払戻レース</span><b id="dailyPayoutRaces">—</b></div>
+        <div class="kpi"><span>払戻掲載件数</span><b id="dailyPayoutEntries">—</b></div>
+      </div>
+      <div id="dailyPayoutRows" class="sub" style="margin-top:14px">公式払戻データを読み込んでいます。</div>
+      <p class="sub" style="margin-top:12px">※単勝・複勝・ワイド・馬連・馬単・3連複・3連単の公式払戻を表示します。同着などで複数の払戻がある場合も掲載します。</p>
+    </div>
   </section>
   <section id="settings" class="panel">
     <div class="card"><h2>&#x4E88;&#x6E2C;&#x30E2;&#x30C7;&#x30EB;&#x306E;&#x914D;&#x70B9;</h2><p class="sub">&#x307E;&#x305A;&#x306F;&#x516C;&#x5F0F;&#x51FA;&#x99AC;&#x8868;&#x3067;&#x53D6;&#x5F97;&#x3067;&#x304D;&#x308B;&#x9805;&#x76EE;&#x3092;&#x4E2D;&#x5FC3;&#x306B;&#x30B9;&#x30B3;&#x30A2;&#x5316;&#x3002;&#x904E;&#x53BB;&#x6210;&#x7E3E;CSV&#x304C;&#x63C3;&#x3063;&#x305F;&#x6BB5;&#x968E;&#x3067;&#x3001;&#x8DDD;&#x96E2;&#x30FB;&#x7AF6;&#x99AC;&#x5834;&#x9069;&#x6027;&#x3084;&#x4E0A;&#x304C;&#x308A;&#x6027;&#x80FD;&#x306E;&#x6BD4;&#x91CD;&#x3092;&#x5B9F;&#x6E2C;&#x3067;&#x6700;&#x9069;&#x5316;&#x3057;&#x307E;&#x3059;&#x3002;</p><div id="weights"></div><div class="actions"><button class="btn primary" id="saveWeights">&#x914D;&#x70B9;&#x3092;&#x4FDD;&#x5B58;</button><button class="btn" id="resetWeights">&#x521D;&#x671F;&#x5024;&#x306B;&#x623B;&#x3059;</button></div></div>
@@ -588,8 +605,60 @@ function updateHistory(){
 }
 $('analyzeBtn').onclick=analyze;$('demoBtn').onclick=demo;
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='keiba-lab-local-data.json';a.click();URL.revokeObjectURL(a.href)};
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));if(b.dataset.tab==='settings')renderWeights();if(b.dataset.tab==='history')updateHistory()});
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));if(b.dataset.tab==='settings')renderWeights();if(b.dataset.tab==='history')updateHistory();if(b.dataset.tab==='payouts')loadDailyPayouts()});
 if('serviceWorker' in navigator && location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+
+let dailyPayoutReport=null;
+const dailyPayoutLabels={win:'単勝',place:'複勝',wide:'ワイド',quinella:'馬連',exacta:'馬単',trio:'3連複',trifecta:'3連単'};
+function renderDailyPayoutDay(date){
+ const day=(dailyPayoutReport?.days||[]).find(x=>x.date===date);
+ if(!day){
+  $('dailyPayoutRaces').textContent='0';$('dailyPayoutEntries').textContent='0';
+  $('dailyPayoutRows').textContent='この日の確定払戻データはありません。';
+  return;
+ }
+ $('dailyPayoutRaces').textContent=Number(day.race_count||0).toLocaleString()+'R';
+ $('dailyPayoutEntries').textContent=Number(day.payout_entry_count||0).toLocaleString()+'件';
+ const rows=[];
+ for(const race of (day.races||[])){
+  for(const [kind,items] of Object.entries(race.payouts||{})){
+   for(const item of items||[]){
+    rows.push('<tr><td>'+esc(race.venue||'')+'</td><td>'+Number(race.race||0)+'R</td><td>'+dailyPayoutLabels[kind]+'</td><td>'+esc((item.numbers||[]).join('-'))+'</td><td style="text-align:right;font-weight:800">'+Number(item.pay_100||0).toLocaleString()+'円</td></tr>');
+   }
+  }
+ }
+ $('dailyPayoutRows').innerHTML=rows.length?'<div class="tablewrap"><table style="min-width:560px"><thead><tr><th>競馬場</th><th>R</th><th>券種</th><th>的中組合せ</th><th>100円払戻</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>':'この日の確定払戻データはありません。';
+}
+async function loadDailyPayouts(){
+ const status=$('dailyPayoutUpdated');
+ if(!status)return;
+ if(!dailyPayoutReport){
+  $('dailyPayoutRows').textContent='NAR公式払戻データを読み込んでいます…';
+  try{
+   const response=await fetch('./data/daily-payouts.json?v='+Date.now(),{cache:'no-store'});
+   if(!response.ok)throw new Error('まだ初回データが公開されていません');
+   dailyPayoutReport=await response.json();
+  }catch(e){
+   status.textContent='データ準備中';
+   $('dailyPayoutRows').innerHTML='公式払戻データの初回取得・公開を待っています。<br><a href="https://github.com/hezaianchuan-cyber/name-KEIBA-LAB2/actions/workflows/nar-daily-payouts.yml" target="_blank" rel="noopener">払戻データ取得状況を確認</a>';
+   return;
+  }
+ }
+ status.textContent=dailyPayoutReport.generated_at?new Date(dailyPayoutReport.generated_at).toLocaleString('ja-JP'):'—';
+ const select=$('dailyPayoutDate');
+ const days=dailyPayoutReport.days||[];
+ if(!days.length){
+  select.innerHTML='<option value="">確定払戻なし</option>';
+  renderDailyPayoutDay('');
+  return;
+ }
+ const previous=select.value;
+ select.innerHTML=days.map(day=>'<option value="'+esc(day.date)+'">'+esc(day.date)+'（'+Number(day.race_count||0)+'R）</option>').join('');
+ select.value=days.some(day=>day.date===previous)?previous:days[0].date;
+ renderDailyPayoutDay(select.value);
+ select.onchange=()=>renderDailyPayoutDay(select.value);
+}
+window.addEventListener('load',loadDailyPayouts);
 
 async function loadHistoricalBacktest(){
  const section=document.getElementById('history');
