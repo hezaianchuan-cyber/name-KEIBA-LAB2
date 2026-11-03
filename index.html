@@ -384,7 +384,7 @@ function scoreRunner(h,all){
   const totalWeight=Object.values(learned).reduce((a,b)=>a+b,0)||1;
   const score=Object.keys(learned).reduce((sum,k)=>sum+parts[k]*learned[k],0)/totalWeight;
   const odds=h.odds?Math.max(10,Math.min(95,90-Math.log(h.odds)*18)):50;
-  return {...h,parts:{...parts,odds},score,recentRuns:history.map(x=>({date:x.date,rank:x.lastRank,margin:x.margin,last3f:x.last3f,venue:x.venue,distance:x.distance})),pedigreeSampleSize:sireRows.length,previousRun:{rank:history[0]?.lastRank??null,margin:history[0]?.margin??null,last3f:history[0]?.last3f??null,popularity:null,score:form},pedigreeScore:sireScore,modelSource:learnedModelLoaded?'学習済みモデル':'標準モデル'};
+  return {...h,parts:{...parts,odds},score,recentRuns:history.map(x=>({date:x.date,rank:x.lastRank,margin:x.margin,last3f:x.last3f,venue:x.venue,distance:x.distance,fieldSize:x.fieldSize??x.field_size})),pedigreeSampleSize:sireRows.length,previousRun:{rank:history[0]?.lastRank??null,margin:history[0]?.margin??null,last3f:history[0]?.last3f??null,popularity:null,score:form},pedigreeScore:sireScore,modelSource:learnedModelLoaded?'学習済みモデル':'標準モデル'};
 }
 function analyze(){
  sampleMode=false;
@@ -480,6 +480,9 @@ async function loadHistoricalBacktest(){
   const validation=report.out_of_sample_validation||{};
   const base=validation.models?.baseline||{},trained=validation.models?.trained||{};
   const validationBetRows=Object.keys(labels).map(k=>{const b=base.bet_types?.[k]||{},t=trained.bet_types?.[k]||{};return '<tr><td>'+labels[k]+'</td><td>'+Number(b.hit_rate||0)+'%</td><td>'+Number(t.hit_rate||0)+'%</td><td>'+Number(b.roi||0)+'%</td><td>'+Number(t.roi||0)+'%</td><td>'+(Number(t.roi||0)-Number(b.roi||0)).toFixed(2)+'pt</td></tr>';}).join('');
+   const noRecent=validation.models?.trained_no_recent_history||{};
+   const recentComparisonRows=Object.keys(labels).map(k=>{const before=noRecent.bet_types?.[k]||{},after=trained.bet_types?.[k]||{};return '<tr><td>'+labels[k]+'</td><td>'+(before.hit_rate==null?'—':before.hit_rate+'%')+'</td><td>'+(after.hit_rate==null?'—':after.hit_rate+'%')+'</td><td>'+(before.roi==null?'—':before.roi+'%')+'</td><td>'+(after.roi==null?'—':after.roi+'%')+'</td><td>'+(before.roi==null||after.roi==null?'—':(after.roi-before.roi>=0?'+':'')+(after.roi-before.roi).toFixed(2)+'pt')+'</td></tr>';}).join('');
+   const recentComparisonHtml=noRecent.bet_types?'<h3>過去5走データの取り込み効果（同一ホールドアウト比較）</h3><p>同じ未学習レース・同じ学習済み配点で、過去5走を使わない場合と使う場合を比較します。</p><div class="tablewrap"><table><thead><tr><th>券種</th><th>取込前 的中率</th><th>取込後 的中率</th><th>取込前 回収率</th><th>取込後 回収率</th><th>回収率差</th></tr></thead><tbody>'+recentComparisonRows+'</tbody></table></div><p class="sub">※同一ホールドアウトで過去5走の近走・競馬場・距離適性特徴だけを切り替えた比較です。利益を保証するものではありません。</p>':'';
   const foldRows=(validation.folds||[]).map(f=>'<tr><td>'+f.fold+'</td><td>'+esc(f.train_start)+'〜'+esc(f.train_end)+'</td><td>'+esc(f.test_start)+'〜'+esc(f.test_end)+'</td><td>'+Number(f.models?.trained?.races||0).toLocaleString()+'</td><td>'+Number(f.temperature||0).toFixed(3)+'</td><td>'+((f.calibration?.log_loss==null)?'—':f.calibration.log_loss)+'</td><td>'+((f.calibration?.brier==null)?'—':f.calibration.brier)+'</td><td>'+((f.calibration?.ece==null)?'—':f.calibration.ece)+'</td>'+Object.keys(labels).map(k=>'<td>'+((f.models?.trained?.bet_types?.[k]?.roi==null)?'—':f.models.trained.bet_types[k].roi+'%')+'</td>').join('')+'</tr>').join('');
   const foldHtml=foldRows?'<h3>期間別の再現性チェック</h3><p>各期間で学習をやり直し、その後の期間だけを未学習データとして評価しています。LogLoss・Brier・ECEは小さいほど確率予測の誤差が小さい指標です。</p><div class="tablewrap"><table><thead><tr><th>Fold</th><th>学習期間</th><th>検証期間</th><th>検証R</th><th>温度</th><th>LogLoss</th><th>Brier</th><th>ECE</th>'+Object.keys(labels).map(k=>'<th>'+labels[k]+'回収率</th>').join('')+'</tr></thead><tbody>'+foldRows+'</tbody></table></div>':'';
   const validationHtml=validation.status==='ok'?'<h3>未学習期間での比較（'+esc(validation.test_start)+' ～ '+esc(validation.test_end)+'）</h3><p>学習期間：'+esc(validation.train_end)+'まで ／ 検証対象 '+Number(validation.test_races||0).toLocaleString()+'レース。検証期間中は学習配点を固定し、当日全レースの予想後にのみ過去結果を追加しています。</p><div class="tablewrap"><table><thead><tr><th>券種</th><th>標準的中率</th><th>学習的中率</th><th>標準回収率</th><th>学習回収率</th><th>回収率差</th></tr></thead><tbody>'+validationBetRows+'</tbody></table></div>'+foldHtml+'<p><b>判定：</b>'+(Object.keys(labels).some(k=>(trained.bet_types?.[k]?.roi||0)>=100)?'検証期間で回収率100%以上の券種があります。別期間で再現性を確認するまで運用採用しません。':'今回の検証期間では、学習モデルの全券種が回収率100%未満です。現時点では収益運用の合格基準に達していません。')+'</p><p>勝ち馬1位率：'+Number(base.winner_top1_rate||0)+'% → '+Number(trained.winner_top1_rate||0)+'% ／ 上位3頭内率：'+Number(base.winner_top3_rate||0)+'% → '+Number(trained.winner_top3_rate||0)+'%</p>':'<p class="sub">未学習期間の比較は未完了です。</p>';
@@ -498,12 +501,14 @@ async function loadLearnedModel(){
    model=window.KEIBA_LAB_LEARNED_MODEL;learnedHistory=window.KEIBA_LAB_LEARNED_HISTORY;
   }else{
    const stamp='?v='+Date.now();
-   const [modelResponse,historyResponse]=await Promise.all([
-    fetch('./data/live-model.json'+stamp,{cache:'no-store'}),
-    fetch('./data/live-history.json'+stamp,{cache:'no-store'})
-   ]);
-   if(!modelResponse.ok||!historyResponse.ok)throw new Error('学習モデルまたは過去成績データ未公開');
-   model=await modelResponse.json();learnedHistory=await historyResponse.json();
+   const modelResponse=await fetch('./data/live-model.json'+stamp,{cache:'no-store'});
+   if(!modelResponse.ok)throw new Error('学習モデル未公開');
+   model=await modelResponse.json();
+   try{
+    const historyResponse=await fetch('./data/live-history.json'+stamp,{cache:'no-store'});
+    learnedHistory=historyResponse.ok?await historyResponse.json():null;
+   }catch(historyError){learnedHistory=null;}
+   if(!learnedHistory||typeof learnedHistory!=='object')learnedHistory={horse_history:{},sire_stats:{},jockey_stats:{}};
   }
   learnedModelEnd=String(model.training_period?.end||'');
   const w=model.weights||{};
