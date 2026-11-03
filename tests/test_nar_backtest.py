@@ -264,9 +264,15 @@ class PerBetTypeProbabilityTests(unittest.TestCase):
             {"type":"3連単","n1":"01","n2":"02","n3":"03","odds":15.0},
         ]
         result = capture.predict_combinations(odds, horses)
-        self.assertEqual([x["bet_type"] for x in result],["win","quinella","trio","trifecta"])
-        self.assertTrue(all(x["expected_value"] > 0 for x in result))
-        self.assertEqual(result[0]["numbers"],["1"])
+        counts = {kind:sum(1 for x in result if x["bet_type"] == kind)
+                  for kind in ("win","place","wide","quinella","exacta","trio","trifecta")}
+        self.assertEqual(counts,{"win":2,"place":3,"wide":3,"quinella":1,
+                                 "exacta":4,"trio":1,"trifecta":4})
+        first_win = next(x for x in result if x["bet_type"] == "win" and x["numbers"] == ["1"])
+        self.assertEqual(first_win["odds"],2.5)
+        self.assertGreater(first_win["expected_value"],0)
+        self.assertTrue(all(x["odds_status"] in ("取得済み","オッズ待ち") for x in result))
+        self.assertTrue(any(x["expected_value"] is None for x in result))
 
 
 
