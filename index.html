@@ -316,6 +316,7 @@ async function syncCloudPredictions(){
   db.predictions=[...byId.values()];
   try{localStorage.setItem('keibaLabLocalDB',JSON.stringify(db));}catch(e){}
   updateHistory();
+  if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
   setCloudStatus('同期完了：'+(latest||[]).length+'レースの予想履歴をクラウド保存中。',true);
  }catch(e){
   setCloudStatus('同期エラー：'+(e.message||String(e))+' ／ テーブル設定を確認してください。');
@@ -644,7 +645,7 @@ function renderDailyPayoutDay(date){
 function labLedgerDateKey(value){return String(value||'').replace(/[^0-9]/g,'').slice(0,8);}
 function labLedgerVenueKey(value){return String(value||'').replace(/競馬場/g,'').replace(/[\\s　]/g,'').trim();}
 function labLedgerComb(value,type){
- const parts=String(value||'').split('-').map(x=>String(x).trim()).filter(Boolean);
+ const parts=String(value||'').split('-').map(x=>String(Number(String(x).trim()))).filter(x=>x!=='NaN');
  return ['複勝','ワイド','馬連','3連複'].includes(type)?parts.sort((a,b)=>Number(a)-Number(b)).join('-'):parts.join('-');
 }
 function renderLabVirtualLedger(){
@@ -656,8 +657,8 @@ function renderLabVirtualLedger(){
  select.value=dates.includes(previous)?previous:dates[0];
  const date=select.value,day=(dailyPayoutReport?.days||[]).find(d=>labLedgerDateKey(d.date)===date),dayRaces=day?.races||[];
  const records=plans.filter(x=>x.date===date).map(({p,plan})=>{
-  const venue=labLedgerVenueKey(plan.venue),raceNo=String(plan.raceNo||'').replace(/[^0-9]/g,'');
-  const matches=dayRaces.filter(r=>labLedgerVenueKey(r.venue)===venue&&String(r.race||'')===raceNo);
+  const venue=labLedgerVenueKey(plan.venue),raceNo=String(Number(String(plan.raceNo||'').replace(/[^0-9]/g,'')));
+  const matches=dayRaces.filter(r=>labLedgerVenueKey(r.venue)===venue&&String(Number(r.race||0))===raceNo);
   const race=matches.length===1?matches[0]:null,isSkip=plan.decision!=='BET',tickets=Array.isArray(plan.tickets)?plan.tickets:[];
   const stake=tickets.reduce((sum,t)=>sum+Math.max(0,Number(t.stake)||0),0);
   if(isSkip)return {plan,p,isSkip:true,settled:true,stake:0,returned:0,hit:false};
@@ -952,7 +953,7 @@ function generateTickets(){
      modelLoaded:!!learnedModelLoaded,oddsCaptured:oddsRows.length>0
    };
    const prediction=(db.predictions||[]).find(p=>String(p.id)===String(raceId)&&!p.learned);
-   if(prediction){prediction.ticketPlan=snapshot;prediction.at=snapshot.createdAt;save();scheduleCloudSync();}
+   if(prediction){prediction.ticketPlan=snapshot;prediction.at=snapshot.createdAt;save();scheduleCloudSync();if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();}
  }
  out.innerHTML=horseHtml+selectedHtml+mainHtml+'<details style="margin-top:12px"><summary>券種別の候補一覧（比較用）</summary>'+allHtml+'</details><p>券種選択は、校正済みモデル・実オッズ・券種別EV基準を満たす候補がある場合のみ行います。候補確率はPlackett–Luce方式による近似です。各候補のオッズが未取得、モデル未校正、または基準未達の場合は見送り。1点100円単位、1レース合計2,000円を超えないよう配分します。実際の購入・払戻ではなく、アプリの推奨額です。候補 '+candidates.length+'点 / オッズ照合済み '+candidates.filter(x=>x.ev!=null).length+'点。</p>';
 }
