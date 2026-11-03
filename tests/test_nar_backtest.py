@@ -852,6 +852,7 @@ class CandidateRankingResearchTests(unittest.TestCase):
         ]
         record = {
             "race_key":"大井|20261103|10","date":"20261103",
+            "model_version":"nar-chronological-v8-abcd-C-preoff",
             "captured_at":"2026-11-03T15:10:00+09:00",
             "scheduled_post_time":"2026-11-03T15:30:00+09:00",
             "minutes_to_post":20,"candidate_combinations":candidates,
@@ -870,6 +871,19 @@ class CandidateRankingResearchTests(unittest.TestCase):
         self.assertFalse(ev["minimum_sample_met"])
         self.assertEqual(result["selected_by_development"]["exacta"]["status"],
                          "awaiting_development_sample")
+
+    def test_D_backtest_excludes_snapshots_from_older_model_versions(self):
+        key = ("大井","20261103","10")
+        old_snapshot = {
+            "race_key":"大井|20261103|10",
+            "model_version":"nar-chronological-v7-fieldsize-calibrated",
+        }
+        with mock.patch.object(nb, "load_odds_snapshots", return_value={key:old_snapshot}):
+            result = nb.preoff_ranking_strategy_backtest({})
+        self.assertEqual(result["status"], "awaiting_C_model_preoff_snapshots")
+        self.assertEqual(result["snapshot_races"], 0)
+        self.assertEqual(result["legacy_snapshot_races_excluded"], 1)
+        self.assertEqual(result["required_model_version"], "nar-chronological-v8-abcd-C-preoff")
 
 
 class TrifectaDiagnosticTests(unittest.TestCase):
