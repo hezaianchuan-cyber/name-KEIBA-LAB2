@@ -813,3 +813,42 @@ class TrifectaDiagnosticTests(unittest.TestCase):
         self.assertEqual(result["structures"]["first2_pool5"]["hits"], 1)
         self.assertEqual(result["structures"]["first2_pool5"]["tickets"], 24)
         self.assertEqual(result["structures"]["first2_pool5"]["roi"], 500.0)
+
+
+
+class TrioDiagnosticTests(unittest.TestCase):
+    def test_top_n_trio_combinations_are_unordered_and_have_expected_counts(self):
+        ranked = [{"no": str(i)} for i in range(1, 8)]
+        self.assertEqual(len(nb.build_trio_tickets(ranked, 4)), 4)
+        self.assertEqual(len(nb.build_trio_tickets(ranked, 5)), 10)
+        self.assertEqual(len(nb.build_trio_tickets(ranked, 6)), 20)
+        self.assertEqual(len(nb.build_trio_tickets(ranked, 7)), 35)
+        self.assertIn(["1", "2", "3"], nb.build_trio_tickets(ranked, 5))
+        self.assertNotIn(["1", "3", "2"], nb.build_trio_tickets(ranked, 5))
+
+    def test_trio_diagnostics_separate_podium_coverage_from_ticket_roi(self):
+        ranked = [{"no": str(i)} for i in range(1, 8)]
+        field = [
+            {"no": "1", "finish": 1}, {"no": "2", "finish": 3},
+            {"no": "3", "finish": 2}, {"no": "4", "finish": 4},
+            {"no": "5", "finish": 5}, {"no": "6", "finish": 6},
+            {"no": "7", "finish": 7},
+        ]
+        payout = {"trio": [(["1", "2", "3"], 1000)]}
+        stats = nb.new_trio_diagnostics()
+        nb.update_trio_diagnostics(stats, ranked, field, payout)
+        result = nb.summarize_trio_diagnostics(stats)
+        self.assertEqual(result["rates"]["all_podium_top4"], 100.0)
+        self.assertEqual(result["structures"]["top4"]["tickets"], 4)
+        self.assertEqual(result["structures"]["top5"]["tickets"], 10)
+        self.assertEqual(result["structures"]["top4"]["hits"], 1)
+        self.assertEqual(result["structures"]["top4"]["roi"], 250.0)
+        self.assertEqual(result["structures"]["top5"]["roi"], 100.0)
+
+    def test_trio_diagnostics_skip_incomplete_podium_results(self):
+        ranked = [{"no": str(i)} for i in range(1, 6)]
+        field = [{"no": "1", "finish": 1}, {"no": "2", "finish": 2},
+                 {"no": "3", "finish": None}]
+        stats = nb.new_trio_diagnostics()
+        nb.update_trio_diagnostics(stats, ranked, field, {"trio": []})
+        self.assertEqual(nb.summarize_trio_diagnostics(stats)["races"], 0)
