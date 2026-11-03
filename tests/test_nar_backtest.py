@@ -686,3 +686,64 @@ class MultiBetConditionDiagnosticsTests(unittest.TestCase):
         self.assertIn("exacta", segments)
         self.assertIn("trio", segments)
 
+
+
+class CandidateRankingResearchTests(unittest.TestCase):
+    def test_full_universe_contains_combinations_beyond_fixed_top_five(self):
+        horses = [
+            {"horse_no":"1","win_probability":0.5,"score":0.9},
+            {"horse_no":"2","win_probability":0.3,"score":0.7},
+            {"horse_no":"3","win_probability":0.2,"score":0.5},
+        ]
+        odds = []
+        for kind, pairs in [
+            ("単勝", [("1",),("2",),("3",)]),
+            ("複勝", [("1",),("2",),("3",)]),
+            ("ワイド", [("1","2"),("1","3"),("2","3")]),
+            ("馬連", [("1","2"),("1","3"),("2","3")]),
+            ("馬単", [("1","2"),("1","3"),("2","1"),("2","3"),("3","1"),("3","2")]),
+            ("3連複", [("1","2","3")]),
+            ("3連単", [("1","2","3"),("1","3","2"),("2","1","3"),
+                       ("2","3","1"),("3","1","2"),("3","2","1")]),
+        ]:
+            for nums in pairs:
+                odds.append({"type":kind,"n1":nums[0],
+                             "n2":nums[1] if len(nums)>1 else "",
+                             "n3":nums[2] if len(nums)>2 else "",
+                             "odds":5.0})
+        result = capture.predict_combinations(odds, horses, full_universe=True)
+        counts = {kind:sum(1 for row in result if row["bet_type"] == kind)
+                  for kind in ("win","place","wide","quinella","exacta","trio","trifecta")}
+        self.assertEqual(counts, {"win":3,"place":3,"wide":3,"quinella":3,
+                                  "exacta":6,"trio":1,"trifecta":6})
+
+    def test_preoff_ranking_backtest_selects_same_top_n_and_uses_settled_payouts(self):
+        key = ("大井","20261103","10")
+        candidates = [
+            {"bet_type":"exacta","numbers":["1","2"],"probability":0.30,"odds":2.0,"expected_value":0.60},
+            {"bet_type":"exacta","numbers":["1","3"],"probability":0.10,"odds":20.0,"expected_value":2.00},
+            {"bet_type":"exacta","numbers":["2","1"],"probability":0.20,"odds":3.0,"expected_value":0.60},
+            {"bet_type":"exacta","numbers":["2","3"],"probability":0.15,"odds":10.0,"expected_value":1.50},
+            {"bet_type":"exacta","numbers":["3","1"],"probability":0.10,"odds":5.0,"expected_value":0.50},
+            {"bet_type":"exacta","numbers":["3","2"],"probability":0.15,"odds":4.0,"expected_value":0.60},
+        ]
+        record = {
+            "race_key":"大井|20261103|10","date":"20261103",
+            "captured_at":"2026-11-03T15:10:00+09:00",
+            "scheduled_post_time":"2026-11-03T15:30:00+09:00",
+            "minutes_to_post":20,"candidate_combinations":candidates,
+        }
+        payout = {kind:[] for kind in ("win","place","wide","quinella","exacta","trio","trifecta")}
+        payout["win"] = [(["9"],100)]
+        payout["exacta"] = [(["1","3"],2000)]
+        with mock.patch.object(nb,"load_odds_snapshots",return_value={key:record}):
+            result = nb.preoff_ranking_strategy_backtest({key:payout})
+        self.assertEqual(result["status"],"ok")
+        self.assertEqual(result["snapshot_races"],1)
+        ev = result["strategies"]["exacta"]["expected_value"]["overall"]
+        self.assertEqual(ev["tickets"],4)
+        self.assertEqual(ev["hits"],1)
+        self.assertEqual(ev["return"],2000)
+        self.assertFalse(ev["minimum_sample_met"])
+        self.assertEqual(result["selected_by_development"]["exacta"]["status"],
+                         "awaiting_development_sample")
