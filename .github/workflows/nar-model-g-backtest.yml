@@ -1,6 +1,12 @@
 name: Evaluate prospective NAR Model G snapshots
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/nar_model_g.py'
+      - 'scripts/nar_model_g_backtest.py'
+      - '.github/workflows/nar-model-g-backtest.yml'
   workflow_dispatch:
   schedule:
     - cron: "15 19 * * *"
