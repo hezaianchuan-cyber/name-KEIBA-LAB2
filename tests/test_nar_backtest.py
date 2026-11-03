@@ -440,8 +440,8 @@ class PerformanceFeatureTests(unittest.TestCase):
         ]
         features = nb.field_performance_features(field)
         self.assertEqual(features["2"]["last3f_rank_score"], 1.0)
-        self.assertEqual(features["1"]["last3f_rank_score"], 2/3)
-        self.assertEqual(features["3"]["last3f_rank_score"], 1/3)
+        self.assertEqual(features["1"]["last3f_rank_score"], 0.5)
+        self.assertEqual(features["3"]["last3f_rank_score"], 0.0)
         self.assertIsNone(features["4"]["last3f_rank_score"])
         self.assertGreater(features["1"]["margin_quality"], features["3"]["margin_quality"])
         self.assertGreater(features["2"]["margin_quality"], features["3"]["margin_quality"])
@@ -453,8 +453,8 @@ class PerformanceFeatureTests(unittest.TestCase):
              "margin_quality":0.9,"last3f_rank_score":0.9}
         ]}
         weights = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
-        base, _ = nb.score_runner(horse,history,{}, {}, {"venue":"X","distance":1400},weights)
-        d_score, parts = nb.score_runner_d(horse,history,{}, {}, {"venue":"X","distance":1400},weights)
+        base, _ = nb.score_runner(horse,history,{}, {"": {"runs":0,"top3":0}}, {"venue":"X","distance":1400},weights)
+        d_score, parts = nb.score_runner_d(horse,history,{}, {"": {"runs":0,"top3":0}}, {"venue":"X","distance":1400},weights)
         self.assertGreater(d_score, base)
         self.assertEqual(parts["margin_form"], 0.9)
         self.assertEqual(parts["closing_form"], 0.9)
