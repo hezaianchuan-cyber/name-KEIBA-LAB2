@@ -231,7 +231,7 @@ function initCloudSync(){
   $('cloudSignUp').disabled=true;
   setCloudStatus('アカウントを作成しています…');
   try{
-   const response=await fetch(KEIBA_SUPABASE_URL+'/auth/v1/signup',{method:'POST',headers:{'Content-Type':'application/json','apikey':KEIBA_SUPABASE_KEY},body:JSON.stringify({email,password})});
+   const response=await fetch(KEIBA_SUPABASE_URL+'/auth/v1/signup?redirect_to='+encodeURIComponent('https://hezaianchuan-cyber.github.io/name-KEIBA-LAB2/'),{method:'POST',headers:{'Content-Type':'application/json','apikey':KEIBA_SUPABASE_KEY},body:JSON.stringify({email,password})});
    const result=await response.json().catch(()=>({}));
    if(!response.ok)throw new Error(result.msg||result.message||result.error_description||result.error||('HTTP '+response.status));
    if(result.access_token){
