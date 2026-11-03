@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "backtest-summary.json"
 END = dt.date.today() - dt.timedelta(days=1)
-START = END - dt.timedelta(days=1095)  # approximately 3 years of official monthly history
+START = END - dt.timedelta(days=1460)  # four years: one year warm-up + three untouched annual test windows
 UA = "Mozilla/5.0 (compatible; KEIBA-LAB-backtest/1.0)"
 
 def norm(s):
@@ -2320,34 +2320,83 @@ def holdout_validation(races, horses, payouts):
     dates=sorted({r["date"] for r in races.values()})
     if len(dates)<60:
         return {"status":"insufficient_dates","available_dates":len(dates)}
-    # Three non-overlapping forward test windows. Each fold trains only on dates
-    # strictly before its test window and keeps weights frozen throughout that window.
-    bounds=[(0.50,0.65),(0.65,0.80),(0.80,1.00)]
-    folds=[]
-    for index,(train_fraction,test_end_fraction) in enumerate(bounds,1):
-        train_end=max(1,int(len(dates)*train_fraction))
-        test_end=max(train_end+1,int(len(dates)*test_end_fraction))
-        test_end=min(len(dates),test_end)
-        train_dates=dates[:train_end]
-        test_dates=dates[train_end:test_end]
-        if not train_dates or not test_dates: continue
-        folds.append({"fold":index,**evaluate_holdout_fold(races,horses,payouts,train_dates,test_dates)})
-    if len(folds)<2:
-        return {"status":"insufficient_folds","folds":folds}
-
+    # Four years of source data allow a clean comparison: the first year is
+    # warm-up/training, the following two years are evaluated as two sequential
+    # one-year walk-forward windows, and the latest year is the final holdout.
     recent_start = END - dt.timedelta(days=364)
-    recent_train_dates = [d for d in dates if d < recent_start]
-    recent_test_dates = [d for d in dates if recent_start <= d <= END]
+    previous_two_start = recent_start - dt.timedelta(days=730)
+    previous_split = previous_two_start + dt.timedelta(days=365)
+    fold_specs = [
+        ("previous_year_2", previous_two_start, previous_split),
+        ("previous_year_1", previous_split, recent_start),
+        ("recent_year", recent_start, END + dt.timedelta(days=1)),
+    ]
+    folds=[]
+    for index,(label,test_start,test_end) in enumerate(fold_specs,1):
+        train_dates=[d for d in dates if d < test_start]
+        test_dates=[d for d in dates if test_start <= d < test_end]
+        if not train_dates or not test_dates:
+            continue
+        folds.append({"fold":index,"period_label":label,
+                      **evaluate_holdout_fold(races,horses,payouts,train_dates,test_dates)})
+    if len(folds)<3:
+        return {"status":"insufficient_folds","folds":folds,
+                "required_periods":["previous_year_2","previous_year_1","recent_year"]}
+
+    def summarize_period(period_folds):
+        model_names = period_folds[0]["models"].keys()
+        period_models = {}
+        for model_name in model_names:
+            source_models = [fold["models"][model_name] for fold in period_folds]
+            race_total = sum(int(m.get("races") or 0) for m in source_models)
+            winner_top1 = sum(int(m.get("winner_top1") or 0) for m in source_models)
+            winner_top3 = sum(int(m.get("winner_top3") or 0) for m in source_models)
+            bet_types = {}
+            for kind in ("win","place","wide","quinella","exacta","trio","trifecta"):
+                totals = {key:sum(int((m.get("bet_types") or {}).get(kind,{}).get(key) or 0)
+                                  for m in source_models)
+                          for key in ("tickets","hits","stake","return","race_count",
+                                      "sum_return_sq","sum_stake_sq","sum_stake_return")}
+                bet_types[kind] = {
+                    **totals,
+                    "hit_rate":round(100*totals["hits"]/totals["tickets"],2) if totals["tickets"] else None,
+                    **summarize_race_cluster_roi(totals),
+                }
+            period_models[model_name] = {
+                "races":race_total,
+                "winner_top1_rate":round(100*winner_top1/race_total,2) if race_total else None,
+                "winner_top3_rate":round(100*winner_top3/race_total,2) if race_total else None,
+                "bet_types":bet_types,
+            }
+        return period_models
+
+    previous_folds = [fold for fold in folds if fold["period_label"] in ("previous_year_2","previous_year_1")]
+    recent_folds = [fold for fold in folds if fold["period_label"] == "recent_year"]
+    previous_two_year_models = summarize_period(previous_folds)
+    recent_year_models = summarize_period(recent_folds)
     recent_year_validation = {
-        "status": "evaluated" if recent_train_dates and recent_test_dates else "insufficient_dates",
-        "period": {"start": recent_start.isoformat(), "end": END.isoformat()},
-        "train_end": recent_train_dates[-1].isoformat() if recent_train_dates else None,
-        "test_races_expected": sum(1 for r in races.values() if recent_start <= r["date"] <= END),
+        "status":"evaluated" if recent_folds else "insufficient_dates",
+        "period":{"start":recent_start.isoformat(),"end":END.isoformat()},
+        "train_end":recent_folds[0]["train_end"] if recent_folds else None,
+        "test_races_expected":sum(int(fold.get("test_races") or 0) for fold in recent_folds),
+        "models":recent_year_models,
+        "fold":recent_folds[0] if recent_folds else None,
     }
-    if recent_train_dates and recent_test_dates:
-        recent_year_validation.update(
-            evaluate_holdout_fold(races, horses, payouts, recent_train_dates, recent_test_dates)
-        )
+    previous_two_year_validation = {
+        "status":"evaluated" if len(previous_folds)==2 else "insufficient_dates",
+        "period":{"start":previous_two_start.isoformat(),"end":(recent_start-dt.timedelta(days=1)).isoformat()},
+        "test_races":sum(int(fold.get("test_races") or 0) for fold in previous_folds),
+        "folds":[{"period_label":fold["period_label"],"train_start":fold["train_start"],
+                  "train_end":fold["train_end"],"test_start":fold["test_start"],
+                  "test_end":fold["test_end"],"test_races":fold["test_races"]}
+                 for fold in previous_folds],
+        "models":previous_two_year_models,
+    }
+    period_comparison = {
+        "previous_two_years":previous_two_year_validation,
+        "recent_one_year":recent_year_validation,
+        "method":"Previous two years are aggregated from two sequential one-year out-of-sample windows. Each year's model is trained only on dates before that year's test window. The recent year is a separate final holdout trained on the preceding three years. Hit rate is winning tickets / all tickets; ROI is official payout / stake.",
+    }
 
     kinds=("win","place","wide","quinella","exacta","trio","trifecta")
     aggregate={}
@@ -2449,6 +2498,8 @@ def holdout_validation(races, horses, payouts):
             "integrated_strategy_E": integrated_e_oos,"method":"three rolling-origin folds with non-overlapping test windows; weights frozen within each test window; prior results added only after all races on a date are scored; market-value bets use timestamped official pre-off odds snapshots",
             "folds":folds,
             "recent_year_validation":recent_year_validation,
+            "previous_two_year_validation":previous_two_year_validation,
+            "period_comparison":period_comparison,
             "test_races":sum(x["models"]["trained"]["races"] for x in folds),
             "test_start":folds[0]["test_start"],"test_end":folds[-1]["test_end"],
             "train_end":folds[-1]["train_end"],"models":aggregate,
