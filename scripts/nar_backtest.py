@@ -557,6 +557,65 @@ def build_role_trifecta_formation(role_rankings, first_count, second_count, thir
             for third in thirds if third not in (first, second)]
 
 
+def new_finish_position_diagnostics():
+    """Measure whether each ranking predicts the actual horse for each finish position."""
+    return {
+        ranking: {
+            str(role): {"races": 0, "topk": {str(k): 0 for k in (1, 2, 3, 5, 7)},
+                        "rank_sum": 0.0, "reciprocal_rank_sum": 0.0,
+                        "found": 0}
+            for role in (1, 2, 3)
+        }
+        for ranking in ("ordinary", "role_specific")
+    }
+
+
+def update_finish_position_diagnostics(stats, ordinary_ranking, role_rankings, field):
+    finishers = {
+        role: {str(h["no"]) for h in field if h.get("finish") == role}
+        for role in (1, 2, 3)
+    }
+    rankings = {"ordinary": {role: ordinary_ranking for role in (1, 2, 3)},
+                "role_specific": role_rankings}
+    for ranking_name, by_role in rankings.items():
+        for role in (1, 2, 3):
+            bucket = stats[ranking_name][str(role)]
+            bucket["races"] += 1
+            targets = finishers[role]
+            ordered = [str(h["no"]) for h in by_role[role]]
+            positions = [i + 1 for i, no in enumerate(ordered) if no in targets]
+            if positions:
+                best = min(positions)
+                bucket["found"] += 1
+                bucket["rank_sum"] += best
+                bucket["reciprocal_rank_sum"] += 1.0 / best
+            for k in (1, 2, 3, 5, 7):
+                if any(position <= k for position in positions):
+                    bucket["topk"][str(k)] += 1
+
+
+def summarize_finish_position_diagnostics(stats):
+    output = {}
+    for ranking_name, by_role in stats.items():
+        output[ranking_name] = {}
+        for role, bucket in by_role.items():
+            races = bucket["races"]
+            output[ranking_name][role] = {
+                "races": races,
+                "topk_hits": bucket["topk"],
+                "topk_rate": {
+                    k: round(100 * value / races, 2) if races else None
+                    for k, value in bucket["topk"].items()
+                },
+                "mean_rank_when_found": round(bucket["rank_sum"] / bucket["found"], 3)
+                    if bucket["found"] else None,
+                "mean_reciprocal_rank": round(bucket["reciprocal_rank_sum"] / races, 4)
+                    if races else None,
+                "found_count": bucket["found"],
+            }
+    return output
+
+
 def new_role_trifecta_diagnostics():
     formations = ((1,3,4), (1,4,3), (1,4,4), (1,4,5), (1,5,4),
                   (2,3,3), (2,3,4), (2,4,3), (2,4,4), (2,5,3),
@@ -1145,6 +1204,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                                   for kind in kinds},
                      "trifecta_diagnostics":new_trifecta_diagnostics(),
                      "role_trifecta_diagnostics":new_role_trifecta_diagnostics(),
+                     "finish_position_diagnostics":new_finish_position_diagnostics(),
                      "trio_diagnostics":new_trio_diagnostics()} for name in models}
 
     history = defaultdict(list)
@@ -1278,6 +1338,12 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             # Walk-forward selection may choose baseline or any trained variant;
             # restricting this to "trained" leaves the selected model's report empty.
             update_role_trifecta_diagnostics(m["role_trifecta_diagnostics"], scored, history, payout)
+            role_rankings_for_positions = {
+                role: role_specific_ranking(scored, history, role, 0.10)
+                for role in (1, 2, 3)
+            }
+            update_finish_position_diagnostics(
+                m["finish_position_diagnostics"], ranked, role_rankings_for_positions, field)
             update_trio_diagnostics(m["trio_diagnostics"], ranked, field, payout)
             if model_name in ("baseline", "trained_no_recent_history"):
                 for dimension, label in race_segment_labels(race).items():
@@ -1388,6 +1454,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
         out[name]={**m,"bet_types":bet_summary,
           "trifecta_diagnostics":summarize_trifecta_diagnostics(m["trifecta_diagnostics"]),
           "role_trifecta_diagnostics":summarize_role_trifecta_diagnostics(m["role_trifecta_diagnostics"]),
+          "finish_position_diagnostics":summarize_finish_position_diagnostics(m["finish_position_diagnostics"]),
           "trio_diagnostics":summarize_trio_diagnostics(m["trio_diagnostics"]),
           "winner_top1_rate":round(100*m["winner_top1"]/n,2),
           "winner_top3_rate":round(100*m["winner_top3"]/n,2),
