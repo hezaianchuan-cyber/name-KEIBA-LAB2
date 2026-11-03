@@ -81,6 +81,7 @@ def read_archives():
     if not race_zip.exists() or not odds_zip.exists():
         return race_rows, horse_rows, odds_rows
     with zipfile.ZipFile(race_zip) as archive:
+        print("Race archive members:", archive.namelist()[:30], flush=True)
         for name in archive.namelist():
             kind = kind_for(name)
             if kind == "races":
@@ -116,10 +117,15 @@ def read_archives():
                         "jockey": str(row[14] or "").strip() if len(row) > 14 else "",
                     })
     with zipfile.ZipFile(odds_zip) as archive:
+        print("Odds archive members:", archive.namelist()[:50], flush=True)
         for name in archive.namelist():
-            if kind_for(name) != "odds":
+            kind = kind_for(name)
+            raw_rows = csv_rows(archive.read(name)) if not name.endswith("/") else []
+            if raw_rows:
+                print(f"Odds member {name}: classified={kind}, rows={len(raw_rows)}, first_row_columns={len(raw_rows[0])}", flush=True)
+            if kind != "odds":
                 continue
-            for row in csv_rows(archive.read(name)):
+            for row in raw_rows:
                 if len(row) < 10:
                     continue
                 key = race_id(row[0], row[1], row[2])
