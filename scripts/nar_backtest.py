@@ -266,9 +266,10 @@ def field_performance_features(field):
     return output
 
 
-def score_runner_d(h, history, sire_stats, jockey_stats, race, model_weights,
-                   include_recent_history=True):
-    """B score plus race-relative recent margin and closing-speed features."""
+def score_runner_performance(h, history, sire_stats, jockey_stats, race, model_weights,
+                             margin_weight=0.10, closing_weight=0.10,
+                             include_recent_history=True):
+    """B score blended with strictly prior margin/closing-speed form."""
     base_score, parts = score_runner(h, history, sire_stats, jockey_stats, race,
                                      model_weights, include_recent_history)
     past = history.get(h["name"], [])[-5:] if include_recent_history else []
@@ -281,9 +282,18 @@ def score_runner_d(h, history, sire_stats, jockey_stats, race, model_weights,
         return sum(value * weight for value, weight in zip(values, weights)) / sum(weights)
     margin_form = recent_average("margin_quality")
     closing_form = recent_average("last3f_rank_score")
-    return base_score * 0.80 + margin_form * 0.10 + closing_form * 0.10, {
-        **parts, "margin_form": margin_form, "closing_form": closing_form
-    }
+    base_weight = max(0.0, 1.0 - margin_weight - closing_weight)
+    score = base_score * base_weight + margin_form * margin_weight + closing_form * closing_weight
+    return score, {**parts, "margin_form": margin_form, "closing_form": closing_form,
+                   "performance_weights": {"base": base_weight, "margin": margin_weight,
+                                           "closing": closing_weight}}
+
+
+def score_runner_d(h, history, sire_stats, jockey_stats, race, model_weights,
+                   include_recent_history=True):
+    """D1 compatibility wrapper: 80% B + 10% margin + 10% closing speed."""
+    return score_runner_performance(h, history, sire_stats, jockey_stats, race,
+                                    model_weights, 0.10, 0.10, include_recent_history)
 
 
 def score_runner(h, history, sire_stats, jockey_stats, race, model_weights, include_recent_history=True):
@@ -571,7 +581,16 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     d_weights = {key: value * 0.80 for key, value in learned.items()}
     models = {"baseline":baseline, "trained":learned, "trained_no_recent_history":learned,
               "trained_with_pace":learned, "trained_with_performance":d_weights,
-              "trained_performance_with_pace":d_weights}
+              "trained_performance_with_pace":d_weights,
+              "trained_margin_only":d_weights, "trained_closing_only":d_weights,
+              "trained_performance_light":d_weights}
+    performance_blends = {
+        "trained_with_performance": (0.10, 0.10),
+        "trained_performance_with_pace": (0.10, 0.10),
+        "trained_margin_only": (0.10, 0.00),
+        "trained_closing_only": (0.00, 0.10),
+        "trained_performance_light": (0.05, 0.05),
+    }
     kinds = ("win","place","wide","quinella","exacta","trio","trifecta")
     results = {name:{"races":0,"winner_top1":0,"winner_top3":0,
                      "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0}
@@ -634,9 +653,12 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
         if not winners: continue
         for model_name,weights in models.items():
             include_recent_history = model_name != "trained_no_recent_history"
-            use_performance = model_name in ("trained_with_performance", "trained_performance_with_pace")
-            scorer = score_runner_d if use_performance else score_runner
-            scored=[(scorer(h,history,sire_stats,jockey_stats,race,weights,
+            if model_name in performance_blends:
+                margin_weight, closing_weight = performance_blends[model_name]
+                scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
+                            margin_weight,closing_weight,include_recent_history)[0],h) for h in field]
+            else:
+                scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights,
                             include_recent_history=include_recent_history)[0],h) for h in field]
             if model_name in ("trained_with_pace", "trained_performance_with_pace"):
                 _, _, pace_delta = pace_adjustments(field, history)
@@ -1020,7 +1042,8 @@ def holdout_validation(races, horses, payouts):
     kinds=("win","place","wide","quinella","exacta","trio","trifecta")
     aggregate={}
     for model_name in ("baseline","trained","trained_no_recent_history","trained_with_pace",
-                       "trained_with_performance","trained_performance_with_pace"):
+                       "trained_with_performance","trained_performance_with_pace",
+                       "trained_margin_only","trained_closing_only","trained_performance_light"):
         total={"races":0,"winner_top1":0,"winner_top3":0,
                "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0} for kind in kinds}}
         for fold in folds:
@@ -1117,6 +1140,13 @@ def main():
         "validation": validation,
         "feature_schema": ["form", "venue", "distance", "sire", "jockey", "age"],
         "experimental_d_features": ["recent_margin_quality", "recent_race_relative_last3f_rank"],
+        "experimental_performance_variants": {
+            "D1_combined": {"margin_weight": 0.10, "closing_weight": 0.10},
+            "D2_combined_with_pace": {"margin_weight": 0.10, "closing_weight": 0.10, "pace": True},
+            "D3_margin_only": {"margin_weight": 0.10, "closing_weight": 0.00},
+            "D4_closing_only": {"margin_weight": 0.00, "closing_weight": 0.10},
+            "D5_light_combined": {"margin_weight": 0.05, "closing_weight": 0.05}
+        },
         "pace_feature_schema": ["first_corner_pct", "last_corner_pct"],
         "pace_feature_note": "Experimental trained_with_pace model is holdout-only; production weights remain unchanged until validation passes.",
         "weights": validated_weights,
