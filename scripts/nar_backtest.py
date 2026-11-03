@@ -339,7 +339,9 @@ def score_runner_performance(h, history, sire_stats, jockey_stats, race, model_w
     # Going suitability is calculated only from this horse's earlier starts.
     # Sparse samples shrink toward neutral; no same-day/current-race outcome leaks in.
     target_going = norm(race.get("going"))
+    target_surface = norm(race.get("surface"))
     going_rows = [row for row in past if target_going and norm(row.get("going")) == target_going
+                  and (not target_surface or not norm(row.get("surface")) or norm(row.get("surface")) == target_surface)
                   and number(row.get("going_quality")) is not None]
     going_quality = [number(row.get("going_quality")) for row in going_rows]
     going_form = smoothed_rate(
