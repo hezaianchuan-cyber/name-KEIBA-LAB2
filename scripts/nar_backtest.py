@@ -1147,6 +1147,72 @@ def preoff_ticket_type_backtest(payouts):
     }
 
 
+def select_models_from_prior_fold(prior_fold, min_tickets=300, min_roi_gain=5.0):
+    """Select one candidate per bet type using only the immediately prior validation fold.
+
+    The baseline remains the fallback. A challenger must have enough tickets and
+    beat baseline ROI by a fixed margin; the selected model is evaluated only on
+    the next, untouched fold.
+    """
+    models = prior_fold.get("models", {})
+    baseline = models.get("baseline", {})
+    selected = {}
+    for kind in ("win", "place", "wide", "quinella", "exacta", "trio", "trifecta"):
+        base = (baseline.get("bet_types") or {}).get(kind, {})
+        base_roi = number(base.get("roi"))
+        candidates = []
+        for model_name, model in models.items():
+            bucket = (model.get("bet_types") or {}).get(kind, {})
+            roi = number(bucket.get("roi"))
+            tickets = int(bucket.get("tickets") or 0)
+            if model_name == "baseline" or roi is None or tickets < min_tickets:
+                continue
+            if base_roi is not None and roi >= base_roi + min_roi_gain:
+                candidates.append((roi, model_name, tickets))
+        if candidates:
+            roi, model_name, tickets = max(candidates, key=lambda item: (item[0], item[2]))
+            selected[kind] = {"model": model_name, "development_roi": roi,
+                              "development_tickets": tickets, "baseline_roi": base_roi}
+        else:
+            selected[kind] = {"model": "baseline", "development_roi": base_roi,
+                              "development_tickets": int(base.get("tickets") or 0),
+                              "baseline_roi": base_roi}
+    return selected
+
+
+def evaluate_walk_forward_selection(folds, min_tickets=300, min_roi_gain=5.0):
+    """Choose candidates on one completed fold and score them on the next fold."""
+    evaluations = []
+    for index in range(1, len(folds)):
+        prior = folds[index - 1]
+        current = folds[index]
+        choices = select_models_from_prior_fold(prior, min_tickets, min_roi_gain)
+        per_type = {}
+        for kind, choice in choices.items():
+            model_name = choice["model"]
+            actual = current.get("models", {}).get(model_name, {}).get("bet_types", {}).get(kind, {})
+            baseline = current.get("models", {}).get("baseline", {}).get("bet_types", {}).get(kind, {})
+            per_type[kind] = {
+                **choice, "validation_fold": current.get("fold"),
+                "validation_roi": actual.get("roi"), "validation_tickets": actual.get("tickets", 0),
+                "validation_hits": actual.get("hits", 0), "validation_stake": actual.get("stake", 0),
+                "validation_return": actual.get("return", 0),
+                "validation_profit": actual.get("profit", 0),
+                "baseline_validation_roi": baseline.get("roi"),
+                "roi_delta_vs_baseline": (round(actual["roi"] - baseline["roi"], 2)
+                    if actual.get("roi") is not None and baseline.get("roi") is not None else None),
+            }
+        evaluations.append({"selection_fold": prior.get("fold"),
+                            "validation_fold": current.get("fold"), "bet_types": per_type})
+    return {
+        "status": "ok" if evaluations else "awaiting_next_fold",
+        "selection_method": "For each bet type, select among the fixed candidate models using only the immediately preceding fold. A challenger must have at least min_tickets and exceed that fold's baseline ROI by min_roi_gain percentage points. The selected model is evaluated on the next untouched fold; baseline is the fallback.",
+        "min_tickets": min_tickets, "min_roi_gain_percentage_points": min_roi_gain,
+        "evaluations": evaluations,
+        "promotion_policy": "No model is automatically promoted from a single fold. Require repeated next-fold gains, adequate samples, and independent market-odds validation before production use."
+    }
+
+
 def holdout_validation(races, horses, payouts):
     dates=sorted({r["date"] for r in races.values()})
     if len(dates)<60:
@@ -1206,7 +1272,8 @@ def holdout_validation(races, horses, payouts):
             "before_tickets": before["tickets"], "after_tickets": after["tickets"],
         }
     history_comparison["_method"] = "Same chronological holdout races and same trained weights; before excludes each horse's last-five-run form/venue/distance inputs, after includes them. Sire, jockey and age features remain identical."
-    return {"status":"ok","method":"three rolling-origin folds with non-overlapping test windows; weights frozen within each test window; prior results added only after all races on a date are scored; market-value bets use timestamped official pre-off odds snapshots",
+    auto_selection = evaluate_walk_forward_selection(folds)
+    return {"status":"ok","auto_improvement_loop":auto_selection,"method":"three rolling-origin folds with non-overlapping test windows; weights frozen within each test window; prior results added only after all races on a date are scored; market-value bets use timestamped official pre-off odds snapshots",
             "folds":folds,
             "test_races":sum(x["models"]["trained"]["races"] for x in folds),
             "test_start":folds[0]["test_start"],"test_end":folds[-1]["test_end"],
