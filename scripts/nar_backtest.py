@@ -2559,7 +2559,12 @@ def preoff_ranking_strategy_backtest(payouts):
     top_n = {"wide":3, "exacta":4, "trio":10, "trifecta":24}
     strategies = ("expected_value", "probability", "odds")
     records = []
+    legacy_snapshot_races_excluded = 0
+    expected_model_version = "nar-chronological-v8-abcd-C-preoff"
     for record in load_odds_snapshots().values():
+        if record.get("model_version") != expected_model_version:
+            legacy_snapshot_races_excluded += 1
+            continue
         parts = str(record.get("race_key") or "").split("|")
         if len(parts) != 3:
             continue
@@ -2637,8 +2642,11 @@ def preoff_ranking_strategy_backtest(payouts):
             "candidate_pass":bool(enough and ci_low is not None and ci_low > 100),
         }
 
-    result = {"status":"ok" if records else "awaiting_preoff_candidate_snapshots",
-              "snapshot_races":len(records), "date_count":len(dates),
+    result = {"status":"ok" if records else "awaiting_C_model_preoff_snapshots",
+              "snapshot_races":len(records),
+              "legacy_snapshot_races_excluded":legacy_snapshot_races_excluded,
+              "required_model_version":expected_model_version,
+              "date_count":len(dates),
               "development_date_count":len(development_dates),
               "holdout_date_count":len(dates)-len(development_dates) if split else 0,
               "top_n_per_race":top_n, "strategies":{}, "selected_by_development":{}}
@@ -2757,7 +2765,7 @@ def main():
 
     validated_weights = learned_weights
     live_model = {
-        "model_version": "nar-chronological-v7-fieldsize-calibrated",
+        "model_version": "nar-chronological-v8-abcd-C-preoff",
         "generated_at": result["generated_at"],
         "training_period": result["period"],
         "updates": learning_updates,
