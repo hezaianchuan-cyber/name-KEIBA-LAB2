@@ -165,8 +165,8 @@ def rank_quality(finish, field_size=None):
     return max(5.0, 100.0-(rank-1)*8.0)
 
 
-def score_runner(h, history, sire_stats, jockey_stats, race, model_weights):
-    past = history.get(h["name"], [])[-5:]
+def score_runner(h, history, sire_stats, jockey_stats, race, model_weights, include_recent_history=True):
+    past = history.get(h["name"], [])[-5:] if include_recent_history else []
     if past:
         quality_rows = [rank_quality(x.get("finish"), x.get("field_size")) for x in past]
         quality_rows = [q for q in quality_rows if q is not None]
@@ -427,7 +427,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     _, _, _, learned, updates, train_calibration_records = run_backtest(train_races, train_horses, train_payouts)
     temperature = fit_temperature(train_calibration_records)
     baseline = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
-    models = {"baseline":baseline, "trained":learned}
+    models = {"baseline":baseline, "trained":learned, "trained_no_recent_history":learned}
     kinds = ("win","place","wide","quinella","exacta","trio","trifecta")
     results = {name:{"races":0,"winner_top1":0,"winner_top3":0,
                      "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0}
@@ -482,7 +482,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
         winners={numbers[0] for numbers, _ in payout.get("win", [])}
         if not winners: continue
         for model_name,weights in models.items():
-            scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights)[0],h) for h in field]
+            include_recent_history = model_name != "trained_no_recent_history"
+            scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights,include_recent_history=include_recent_history)[0],h) for h in field]
             if model_name == "trained":
                 winner_indices=[i for i,h in enumerate(field) if h.get("finish") == 1]
                 if winner_indices:
@@ -870,7 +871,7 @@ def holdout_validation(races, horses, payouts):
 
     kinds=("win","place","wide","quinella","exacta","trio","trifecta")
     aggregate={}
-    for model_name in ("baseline","trained"):
+    for model_name in ("baseline","trained","trained_no_recent_history"):
         total={"races":0,"winner_top1":0,"winner_top3":0,
                "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0} for kind in kinds}}
         for fold in folds:
@@ -893,11 +894,25 @@ def holdout_validation(races, horses, payouts):
             "winner_top3_rate":round(100*total["winner_top3"]/n,2),
             "win_roi":bet_summary["win"]["roi"],"place_roi":bet_summary["place"]["roi"],
             "wide_roi":bet_summary["wide"]["roi"]}
+    history_comparison = {}
+    without = aggregate["trained_no_recent_history"]
+    with_history = aggregate["trained"]
+    for kind in kinds:
+        before, after = without["bet_types"][kind], with_history["bet_types"][kind]
+        history_comparison[kind] = {
+            "before_hit_rate": before["hit_rate"], "after_hit_rate": after["hit_rate"],
+            "hit_rate_delta": round(after["hit_rate"]-before["hit_rate"], 2) if after["hit_rate"] is not None and before["hit_rate"] is not None else None,
+            "before_roi": before["roi"], "after_roi": after["roi"],
+            "roi_delta": round(after["roi"]-before["roi"], 2) if after["roi"] is not None and before["roi"] is not None else None,
+            "before_tickets": before["tickets"], "after_tickets": after["tickets"],
+        }
+    history_comparison["_method"] = "Same chronological holdout races and same trained weights; before excludes each horse's last-five-run form/venue/distance inputs, after includes them. Sire, jockey and age features remain identical."
     return {"status":"ok","method":"three rolling-origin folds with non-overlapping test windows; weights frozen within each test window; prior results added only after all races on a date are scored; market-value bets use timestamped official pre-off odds snapshots",
             "folds":folds,
             "test_races":sum(x["models"]["trained"]["races"] for x in folds),
             "test_start":folds[0]["test_start"],"test_end":folds[-1]["test_end"],
             "train_end":folds[-1]["train_end"],"models":aggregate,
+            "recent_history_comparison":history_comparison,
             "trained_weights":folds[-1]["trained_weights"],
             "folds_above_100_roi":{kind:sum(1 for fold in folds if (fold["models"]["trained"]["bet_types"][kind]["roi"] or 0)>=100) for kind in kinds},
             "selection_rule":"Each fold uses only strictly earlier training data; test weights remain fixed and race results are added to history only after the entire date is scored."}
