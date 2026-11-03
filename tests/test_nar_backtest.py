@@ -16,6 +16,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import capture_nar_odds as capture
 
 
+class RecentHistoryAblationTests(unittest.TestCase):
+    def test_recent_history_is_an_explicit_optional_prediction_input(self):
+        h={"name":"馬A","sire":"父A","jockey":"騎手A","age":5}
+        history={"馬A":[{"finish":1,"field_size":10,"venue":"大井","distance":1600},
+                        {"finish":2,"field_size":10,"venue":"大井","distance":1600}]}
+        sire=defaultdict(lambda:{"runs":0,"top3":0})
+        jockey=defaultdict(lambda:{"runs":0,"top3":0})
+        race={"venue":"大井","distance":1600}
+        weights={"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
+        with_history=nb.score_runner(h,history,sire,jockey,race,weights,include_recent_history=True)[0]
+        without_history=nb.score_runner(h,history,sire,jockey,race,weights,include_recent_history=False)[0]
+        self.assertNotEqual(with_history,without_history)
+
+
 class PayoutParsingTests(unittest.TestCase):
     def payout_row(self, winner="1", win_pay="250"):
         row = [""] * 53
