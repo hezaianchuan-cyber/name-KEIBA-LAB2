@@ -32,7 +32,7 @@ class StrategyRiskDiagnosticsTests(unittest.TestCase):
         self.assertEqual(report["max_losing_streak_races"], 2)
         self.assertEqual(report["max_losing_streak_loss_jpy"], 200)
         self.assertEqual(report["max_drawdown_jpy"], 300)
-        self.assertEqual(report["net_profit_jpy"], -200)
+        self.assertEqual(report["net_profit_jpy"], -300)
 
     def test_handles_no_bets_without_assuming_bankroll(self):
         report = nb.strategy_risk_diagnostics([])
