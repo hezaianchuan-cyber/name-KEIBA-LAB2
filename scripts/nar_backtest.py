@@ -589,6 +589,61 @@ def race_segment_labels(race):
     return labels
 
 
+CONFIDENCE_THRESHOLDS = (0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50)
+
+def new_confidence_filter_stats():
+    return {
+        f"{threshold:.2f}": {
+            "races": 0, "winner_top1": 0, "winner_top3": 0,
+            "bet_types": {
+                kind: {"tickets": 0, "hits": 0, "stake": 0, "return": 0}
+                for kind in ("win", "place", "wide", "quinella", "exacta", "trio", "trifecta")
+            }
+        }
+        for threshold in CONFIDENCE_THRESHOLDS
+    }
+
+
+def update_confidence_filter_stats(stats, top_probability, ranked, winners, ticket_map, payout):
+    """Evaluate fixed tickets only when calibrated top-win probability clears a preset threshold."""
+    for threshold in CONFIDENCE_THRESHOLDS:
+        if top_probability + 1e-12 < threshold:
+            continue
+        bucket = stats[f"{threshold:.2f}"]
+        bucket["races"] += 1
+        bucket["winner_top1"] += int(bool(ranked) and ranked[0]["no"] in winners)
+        bucket["winner_top3"] += int(any(h["no"] in winners for h in ranked[:3]))
+        for kind, tickets in ticket_map.items():
+            target = bucket["bet_types"][kind]
+            for ticket in tickets:
+                target["tickets"] += 1
+                target["stake"] += 100
+                returned = payout_for(kind, ticket, payout) or 0
+                if returned:
+                    target["hits"] += 1
+                    target["return"] += returned
+
+
+def summarize_confidence_filter_stats(stats):
+    output = {}
+    for threshold, bucket in stats.items():
+        bet_types = {}
+        for kind, values in bucket["bet_types"].items():
+            bet_types[kind] = {
+                **values,
+                "hit_rate": round(100 * values["hits"] / values["tickets"], 2) if values["tickets"] else None,
+                "roi": round(100 * values["return"] / values["stake"], 2) if values["stake"] else None,
+                "profit": values["return"] - values["stake"],
+            }
+        output[threshold] = {
+            "races": bucket["races"],
+            "winner_top1_rate": round(100 * bucket["winner_top1"] / bucket["races"], 2) if bucket["races"] else None,
+            "winner_top3_rate": round(100 * bucket["winner_top3"] / bucket["races"], 2) if bucket["races"] else None,
+            "bet_types": bet_types,
+        }
+    return output
+
+
 def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     train_set = set(train_dates)
     test_set = set(test_dates)
@@ -645,6 +700,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     ordered = sorted(test_races.values(), key=lambda r:(r["date"],r["venue"],int(r["race"])))
     pending=[]; current=None
     test_calibration_records=[]
+    confidence_filter_stats = new_confidence_filter_stats()
     segment_stats = defaultdict(lambda: {
         "races": 0, "winner_top1": 0, "winner_top3": 0,
         "bet_types": {kind: {"tickets": 0, "hits": 0, "stake": 0, "return": 0}
@@ -698,11 +754,18 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                                                      "winner_indices":winner_indices})
             ranked=[h for _,h in sorted(scored,key=lambda x:x[0],reverse=True)]
             if len(ranked)<3: continue
+            if model_name == "trained":
+                calibrated_probabilities = softmax_probabilities([score for score, _ in scored], temperature)
+                top_probability = max(calibrated_probabilities) if calibrated_probabilities else 0.0
+            else:
+                top_probability = None
             m=results[model_name]; m["races"]+=1
             if ranked[0]["no"] in winners: m["winner_top1"]+=1
             if any(h["no"] in winners for h in ranked[:3]): m["winner_top3"]+=1
             ticket_map=build_fixed_tickets(ranked)
             if model_name == "trained":
+                update_confidence_filter_stats(confidence_filter_stats, top_probability,
+                                               ranked, winners, ticket_map, payout)
                 winners_in_race = winners
                 labels = race_segment_labels(race)
                 for dimension, label in labels.items():
@@ -767,7 +830,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             "train_races":len(train_races),"test_races":len(ordered),
             "training_updates":updates,"trained_weights":learned,"temperature":round(temperature,4),
             "calibration":calibration_metrics(test_calibration_records,temperature),"models":out,
-            "trained_condition_segments":segment_output}
+            "trained_condition_segments":segment_output,
+            "confidence_filter_backtest":summarize_confidence_filter_stats(confidence_filter_stats)}
 
 
 def load_odds_snapshot_records():
