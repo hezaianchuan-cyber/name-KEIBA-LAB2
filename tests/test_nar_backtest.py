@@ -16,6 +16,32 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import capture_nar_odds as capture
 
 
+class StrategyRiskDiagnosticsTests(unittest.TestCase):
+    def test_reports_drawdown_losing_streak_and_worst_ten_race_roi(self):
+        report = nb.strategy_risk_diagnostics([(100, 0)] * 10)
+        self.assertEqual(report["bet_races"], 10)
+        self.assertEqual(report["losing_races"], 10)
+        self.assertEqual(report["max_losing_streak_races"], 10)
+        self.assertEqual(report["max_losing_streak_loss_jpy"], 1000)
+        self.assertEqual(report["max_drawdown_jpy"], 1000)
+        self.assertEqual(report["worst_10_consecutive_race_roi_percent"], 0.0)
+        self.assertEqual(report["net_profit_jpy"], -1000)
+
+    def test_breaks_losing_streak_after_non_losing_race(self):
+        report = nb.strategy_risk_diagnostics([(100, 0), (100, 0), (100, 100), (100, 0)])
+        self.assertEqual(report["max_losing_streak_races"], 2)
+        self.assertEqual(report["max_losing_streak_loss_jpy"], 200)
+        self.assertEqual(report["max_drawdown_jpy"], 200)
+        self.assertEqual(report["net_profit_jpy"], -200)
+
+    def test_handles_no_bets_without_assuming_bankroll(self):
+        report = nb.strategy_risk_diagnostics([])
+        self.assertEqual(report["bet_races"], 0)
+        self.assertIsNone(report["losing_race_rate"])
+        self.assertEqual(report["max_drawdown_jpy"], 0)
+        self.assertIsNone(report["worst_10_consecutive_race_roi_percent"])
+
+
 class BayesianSmoothingTests(unittest.TestCase):
     def test_no_history_returns_neutral_prior(self):
         self.assertAlmostEqual(nb.smoothed_rate(0, 0), 0.50)
