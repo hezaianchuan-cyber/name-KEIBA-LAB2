@@ -508,7 +508,8 @@ def new_role_trifecta_diagnostics():
     return {
         f"{blend:.2f}": {
             f"{a}-{b}-{c}": {"races":0,"tickets":0,"hits":0,"hit_races":0,
-                              "stake":0,"return":0}
+                              "stake":0,"return":0,"sum_return_sq":0,
+                              "sum_stake_sq":0,"sum_stake_return":0}
             for a,b,c in formations
         } for blend in blends
     }
@@ -528,12 +529,18 @@ def update_role_trifecta_diagnostics(bucket, scored, history, payout):
                 continue
             returned = sum(payout_for("trifecta", ticket, payout) or 0 for ticket in tickets)
             hits = sum(1 for ticket in tickets if payout_for("trifecta", ticket, payout))
+            race_stake = 100 * len(tickets)
             stats["races"] += 1
             stats["tickets"] += len(tickets)
             stats["hits"] += hits
             stats["hit_races"] += int(hits > 0)
-            stats["stake"] += 100 * len(tickets)
+            stats["stake"] += race_stake
             stats["return"] += returned
+            # Race-level ratio moments allow a conservative uncertainty estimate
+            # without retaining raw race records in the published aggregate file.
+            stats["sum_return_sq"] += returned * returned
+            stats["sum_stake_sq"] += race_stake * race_stake
+            stats["sum_stake_return"] += race_stake * returned
 
 
 def summarize_role_trifecta_diagnostics(bucket):
@@ -541,12 +548,33 @@ def summarize_role_trifecta_diagnostics(bucket):
     for blend, formations in bucket.items():
         output[blend] = {}
         for formation, stats in formations.items():
+            races = stats["races"]
+            stake = stats["stake"]
+            returned = stats["return"]
+            roi = 100 * returned / stake if stake else None
+            ci_low = ci_high = None
+            if races > 1 and roi is not None:
+                ratio = returned / stake
+                sum_z_sq = (stats["sum_return_sq"]
+                            - 2 * ratio * stats["sum_stake_return"]
+                            + ratio * ratio * stats["sum_stake_sq"])
+                variance = max(0.0, sum_z_sq / (races - 1))
+                mean_stake = stake / races
+                standard_error = 100 * math.sqrt(variance / races) / mean_stake if mean_stake else 0.0
+                ci_low = round(roi - 1.96 * standard_error, 2)
+                ci_high = round(roi + 1.96 * standard_error, 2)
+            enough = races >= 100 and stats["tickets"] >= 300
             output[blend][formation] = {
                 **stats,
-                "tickets_per_race": round(stats["tickets"] / stats["races"], 2) if stats["races"] else None,
-                "race_hit_rate": round(100 * stats["hit_races"] / stats["races"], 2) if stats["races"] else None,
-                "roi": round(100 * stats["return"] / stats["stake"], 2) if stats["stake"] else None,
-                "profit": stats["return"] - stats["stake"],
+                "tickets_per_race": round(stats["tickets"] / races, 2) if races else None,
+                "hit_rate": round(100 * stats["hits"] / stats["tickets"], 4) if stats["tickets"] else None,
+                "race_hit_rate": round(100 * stats["hit_races"] / races, 2) if races else None,
+                "roi": round(roi, 2) if roi is not None else None,
+                "roi_ci95_normal_low": ci_low,
+                "roi_ci95_normal_high": ci_high,
+                "minimum_sample_met": enough,
+                "candidate_pass": bool(enough and ci_low is not None and ci_low > 100),
+                "profit": returned - stake,
             }
     return output
 
@@ -1678,10 +1706,37 @@ def evaluate_walk_forward_selection(folds, min_tickets=300, min_roi_gain=5.0):
             for item in chosen
         ]
         selected_portfolio[kind] = totals
+    # Aggregate role-specific trifecta diagnostics only for the model selected
+    # from prior folds, evaluated on the next untouched fold. This is the
+    # selection-aware out-of-sample view; all-candidate diagnostics remain on
+    # each fold for research comparison.
+    selected_role_stats = new_role_trifecta_diagnostics()
+    selected_role_models = []
+    fold_by_number = {fold.get("fold"): fold for fold in folds}
+    for entry in evaluations:
+        trifecta_choice = (entry.get("bet_types") or {}).get("trifecta") or {}
+        model_name = trifecta_choice.get("model")
+        validation_fold = fold_by_number.get(entry.get("validation_fold"))
+        model_bucket = ((validation_fold or {}).get("models") or {}).get(model_name or "", {})
+        diagnostics = model_bucket.get("role_trifecta_diagnostics") or {}
+        if not diagnostics:
+            continue
+        selected_role_models.append({
+            "validation_fold": entry.get("validation_fold"),
+            "model": model_name,
+        })
+        for blend, formations in diagnostics.items():
+            for formation, source_stats in formations.items():
+                target = selected_role_stats[blend][formation]
+                for key in ("races", "tickets", "hits", "hit_races", "stake", "return",
+                            "sum_return_sq", "sum_stake_sq", "sum_stake_return"):
+                    target[key] += int(source_stats.get(key) or 0)
     return {
         "status": "ok" if evaluations else "awaiting_next_fold",
         "selection_method": "Each candidate must clear its type-specific sample and ROI-edge hurdle in every available prior fold. Selection uses no validation-fold outcomes; baseline is the fallback. Selection hurdles are not profitability gates.",
         "selected_portfolio": selected_portfolio,
+        "selected_role_trifecta_models_by_validation_fold": selected_role_models,
+        "selected_role_trifecta_diagnostics": summarize_role_trifecta_diagnostics(selected_role_stats),
         "min_tickets": min_tickets, "min_roi_gain_percentage_points": min_roi_gain,
         "selection_rules_by_bet_type": {
             kind: {"min_tickets": int(BET_TYPE_SELECTION_RULES.get(kind, {}).get("min_tickets", min_tickets)),
