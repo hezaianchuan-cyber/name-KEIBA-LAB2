@@ -458,3 +458,17 @@ class PerformanceFeatureTests(unittest.TestCase):
         self.assertGreater(d_score, base)
         self.assertEqual(parts["margin_form"], 0.9)
         self.assertEqual(parts["closing_form"], 0.9)
+
+    def test_performance_ablation_weights_are_independent(self):
+        horse = {"no":"1","name":"A","sire":"","jockey":"","age":5}
+        history = {"A":[{"finish":5,"field_size":10,"venue":"X","distance":1400,
+                         "margin_quality":1.0,"last3f_rank_score":0.0}]}
+        weights = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
+        args = (horse,history,{}, {"": {"runs":0,"top3":0}}, {"venue":"X","distance":1400},weights)
+        base = nb.score_runner(*args)[0]
+        margin = nb.score_runner_performance(*args,margin_weight=0.10,closing_weight=0.00)[0]
+        closing = nb.score_runner_performance(*args,margin_weight=0.00,closing_weight=0.10)[0]
+        light = nb.score_runner_performance(*args,margin_weight=0.05,closing_weight=0.05)[0]
+        self.assertGreater(margin, base)
+        self.assertLess(closing, base)
+        self.assertAlmostEqual(light, base + (margin-base + closing-base)/2, places=10)
