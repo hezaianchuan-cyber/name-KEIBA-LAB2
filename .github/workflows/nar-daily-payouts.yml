@@ -1,6 +1,11 @@
 name: Publish daily official NAR payouts
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/nar_daily_payouts.py'
+      - '.github/workflows/nar-daily-payouts.yml'
   workflow_dispatch:
   schedule:
     - cron: "30 19 * * *"
