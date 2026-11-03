@@ -644,6 +644,35 @@ async function loadHistoricalBacktest(){
 }
 window.addEventListener('load',loadHistoricalBacktest);
 
+async function loadModelGReport(){
+ const section=document.getElementById('history');
+ if(!section)return;
+ const card=document.createElement('div');
+ card.className='card';
+ card.id='modelGProspectiveReport';
+ card.innerHTML='<h2>Model G：新チャレンジャーの直前オッズ検証</h2><p class="sub">Model Eは変更せず、Gは独立した実験モデルとして将来の直前オッズで検証します。</p><div class="sub">検証レポートを読み込んでいます。</div>';
+ const anchor=document.getElementById('historicalBacktest');
+ if(anchor)anchor.after(card);else section.prepend(card);
+ try{
+  const response=await fetch('./data/model-g-prospective-backtest.json?v='+Date.now(),{cache:'no-store'});
+  if(!response.ok)throw new Error('初回レポート待ち');
+  const report=await response.json();
+  const h=report.holdout||{},d=report.development||{};
+  const state={
+   awaiting_preoff_snapshots:'直前オッズの蓄積待ち',
+   awaiting_more_snapshot_dates:'検証日数の蓄積待ち',
+   awaiting_holdout_sample:'未使用期間の標本不足',
+   not_validated_profitable:'収益性は未確認',
+   profitable_candidate:'基準を満たす候補（別期間で再確認が必要）'
+  }[report.status]||report.status||'状態不明';
+  const metric=(x,k,suffix='')=>x[k]==null?'—':Number(x[k]).toLocaleString('ja-JP')+suffix;
+  card.innerHTML='<h2>Model G：新チャレンジャーの直前オッズ検証</h2><p class="sub">Model Eは変更せず、Gは独立した実験モデルとして将来の直前オッズで検証します。</p><p><b>現在の状態：</b>'+esc(state)+'<br><b>保存済み直前オッズ：</b>'+Number(report.snapshot_races||0).toLocaleString()+'レース ／ '+Number(report.snapshot_dates||0).toLocaleString()+'日<br><b>開発期間：</b>'+esc((report.development_period||[]).join(' ～ ')||'未開始')+'<br><b>未使用期間：</b>'+esc((report.holdout_period||[]).join(' ～ ')||'未開始')+'</p><div class="kpis"><div class="kpi"><span>Holdout購入対象R</span><b>'+metric(h,'races_with_bets')+'</b></div><div class="kpi"><span>点数</span><b>'+metric(h,'tickets')+'</b></div><div class="kpi"><span>的中率</span><b>'+metric(h,'hit_rate_percent','%')+'</b></div><div class="kpi"><span>回収率</span><b>'+metric(h,'roi_percent','%')+'</b></div></div><p class="sub">収支 '+metric(h,'profit_jpy','円')+' ／ 95%レース単位区間 '+metric(h,'roi_ci95_race_cluster_low','%')+' ～ '+metric(h,'roi_ci95_race_cluster_high','%')+' ／ 1レース上限 '+Number(report.strategy_policy?.race_budget_cap_jpy||2000).toLocaleString()+'円</p><p class="sub">'+esc(report.promotion_policy||'標本が十分に集まるまで収益性を判定しません。')+'</p><p><a href="https://github.com/hezaianchuan-cyber/name-KEIBA-LAB2/actions/workflows/nar-model-g-backtest.yml" target="_blank" rel="noopener">Model Gの検証実行状況を開く</a></p>';
+ }catch(e){
+  card.innerHTML='<h2>Model G：新チャレンジャーの直前オッズ検証</h2><p class="sub">Model Eは変更せず、Gは独立した実験モデルとして将来の直前オッズで検証します。</p><p class="sub">初回レポートを作成中です。直前オッズが蓄積されるまでは回収率を表示しません。</p><p><a href="https://github.com/hezaianchuan-cyber/name-KEIBA-LAB2/actions/workflows/nar-model-g-backtest.yml" target="_blank" rel="noopener">Model Gの検証実行状況を開く</a></p>';
+ }
+}
+window.addEventListener('load',loadModelGReport);
+
 async function loadLearnedModel(){
  if(hasCustomWeights)return;
  try{
