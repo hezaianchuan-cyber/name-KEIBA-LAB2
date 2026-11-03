@@ -985,6 +985,22 @@ class RoleSpecificTrifectaTests(unittest.TestCase):
 
 
 class RoleTrifectaUncertaintyAndSelectionTests(unittest.TestCase):
+    def _fold(self, fold_no, model_rois):
+        models = {}
+        for model_name, roi in model_rois.items():
+            stake = 50000
+            returned = int(stake * roi / 100)
+            models[model_name] = {
+                "bet_types": {
+                    "trifecta": {
+                        "roi": roi, "tickets": 500, "hits": 50,
+                        "stake": stake, "return": returned,
+                        "profit": returned - stake,
+                    }
+                }
+            }
+        return {"fold": fold_no, "models": models}
+
     def _sample_role_inputs(self):
         scored = [
             (0.90, {"no":"1","name":"A"}),
