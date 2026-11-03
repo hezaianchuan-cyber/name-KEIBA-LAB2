@@ -1440,3 +1440,34 @@ class ConditionSpecificFinishDiagnosticsTests(unittest.TestCase):
         self.assertEqual(exported["condition_model_comparisons"], fold["condition_model_comparisons"])
         self.assertEqual(exported["trained_condition_segments"], fold["trained_condition_segments"])
 
+
+
+class GoingSuitabilityPredictionTests(unittest.TestCase):
+    def test_going_feature_uses_only_prior_matching_going_and_surface(self):
+        horse = {"name":"Runner A", "sire":"", "jockey":"", "age":5}
+        weights = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
+        history = {"Runner A":[
+            {"going":"重","surface":"ダート","going_quality":1.0},
+            {"going":"重","surface":"ダート","going_quality":1.0},
+            {"going":"良","surface":"ダート","going_quality":0.0},
+            {"going":"重","surface":"芝","going_quality":0.0},
+        ]}
+        race = {"venue":"大井","distance":1600,"going":"重","surface":"ダート"}
+        _, parts = nb.score_runner_performance(
+            horse, history, {}, {}, race, weights,
+            margin_weight=0.0, closing_weight=0.0, time_weight=0.0,
+            going_weight=0.10
+        )
+        self.assertAlmostEqual(parts["going_form"], 4.0/6.0)
+        self.assertAlmostEqual(parts["performance_weights"]["going"], 0.10)
+
+    def test_going_feature_shrinks_to_neutral_without_matching_history(self):
+        horse = {"name":"Runner B", "sire":"", "jockey":"", "age":5}
+        weights = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
+        race = {"venue":"大井","distance":1600,"going":"不良","surface":"ダート"}
+        _, parts = nb.score_runner_performance(
+            horse, {}, {}, {}, race, weights,
+            margin_weight=0.0, closing_weight=0.0, time_weight=0.0,
+            going_weight=0.10
+        )
+        self.assertEqual(parts["going_form"], 0.5)
