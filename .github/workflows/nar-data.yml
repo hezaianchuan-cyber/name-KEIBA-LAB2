@@ -9,6 +9,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "*/15 * * * *"
+  workflow_run:
+    workflows: ["Capture NAR pre-off odds every five minutes"]
+    types: [completed]
 
 permissions:
   contents: write
@@ -21,6 +24,7 @@ concurrency:
 
 jobs:
   fetch-and-deploy:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout website
