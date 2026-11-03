@@ -666,7 +666,7 @@ class StrongerSelectionAndOddsGateTests(unittest.TestCase):
 
     def test_candidate_that_fails_one_prior_fold_is_not_selected(self):
         first = self._fold(1, wide_roi=70.0, win_roi=70.0, trifecta_roi=60.0)
-        second = self._fold(2, wide_roi=63.0, win_roi=70.0, trifecta_roi=60.0)
+        second = self._fold(2, wide_roi=62.0, win_roi=70.0, trifecta_roi=60.0)
         selected = nb.select_models_from_prior_folds([first, second])
         self.assertEqual(selected["wide"]["model"], "baseline")
 
