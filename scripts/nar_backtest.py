@@ -740,6 +740,115 @@ def preoff_value_backtest(payouts):
     }
 
 
+def preoff_ticket_type_backtest(payouts):
+    """Evaluate each bet type independently using timestamped pre-off odds."""
+    records = []
+    for record in load_odds_snapshots().values():
+        parts = str(record.get("race_key") or "").split("|")
+        if len(parts) != 3:
+            continue
+        key = race_key(parts[0], parts[1], parts[2])
+        if not key:
+            continue
+        try:
+            captured = dt.datetime.fromisoformat(str(record["captured_at"]))
+            scheduled = dt.datetime.fromisoformat(str(record["scheduled_post_time"]))
+            minutes = float(record["minutes_to_post"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        payout = payouts.get(key)
+        tickets = record.get("combination_predictions") or []
+        if (captured.tzinfo is None or scheduled.tzinfo is None or captured >= scheduled
+                or not 5 <= minutes <= 15 or not payout or not payout.get("win") or not tickets):
+            continue
+        records.append((str(record.get("date") or key[1]), tickets, payout))
+
+    kinds = ("win","place","wide","quinella","exacta","trio","trifecta")
+    thresholds = (1.00,1.05,1.10,1.15,1.20,1.30,1.50)
+
+    def summarize(subset, kind):
+        output = {}
+        for threshold in thresholds:
+            races_with_bets = tickets_count = hits = stake = returned = 0
+            race_results = []
+            for _, tickets, payout in subset:
+                race_stake = race_return = race_count = 0
+                for ticket in tickets:
+                    if ticket.get("bet_type") != kind:
+                        continue
+                    ev = number(ticket.get("expected_value"))
+                    numbers = [str(x) for x in ticket.get("numbers") or []]
+                    if ev is None or ev < threshold or not numbers:
+                        continue
+                    race_count += 1
+                    race_stake += 100
+                    pay = payout_for(kind, numbers, payout) or 0
+                    if pay:
+                        hits += 1
+                        race_return += pay
+                if race_count:
+                    races_with_bets += 1
+                    tickets_count += race_count
+                    stake += race_stake
+                    returned += race_return
+                    race_results.append((race_stake,race_return))
+            ci_low = ci_high = None
+            if len(race_results) >= 30:
+                rng = random.Random(20261103 + int(round(threshold*100)) + sum(ord(c) for c in kind))
+                samples = []
+                count = len(race_results)
+                for _ in range(1000):
+                    sample = [race_results[rng.randrange(count)] for _ in range(count)]
+                    sample_stake = sum(x[0] for x in sample)
+                    sample_return = sum(x[1] for x in sample)
+                    if sample_stake:
+                        samples.append(100*sample_return/sample_stake)
+                samples.sort()
+                if samples:
+                    ci_low = round(samples[int(0.025*(len(samples)-1))],2)
+                    ci_high = round(samples[int(0.975*(len(samples)-1))],2)
+            enough = races_with_bets >= 100 and tickets_count >= 300
+            output[f"{threshold:.2f}"] = {
+                "races_with_bets":races_with_bets,"tickets":tickets_count,"hits":hits,
+                "stake":stake,"return":returned,
+                "hit_rate":round(100*hits/tickets_count,2) if tickets_count else None,
+                "roi":round(100*returned/stake,2) if stake else None,
+                "profit":returned-stake,"roi_ci95_low":ci_low,"roi_ci95_high":ci_high,
+                "minimum_sample_met":enough,
+                "candidate_pass":bool(enough and ci_low is not None and ci_low > 100),
+            }
+        return output
+
+    records.sort(key=lambda x:x[0])
+    dates = sorted({x[0] for x in records})
+    split = max(1,min(len(dates)-1,int(len(dates)*0.70))) if len(dates)>=10 else 0
+    dev_dates = set(dates[:split])
+    development_records = [x for x in records if x[0] in dev_dates]
+    holdout_records = [x for x in records if x[0] not in dev_dates] if split else []
+    by_type = {}
+    for kind in kinds:
+        overall = summarize(records,kind)
+        development = summarize(development_records,kind) if split else {}
+        holdout = summarize(holdout_records,kind) if split else {}
+        eligible = [(float(k),v) for k,v in development.items() if v["minimum_sample_met"]]
+        selected = max(eligible,key=lambda x:x[1]["roi"] or 0)[0] if eligible else None
+        selected_key = f"{selected:.2f}" if selected is not None else None
+        by_type[kind] = {
+            "overall":overall,"development":development,"holdout":holdout,
+            "selected_threshold":selected_key,
+            "selected_holdout":holdout.get(selected_key) if selected_key else None,
+            "validation_status":"ready" if selected_key else ("awaiting_sample_size" if split else "awaiting_more_dates"),
+        }
+    return {
+        "status":"ok" if records else "awaiting_snapshots",
+        "snapshot_races":len(records),"date_count":len(dates),
+        "development_date_count":len(dev_dates),"holdout_date_count":len(dates)-len(dev_dates),
+        "selection_policy":"Each bet type is evaluated and selected independently. Threshold selection uses only the first 70% of dates; the final 30% is untouched holdout. Candidate pass requires at least 100 races, 300 tickets, and a race-cluster bootstrap 95% lower ROI bound above 100%.",
+        "probability_model":"Plackett-Luce top-three finish probabilities derived from calibrated win probabilities; combination odds are taken from the same timestamped official pre-off snapshot.",
+        "bet_types":by_type,
+    }
+
+
 def holdout_validation(races, horses, payouts):
     dates=sorted({r["date"] for r in races.values()})
     if len(dates)<60:
@@ -827,6 +936,7 @@ def main():
         "out_of_sample_validation": validation,
         "odds_snapshot_archive": odds_snapshot_inventory(),
         "preoff_value_backtest": preoff_value_backtest(payouts),
+        "preoff_ticket_type_backtest": preoff_ticket_type_backtest(payouts),
         "online_learning": {"updates": learning_updates, "final_weights": learned_weights,
                             "temperature": round(production_temperature,4), "calibration": production_calibration,
                             "note": "Daily batch learning: all races on a date are scored before that date's results update weights for later dates."},
