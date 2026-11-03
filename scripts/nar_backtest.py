@@ -442,10 +442,7 @@ def build_fixed_tickets(ranked):
     first_candidates = nos[:2]
     second_candidates = nos[:3]
     tickets = {
-        "win": [[no] for no in nos[:2]],
-        "place": [[no] for no in nos[:3]],
         "wide": [[nos[0],nos[1]],[nos[0],nos[2]],[nos[1],nos[2]]],
-        "quinella": [[nos[0],nos[1]]],
         "exacta": [[first,second] for first in first_candidates
                    for second in second_candidates if first != second],
         "trio": [list(combo) for combo in __import__("itertools").combinations(nos,3)],
