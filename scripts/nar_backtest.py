@@ -1065,6 +1065,10 @@ def update_condition_finish_bucket(bucket, ordinary_ranking, role_rankings, fiel
     }
     for role in (1, 2, 3):
         targets = finishers[role]
+        # Do not count a race in a role's denominator when the official
+        # finishing position is absent (e.g. incomplete/void result rows).
+        if not targets:
+            continue
         for ranking_name, by_role in rankings.items():
             stats = bucket[str(role)][ranking_name]
             stats["races"] += 1
