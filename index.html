@@ -339,7 +339,7 @@ function getRecentRuns(h){
   const cutoff=String(h.date||'');
   const same=(db.horses||[]).filter(x=>norm(x.name)===norm(h.name)&&String(x.date||'')<cutoff&&x.lastRank!=null);
   const unique=new Map();for(const x of same.sort((a,b)=>String(a.date).localeCompare(String(b.date))))unique.set(String(x.date),x);
-  return [...unique.values()].slice(-5).reverse().map(x=>({...x,distance:x.distance??db.races.find(r=>r.id===x.id)?.distance,fieldSize:x.fieldSize??db.races.find(r=>r.id===x.id)?.fieldSize}));
+  return [...unique.values()].slice(-5).reverse().map(x=>{const r=db.races.find(r=>r.id===x.id)||{};return {...x,distance:x.distance??r.distance,fieldSize:x.fieldSize??r.fieldSize,going:x.going??r.going,surface:x.surface??r.surface};});
 }
 function scoreRunner(h,all){
   const cutoff=String(h.date||'');
@@ -360,6 +360,10 @@ function scoreRunner(h,all){
   const distanceRuns=history.filter(x=>h.distance&&x.distance&&Math.abs(Number(x.distance)-Number(h.distance))<=200&&Number(x.lastRank)>0);
   const distanceQuality=distanceRuns.map(rankQuality).filter(x=>x!=null);
   const distanceScore=distanceQuality.length?distanceQuality.reduce((a,b)=>a+b,0)/distanceQuality.length:48;
+  const targetGoing=norm(h.going),targetSurface=norm(h.surface);
+  const sameGoing=history.filter(x=>targetGoing&&norm(x.going)===targetGoing&&(!targetSurface||!norm(x.surface)||norm(x.surface)===targetSurface));
+  const goingValues=sameGoing.map(rankQuality).filter(x=>x!=null);
+  const goingScore=goingValues.length?(goingValues.reduce((a,b)=>a+b,0)+50*4)/(goingValues.length+4):50;
   const prior=(db.horses||[]).filter(x=>String(x.date||'')<cutoff&&Number(x.lastRank)>0);
   const useSnapshot=!!(learnedModelLoaded&&learnedHistory?.training_period&&learnedModelEnd&&cutoff>learnedModelEnd);
   if(useSnapshot){
@@ -382,15 +386,17 @@ function scoreRunner(h,all){
   const parts={form,venue:venueScore,distance:distanceScore,sire:sireScore,pedigree:sireScore,jockey:jockeyScore,age};
   const learned={form:weights.form||0,venue:weights.venue||0,distance:weights.distance||0,sire:weights.pedigree||0,jockey:weights.jockey||0,age:weights.age||0};
   const totalWeight=Object.values(learned).reduce((a,b)=>a+b,0)||1;
-  const score=Object.keys(learned).reduce((sum,k)=>sum+parts[k]*learned[k],0)/totalWeight;
+  const baseScore=Object.keys(learned).reduce((sum,k)=>sum+parts[k]*learned[k],0)/totalWeight;
+  // Small, smoothed 10% adjustment from this horse's prior starts on the same official going/surface.
+  const score=baseScore*0.90+goingScore*0.10;
   const odds=h.odds?Math.max(10,Math.min(95,90-Math.log(h.odds)*18)):50;
-  return {...h,parts:{...parts,odds},score,recentRuns:history.map(x=>({date:x.date,rank:x.lastRank,margin:x.margin,last3f:x.last3f,venue:x.venue,distance:x.distance,fieldSize:x.fieldSize??x.field_size})),pedigreeSampleSize:sireRows.length,previousRun:{rank:history[0]?.lastRank??null,margin:history[0]?.margin??null,last3f:history[0]?.last3f??null,popularity:null,score:form},pedigreeScore:sireScore,modelSource:learnedModelLoaded?'学習済みモデル':'標準モデル'};
+  return {...h,parts:{...parts,going:goingScore,odds},score,recentRuns:history.map(x=>({date:x.date,rank:x.lastRank,margin:x.margin,last3f:x.last3f,venue:x.venue,distance:x.distance,going:x.going,surface:x.surface,fieldSize:x.fieldSize??x.field_size})),pedigreeSampleSize:sireRows.length,previousRun:{rank:history[0]?.lastRank??null,margin:history[0]?.margin??null,last3f:history[0]?.last3f??null,popularity:null,score:form},pedigreeScore:sireScore,modelSource:learnedModelLoaded?'学習済みモデル':'標準モデル'};
 }
 function analyze(){
  sampleMode=false;
  const id=$('raceSelect').value;
  const race=db.races.find(r=>r.id===id)||oddsRaceIndex.find(r=>r.id===id);
- let runners=db.horses.filter(h=>h.id===id);
+ let runners=db.horses.filter(h=>h.id===id).map(h=>({...h,going:h.going??race?.going,surface:h.surface??race?.surface}));
  if(!runners.length&&oddsCsvText){
   const date=race?.date||'',venue=race?.venue||'',raceNo=race?.race||'';
   const lines=oddsCsvText.split(/\r?\n/),rows=[];
