@@ -284,7 +284,7 @@ async function syncCloudPredictions(){
   setCloudStatus('同期エラー：'+(e.message||String(e))+' ／ テーブル設定を確認してください。');
  }finally{cloudSyncBusy=false;}
 }
-window.addEventListener('load',initCloudSync);
+try{initCloudSync();}catch(e){console.error('クラウド認証の初期化エラー',e);const status=document.getElementById('cloudStatus');if(status)status.textContent='認証画面の初期化に失敗しました。ページを再読み込みしてください。';}
 
 function csvRows(text){let rows=[],row=[],cell='',q=false;for(let i=0;i<text.length;i++){let c=text[i];if(c==='"'){if(q&&text[i+1]==='"'){cell+='"';i++}else q=!q}else if(c===','&&!q){row.push(cell);cell=''}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(x=>x!==''))rows.push(row);row=[];cell=''}else cell+=c}if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows;}
 function txt(buf){const bytes=buf instanceof Uint8Array?buf:new Uint8Array(buf);if(bytes.length>=3&&bytes[0]===0xEF&&bytes[1]===0xBB&&bytes[2]===0xBF)return new TextDecoder('utf-8').decode(bytes);if(bytes.length>=2&&bytes[0]===0xFF&&bytes[1]===0xFE)return new TextDecoder('utf-16le').decode(bytes);if(bytes.length>=2&&bytes[0]===0xFE&&bytes[1]===0xFF)return new TextDecoder('utf-16be').decode(bytes);try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes)}catch(e){try{return new TextDecoder('shift_jis').decode(bytes)}catch(e2){return new TextDecoder('utf-8').decode(bytes)}}}
