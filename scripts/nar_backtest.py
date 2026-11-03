@@ -1960,9 +1960,14 @@ def preoff_value_backtest(payouts):
 
 
 def preoff_ticket_type_backtest(payouts):
-    """Evaluate each bet type independently using timestamped pre-off odds."""
+    """Evaluate each bet type on timestamped pre-off odds from the current model only."""
     records = []
+    legacy_snapshot_races_excluded = 0
+    expected_model_version = "nar-chronological-v8-abcd-C-preoff"
     for record in load_odds_snapshots().values():
+        if record.get("model_version") != expected_model_version:
+            legacy_snapshot_races_excluded += 1
+            continue
         parts = str(record.get("race_key") or "").split("|")
         if len(parts) != 3:
             continue
@@ -2070,6 +2075,8 @@ def preoff_ticket_type_backtest(payouts):
     return {
         "status":"ok" if records else "awaiting_snapshots",
         "snapshot_races":len(records),"date_count":len(dates),
+        "legacy_snapshot_races_excluded":legacy_snapshot_races_excluded,
+        "required_model_version":expected_model_version,
         "development_date_count":len(dev_dates),"holdout_date_count":len(dates)-len(dev_dates),
         "selection_policy":"Each bet type is evaluated and selected independently. Threshold selection uses only the first 70% of dates; the final 30% is untouched holdout. Candidate pass requires at least 100 races, 300 tickets, and a race-cluster bootstrap 95% lower ROI bound above 100%.",
         "probability_model":"Plackett-Luce top-three finish probabilities derived from calibrated win probabilities; combination odds are taken from the same timestamped official pre-off snapshot.",
