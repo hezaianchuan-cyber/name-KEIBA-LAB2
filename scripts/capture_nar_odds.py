@@ -317,10 +317,27 @@ def append_snapshot(path: Path, record: dict) -> bool:
     return True
 
 
+def write_capture_status(now, races, horses_by_race, odds, **extra):
+    status = {
+        "updated_at": now.isoformat(),
+        "capture_window_minutes": [CAPTURE_WINDOW_MINUTES, STOP_BEFORE_POST_MINUTES],
+        "race_rows": len(races),
+        "horse_rows": sum(len(rows) for rows in horses_by_race.values()),
+        "odds_rows": sum(len(rows) for rows in odds.values()),
+        "races_with_horses": sum(1 for rows in horses_by_race.values() if len(rows) >= 3),
+        "races_with_odds": len(odds),
+        **extra,
+    }
+    path = DATA / "odds-capture-status.json"
+    path.write_text(json.dumps(status, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print("Capture status:", json.dumps(status, ensure_ascii=False), flush=True)
+
+
 def main():
     now = dt.datetime.now(JST)
     races, horses_by_race, odds = read_archives()
     if not races:
+        write_capture_status(now, races, horses_by_race, odds, result="no_race_rows", captured_races=0)
         print(f"No current official race rows; race_rows={len(races)}")
         return
     candidates = []
@@ -359,6 +376,14 @@ def main():
         flush=True,
     )
     if not candidates:
+        write_capture_status(
+            now, races, horses_by_race, odds,
+            result="no_eligible_preoff_races",
+            races_in_window=window_races,
+            window_races_with_field=window_with_field,
+            window_races_with_positive_odds=window_with_positive_odds,
+            captured_races=0,
+        )
         print("No eligible pre-off races yet; the next scheduled capture will retry.")
         return
     model_context = load_model_context()
@@ -385,6 +410,16 @@ def main():
         }
         if append_snapshot(path, record):
             additions += 1
+    write_capture_status(
+        now, races, horses_by_race, odds,
+        result="captured" if additions else "already_recorded",
+        races_in_window=window_races,
+        window_races_with_field=window_with_field,
+        window_races_with_positive_odds=window_with_positive_odds,
+        candidate_races=len(candidates),
+        captured_races=additions,
+        model_available=model_context is not None,
+    )
     print(f"Captured {additions} pre-off race snapshots at {now.isoformat()}; candidates={len(candidates)} window={CAPTURE_WINDOW_MINUTES}-{STOP_BEFORE_POST_MINUTES}min model_available={model_context is not None}")
 
 
