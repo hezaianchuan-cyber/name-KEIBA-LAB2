@@ -1513,3 +1513,91 @@ class GoingSuitabilityPredictionTests(unittest.TestCase):
             going_weight=0.10
         )
         self.assertEqual(parts["going_form"], 0.5)
+
+
+
+class RaceBudgetAutoStrategyTests(unittest.TestCase):
+    def _snapshot(self, day, tickets):
+        return {
+            "model_version": "nar-chronological-v8-abcd-C-preoff",
+            "race_key": f"大井|{day.replace('-', '')}|1",
+            "date": day,
+            "captured_at": f"{day}T19:50:00+09:00",
+            "scheduled_post_time": f"{day}T20:00:00+09:00",
+            "minutes_to_post": 10,
+            "combination_predictions": tickets,
+        }
+
+    def _ticket(self, kind, number, ev, probability=0.1):
+        return {
+            "bet_type": kind,
+            "numbers": [str(number), str(number + 1)],
+            "expected_value": ev,
+            "probability": probability,
+            "odds": 10.0,
+        }
+
+    @mock.patch.object(nb, "load_odds_snapshots")
+    def test_selects_best_type_caps_each_race_and_skips_without_candidates(self, load_snapshots):
+        records = {}
+        for day_num in range(1, 8):
+            day = f"2026-10-{day_num:02d}"
+            records[str(day_num)] = self._snapshot(day, [])
+        records["8"] = self._snapshot(
+            "2026-10-08",
+            [self._ticket("wide", i, 1.50) for i in range(1, 26)] +
+            [self._ticket("place", i, 1.20) for i in range(30, 55)]
+        )
+        records["9"] = self._snapshot("2026-10-09", [])
+        records["10"] = self._snapshot(
+            "2026-10-10", [self._ticket("place", 70, 1.30)]
+        )
+        load_snapshots.return_value = records
+
+        payout = {
+            "win": [(["1"], 100)],
+            "_index": {"win": {}, "place": {}, "wide": {}, "quinella": {},
+                       "exacta": {}, "trio": {}, "trifecta": {}},
+        }
+        payouts = {
+            ("大井", "20261008", "1"): payout,
+            ("大井", "20261009", "1"): payout,
+            ("大井", "20261010", "1"): payout,
+        }
+        validation = {
+            "bet_types": {
+                kind: {
+                    "selected_threshold": "1.05",
+                    "development": {"1.05": {"candidate_pass": True}},
+                }
+                for kind in ("wide", "place")
+            }
+        }
+
+        result = nb.race_budget_auto_strategy_backtest(payouts, validation)
+        self.assertEqual(result["status"], "awaiting_holdout_sample")
+        self.assertEqual(result["holdout_races_with_bets"], 2)
+        self.assertEqual(result["skipped_races"], 1)
+        self.assertEqual(result["selected_bet_type_race_counts"]["wide"], 1)
+        self.assertEqual(result["selected_bet_type_race_counts"]["place"], 1)
+        self.assertEqual(result["max_race_stake_jpy"], 2000)
+        self.assertEqual(result["stake_jpy"], 2100)
+        self.assertLessEqual(result["max_race_stake_jpy"], 2000)
+
+    @mock.patch.object(nb, "load_odds_snapshots")
+    def test_no_development_validated_type_means_no_bets(self, load_snapshots):
+        records = {
+            str(i): self._snapshot(f"2026-10-{i:02d}", [])
+            for i in range(1, 11)
+        }
+        records["10"] = self._snapshot(
+            "2026-10-10", [self._ticket("wide", 1, 2.0)]
+        )
+        load_snapshots.return_value = records
+        payout = {"win": [(["1"], 100)]}
+        payouts = {("大井", "20261010", "1"): payout}
+
+        result = nb.race_budget_auto_strategy_backtest(payouts, {"bet_types": {}})
+        self.assertEqual(result["status"], "awaiting_development_validation")
+        self.assertEqual(result["stake_jpy"], 0)
+        self.assertEqual(result["holdout_races_with_bets"], 0)
