@@ -754,7 +754,8 @@ function generateTickets(){
  const main=groups.map(type=>ranked(type)[0]).filter(Boolean);
  const MAX_RACE_STAKE=2000,UNIT_STAKE=100;
  const eligibleByType=groups.map(type=>{
-   const threshold=thresholdFor(type);
+   const verifiedThreshold=Number(verifiedTicketThresholds[typeKeys[type]]);
+   const threshold=Number.isFinite(verifiedThreshold)&&verifiedThreshold>0?verifiedThreshold:Infinity;
    const rows=ranked(type).filter(x=>x.ev!=null&&x.ev>=Math.max(1.05,threshold));
    const qualified=rows.length>0;
    const avg=qualified?rows.slice(0,5).reduce((a,x)=>a+x.ev,0)/Math.min(5,rows.length):0;
@@ -768,13 +769,13 @@ function generateTickets(){
  let allocation=selectedRows.map((x,i)=>({ ...x, stake:weightTotal?Math.floor((MAX_RACE_STAKE*stakeWeights[i]/weightTotal)/UNIT_STAKE)*UNIT_STAKE:0 })).filter(x=>x.stake>=UNIT_STAKE);
  let allocated=allocation.reduce((a,x)=>a+x.stake,0);
  for(let i=0;allocated+UNIT_STAKE<=MAX_RACE_STAKE&&allocation.length;i=(i+1)%allocation.length){allocation[i].stake+=UNIT_STAKE;allocated+=UNIT_STAKE;if(i===allocation.length-1)break;}
- const selectedHtml=selectedType
+ const selectedHtml=selectedType&&allocation.length
    ? '<h3>このレースの自動選択：'+selectedType+'</h3><p>券種別の候補を比較し、検証済みEV基準を満たす候補の平均EVが最も高い券種を選択。購入上限2,000円の範囲で配分します。</p><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>EV</th><th>配分額</th></tr></thead><tbody>'+allocation.map(x=>'<tr><td><b>'+selectedType+' '+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+x.stake.toLocaleString()+'円</td></tr>').join('')+'</tbody></table></div><p><b>推奨購入額：'+allocated.toLocaleString()+'円／上限2,000円</b></p>'
    : '<h3>このレースは見送り</h3><p>校正済みモデルと実オッズがそろい、券種別の基準EVを満たす候補がありません。予算を使い切るための購入は提案しません。</p>';
  const pct=v=>(v*100).toFixed(2)+'%',odds=v=>v==null?'未取得':v.toFixed(1)+'倍',ev=v=>v==null?'—':v.toFixed(3);
  const mainHtml='<h3>的中率優先・券種別候補</h3><div class="tablewrap"><table><thead><tr><th>券種</th><th>買い目・方式</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+main.map(x=>'<tr><td>'+x.type+'</td><td><b>'+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'<tr><td>3連単</td><td><b>フォーメーション '+trifectaFormation.first.join(',')+' → '+trifectaFormation.second.join(',')+' → '+trifectaFormation.third.join(',')+'</b>（'+trifectaList.length+'点）</td><td colspan="4">着順別候補を指定・同一馬の重複組合せは除外</td></tr></tbody></table></div>';
  const horseHtml='<h3>予想上位馬</h3><div class="tablewrap"><table><thead><tr><th>順位</th><th>馬番・馬名</th><th>評価点</th><th>'+(learnedModelLoaded?'学習モデル推定勝率':'参考スコア比率')+'</th><th>単勝オッズ</th></tr></thead><tbody>'+top.map((h,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(h.horseNo+'番 '+(h.name||''))+'</td><td>'+(Number(h.score)||0).toFixed(1)+'</td><td>'+formatPct(h.modelProb)+'</td><td>'+formatOdds(Number(h.odds)>0?Number(h.odds):null)+'</td></tr>').join('')+'</tbody></table></div>';
- const ticketLimits={'ワイド':3,'馬単':4,'3連複':10,'3連単':24};
+ const ticketLimits={'単勝':5,'複勝':5,'ワイド':10,'馬連':10,'馬単':10,'3連複':10,'3連単':24};
  const allHtml=groups.map(type=>{const list=ranked(type).slice(0,ticketLimits[type]||0);if(type==='3連単'){const roleText='<p><b>1着：</b>'+trifectaFormation.first.join('・')+'番　<b>2着：</b>'+trifectaFormation.second.join('・')+'番　<b>3着：</b>'+trifectaFormation.third.join('・')+'番</p><p class="sub">同一馬が1着・2着・3着に重複する組合せは除外。基本形は2-5-5、計24点です。</p>';return '<h3>3連単フォーメーション（'+list.length+'点）</h3>'+roleText+'<div class="tablewrap"><table><thead><tr><th>成立買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+list.map(x=>'<tr><td><b>'+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';}return '<h3>'+type+'（'+list.length+'点）</h3><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+list.map(x=>'<tr><td><b>'+type+' '+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';}).join('');
  out.innerHTML=horseHtml+selectedHtml+mainHtml+'<details style="margin-top:12px"><summary>券種別の候補一覧（比較用）</summary>'+allHtml+'</details><p>券種選択は、校正済みモデル・実オッズ・券種別EV基準を満たす候補がある場合のみ行います。候補確率はPlackett–Luce方式による近似です。各候補のオッズが未取得、モデル未校正、または基準未達の場合は見送り。1点100円単位、1レース合計2,000円を超えないよう配分します。実際の購入・払戻ではなく、アプリの推奨額です。候補 '+candidates.length+'点 / オッズ照合済み '+candidates.filter(x=>x.ev!=null).length+'点。</p>';
 }
