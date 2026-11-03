@@ -538,3 +538,19 @@ class ResearchReadinessAndDataQualityTests(unittest.TestCase):
         self.assertIn("does not mean profitable", result["policy"])
 
 
+
+
+class ConditionSegmentTests(unittest.TestCase):
+    def test_race_segment_labels_cover_venue_surface_going_and_distance_band(self):
+        labels = nb.race_segment_labels({
+            "venue":"大井", "surface":"ダート", "going":"稍重", "distance":1600
+        })
+        self.assertEqual(labels["venue"], "大井")
+        self.assertEqual(labels["surface"], "ダート")
+        self.assertEqual(labels["going"], "稍重")
+        self.assertEqual(labels["distance_band"], "mile_1201-1600m")
+
+    def test_missing_conditions_are_not_fabricated(self):
+        labels = nb.race_segment_labels({"venue":"", "surface":None, "going":"", "distance":None})
+        self.assertEqual(labels, {})
+
