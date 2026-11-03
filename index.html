@@ -252,10 +252,10 @@ async function syncCloudPredictions(){
   if(readError)throw readError;
   const local=(db.predictions||[]).filter(p=>p.id&&p.date);
   const remoteByRace=new Map((remote||[]).map(row=>[row.race_id,row]));
-  const payload=local.map(p=>({
+  const payload=local.filter(p=>{const row=remoteByRace.get(String(p.id));return !row||String(p.at||'')>String(row.created_at||'');}).map(p=>({
    user_id:cloudUser.id,
    race_id:String(p.id),
-   race_date:String(p.date).replace(/^(\\d{4})(\\d{2})(\\d{2})$/,'$1-$2-$3'),
+   race_date:String(p.date).replace(/^(\d{4})(\d{2})(\d{2})$/,'$1-$2-$3'),
    predicted_top3:Array.isArray(p.top)?p.top:[],
    runners:Array.isArray(p.runners)?p.runners:[],
    race_info:(db.races||[]).find(r=>r.id===p.id)||{},
