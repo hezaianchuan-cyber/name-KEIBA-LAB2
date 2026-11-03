@@ -216,7 +216,7 @@ def ordered_finish_probability(order, probabilities):
 def combination_probability(kind, numbers, probabilities):
     """Probability for a ticket under a Plackett-Luce top-three finish model."""
     import itertools
-    numbers = [str(int(re.sub(r"\\D", "", str(x or "")) or 0)) for x in numbers]
+    numbers = [str(int(re.sub(r"\D", "", str(x or "")) or 0)) for x in numbers]
     if kind == "win" and len(numbers) == 1:
         return probabilities.get(numbers[0], 0.0)
     if kind == "place" and len(numbers) == 1:
@@ -268,8 +268,8 @@ def predict_combinations(odds_rows, horse_predictions):
         kind = next((value for key, value in type_map.items() if key in label), None)
         if not kind:
             continue
-        numbers = [re.sub(r"\D", "", str(item.get(key) or "")) for key in ("n1","n2","n3")]
-        numbers = [x for x in numbers if x]
+        numbers = [str(int(re.sub(r"\D", "", str(item.get(key) or "")) or 0))
+                   for key in ("n1","n2","n3") if re.sub(r"\D", "", str(item.get(key) or ""))]
         required = {"win":1,"place":1,"wide":2,"quinella":2,"exacta":2,"trio":3,"trifecta":3}[kind]
         if len(numbers) < required:
             continue
