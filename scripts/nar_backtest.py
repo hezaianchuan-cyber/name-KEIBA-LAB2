@@ -2746,6 +2746,61 @@ def main():
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
+
+    # Publish three distinct backtest reports from the same cached source data
+    # and the same untouched final-year holdout. No extra download or duplicate
+    # model fitting is performed solely to create these views.
+    recent_validation = validation.get("recent_year_validation", {}) if isinstance(validation, dict) else {}
+    recent_fold = recent_validation.get("fold") or {}
+    recent_models = recent_fold.get("models") or {}
+    canonical_models = ("A_baseline", "B_condition", "C_performance_pace")
+    model_report = {
+        "generated_at": result["generated_at"],
+        "period": result["period"],
+        "holdout": {
+            "status": recent_validation.get("status"),
+            "period": recent_validation.get("period"),
+            "train_end": recent_validation.get("train_end"),
+            "test_races": recent_validation.get("test_races_expected"),
+            "method": validation.get("method") if isinstance(validation, dict) else None,
+        },
+        "models": {name: recent_models.get(name) for name in canonical_models},
+        "D_preoff_odds": result.get("preoff_ranking_strategy_backtest"),
+        "comparison_policy": result["strategy_comparison"]["comparison_design"],
+    }
+    (OUT.parent / "backtest-1-model-comparison.json").write_text(
+        json.dumps(model_report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    ticket_report = {
+        "generated_at": result["generated_at"],
+        "holdout_period": recent_validation.get("period"),
+        "train_end": recent_validation.get("train_end"),
+        "ranking_model": "C_performance_pace",
+        "ticket_policy": result["method"]["ticket_generation"],
+        "stake_per_ticket_jpy": 100,
+        "bet_types": (recent_models.get("C_performance_pace") or {}).get("bet_types", {}),
+        "all_model_bet_type_comparison": {
+            name: (recent_models.get(name) or {}).get("bet_types", {})
+            for name in canonical_models
+        },
+        "interpretation": "Same final-year holdout, same C ranking, and fixed 100 JPY per ticket. Compare hit rate, ROI, sample size and race-cluster uncertainty across bet types; this is not a parameter-tuned betting recommendation.",
+    }
+    (OUT.parent / "backtest-2-ticket-strategy.json").write_text(
+        json.dumps(ticket_report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    condition_report = {
+        "generated_at": result["generated_at"],
+        "holdout_period": recent_validation.get("period"),
+        "train_end": recent_validation.get("train_end"),
+        "test_races": recent_validation.get("test_races_expected"),
+        "venue_surface_going_distance_comparisons": recent_fold.get("condition_model_comparisons", {}),
+        "condition_finish_position_segments": recent_fold.get("condition_finish_position_segments", {}),
+        "trained_condition_segments": recent_fold.get("trained_condition_segments", {}),
+        "interpretation": "Condition segments are diagnostics within the untouched final-year holdout. Small segments must be treated as descriptive, not as evidence of a profitable betting edge.",
+    }
+    (OUT.parent / "backtest-3-condition-robustness.json").write_text(
+        json.dumps(condition_report, ensure_ascii=False, indent=2), encoding="utf-8")
+
     # Publish a compact, directly retrievable report for the trifecta-only
     # research loop. Keep every fold separate so candidate comparisons cannot
     # silently pool tuning and evaluation data.
