@@ -197,6 +197,97 @@ def predict_horses(race, horses, odds_rows, model_context):
     return predictions
 
 
+def ordered_finish_probability(order, probabilities):
+    """Plackett-Luce probability for an exact ordered top-k finish."""
+    remaining = sum(probabilities.values())
+    result = 1.0
+    used = set()
+    for raw_no in order:
+        no = str(int(re.sub(r"\D", "", str(raw_no or "")) or 0))
+        if no in used or no not in probabilities or remaining <= 0:
+            return 0.0
+        weight = probabilities[no]
+        result *= weight / remaining
+        remaining -= weight
+        used.add(no)
+    return result
+
+
+def combination_probability(kind, numbers, probabilities):
+    """Probability for a ticket under a Plackett-Luce top-three finish model."""
+    import itertools
+    if kind == "win" and len(numbers) == 1:
+        return probabilities.get(numbers[0], 0.0)
+    if kind == "place" and len(numbers) == 1:
+        target = numbers[0]
+        if target not in probabilities:
+            return 0.0
+        others = [x for x in probabilities if x != target]
+        total = 0.0
+        for a in others:
+            total += ordered_finish_probability([target, a], probabilities)
+            total += ordered_finish_probability([a, target], probabilities)
+            for b in others:
+                if b != a:
+                    total += ordered_finish_probability([a, b, target], probabilities)
+        return min(1.0, total)
+    if kind in ("quinella", "wide") and len(numbers) == 2:
+        a, b = numbers
+        if a not in probabilities or b not in probabilities or a == b:
+            return 0.0
+        if kind == "quinella":
+            return ordered_finish_probability([a, b], probabilities) + ordered_finish_probability([b, a], probabilities)
+        total = 0.0
+        for third in probabilities:
+            if third not in (a, b):
+                for order in ((a,b,third),(a,third,b),(b,a,third),(b,third,a),(third,a,b),(third,b,a)):
+                    total += ordered_finish_probability(order, probabilities)
+        return min(1.0, total)
+    if kind == "exacta" and len(numbers) == 2:
+        return ordered_finish_probability(numbers, probabilities)
+    if kind == "trio" and len(numbers) == 3:
+        return sum(ordered_finish_probability(order, probabilities) for order in itertools.permutations(numbers))
+    if kind == "trifecta" and len(numbers) == 3:
+        return ordered_finish_probability(numbers, probabilities)
+    return 0.0
+
+
+def predict_combinations(odds_rows, horse_predictions):
+    """Attach a model probability and EV to each quoted ticket."""
+    import unicodedata
+    probabilities = {str(p["horse_no"]): float(p["win_probability"]) for p in horse_predictions}
+    type_map = {
+        "単勝":"win", "複勝":"place", "ワイド":"wide", "馬連":"quinella",
+        "馬単":"exacta", "3連複":"trio", "三連複":"trio",
+        "3連単":"trifecta", "三連単":"trifecta",
+    }
+    output = []
+    for item in odds_rows:
+        label = unicodedata.normalize("NFKC", str(item.get("type") or "")).replace(" ", "")
+        kind = next((value for key, value in type_map.items() if key in label), None)
+        if not kind:
+            continue
+        numbers = [re.sub(r"\D", "", str(item.get(key) or "")) for key in ("n1","n2","n3")]
+        numbers = [x for x in numbers if x]
+        required = {"win":1,"place":1,"wide":2,"quinella":2,"exacta":2,"trio":3,"trifecta":3}[kind]
+        if len(numbers) < required:
+            continue
+        numbers = numbers[:required]
+        try:
+            odds_value = float(item.get("odds"))
+        except (TypeError, ValueError):
+            continue
+        if odds_value <= 0:
+            continue
+        probability = combination_probability(kind, numbers, probabilities)
+        output.append({
+            "bet_type":kind, "numbers":numbers, "odds":odds_value,
+            "probability":round(probability, 10),
+            "expected_value":round(probability*odds_value, 6),
+        })
+    return output
+
+
 def append_snapshot(path: Path, record: dict) -> bool:
     """Append a race once as a concatenated gzip member; return whether it was new."""
     race_key_text = record.get("race_key")
@@ -250,6 +341,7 @@ def main():
     additions = 0
     for key, race, race_date, post, minutes, entries, field in candidates:
         predictions = predict_horses(race, field, entries, model_context)
+        combination_predictions = predict_combinations(entries, predictions)
         path = SNAPSHOT_DIR / f"{race_date.isoformat()}.jsonl.gz"
         model = model_context[0] if model_context else {}
         record = {
@@ -264,6 +356,7 @@ def main():
             "model_version": model.get("model_version"),
             "model_temperature": model.get("temperature"),
             "predictions": predictions,
+            "combination_predictions": combination_predictions,
             "odds": entries,
         }
         if append_snapshot(path, record):
