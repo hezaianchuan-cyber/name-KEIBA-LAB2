@@ -982,3 +982,58 @@ class RoleSpecificTrifectaTests(unittest.TestCase):
                 self.assertGreater(result["tickets"], 0)
                 self.assertGreaterEqual(result["stake"], 100)
                 self.assertIsNotNone(result["roi"])
+
+
+class RoleTrifectaUncertaintyAndSelectionTests(unittest.TestCase):
+    def _sample_role_inputs(self):
+        scored = [
+            (0.90, {"no":"1","name":"A"}),
+            (0.80, {"no":"2","name":"B"}),
+            (0.70, {"no":"3","name":"C"}),
+            (0.60, {"no":"4","name":"D"}),
+            (0.50, {"no":"5","name":"E"}),
+            (0.40, {"no":"6","name":"F"}),
+        ]
+        history = {
+            "A":[{"finish":1,"field_size":6}],
+            "B":[{"finish":2,"field_size":6}],
+            "C":[{"finish":3,"field_size":6}],
+        }
+        payout = {"trifecta":[(["1","2","3"],1500)]}
+        return scored, history, payout
+
+    def test_role_diagnostics_apply_sample_and_confidence_gate(self):
+        scored, history, payout = self._sample_role_inputs()
+        diagnostics = nb.new_role_trifecta_diagnostics()
+        for _ in range(100):
+            nb.update_role_trifecta_diagnostics(diagnostics, scored, history, payout)
+        result = nb.summarize_role_trifecta_diagnostics(diagnostics)["0.10"]["1-4-4"]
+        self.assertEqual(result["races"], 100)
+        self.assertEqual(result["tickets"], 600)
+        self.assertEqual(result["stake"], 60000)
+        self.assertEqual(result["return"], 150000)
+        self.assertEqual(result["roi"], 250.0)
+        self.assertEqual(result["roi_ci95_normal_low"], 250.0)
+        self.assertTrue(result["minimum_sample_met"])
+        self.assertTrue(result["candidate_pass"])
+
+    def test_walk_forward_reports_role_diagnostics_for_selected_model_only(self):
+        scored, history, payout = self._sample_role_inputs()
+        fold1 = self._fold(1, {"baseline":60.0, "trained":70.0})
+        fold2 = self._fold(2, {"baseline":61.0, "trained":75.0})
+        for fold in (fold1, fold2):
+            for model_name in ("baseline", "trained"):
+                bucket = nb.new_role_trifecta_diagnostics()
+                nb.update_role_trifecta_diagnostics(bucket, scored, history, payout)
+                fold["models"][model_name]["role_trifecta_diagnostics"] = bucket
+        result = nb.evaluate_walk_forward_selection([fold1, fold2])
+        self.assertEqual(
+            result["selected_role_trifecta_models_by_validation_fold"],
+            [{"validation_fold":2,"model":"baseline"}],
+        )
+        selected = result["selected_role_trifecta_diagnostics"]["0.10"]["1-4-4"]
+        self.assertEqual(selected["races"], 1)
+        self.assertEqual(selected["tickets"], 6)
+        self.assertEqual(selected["roi"], 250.0)
+        self.assertFalse(selected["minimum_sample_met"])
+        self.assertFalse(selected["candidate_pass"])
