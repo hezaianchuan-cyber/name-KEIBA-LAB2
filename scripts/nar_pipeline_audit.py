@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Static safety audit for the NAR historical backtest pipeline.
 
-This audit does not claim that A-D are implemented. It verifies the current
-chronological split and reports any remaining comparison limitations.
+This audit verifies canonical A-C feature ablations, the timestamped D odds gate,
+and the chronological final-year holdout split.
 """
 from __future__ import annotations
 import json
@@ -17,18 +17,18 @@ OUT = ROOT / "data" / "nar-pipeline-audit.json"
 def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     checks = {
-        "four_year_source_window": bool(re.search(r"END\\s*-\\s*dt\\.timedelta\\(days\\s*=\\s*1460\\)", source)),
-        "final_year_starts_364_days_before_end": bool(re.search(r"recent_start\\s*=\\s*END\\s*-\\s*dt\\.timedelta\\(days\\s*=\\s*364\\)", source)),
-        "final_fold_trains_only_before_test_start": bool(re.search(r"train_dates\\s*=\\[d\\s+for\\s+d\\s+in\\s+dates\\s+if\\s+d\\s*<\\s*test_start\\]", source)),
+        "four_year_source_window": bool(re.search(r"END\s*-\s*dt\.timedelta\(days\s*=\s*1460\)", source)),
+        "final_year_starts_364_days_before_end": bool(re.search(r"recent_start\s*=\s*END\s*-\s*dt\.timedelta\(days\s*=\s*364\)", source)),
+        "final_fold_trains_only_before_test_start": bool(re.search(r"train_dates\s*=\[d\s+for\s+d\s+in\s+dates\s+if\s+d\s*<\s*test_start\]", source)),
         "final_fold_is_recent_year": '"recent_year"' in source,
         "timestamped_odds_window_2_to_30_minutes": "minutes < 2 or minutes > 30" in source,
         "no_final_odds_used_as_preoff": "discard post-off records" in source or "discard post-off" in source,
         "canonical_A_B_C_models_declared": all(token in source for token in (
             '"A_baseline"', '"B_condition"', '"C_performance_pace"')),
         "B_adds_prior_going_suitability": bool(re.search(
-            r'"B_condition".*?going_weight=0\\.10', source, re.S)),
+            r'"B_condition".*?going_weight=0\.10', source, re.S)),
         "C_adds_performance_time_and_pace": bool(re.search(
-            r'"C_performance_pace".*?0\\.10,0\\.10,0\\.10.*?going_weight=0\\.10', source, re.S))
+            r'"C_performance_pace".*?0\.10,0\.10,0\.10.*?going_weight=0\.10', source, re.S))
             and '"C_performance_pace", "trained_with_pace"' in source,
         "A_C_share_holdout_and_ticket_rules": (
             "identical chronological holdout races" in source
