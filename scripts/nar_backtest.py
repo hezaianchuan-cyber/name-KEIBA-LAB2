@@ -179,6 +179,69 @@ def merge_payout_row(payouts, key, row):
     return payout
 
 
+def load_final_odds_archives(start=None, end=None):
+    """Load official monthly confirmed win odds for retrospective market benchmarking only."""
+    start = start or dt.date(2026, 3, 1)
+    end = end or END
+    output = defaultdict(dict)
+    months = list(month_iter(start, end))
+    def download_odds_month(y, m):
+        url = "https://www.keiba.go.jp/KeibaWeb/DataDownload/OddsDataDownload?" + urllib.parse.urlencode({
+            "type": "monthly", "k_year": y, "k_month": m, "k_day": 1
+        })
+        req = urllib.request.Request(url, headers={"User-Agent": UA, "Referer": "https://www.keiba.go.jp/"})
+        last = None
+        for attempt in range(3):
+            try:
+                with urllib.request.urlopen(req, timeout=90) as res:
+                    blob = res.read()
+                if not blob.startswith(b"PK"):
+                    raise RuntimeError(f"{y}-{m:02d}: odds response is not a ZIP archive")
+                return (y, m), blob
+            except Exception as exc:
+                last = exc
+                time.sleep(2 * (attempt + 1))
+        raise RuntimeError(f"{y}-{m:02d}: odds download failed: {last}")
+    downloaded = []
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        archives = list(pool.map(lambda ym: download_odds_month(*ym), months))
+    for (year, month), blob in archives:
+        rows_seen = 0
+        with zipfile.ZipFile(io.BytesIO(blob)) as zf:
+            for info in zf.infolist():
+                if info.is_dir() or "odds" not in info.filename.lower():
+                    continue
+                for row in rows_from_bytes(zf.read(info)):
+                    if len(row) < 10 or row[0] == "競馬場":
+                        continue
+                    if str(row[3]).strip() != "単勝":
+                        continue
+                    key = race_key(row[0], row[1], row[2])
+                    if not key:
+                        continue
+                    date = dt.datetime.strptime(key[1], "%Y%m%d").date()
+                    if date < start or date > end:
+                        continue
+                    horse_no = re.sub(r"\D", "", str(row[4] or ""))
+                    odds = number(row[7])
+                    if not horse_no or odds is None or odds <= 0:
+                        continue
+                    output[key][str(int(horse_no))] = odds
+                    rows_seen += 1
+        downloaded.append({"month": f"{year}-{month:02d}", "bytes": len(blob),
+                           "win_odds_rows": rows_seen})
+    return output, downloaded
+
+
+def summarize_final_market_pair(bucket):
+    return {
+        **bucket,
+        "top1_rate": round(100 * bucket["top1_hits"] / bucket["races"], 2) if bucket["races"] else None,
+        "hit_rate": round(100 * bucket["hits"] / bucket["races"], 2) if bucket["races"] else None,
+        **summarize_race_cluster_roi(bucket),
+    }
+
+
 def load_archives():
     races, horses, payouts = {}, defaultdict(list), {}
     months = list(month_iter(START, END))
@@ -1359,7 +1422,7 @@ def summarize_race_cluster_roi(stats):
         "profit": returned - stake,
     }
 
-def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
+def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final_odds=None):
     train_set = set(train_dates)
     test_set = set(test_dates)
     train_races = {k:r for k,r in races.items() if r["date"] in train_set}
@@ -1433,6 +1496,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     confidence_filter_stats = new_confidence_filter_stats()
     # E: pre-registered integrated challenger. The confidence gate and role blend
     # are fixed before holdout evaluation; no test-fold threshold tuning is allowed.
+    final_market_stats = {name: {"races":0,"top1_hits":0,"hits":0,"tickets":0,"stake":0,"return":0,"race_count":0,"sum_return_sq":0,"sum_stake_sq":0,"sum_stake_return":0} for name in ("C_model_top_pick","final_odds_favorite")}
     integrated_stats = {
         "confidence_threshold": 0.30,
         "role_blend": 0.10,
@@ -1530,6 +1594,30 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                     test_calibration_records.append({"scores":[score for score,_ in scored],
                                                      "winner_indices":winner_indices})
             ranked=[h for _,h in sorted(scored,key=lambda x:x[0],reverse=True)]
+            if model_name == "C_performance_pace" and final_odds:
+                odds_for_race = final_odds.get(key, {})
+                field_numbers = {str(h["no"]) for h in field}
+                available_market = [(float(odds), str(no)) for no, odds in odds_for_race.items()
+                                    if str(no) in field_numbers]
+                if available_market:
+                    favorite_no = min(available_market, key=lambda item: (item[0], int(item[1])))[1]
+                    c_pick_no = str(ranked[0]["no"])
+                    for label, selected_no in (("C_model_top_pick", c_pick_no),
+                                               ("final_odds_favorite", favorite_no)):
+                        market_bucket = final_market_stats[label]
+                        market_bucket["races"] += 1
+                        market_bucket["tickets"] += 1
+                        market_bucket["stake"] += 100
+                        market_bucket["race_count"] += 1
+                        is_hit = selected_no in winners
+                        market_bucket["top1_hits"] += int(is_hit)
+                        market_bucket["hits"] += int(is_hit)
+                        returned = payout_for("win", (selected_no,), payout) or 0
+                        market_bucket["return"] += returned
+                        market_bucket["sum_return_sq"] += returned * returned
+                        market_bucket["sum_stake_sq"] += 10000
+                        market_bucket["sum_stake_return"] += 100 * returned
+
             if len(ranked)<3: continue
             if model_name == "trained":
                 calibrated_probabilities = softmax_probabilities([score for score, _ in scored], temperature)
@@ -1746,7 +1834,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             "condition_model_comparisons":condition_comparisons,
             "condition_finish_position_segments":condition_finish_segments,
             "confidence_filter_backtest":summarize_confidence_filter_stats(confidence_filter_stats),
-            "integrated_strategy_E": integrated_summary}
+            "integrated_strategy_E": integrated_summary,
+            "final_odds_market_comparison": {name: summarize_final_market_pair(bucket) for name, bucket in final_market_stats.items()}}
 
 
 def load_odds_snapshot_records():
@@ -2582,7 +2671,7 @@ def evaluate_walk_forward_selection(folds, min_tickets=300, min_roi_gain=5.0):
     }
 
 
-def holdout_validation(races, horses, payouts):
+def holdout_validation(races, horses, payouts, final_odds=None):
     dates=sorted({r["date"] for r in races.values()})
     if len(dates)<60:
         return {"status":"insufficient_dates","available_dates":len(dates)}
@@ -2604,7 +2693,7 @@ def holdout_validation(races, horses, payouts):
         if not train_dates or not test_dates:
             continue
         folds.append({"fold":index,"period_label":label,
-                      **evaluate_holdout_fold(races,horses,payouts,train_dates,test_dates)})
+                      **evaluate_holdout_fold(races,horses,payouts,train_dates,test_dates,final_odds)})
     if len(folds)<3:
         return {"status":"insufficient_folds","folds":folds,
                 "required_periods":["previous_year_2","previous_year_1","recent_year"]}
@@ -2958,7 +3047,9 @@ def main():
     metrics, examples, race_count, learned_weights, learning_updates, calibration_records = run_backtest(races, horses, payouts)
     production_temperature = fit_temperature(calibration_records)
     production_calibration = calibration_metrics(calibration_records, production_temperature)
-    validation = holdout_validation(races, horses, payouts)
+    final_odds, final_odds_downloads = load_final_odds_archives(dt.date(2026, 3, 1), END)
+    print(f"Official monthly final-odds races: {len(final_odds)}", flush=True)
+    validation = holdout_validation(races, horses, payouts, final_odds)
     preoff_type_report = preoff_ticket_type_backtest(payouts)
     race_budget_report = race_budget_auto_strategy_backtest(payouts, preoff_type_report)
     result = {
@@ -2988,6 +3079,13 @@ def main():
         },
         "metrics": metrics,
         "out_of_sample_validation": validation,
+        "final_odds_market_benchmark": {
+            "source": "NAR official monthly confirmed win odds; retrospective market benchmark only, not pre-off purchasable odds",
+            "downloaded_months": final_odds_downloads,
+            "races_with_win_odds": len(final_odds),
+            "comparison": "C model top-ranked horse vs lowest final win odds (market favorite), same eligible races, one 100 JPY win ticket per race",
+            "recent_year_fold": ((validation.get("recent_year_validation") or {}).get("fold") or {}).get("final_odds_market_comparison", {})
+        },
         "strategy_comparison": {
             "A_baseline": "out_of_sample_validation.models.A_baseline (fixed reference weights)",
             "B_condition": "out_of_sample_validation.models.B_condition (learned base weights + prior track/going suitability)",
@@ -3030,6 +3128,16 @@ def main():
         "D_preoff_odds": result.get("preoff_ranking_strategy_backtest"),
         "comparison_policy": result["strategy_comparison"]["comparison_design"],
     }
+    final_market_report = {
+        "generated_at": result["generated_at"],
+        "source": result["final_odds_market_benchmark"],
+        "holdout_period": recent_validation.get("period"),
+        "comparison": result["final_odds_market_benchmark"]["recent_year_fold"],
+        "interpretation": "Final confirmed odds are published after race completion and are used only as a retrospective market benchmark. This is not a live betting strategy and must not be mixed into model E."
+    }
+    (OUT.parent / "backtest-4-final-market-comparison.json").write_text(
+        json.dumps(final_market_report, ensure_ascii=False, indent=2), encoding="utf-8")
+
     (OUT.parent / "backtest-1-model-comparison.json").write_text(
         json.dumps(model_report, ensure_ascii=False, indent=2), encoding="utf-8")
 
