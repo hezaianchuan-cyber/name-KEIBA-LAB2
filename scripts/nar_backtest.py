@@ -2438,6 +2438,25 @@ def preoff_ranking_strategy_backtest(payouts):
                         "bootstrap 95% ROI lower bound above 100%.")
     return result
 
+def build_trifecta_research_fold(fold):
+    """Export every condition diagnostic needed by the research report."""
+    trained = (fold.get("models") or {}).get("trained") or {}
+    return {
+        "fold": fold.get("fold"),
+        "train_end": fold.get("train_end"),
+        "test_start": fold.get("test_start"),
+        "test_end": fold.get("test_end"),
+        "races": trained.get("races"),
+        "finish_position_diagnostics": trained.get("finish_position_diagnostics"),
+        "role_trifecta_diagnostics": trained.get("role_trifecta_diagnostics"),
+        "trifecta_diagnostics": trained.get("trifecta_diagnostics"),
+        "condition_finish_position_segments": fold.get("condition_finish_position_segments", {}),
+        "condition_model_segments": fold.get("condition_model_segments", {}),
+        "condition_model_comparisons": fold.get("condition_model_comparisons", {}),
+        "trained_condition_segments": fold.get("trained_condition_segments", {}),
+    }
+
+
 def main():
     print(f"Backtest range: {START} through {END}", flush=True)
     races, horses, payouts, months = load_archives()
@@ -2494,19 +2513,7 @@ def main():
     # research loop. Keep every fold separate so candidate comparisons cannot
     # silently pool tuning and evaluation data.
     validation_folds = validation.get("folds", []) if isinstance(validation, dict) else []
-    research_folds = []
-    for fold in validation_folds:
-        trained = (fold.get("models") or {}).get("trained") or {}
-        research_folds.append({
-            "fold": fold.get("fold"),
-            "train_end": fold.get("train_end"),
-            "test_start": fold.get("test_start"),
-            "test_end": fold.get("test_end"),
-            "races": trained.get("races"),
-            "finish_position_diagnostics": trained.get("finish_position_diagnostics"),
-            "role_trifecta_diagnostics": trained.get("role_trifecta_diagnostics"),
-            "trifecta_diagnostics": trained.get("trifecta_diagnostics"),
-        })
+    research_folds = [build_trifecta_research_fold(fold) for fold in validation_folds]
     research_report = {
         "generated_at": result["generated_at"],
         "period": result["period"],
