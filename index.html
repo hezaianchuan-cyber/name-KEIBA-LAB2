@@ -361,7 +361,7 @@ function scoreRunner(h,all){
   const distanceQuality=distanceRuns.map(rankQuality).filter(x=>x!=null);
   const distanceScore=distanceQuality.length?distanceQuality.reduce((a,b)=>a+b,0)/distanceQuality.length:48;
   const prior=(db.horses||[]).filter(x=>String(x.date||'')<cutoff&&Number(x.lastRank)>0);
-  const useSnapshot=!!(learnedModelLoaded&&learnedHistory&&learnedModelEnd&&cutoff>learnedModelEnd);
+  const useSnapshot=!!(learnedModelLoaded&&learnedHistory?.training_period&&learnedModelEnd&&cutoff>learnedModelEnd);
   if(useSnapshot){
     const baseRuns=(learnedHistory.horse_history?.[norm(h.name)]||[]).map(x=>({...x,lastRank:x.finish,fieldSize:x.field_size??x.fieldSize}));
     const newRuns=prior.filter(x=>String(x.date||'')>learnedModelEnd&&norm(x.name)===norm(h.name)).map(x=>({...x,distance:x.distance??db.races.find(r=>r.id===x.id)?.distance,fieldSize:x.fieldSize??db.races.find(r=>r.id===x.id)?.fieldSize}));
