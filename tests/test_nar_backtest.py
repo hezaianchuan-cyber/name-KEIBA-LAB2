@@ -485,3 +485,56 @@ class PerformanceFeatureTests(unittest.TestCase):
             base * 0.80 + 0.10 * 1.0 + 0.10 * 0.0,
             places=10,
         )
+
+
+class ResearchReadinessAndDataQualityTests(unittest.TestCase):
+    def test_data_quality_audit_reports_missing_condition_and_runner_fields(self):
+        key = ("大井", "20261103", "1")
+        race = {"key": key, "distance": 1600, "surface": "ダート", "going": ""}
+        horses = {key: [
+            {"no":"1","age":5,"jockey":"騎手A","sire":"父A","finish":1,"last3f":38.0},
+            {"no":"2","age":None,"jockey":"","sire":"父B","finish":2,"last3f":None},
+            {"no":"3","age":4,"jockey":"騎手B","sire":"","finish":3,"last3f":39.0},
+        ]}
+        payouts = {key: {"win":[(["1"],250)]}}
+        audit = nb.data_quality_audit({key:race}, horses, payouts)
+        self.assertEqual(audit["races"], 1)
+        self.assertEqual(audit["runners"], 3)
+        self.assertEqual(audit["surface_coverage_pct"], 100.0)
+        self.assertEqual(audit["going_coverage_pct"], 0.0)
+        self.assertAlmostEqual(audit["runner_age_coverage_pct"], 66.67, places=2)
+        self.assertAlmostEqual(audit["runner_jockey_coverage_pct"], 66.67, places=2)
+        self.assertEqual(audit["races_with_payout"], 1)
+
+    def test_readiness_skips_when_odds_history_or_calibration_evidence_is_insufficient(self):
+        model = {"calibration":{"races":100}}
+        history = {"A":[{"finish":1}]}
+        context = (model, history, {}, {}, {})
+        horses = [{"no":str(i),"name":chr(64+i)} for i in range(1,6)]
+        predictions = [
+            {"horse_no":str(i),"win_probability":0.2,"prior_runs":1 if i == 1 else 0}
+            for i in range(1,6)
+        ]
+        odds = [{"type":"単勝","n1":"1","odds":2.0}]
+        result = capture.race_readiness({}, horses, odds, predictions, context)
+        self.assertEqual(result["status"], "skip_insufficient_evidence")
+        self.assertIn("win_odds_coverage_below_70pct", result["reasons"])
+        self.assertIn("historical_form_coverage_below_50pct", result["reasons"])
+        self.assertIn("calibration_sample_below_500", result["reasons"])
+        self.assertAlmostEqual(result["normalized_entropy"], 1.0, places=6)
+
+    def test_readiness_marks_complete_research_sample_without_calling_it_profitable(self):
+        model = {"calibration":{"races":1000}}
+        context = (model, {}, {}, {}, {})
+        horses = [{"no":str(i),"name":f"H{i}"} for i in range(1,6)]
+        predictions = [
+            {"horse_no":str(i),"win_probability":p,"prior_runs":5}
+            for i,p in enumerate((0.40,0.25,0.15,0.12,0.08),1)
+        ]
+        odds = [{"type":"単勝","n1":str(i),"odds":float(i+1)} for i in range(1,6)]
+        result = capture.race_readiness({}, horses, odds, predictions, context)
+        self.assertEqual(result["status"], "eligible_for_research_evaluation")
+        self.assertEqual(result["reasons"], [])
+        self.assertIn("does not mean profitable", result["policy"])
+
+
