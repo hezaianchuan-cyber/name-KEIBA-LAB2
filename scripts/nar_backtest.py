@@ -536,7 +536,7 @@ def summarize_trifecta_diagnostics(bucket):
     output = {key: bucket[key] for key in ("races", *rate_keys)}
     output["rates"] = {key: round(100 * bucket[key] / n, 2) if n else None for key in rate_keys}
     structures = {}
-    for (formation, stats in bucket["structures"].items():
+    for formation, stats in bucket["structures"].items():
         first_count, second_count, third_count = formation
         structures[f"{first_count}-{second_count}-{third_count}"] = {
             **stats,
