@@ -608,6 +608,7 @@ async function loadHistoricalBacktest(){
   verifiedTicketThresholds=Object.fromEntries(Object.entries(typeValidation)
    .filter(([kind,item])=>item.selected_threshold&&item.selected_holdout?.candidate_pass)
    .map(([kind,item])=>[kind,Number(item.selected_threshold)]));
+  if(typeof currentRunners!=='undefined'&&currentRunners.length)generateTickets();
   const metrics=report.metrics||{};
   const labels={win:'単勝',place:'複勝',wide:'ワイド',quinella:'馬連',exacta:'馬単',trio:'3連複',trifecta:'3連単'};
   const rows=Object.keys(labels).map(k=>{const m=metrics[k]||{};return '<tr><td>'+labels[k]+'</td><td>'+Number(m.races||0).toLocaleString()+'</td><td>'+Number(m.tickets||0).toLocaleString()+'</td><td>'+((m.hit_rate==null)?'—':m.hit_rate+'%')+'</td><td>'+((m.roi==null)?'—':m.roi+'%')+'</td><td>'+Number(m.profit||0).toLocaleString()+'円</td></tr>';}).join('');
