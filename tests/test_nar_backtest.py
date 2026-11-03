@@ -617,3 +617,39 @@ class ConditionSegmentTests(unittest.TestCase):
         labels = nb.race_segment_labels({"venue":"", "surface":None, "going":"", "distance":None})
         self.assertEqual(labels, {})
 
+
+
+class StrongerSelectionAndOddsGateTests(unittest.TestCase):
+    def _fold(self, number, wide_roi, win_roi, trifecta_roi):
+        kinds = ("win", "place", "wide", "quinella", "exacta", "trio", "trifecta")
+        models = {"baseline": {"bet_types": {}}, "challenger": {"bet_types": {}}}
+        for kind in kinds:
+            base_roi = 60.0
+            challenger_roi = {
+                "win": win_roi, "wide": wide_roi, "trifecta": trifecta_roi
+            }.get(kind, base_roi)
+            for model_name, roi in (("baseline", base_roi), ("challenger", challenger_roi)):
+                models[model_name]["bet_types"][kind] = {
+                    "roi": roi, "tickets": 12000, "hits": 1000,
+                    "stake": 1200000, "return": int(1200000 * roi / 100),
+                    "profit": int(1200000 * roi / 100) - 1200000,
+                }
+        return {"fold": number, "models": models}
+
+    def test_wide_requires_repeated_edge_and_trifecta_has_stricter_hurdle(self):
+        first = self._fold(1, wide_roi=70.0, win_roi=70.0, trifecta_roi=71.5)
+        second = self._fold(2, wide_roi=71.0, win_roi=55.0, trifecta_roi=71.5)
+        selected = nb.select_models_from_prior_folds([first, second])
+        self.assertEqual(selected["wide"]["model"], "challenger")
+        self.assertEqual(selected["wide"]["edge_history"], [10.0, 11.0])
+        self.assertEqual(selected["win"]["model"], "baseline")
+        self.assertEqual(selected["trifecta"]["model"], "baseline")
+        self.assertEqual(selected["trifecta"]["required_min_tickets"], 5000)
+        self.assertEqual(selected["trifecta"]["required_min_roi_gain"], 12.0)
+
+    def test_candidate_that_fails_one_prior_fold_is_not_selected(self):
+        first = self._fold(1, wide_roi=70.0, win_roi=70.0, trifecta_roi=60.0)
+        second = self._fold(2, wide_roi=63.0, win_roi=70.0, trifecta_roi=60.0)
+        selected = nb.select_models_from_prior_folds([first, second])
+        self.assertEqual(selected["wide"]["model"], "baseline")
+
