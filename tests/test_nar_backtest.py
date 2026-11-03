@@ -790,6 +790,20 @@ class TrifectaDiagnosticTests(unittest.TestCase):
         self.assertEqual(len(nb.build_trifecta_tickets(ranked, 2, 6)), 40)
         self.assertEqual(len(nb.build_trifecta_tickets(ranked, 2, 7)), 60)
 
+    def test_narrow_formations_reduce_ticket_count_without_duplicate_horses(self):
+        ranked = [{"no": str(i)} for i in range(1, 8)]
+        expected = {
+            (1, 4, 4): 6, (1, 4, 5): 9, (1, 5, 4): 9,
+            (2, 3, 4): 8, (2, 4, 3): 8, (2, 3, 5): 12,
+            (2, 5, 3): 12, (2, 4, 4): 12,
+        }
+        for pools, ticket_count in expected.items():
+            tickets = nb.build_trifecta_formation(ranked, *pools)
+            self.assertEqual(len(tickets), ticket_count, pools)
+            self.assertTrue(all(len(set(ticket)) == 3 for ticket in tickets))
+        structures = nb.new_trifecta_diagnostics()["structures"]
+        self.assertTrue(all(pools in structures for pools in expected))
+
     def test_asymmetric_formation_uses_independent_rank_pools(self):
         ranked = [{"no": str(i)} for i in range(1, 8)]
         a = nb.build_trifecta_formation(ranked, 2, 4, 5)
