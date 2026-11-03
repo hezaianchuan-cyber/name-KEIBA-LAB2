@@ -523,76 +523,65 @@ ticketBox.style.marginTop='16px';
 ticketBox.innerHTML='<h2>買い目自動生成</h2><p class="sub">レース分析後に全券種の候補を自動表示します。参考推定であり、的中や利益を保証しません。</p><div id="ticketResult" class="sub" style="margin-top:12px">レースを分析すると買い目を自動表示します。</div>';
 $('runnerList').parentElement.after(ticketBox);
 function generateTickets(){
- const out=$('ticketResult');
- if(!out)return;
+ const out=$('ticketResult');if(!out)return;
  const source=[...(currentRunners||[])];
- if(source.length&&source.every(h=>h.market)){
-   out.innerHTML='<p>現在のデータはオッズ一覧のみです。出馬表・過去成績を読み込むと、独自予想から買い目を生成します。オッズ人気順だけを予想として表示することはしません。</p>';
-   return;
- }
+ if(source.length&&source.every(h=>h.market)){out.innerHTML='<p>現在はオッズ一覧のみです。出馬表・過去成績を読み込むと独自予想を行います。</p>';return;}
  const raceId=$('raceSelect')?.value;
  let horses=source.filter(h=>/^\d+$/.test(String(h.horseNo??'').trim())).map(h=>({...h,modelProb:Number(h.prob)>0?Number(h.prob)/100:null}));
- if(horses.length<3){
-   const saved=(db.horses||[]).filter(h=>h.id===raceId&&/^\d+$/.test(String(h.horseNo??'').trim()));
-   if(saved.length>=3)horses=saved.map(h=>scoreRunner(h,saved));
- }
- const unique=new Map();
- horses.forEach(h=>{const no=String(h.horseNo).trim();if(!unique.has(no))unique.set(no,h);});
+ if(horses.length<3){const saved=(db.horses||[]).filter(h=>h.id===raceId&&/^\d+$/.test(String(h.horseNo??'').trim()));if(saved.length>=3)horses=saved.map(h=>scoreRunner(h,saved));}
+ const unique=new Map();horses.forEach(h=>{const no=String(h.horseNo).trim();if(!unique.has(no))unique.set(no,h);});
  horses=[...unique.values()].sort((a,b)=>(Number(b.score)||0)-(Number(a.score)||0));
- if(horses.length<3){
-   out.innerHTML='<p>買い目を作るには、馬番が確認できる出走馬データが3頭以上必要です。オッズの組合せ一覧だけでは予想を作りません。</p>';
-   return;
- }
- const peak=Math.max(...horses.map(h=>Number(h.score)||0));
- const temp=Math.max(2,Number(learnedTemperature)||18);
- const raw=horses.map(h=>Math.exp(Math.max(-50,((Number(h.score)||0)-peak)/temp)));
- const total=raw.reduce((a,b)=>a+b,0)||1;
- horses=horses.map((h,i)=>({...h,modelProb:Number.isFinite(h.modelProb)&&h.modelProb>0?h.modelProb:raw[i]/total})).slice(0,6);
- const fmt=arr=>arr.map(h=>String(h.horseNo)).join('-');
- const candidates=[];
- const add=(type,comb,rankScore)=>candidates.push({type,comb:fmt(comb),score:rankScore});
- const top=horses.slice(0,4);
- // Main selections are rank-driven; combination scores are ordering aids, not calibrated probabilities.
- horses.slice(0,3).forEach(h=>add('単勝',[h],h.modelProb));
- horses.slice(0,3).forEach(h=>add('複勝',[h],h.modelProb));
- for(let i=0;i<top.length;i++)for(let j=i+1;j<top.length;j++){
-   const pair=top[i].modelProb*top[j].modelProb;
-   add('ワイド',[top[i],top[j]],pair);
-   add('馬連',[top[i],top[j]],pair);
-   add('馬単',[top[i],top[j]],pair*.9);
-   add('馬単',[top[j],top[i]],pair*.75);
- }
- for(let i=0;i<top.length;i++)for(let j=i+1;j<top.length;j++)for(let k=j+1;k<top.length;k++){
-   const trio=[top[i],top[j],top[k]],v=trio.reduce((p,h)=>p*h.modelProb,1);
-   add('3連複',trio,v);
-   const orders=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
-   orders.forEach((order,idx)=>add('3連単',order.map(n=>trio[n]),v*(1-idx*.06)));
- }
+ if(horses.length<3){out.innerHTML='<p>馬番が確認できる出走馬データが3頭以上必要です。</p>';return;}
+ const peak=Math.max(...horses.map(h=>Number(h.score)||0)),temp=Math.max(2,Number(learnedTemperature)||18);
+ const raw=horses.map(h=>Math.exp(Math.max(-50,((Number(h.score)||0)-peak)/temp))),total=raw.reduce((a,b)=>a+b,0)||1;
+ horses=horses.map((h,i)=>({...h,modelProb:Number.isFinite(h.modelProb)&&h.modelProb>0?h.modelProb:raw[i]/total}));
+ const ptotal=horses.reduce((a,h)=>a+h.modelProb,0)||1;
+ const field=horses.map(h=>({...h,modelProb:h.modelProb/ptotal})),top=field.slice(0,Math.min(6,field.length));
+ const byNo=new Map(field.map(h=>[String(h.horseNo),h.modelProb]));
+ const orderedProbability=seq=>{let remaining=1,result=1;const used=new Set();for(const rawNo of seq){const no=String(rawNo),p=byNo.get(no);if(p==null||used.has(no)||remaining<=0)return 0;result*=p/remaining;remaining-=p;used.add(no);}return result;};
+ const perms=arr=>arr.length<=1?[arr]:arr.flatMap((x,i)=>perms(arr.filter((_,j)=>i!==j)).map(rest=>[x,...rest]));
+ const placeProbability=no=>{
+   let p=orderedProbability([no]);
+   const others=field.filter(h=>String(h.horseNo)!==no).map(h=>String(h.horseNo));
+   for(const a of others){p+=orderedProbability([a,no]);for(const b of others){if(b!==a)p+=orderedProbability([a,b,no]);}}
+   return Math.min(1,p);
+ };
+ const wideProbability=(a,b)=>{
+   let p=0;
+   for(const h of field){const c=String(h.horseNo);if(c===a||c===b)continue;p+=perms([a,b,c]).reduce((sum,order)=>sum+orderedProbability(order),0);}
+   return Math.min(1,p);
+ };
+ const comboProbability=(type,n)=>{
+   if(type==='単勝')return orderedProbability(n);
+   if(type==='複勝')return placeProbability(n[0]);
+   if(type==='ワイド')return wideProbability(n[0],n[1]);
+   if(type==='馬連')return perms(n).reduce((sum,x)=>sum+orderedProbability(x),0);
+   if(type==='馬単')return orderedProbability(n);
+   if(type==='3連複')return perms(n).reduce((sum,x)=>sum+orderedProbability(x),0);
+   if(type==='3連単')return orderedProbability(n);
+   return 0;
+ };
+ const normNo=x=>String(x??'').replace(/\D/g,'').replace(/^0+(?=\d)/,'');
+ const oddsRows=(db.odds||[]).filter(o=>o.id===raceId&&Number(o.odds)>0);
+ const unorderedKey=a=>a.map(normNo).sort((x,y)=>Number(x)-Number(y)).join('-'),orderedKey=a=>a.map(normNo).join('-');
+ const findOdds=(type,n)=>{
+   const typeMatch=o=>{const label=norm(o.type);if(type==='単勝')return label.includes(norm('単勝'));if(type==='複勝')return label.includes(norm('複勝'));if(type==='ワイド')return label.includes(norm('ワイド'));if(type==='馬連')return label.includes(norm('馬連'));if(type==='馬単')return label.includes(norm('馬単'));if(type==='3連複')return label.includes(norm('3連複'))||label.includes(norm('三連複'));if(type==='3連単')return label.includes(norm('3連単'))||label.includes(norm('三連単'));return false;};
+   const unordered=['複勝','ワイド','馬連','3連複'].includes(type),wanted=unordered?unorderedKey(n):orderedKey(n);
+   const row=oddsRows.find(o=>{if(!typeMatch(o))return false;const nums=[o.n1,o.n2,o.n3].filter(x=>String(x??'').trim()!=='');return (unordered?unorderedKey(nums):orderedKey(nums))===wanted;});
+   return row?Number(row.odds):null;
+ };
+ const candidates=[],add=(type,comb)=>{const numbers=comb.map(h=>String(h.horseNo)),probability=Math.max(0,Math.min(1,comboProbability(type,numbers))),odds=findOdds(type,numbers);candidates.push({type,comb:numbers.join('-'),probability,odds,ev:odds&&odds>0?probability*odds:null});};
+ top.forEach(h=>{add('単勝',[h]);add('複勝',[h]);});
+ for(let i=0;i<top.length;i++)for(let j=i+1;j<top.length;j++){const a=top[i],b=top[j];add('ワイド',[a,b]);add('馬連',[a,b]);add('馬単',[a,b]);add('馬単',[b,a]);}
+ for(let i=0;i<top.length;i++)for(let j=i+1;j<top.length;j++)for(let k=j+1;k<top.length;k++){const trio=[top[i],top[j],top[k]];add('3連複',trio);perms(trio).forEach(order=>add('3連単',order));}
  const groups=['単勝','複勝','ワイド','馬連','馬単','3連複','3連単'];
- const best=type=>candidates.filter(x=>x.type===type).sort((a,b)=>b.score-a.score);
- const main=[
-   ['単勝',fmt([horses[0]])],
-   ['複勝',fmt([horses[0]])],['複勝',fmt([horses[1]])],['複勝',fmt([horses[2]])],
-   ['ワイド',fmt([horses[0],horses[1]])],['ワイド',fmt([horses[0],horses[2]])],
-   ['馬連',fmt([horses[0],horses[1]])],
-   ['馬単',fmt([horses[0],horses[1]])],
-   ['3連複',fmt(horses.slice(0,3))],
-   ['3連単',fmt(horses.slice(0,3))]
- ];
- const mainHtml='<h3>本線の買い目</h3><div class="tablewrap"><table><thead><tr><th>券種</th><th>買い目</th><th>位置づけ</th></tr></thead><tbody>'+
- main.map((x,i)=>'<tr><td>'+x[0]+'</td><td><b>'+x[1]+'</b></td><td>'+(i<4?'軸候補':i<8?'相手候補':'組合せ候補')+'</td></tr>').join('')+
- '</tbody></table></div>';
- const horseHtml='<h3>予想上位馬</h3><div class="tablewrap"><table><thead><tr><th>順位</th><th>馬番・馬名</th><th>評価点</th><th>'+(learnedModelLoaded?'学習モデル推定勝率':'参考スコア比率')+'</th><th>単勝オッズ</th></tr></thead><tbody>'+
- horses.map((h,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(h.horseNo+'番 '+(h.name||''))+'</td><td>'+(Number(h.score)||0).toFixed(1)+'</td><td>'+(h.modelProb*100).toFixed(1)+'%</td><td>'+(Number(h.odds)>0?Number(h.odds).toFixed(1)+'倍':'未取得')+'</td></tr>').join('')+
- '</tbody></table></div>';
- const allHtml=groups.map(type=>{
-   const list=best(type).slice(0,type==='3連単'?8:6);
-   return '<h3>'+type+'（上位'+list.length+'点）</h3><div class="tablewrap"><table><thead><tr><th>買い目</th><th>組合せ順位指数</th></tr></thead><tbody>'+
-   list.map(x=>'<tr><td><b>'+type+' '+x.comb+'</b></td><td>'+x.score.toFixed(5)+'</td></tr>').join('')+
-   '</tbody></table></div>';
- }).join('');
- out.innerHTML=horseHtml+mainHtml+'<details style="margin-top:12px"><summary>券種別の候補一覧を開く</summary>'+allHtml+'</details>'+
- '<p>合計候補 '+candidates.length+' 点。組合せ順位指数は候補の並べ替え用で、的中確率や期待値を保証する数値ではありません。勝率欄は学習モデル読込時のみ学習モデル推定値で、未読込時は参考スコア比率です。実際の期待値判定には発走5分前までの取得オッズが必要です。</p>';
+ const ranked=type=>candidates.filter(x=>x.type===type).sort((a,b)=>a.ev!=null&&b.ev!=null?b.ev-a.ev:a.ev!=null?-1:b.ev!=null?1:b.probability-a.probability);
+ const pct=v=>(v*100).toFixed(2)+'%',odds=v=>v==null?'未取得':v.toFixed(1)+'倍',ev=v=>v==null?'—':v.toFixed(3);
+ const main=groups.map(type=>ranked(type)[0]).filter(Boolean);
+ const mainHtml='<h3>券種別の最上位候補</h3><div class="tablewrap"><table><thead><tr><th>券種</th><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+main.map(x=>'<tr><td>'+x.type+'</td><td><b>'+x.comb+'</b></td><td>'+pct(x.probability)+'</td><td>'+odds(x.odds)+'</td><td>'+ev(x.ev)+'</td><td>'+(x.ev==null?'オッズ待ち':x.ev>=1.05?'EV候補':'見送り')+'</td></tr>').join('')+'</tbody></table></div>';
+ const horseHtml='<h3>予想上位馬</h3><div class="tablewrap"><table><thead><tr><th>順位</th><th>馬番・馬名</th><th>評価点</th><th>'+(learnedModelLoaded?'学習モデル推定勝率':'参考スコア比率')+'</th><th>単勝オッズ</th></tr></thead><tbody>'+top.map((h,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(h.horseNo+'番 '+(h.name||''))+'</td><td>'+(Number(h.score)||0).toFixed(1)+'</td><td>'+pct(h.modelProb)+'</td><td>'+odds(Number(h.odds)>0?Number(h.odds):null)+'</td></tr>').join('')+'</tbody></table></div>';
+ const allHtml=groups.map(type=>{const list=ranked(type).slice(0,type==='3連単'?12:10);return '<h3>'+type+'（上位'+list.length+'点）</h3><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+list.map(x=>'<tr><td><b>'+type+' '+x.comb+'</b></td><td>'+pct(x.probability)+'</td><td>'+odds(x.odds)+'</td><td>'+ev(x.ev)+'</td><td>'+(x.ev==null?'オッズ待ち':x.ev>=1.05?'EV候補':'見送り')+'</td></tr>').join('')+'</tbody></table></div>';}).join('');
+ out.innerHTML=horseHtml+mainHtml+'<details style="margin-top:12px"><summary>券種別の候補一覧を開く</summary>'+allHtml+'</details><p>全出走馬の勝率を正規化し、Plackett–Luce方式で各券種の組合せ確率を近似しています。複勝・ワイドは全出走馬を対象に上位3着以内確率を計算。選択レースの公式オッズと照合し、オッズがない場合はEVを出しません。EV1.05以上は暫定候補であり、実測回収率の検証と確率校正が完了するまでは利益を保証しません。候補 '+candidates.length+'点 / オッズ照合済み '+candidates.filter(x=>x.ev!=null).length+'点。</p>';
 }
 function dedupeRunnerRows(rows) {
   const map = new Map();
