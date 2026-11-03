@@ -842,7 +842,9 @@ class CandidateRankingResearchTests(unittest.TestCase):
         counts = {kind:sum(1 for row in result if row["bet_type"] == kind)
                   for kind in ("wide","exacta","trio","trifecta")}
         self.assertEqual(counts, {"wide":3,"exacta":6,"trio":1,"trifecta":6})
-        self.assertFalse(any(row["bet_type"] in {"win","place","quinella"} for row in result))
+        unquoted = [row for row in result if row["bet_type"] in {"win","place","quinella"}]
+        self.assertTrue(unquoted)
+        self.assertTrue(all(row["expected_value"] is None for row in unquoted))
 
     def test_preoff_ranking_backtest_selects_same_top_n_and_uses_settled_payouts(self):
         key = ("大井","20261103","10")
