@@ -16,6 +16,28 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import capture_nar_odds as capture
 
 
+class BayesianSmoothingTests(unittest.TestCase):
+    def test_no_history_returns_neutral_prior(self):
+        self.assertAlmostEqual(nb.smoothed_rate(0, 0), 0.50)
+
+    def test_sparse_extreme_rate_is_shrunk_toward_neutral(self):
+        self.assertAlmostEqual(nb.smoothed_rate(5, 5), 10 / 15)
+        self.assertLess(nb.smoothed_rate(5, 5), 1.0)
+
+    def test_more_observations_reduce_shrinkage(self):
+        sparse = nb.smoothed_rate(4, 5)
+        larger = nb.smoothed_rate(40, 50)
+        self.assertGreater(sparse, 0.50)
+        self.assertGreater(larger, sparse)
+        self.assertAlmostEqual(larger, 45 / 60)
+
+    def test_same_observed_rate_is_more_conservative_with_fewer_runs(self):
+        sparse = nb.smoothed_rate(4, 5)
+        large = nb.smoothed_rate(40, 50)
+        self.assertLess(abs(sparse - 0.50), abs(0.80 - 0.50))
+        self.assertGreater(abs(large - 0.50), abs(sparse - 0.50))
+
+
 class RecentHistoryAblationTests(unittest.TestCase):
     def test_recent_history_is_an_explicit_optional_prediction_input(self):
         h={"name":"馬A","sire":"父A","jockey":"騎手A","age":5}
