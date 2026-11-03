@@ -72,12 +72,24 @@ def corner_history_for_runner(horse, race):
 
 
 def pace_style(history_rows):
-    values = [number(x.get("first_corner_pct")) for x in history_rows[-5:]]
-    values = [x for x in values if x is not None]
-    if not values: return {"style":"unknown", "front_pct":None}
-    front_pct = sum(values)/len(values)
-    style = "逃げ" if front_pct <= 0.12 else "先行" if front_pct <= 0.38 else "差し" if front_pct <= 0.70 else "追込"
-    return {"style":style, "front_pct":front_pct}
+    recent = history_rows[-5:]
+    early = [number(x.get("first_corner_pct")) for x in recent]
+    early = [x for x in early if x is not None]
+    late = [number(x.get("last_corner_pct")) for x in recent]
+    late = [x for x in late if x is not None]
+    if not early: return {"style":"unknown", "front_pct":None, "late_pct":None, "position_gain":None}
+    front_pct = sum(early)/len(early)
+    late_pct = sum(late)/len(late) if late else front_pct
+    position_gain = front_pct-late_pct
+    if front_pct <= 0.12 and late_pct <= 0.22:
+        style = "逃げ"
+    elif front_pct <= 0.38 and late_pct <= 0.45:
+        style = "先行"
+    elif late_pct <= 0.55 or position_gain >= 0.18:
+        style = "差し"
+    else:
+        style = "追込"
+    return {"style":style, "front_pct":front_pct, "late_pct":late_pct, "position_gain":position_gain}
 
 
 def pace_adjustments(field, history):
@@ -86,10 +98,12 @@ def pace_adjustments(field, history):
     leaders = sum(1 for p in profiles.values() if p["front_pct"] is not None and p["front_pct"] <= 0.12)
     adjustments = {}
     for no, profile in profiles.items():
-        pct, delta = profile["front_pct"], 0.0
-        if pct is not None:
-            if leaders >= 3: delta = -0.018 if pct <= 0.20 else 0.018 if pct >= 0.55 else 0.004
-            elif leaders == 1: delta = 0.010 if pct <= 0.20 else -0.006 if pct >= 0.55 else 0.0
+        style, delta = profile["style"], 0.0
+        if style != "unknown":
+            if leaders >= 3:
+                delta = -0.018 if style == "逃げ" else 0.018 if style in ("差し", "追込") else 0.004
+            elif leaders == 1:
+                delta = 0.010 if style == "逃げ" else -0.006 if style in ("差し", "追込") else 0.0
         adjustments[no] = delta
     return profiles, leaders, adjustments
 
