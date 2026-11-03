@@ -187,6 +187,7 @@ let learnedModelLoaded=false;
 let learnedHistory=null;
 let learnedModelEnd='';
 let learnedTemperature=18;
+let verifiedTicketThresholds={};
 function save(){try{localStorage.setItem('keibaLabLocalDB',JSON.stringify(db));}catch(e){console.warn('\u4FDD\u5B58\u5BB9\u91CF\u3092\u8D85\u3048\u307E\u3057\u305F\u3002CSV\u672C\u4F53\u306F\u4FDD\u5B58\u5BFE\u8C61\u5916\u3067\u3059\u3002',e)}}
 function csvRows(text){let rows=[],row=[],cell='',q=false;for(let i=0;i<text.length;i++){let c=text[i];if(c==='"'){if(q&&text[i+1]==='"'){cell+='"';i++}else q=!q}else if(c===','&&!q){row.push(cell);cell=''}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(x=>x!==''))rows.push(row);row=[];cell=''}else cell+=c}if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows;}
 function txt(buf){const bytes=buf instanceof Uint8Array?buf:new Uint8Array(buf);if(bytes.length>=3&&bytes[0]===0xEF&&bytes[1]===0xBB&&bytes[2]===0xBF)return new TextDecoder('utf-8').decode(bytes);if(bytes.length>=2&&bytes[0]===0xFF&&bytes[1]===0xFE)return new TextDecoder('utf-16le').decode(bytes);if(bytes.length>=2&&bytes[0]===0xFE&&bytes[1]===0xFF)return new TextDecoder('utf-16be').decode(bytes);try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes)}catch(e){try{return new TextDecoder('shift_jis').decode(bytes)}catch(e2){return new TextDecoder('utf-8').decode(bytes)}}}
@@ -452,6 +453,10 @@ async function loadHistoricalBacktest(){
   const response=await fetch('./data/backtest-summary.json?v='+Date.now(),{cache:'no-store'});
   if(!response.ok)throw new Error('レポート未作成');
   const report=await response.json();
+  const typeValidation=report.preoff_ticket_type_backtest?.bet_types||{};
+  verifiedTicketThresholds=Object.fromEntries(Object.entries(typeValidation)
+   .filter(([kind,item])=>item.selected_threshold&&item.selected_holdout?.candidate_pass)
+   .map(([kind,item])=>[kind,Number(item.selected_threshold)]));
   const metrics=report.metrics||{};
   const labels={win:'単勝',place:'複勝',wide:'ワイド',quinella:'馬連',exacta:'馬単',trio:'3連複',trifecta:'3連単'};
   const rows=Object.keys(labels).map(k=>{const m=metrics[k]||{};return '<tr><td>'+labels[k]+'</td><td>'+Number(m.races||0).toLocaleString()+'</td><td>'+Number(m.tickets||0).toLocaleString()+'</td><td>'+((m.hit_rate==null)?'—':m.hit_rate+'%')+'</td><td>'+((m.roi==null)?'—':m.roi+'%')+'</td><td>'+Number(m.profit||0).toLocaleString()+'円</td></tr>';}).join('');
@@ -575,13 +580,16 @@ function generateTickets(){
  for(let i=0;i<top.length;i++)for(let j=i+1;j<top.length;j++){const a=top[i],b=top[j];add('ワイド',[a,b]);add('馬連',[a,b]);add('馬単',[a,b]);add('馬単',[b,a]);}
  for(let i=0;i<top.length;i++)for(let j=i+1;j<top.length;j++)for(let k=j+1;k<top.length;k++){const trio=[top[i],top[j],top[k]];add('3連複',trio);perms(trio).forEach(order=>add('3連単',order));}
  const groups=['単勝','複勝','ワイド','馬連','馬単','3連複','3連単'];
+ const typeKeys={'単勝':'win','複勝':'place','ワイド':'wide','馬連':'quinella','馬単':'exacta','3連複':'trio','3連単':'trifecta'};
+ const thresholdFor=type=>Number(verifiedTicketThresholds[typeKeys[type]])||1.05;
+ const decision=x=>x.ev==null?'オッズ待ち':x.ev>=thresholdFor(x.type)?'券種別基準候補':'見送り';
  const ranked=type=>candidates.filter(x=>x.type===type).sort((a,b)=>a.ev!=null&&b.ev!=null?b.ev-a.ev:a.ev!=null?-1:b.ev!=null?1:b.probability-a.probability);
  const pct=v=>(v*100).toFixed(2)+'%',odds=v=>v==null?'未取得':v.toFixed(1)+'倍',ev=v=>v==null?'—':v.toFixed(3);
  const main=groups.map(type=>ranked(type)[0]).filter(Boolean);
- const mainHtml='<h3>券種別の最上位候補</h3><div class="tablewrap"><table><thead><tr><th>券種</th><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+main.map(x=>'<tr><td>'+x.type+'</td><td><b>'+x.comb+'</b></td><td>'+pct(x.probability)+'</td><td>'+odds(x.odds)+'</td><td>'+ev(x.ev)+'</td><td>'+(x.ev==null?'オッズ待ち':x.ev>=1.05?'EV候補':'見送り')+'</td></tr>').join('')+'</tbody></table></div>';
+ const mainHtml='<h3>券種別の最上位候補</h3><div class="tablewrap"><table><thead><tr><th>券種</th><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+main.map(x=>'<tr><td>'+x.type+'</td><td><b>'+x.comb+'</b></td><td>'+pct(x.probability)+'</td><td>'+odds(x.odds)+'</td><td>'+ev(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';
  const horseHtml='<h3>予想上位馬</h3><div class="tablewrap"><table><thead><tr><th>順位</th><th>馬番・馬名</th><th>評価点</th><th>'+(learnedModelLoaded?'学習モデル推定勝率':'参考スコア比率')+'</th><th>単勝オッズ</th></tr></thead><tbody>'+top.map((h,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(h.horseNo+'番 '+(h.name||''))+'</td><td>'+(Number(h.score)||0).toFixed(1)+'</td><td>'+pct(h.modelProb)+'</td><td>'+odds(Number(h.odds)>0?Number(h.odds):null)+'</td></tr>').join('')+'</tbody></table></div>';
  const allHtml=groups.map(type=>{const list=ranked(type).slice(0,type==='3連単'?12:10);return '<h3>'+type+'（上位'+list.length+'点）</h3><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+list.map(x=>'<tr><td><b>'+type+' '+x.comb+'</b></td><td>'+pct(x.probability)+'</td><td>'+odds(x.odds)+'</td><td>'+ev(x.ev)+'</td><td>'+(x.ev==null?'オッズ待ち':x.ev>=1.05?'EV候補':'見送り')+'</td></tr>').join('')+'</tbody></table></div>';}).join('');
- out.innerHTML=horseHtml+mainHtml+'<details style="margin-top:12px"><summary>券種別の候補一覧を開く</summary>'+allHtml+'</details><p>全出走馬の勝率を正規化し、Plackett–Luce方式で各券種の組合せ確率を近似しています。複勝・ワイドは全出走馬を対象に上位3着以内確率を計算。選択レースの公式オッズと照合し、オッズがない場合はEVを出しません。EV1.05以上は暫定候補であり、実測回収率の検証と確率校正が完了するまでは利益を保証しません。候補 '+candidates.length+'点 / オッズ照合済み '+candidates.filter(x=>x.ev!=null).length+'点。</p>';
+ out.innerHTML=horseHtml+mainHtml+'<details style="margin-top:12px"><summary>券種別の候補一覧を開く</summary>'+allHtml+'</details><p>全出走馬の勝率を正規化し、Plackett–Luce方式で各券種の組合せ確率を近似しています。複勝・ワイドは全出走馬を対象に上位3着以内確率を計算。選択レースの公式オッズと照合し、オッズがない場合はEVを出しません。券種別ホールドアウト検証で合格した基準がある場合はその閾値を使用し、未合格の券種はEV1.05を暫定基準とします。実測回収率の検証と確率校正が完了するまでは利益を保証しません。候補 '+candidates.length+'点 / オッズ照合済み '+candidates.filter(x=>x.ev!=null).length+'点。</p>';
 }
 function dedupeRunnerRows(rows) {
   const map = new Map();
