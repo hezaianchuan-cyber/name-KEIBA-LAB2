@@ -261,13 +261,25 @@ def combination_probability(kind, numbers, probabilities):
     return 0.0
 
 
-def predict_combinations(odds_rows, horse_predictions):
-    """Generate the full rank-based ticket portfolio and attach available official odds."""
+def predict_combinations(odds_rows, horse_predictions, full_universe=False):
+    """Generate fixed tickets or the full odds-quoted candidate universe."""
     import itertools
     probabilities = {str(p["horse_no"]): float(p["win_probability"]) for p in horse_predictions}
     ranked = sorted(horse_predictions, key=lambda p: (
         float(p.get("win_probability") or 0), float(p.get("score") or 0)), reverse=True)
-    ticket_map = nb.build_fixed_tickets([{"no":str(p["horse_no"])} for p in ranked])
+    if full_universe:
+        nos = [str(p["horse_no"]) for p in ranked]
+        pairs = list(itertools.combinations(nos, 2))
+        triples = list(itertools.combinations(nos, 3))
+        ticket_map = {
+            "win": [[n] for n in nos], "place": [[n] for n in nos],
+            "wide": [list(x) for x in pairs], "quinella": [list(x) for x in pairs],
+            "exacta": [list(x) for x in itertools.permutations(nos, 2)],
+            "trio": [list(x) for x in triples],
+            "trifecta": [list(x) for x in itertools.permutations(nos, 3)],
+        }
+    else:
+        ticket_map = nb.build_fixed_tickets([{"no":str(p["horse_no"])} for p in ranked])
     type_map = {
         "単勝":"win", "複勝":"place", "ワイド":"wide", "馬連":"quinella",
         "馬単":"exacta", "3連複":"trio", "三連複":"trio",
@@ -465,6 +477,7 @@ def main():
     for key, race, race_date, post, minutes, entries, field in candidates:
         predictions = predict_horses(race, field, entries, model_context)
         combination_predictions = predict_combinations(entries, predictions)
+        candidate_combinations = predict_combinations(entries, predictions, full_universe=True)
         readiness = race_readiness(race, field, entries, predictions, model_context)
         path = SNAPSHOT_DIR / f"{race_date.isoformat()}.jsonl.gz"
         model = model_context[0] if model_context else {}
@@ -481,6 +494,8 @@ def main():
             "model_temperature": model.get("temperature"),
             "predictions": predictions,
             "combination_predictions": combination_predictions,
+            "candidate_combinations": candidate_combinations,
+            "candidate_universe_policy": "All valid runner combinations are retained for independent pre-off ranking tests; production ticket display remains fixed-size.",
             "race_readiness": readiness,
             "odds": entries,
         }
