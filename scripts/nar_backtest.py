@@ -1091,6 +1091,33 @@ def holdout_validation(races, horses, payouts):
             "folds_above_100_roi":{kind:sum(1 for fold in folds if (fold["models"]["trained"]["bet_types"][kind]["roi"] or 0)>=100) for kind in kinds},
             "selection_rule":"Each fold uses only strictly earlier training data; test weights remain fixed and race results are added to history only after the entire date is scored."}
 
+def data_quality_audit(races, horses, payouts):
+    """Report source coverage before interpreting model metrics."""
+    race_rows = list(races.values())
+    runner_rows = [runner for key in races for runner in horses.get(key, [])]
+    total_races = len(race_rows)
+    total_runners = len(runner_rows)
+    def present(value):
+        return value is not None and str(value).strip() != ""
+    def pct(count, total):
+        return round(100.0 * count / total, 2) if total else None
+    return {
+        "races": total_races,
+        "runners": total_runners,
+        "races_with_payout": sum(1 for key in races if payouts.get(key) and payouts[key].get("win")),
+        "race_field_coverage_pct": pct(sum(1 for key in races if len(horses.get(key, [])) >= 3), total_races),
+        "distance_coverage_pct": pct(sum(1 for race in race_rows if present(race.get("distance"))), total_races),
+        "surface_coverage_pct": pct(sum(1 for race in race_rows if present(race.get("surface"))), total_races),
+        "going_coverage_pct": pct(sum(1 for race in race_rows if present(race.get("going"))), total_races),
+        "runner_age_coverage_pct": pct(sum(1 for h in runner_rows if present(h.get("age"))), total_runners),
+        "runner_jockey_coverage_pct": pct(sum(1 for h in runner_rows if present(h.get("jockey"))), total_runners),
+        "runner_sire_coverage_pct": pct(sum(1 for h in runner_rows if present(h.get("sire"))), total_runners),
+        "finish_coverage_pct": pct(sum(1 for h in runner_rows if present(h.get("finish"))), total_runners),
+        "last3f_coverage_pct": pct(sum(1 for h in runner_rows if present(h.get("last3f"))), total_runners),
+        "policy": "Coverage diagnostics only; missing values are not imputed as observed facts and this report does not imply predictive value."
+    }
+
+
 def main():
     print(f"Backtest range: {START} through {END}", flush=True)
     races, horses, payouts, months = load_archives()
@@ -1107,6 +1134,7 @@ def main():
         "horse_rows": sum(len(v) for v in horses.values()),
         "payout_races": sum(1 for p in payouts.values() if p.get("win")),
         "payout_rows": sum(p.get("source_rows", 0) for p in payouts.values()),
+        "data_quality_audit": data_quality_audit(races, horses, payouts),
         "multi_row_payout_races": sum(1 for p in payouts.values() if p.get("source_rows", 0) > 1),
         "evaluated": sum(v["races"] for v in metrics.values()),
         "method": {
