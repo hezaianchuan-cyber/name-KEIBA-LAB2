@@ -1021,6 +1021,38 @@ def summarize_condition_model_segments(stats, kinds=("wide", "exacta", "trio")):
     return segments, comparisons
 
 
+
+def summarize_race_cluster_roi(stats):
+    """Estimate ROI uncertainty using races, not individual tickets, as clusters."""
+    races = int(stats.get("race_count") or stats.get("races") or 0)
+    tickets = int(stats.get("tickets") or 0)
+    stake = float(stats.get("stake") or 0)
+    returned = float(stats.get("return") or 0)
+    roi = 100.0 * returned / stake if stake else None
+    ci_low = ci_high = None
+    if races > 1 and stake > 0 and roi is not None:
+        ratio = returned / stake
+        sum_z_sq = (
+            float(stats.get("sum_return_sq") or 0)
+            - 2.0 * ratio * float(stats.get("sum_stake_return") or 0)
+            + ratio * ratio * float(stats.get("sum_stake_sq") or 0)
+        )
+        variance = max(0.0, sum_z_sq / (races - 1))
+        mean_stake = stake / races
+        standard_error = 100.0 * math.sqrt(variance / races) / mean_stake
+        ci_low = round(roi - 1.96 * standard_error, 2)
+        ci_high = round(roi + 1.96 * standard_error, 2)
+    enough = races >= 100 and tickets >= 300
+    return {
+        "race_count": races,
+        "roi": round(roi, 2) if roi is not None else None,
+        "roi_ci95_normal_low": ci_low,
+        "roi_ci95_normal_high": ci_high,
+        "minimum_sample_met": enough,
+        "candidate_pass": bool(enough and ci_low is not None and ci_low > 100.0),
+        "profit": returned - stake,
+    }
+
 def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     train_set = set(train_dates)
     test_set = set(test_dates)
@@ -1049,7 +1081,9 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     kinds = ("win","place","wide","quinella","exacta","trio","trifecta")
     results = {name:{"races":0,"winner_top1":0,"winner_top3":0,
                      "winner_topk":{str(k):0 for k in (5,6,7)},
-                     "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0}
+                     "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0,
+                                         "race_count":0,"sum_return_sq":0,
+                                         "sum_stake_sq":0,"sum_stake_return":0}
                                   for kind in kinds},
                      "trifecta_diagnostics":new_trifecta_diagnostics(),
                      "role_trifecta_diagnostics":new_role_trifecta_diagnostics(),
@@ -1193,11 +1227,18 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                                 bucket["return"] += segment_return
             for kind,tickets in ticket_map.items():
                 bm=m["bet_types"][kind]
+                race_stake = 100 * len(tickets)
+                race_return = 0
                 for ticket in tickets:
                     bm["tickets"]+=1; bm["stake"]+=100
                     ret=payout_for(kind,ticket,payout) or 0
                     if ret:
                         bm["hits"]+=1; bm["return"]+=ret
+                        race_return += ret
+                bm["race_count"] += 1
+                bm["sum_return_sq"] += race_return * race_return
+                bm["sum_stake_sq"] += race_stake * race_stake
+                bm["sum_stake_return"] += race_stake * race_return
 
     if pending: commit(pending)
     out={}
@@ -1207,8 +1248,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
         for kind,bm in m["bet_types"].items():
             bet_summary[kind]={**bm,
                 "hit_rate":round(100*bm["hits"]/bm["tickets"],2) if bm["tickets"] else None,
-                "roi":round(100*bm["return"]/bm["stake"],2) if bm["stake"] else None,
-                "profit":bm["return"]-bm["stake"]}
+                **summarize_race_cluster_roi(bm)}
         out[name]={**m,"bet_types":bet_summary,
           "trifecta_diagnostics":summarize_trifecta_diagnostics(m["trifecta_diagnostics"]),
           "role_trifecta_diagnostics":summarize_role_trifecta_diagnostics(m["role_trifecta_diagnostics"]),
@@ -1844,7 +1884,10 @@ def holdout_validation(races, horses, payouts):
                        "trained_margin_only","trained_closing_only","trained_performance_light"):
         total={"races":0,"winner_top1":0,"winner_top3":0,
                "winner_topk":{str(k):0 for k in (5,6,7)},
-               "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0} for kind in kinds}}
+               "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0,
+                                   "race_count":0,"sum_return_sq":0,
+                                   "sum_stake_sq":0,"sum_stake_return":0}
+                            for kind in kinds}}
         for fold in folds:
             fm=fold["models"][model_name]
             total["races"]+=fm["races"]
@@ -1853,14 +1896,14 @@ def holdout_validation(races, horses, payouts):
             for k in ("5","6","7"):
                 total["winner_topk"][k] += fm["winner_topk"][k]
             for kind in kinds:
-                for key in ("tickets","hits","stake","return"):
+                for key in ("tickets","hits","stake","return","race_count",
+                            "sum_return_sq","sum_stake_sq","sum_stake_return"):
                     total["bet_types"][kind][key]+=fm["bet_types"][kind][key]
         bet_summary={}
         for kind,bm in total["bet_types"].items():
             bet_summary[kind]={**bm,
                 "hit_rate":round(100*bm["hits"]/bm["tickets"],2) if bm["tickets"] else None,
-                "roi":round(100*bm["return"]/bm["stake"],2) if bm["stake"] else None,
-                "profit":bm["return"]-bm["stake"]}
+                **summarize_race_cluster_roi(bm)}
         n=total["races"] or 1
         aggregate[model_name]={**total,"bet_types":bet_summary,
             "winner_top1_rate":round(100*total["winner_top1"]/n,2),
