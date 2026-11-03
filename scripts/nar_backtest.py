@@ -1448,6 +1448,7 @@ def data_quality_audit(races, horses, payouts):
 
 
 
+# Pre-off ranking research is evaluated only from timestamped snapshots.
 def preoff_ranking_strategy_backtest(payouts):
     """Compare candidate ranking rules on timestamped pre-off odds, with date holdout."""
     top_n = {"win":2, "place":3, "wide":3, "quinella":1,
