@@ -20,9 +20,9 @@ def norm(s):
 
 def number(v):
     try:
-        s = str(v or "").replace(",", "").strip()
+        s = str(v if v is not None else "").replace(",", "").strip()
         return float(s) if s else None
-    except ValueError:
+    except (TypeError, ValueError):
         return None
 
 def rank_value(v):
