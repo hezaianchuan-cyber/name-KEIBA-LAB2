@@ -339,9 +339,12 @@ def race_relative_scores(parts_by_no, model_weights):
     n = len(horse_numbers)
     relative = {no: {} for no in horse_numbers}
     for feature in model_weights:
+        # Missing features are neutral and must tie with an observed 0.5.
         ordered = sorted(
-            ((number(parts_by_no[no].get(feature)), no) for no in horse_numbers),
-            key=lambda item: (item[0] if item[0] is not None else 0.5),
+            (((number(parts_by_no[no].get(feature))
+               if number(parts_by_no[no].get(feature)) is not None else 0.5), no)
+             for no in horse_numbers),
+            key=lambda item: item[0],
             reverse=True,
         )
         position = 0
