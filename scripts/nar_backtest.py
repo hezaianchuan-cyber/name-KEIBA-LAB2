@@ -578,12 +578,14 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     _, _, _, learned, updates, train_calibration_records = run_backtest(train_races, train_horses, train_payouts)
     temperature = fit_temperature(train_calibration_records)
     baseline = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
-    d_weights = {key: value * 0.80 for key, value in learned.items()}
+    # Keep the learned B weights normalized to 1.0. The performance scorer
+    # applies the 0.80/0.10/0.10 blend itself; pre-scaling these weights would
+    # accidentally reduce the B contribution to 0.64.
     models = {"baseline":baseline, "trained":learned, "trained_no_recent_history":learned,
-              "trained_with_pace":learned, "trained_with_performance":d_weights,
-              "trained_performance_with_pace":d_weights,
-              "trained_margin_only":d_weights, "trained_closing_only":d_weights,
-              "trained_performance_light":d_weights}
+              "trained_with_pace":learned, "trained_with_performance":learned,
+              "trained_performance_with_pace":learned,
+              "trained_margin_only":learned, "trained_closing_only":learned,
+              "trained_performance_light":learned}
     performance_blends = {
         "trained_with_performance": (0.10, 0.10),
         "trained_performance_with_pace": (0.10, 0.10),
