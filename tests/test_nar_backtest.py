@@ -1219,3 +1219,29 @@ class TrifectaFormationUniquenessTests(unittest.TestCase):
         self.assertTrue(all(len(ticket) == 3 and len(set(ticket)) == 3
                             for ticket in tickets))
         self.assertEqual(len(tickets), len({tuple(ticket) for ticket in tickets}))
+
+class FinishPositionDiagnosticsTests(unittest.TestCase):
+    def test_topk_diagnostics_compare_ordinary_and_role_rankings(self):
+        stats = nb.new_finish_position_diagnostics()
+        field = [
+            {"no": "1", "finish": 2},
+            {"no": "2", "finish": 1},
+            {"no": "3", "finish": 3},
+            {"no": "4", "finish": 4},
+        ]
+        ordinary = [{"no": str(i)} for i in (1, 2, 3, 4)]
+        role_rankings = {
+            1: [{"no": str(i)} for i in (2, 1, 3, 4)],
+            2: [{"no": str(i)} for i in (1, 2, 3, 4)],
+            3: [{"no": str(i)} for i in (4, 3, 2, 1)],
+        }
+        nb.update_finish_position_diagnostics(stats, ordinary, role_rankings, field)
+        summary = nb.summarize_finish_position_diagnostics(stats)
+        self.assertEqual(summary["ordinary"]["1"]["topk_hits"]["1"], 0)
+        self.assertEqual(summary["role_specific"]["1"]["topk_hits"]["1"], 1)
+        self.assertEqual(summary["ordinary"]["2"]["topk_hits"]["1"], 1)
+        self.assertEqual(summary["role_specific"]["2"]["topk_hits"]["1"], 0)
+        self.assertEqual(summary["role_specific"]["3"]["topk_hits"]["1"], 0)
+        self.assertEqual(summary["role_specific"]["3"]["topk_hits"]["2"], 1)
+        self.assertEqual(summary["role_specific"]["3"]["mean_rank_when_found"], 2.0)
+        self.assertEqual(summary["role_specific"]["3"]["mean_reciprocal_rank"], 0.5)
