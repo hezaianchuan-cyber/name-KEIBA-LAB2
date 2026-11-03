@@ -505,7 +505,12 @@ def build_fixed_tickets(ranked):
 
 
 def role_specific_ranking(scored, history, target_finish, blend):
-    """Rank runners for one finishing role using only strictly prior results."""
+    """Rank a finishing role from strictly prior results and role-relevant race shape.
+
+    First-place candidates get a modest early-position signal; second-place
+    candidates get a balanced in-running-position signal; third-place candidates
+    get late-position/closing-speed signals. Missing signals are neutral.
+    """
     ranked = []
     for base_score, horse in scored:
         past = history.get(horse["name"], [])[-5:]
@@ -515,11 +520,24 @@ def role_specific_ranking(scored, history, target_finish, blend):
             field_size = number(row.get("field_size"))
             if finish is None or field_size is None or field_size < 2:
                 continue
-            values.append(max(0.0, 1.0 - abs(finish - target_finish) / (field_size - 1)))
-            weights.append(index)
+            finish_fit = max(0.0, 1.0 - abs(finish - target_finish) / (field_size - 1))
+            first_pos = number(row.get("first_corner_pct"))
+            last_pos = number(row.get("last_corner_pct"))
+            closing = number(row.get("last3f_rank_score"))
+            if target_finish == 1:
+                role_signal = 1.0 - first_pos if first_pos is not None else 0.5
+            elif target_finish == 2:
+                positions = [1.0 - value for value in (first_pos, last_pos) if value is not None]
+                role_signal = sum(positions) / len(positions) if positions else 0.5
+            else:
+                signals = [1.0 - last_pos if last_pos is not None else None, closing]
+                signals = [value for value in signals if value is not None]
+                role_signal = sum(signals) / len(signals) if signals else 0.5
+            values.append(0.70 * finish_fit + 0.30 * role_signal)
+            weights.append(1.25 ** (index - 1))
         if values:
             role_form = sum(v*w for v,w in zip(values,weights)) / sum(weights)
-            reliability = len(values) / (len(values) + 3.0)
+            reliability = len(values) / (len(values) + 4.0)
             role_form = reliability * role_form + (1.0 - reliability) * 0.5
         else:
             role_form = 0.5
@@ -540,8 +558,10 @@ def build_role_trifecta_formation(role_rankings, first_count, second_count, thir
 
 
 def new_role_trifecta_diagnostics():
-    formations = ((1,4,4), (2,4,3), (2,5,3), (2,5,5))
-    blends = (0.05, 0.10, 0.15, 0.20)
+    formations = ((1,3,4), (1,4,3), (1,4,4), (1,4,5), (1,5,4),
+                  (2,3,3), (2,3,4), (2,4,3), (2,4,4), (2,5,3),
+                  (2,3,5), (2,5,4), (3,4,4), (3,5,4))
+    blends = (0.05, 0.10, 0.20, 0.30, 0.40)
     return {
         f"{blend:.2f}": {
             f"{a}-{b}-{c}": {"races":0,"tickets":0,"hits":0,"hit_races":0,
