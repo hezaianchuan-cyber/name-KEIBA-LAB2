@@ -54,7 +54,7 @@ jobs:
               echo "No report changes"
               exit 0
             fi
-            git commit -m "Update NAR three-year backtest summary"
+            git commit -m "Update NAR four-year backtest summary"
             if git push origin HEAD:main; then
               exit 0
             fi
