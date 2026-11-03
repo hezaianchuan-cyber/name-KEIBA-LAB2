@@ -1174,6 +1174,20 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     pending=[]; current=None
     test_calibration_records=[]
     confidence_filter_stats = new_confidence_filter_stats()
+    # E: pre-registered integrated challenger. The confidence gate and role blend
+    # are fixed before holdout evaluation; no test-fold threshold tuning is allowed.
+    integrated_stats = {
+        "confidence_threshold": 0.30,
+        "role_blend": 0.10,
+        "trifecta_formation": [2, 3, 4],
+        "races": 0,
+        "bet_types": {
+            kind: {"tickets": 0, "hits": 0, "stake": 0, "return": 0,
+                   "race_count": 0, "sum_return_sq": 0,
+                   "sum_stake_sq": 0, "sum_stake_return": 0}
+            for kind in ("wide", "exacta", "trio", "trifecta")
+        },
+    }
     segment_stats = defaultdict(lambda: {
         "races": 0, "winner_top1": 0, "winner_top3": 0,
         "bet_types": {kind: {"tickets": 0, "hits": 0, "stake": 0, "return": 0}
@@ -1275,6 +1289,35 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             if model_name == "trained":
                 update_confidence_filter_stats(confidence_filter_stats, top_probability,
                                                ranked, winners, ticket_map, payout)
+                # Integrated E: apply the fixed confidence gate to B's calibrated
+                # probability, retain C's role-specific trifecta pools, and use
+                # the same wide/exacta/trio ticket definitions as the baseline.
+                if top_probability + 1e-12 >= integrated_stats["confidence_threshold"]:
+                    role_blend = integrated_stats["role_blend"]
+                    role_rankings = {
+                        target: role_specific_ranking(scored, history, target, role_blend)
+                        for target in (1, 2, 3)
+                    }
+                    e_tickets = dict(ticket_map)
+                    e_tickets["trifecta"] = build_role_trifecta_formation(
+                        role_rankings, *integrated_stats["trifecta_formation"])
+                    integrated_stats["races"] += 1
+                    for e_kind, e_ticket_list in e_tickets.items():
+                        e_bucket = integrated_stats["bet_types"][e_kind]
+                        e_race_stake = 100 * len(e_ticket_list)
+                        e_race_return = 0
+                        for e_ticket in e_ticket_list:
+                            e_return = payout_for(e_kind, e_ticket, payout) or 0
+                            e_bucket["tickets"] += 1
+                            e_bucket["stake"] += 100
+                            if e_return:
+                                e_bucket["hits"] += 1
+                                e_bucket["return"] += e_return
+                                e_race_return += e_return
+                        e_bucket["race_count"] += 1
+                        e_bucket["sum_return_sq"] += e_race_return * e_race_return
+                        e_bucket["sum_stake_sq"] += e_race_stake * e_race_stake
+                        e_bucket["sum_stake_return"] += e_race_stake * e_race_return
                 winners_in_race = winners
                 labels = race_segment_labels(race)
                 for dimension, label in labels.items():
@@ -1346,6 +1389,23 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
         }
     condition_segments, condition_comparisons = summarize_condition_model_segments(
         condition_model_segment_stats, condition_bet_types)
+    integrated_bets = {}
+    for kind, bucket in integrated_stats["bet_types"].items():
+        integrated_bets[kind] = {
+            **bucket,
+            "hit_rate": round(100 * bucket["hits"] / bucket["tickets"], 2)
+                if bucket["tickets"] else None,
+            **summarize_race_cluster_roi(bucket),
+        }
+    integrated_summary = {
+        "status": "evaluated" if integrated_stats["races"] else "no_races_passed_confidence_gate",
+        "confidence_threshold": integrated_stats["confidence_threshold"],
+        "role_blend": integrated_stats["role_blend"],
+        "trifecta_formation": integrated_stats["trifecta_formation"],
+        "races": integrated_stats["races"],
+        "bet_types": integrated_bets,
+        "policy": "Fixed 0.30 calibrated top-win probability gate; role-specific trifecta ranking blend 0.10; 2-3-4 formation. Parameters are not selected on the holdout fold.",
+    }
     return {"train_start":min(train_dates).isoformat(),"train_end":max(train_dates).isoformat(),
             "test_start":min(test_dates).isoformat(),"test_end":max(test_dates).isoformat(),
             "train_races":len(train_races),"test_races":len(ordered),
@@ -1354,7 +1414,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             "trained_condition_segments":segment_output,
             "condition_model_segments":condition_segments,
             "condition_model_comparisons":condition_comparisons,
-            "confidence_filter_backtest":summarize_confidence_filter_stats(confidence_filter_stats)}
+            "confidence_filter_backtest":summarize_confidence_filter_stats(confidence_filter_stats),
+            "integrated_strategy_E": integrated_summary}
 
 
 def load_odds_snapshot_records():
@@ -1999,7 +2060,54 @@ def holdout_validation(races, horses, payouts):
         }
     history_comparison["_method"] = "Same chronological holdout races and same trained weights; before excludes each horse's last-five-run form/venue/distance inputs, after includes them. Sire, jockey and age features remain identical."
     auto_selection = evaluate_walk_forward_selection(folds)
-    return {"status":"ok","auto_improvement_loop":auto_selection,"method":"three rolling-origin folds with non-overlapping test windows; weights frozen within each test window; prior results added only after all races on a date are scored; market-value bets use timestamped official pre-off odds snapshots",
+    # Aggregate E only from untouched walk-forward test folds. Raw race-cluster
+    # moments are summed before confidence intervals are recomputed.
+    e_total = {
+        "races": 0,
+        "bet_types": {
+            kind: {"tickets": 0, "hits": 0, "stake": 0, "return": 0,
+                   "race_count": 0, "sum_return_sq": 0,
+                   "sum_stake_sq": 0, "sum_stake_return": 0}
+            for kind in ("wide", "exacta", "trio", "trifecta")
+        },
+    }
+    for fold in folds:
+        e_fold = fold.get("integrated_strategy_E") or {}
+        e_total["races"] += int(e_fold.get("races") or 0)
+        for kind, bucket in e_fold.get("bet_types", {}).items():
+            for key in ("tickets", "hits", "stake", "return", "race_count",
+                        "sum_return_sq", "sum_stake_sq", "sum_stake_return"):
+                e_total["bet_types"][kind][key] += bucket.get(key, 0)
+    e_bets = {}
+    for kind, bucket in e_total["bet_types"].items():
+        e_bets[kind] = {
+            **bucket,
+            "hit_rate": round(100 * bucket["hits"] / bucket["tickets"], 2)
+                if bucket["tickets"] else None,
+            **summarize_race_cluster_roi(bucket),
+        }
+    integrated_e_oos = {
+        "status": "evaluated" if e_total["races"] else "no_races_passed_confidence_gate",
+        "confidence_threshold": 0.30,
+        "role_blend": 0.10,
+        "trifecta_formation": [2, 3, 4],
+        "races": e_total["races"],
+        "bet_types": e_bets,
+        "folds": [
+            {"fold": fold["fold"],
+             "races": fold.get("integrated_strategy_E", {}).get("races", 0),
+             "bet_types": {
+                 kind: {
+                     "roi": fold.get("integrated_strategy_E", {}).get("bet_types", {}).get(kind, {}).get("roi"),
+                     "hit_rate": fold.get("integrated_strategy_E", {}).get("bet_types", {}).get(kind, {}).get("hit_rate"),
+                     "tickets": fold.get("integrated_strategy_E", {}).get("bet_types", {}).get(kind, {}).get("tickets", 0),
+                 } for kind in ("wide", "exacta", "trio", "trifecta")
+             }} for fold in folds
+        ],
+        "policy": "Pre-registered integrated challenger; no parameter selection on the validation folds.",
+    }
+    return {"status":"ok","auto_improvement_loop":auto_selection,
+            "integrated_strategy_E": integrated_e_oos,"method":"three rolling-origin folds with non-overlapping test windows; weights frozen within each test window; prior results added only after all races on a date are scored; market-value bets use timestamped official pre-off odds snapshots",
             "folds":folds,
             "test_races":sum(x["models"]["trained"]["races"] for x in folds),
             "test_start":folds[0]["test_start"],"test_end":folds[-1]["test_end"],
@@ -2184,6 +2292,14 @@ def main():
         },
         "metrics": metrics,
         "out_of_sample_validation": validation,
+        "strategy_comparison": {
+            "A_baseline": "out_of_sample_validation.models.baseline",
+            "B_confidence_filter": "out_of_sample_validation.folds[*].confidence_filter_backtest (fixed thresholds; inspect each fold)",
+            "C_role_specific_trifecta": "out_of_sample_validation.folds[*].models.trained.role_trifecta_diagnostics",
+            "D_preoff_odds": "preoff_ranking_strategy_backtest (timestamped 2-30 minute snapshots only)",
+            "E_integrated": "out_of_sample_validation.integrated_strategy_E",
+            "comparison_policy": "A-E are reported separately. D is marked unevaluable until enough genuine pre-off snapshots exist. No strategy is declared profitable unless sample minimums are met and the 95% race-cluster ROI lower bound exceeds 100%."
+        },
         "odds_snapshot_archive": odds_snapshot_inventory(),
         "preoff_value_backtest": preoff_value_backtest(payouts),
         "preoff_ticket_type_backtest": preoff_ticket_type_backtest(payouts),
