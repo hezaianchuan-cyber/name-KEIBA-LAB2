@@ -275,24 +275,42 @@ def predict_combinations(odds_rows, horse_predictions, full_universe=False):
     probabilities = {str(p["horse_no"]): float(p["win_probability"]) for p in horse_predictions}
     ranked = sorted(horse_predictions, key=lambda p: (
         float(p.get("win_probability") or 0), float(p.get("score") or 0)), reverse=True)
+    nos = [str(p["horse_no"]) for p in ranked]
     if full_universe:
-        nos = [str(p["horse_no"]) for p in ranked]
         pairs = list(itertools.combinations(nos, 2))
         triples = list(itertools.combinations(nos, 3))
         ticket_map = {
+            "win": [[no] for no in nos],
+            "place": [[no] for no in nos],
             "wide": [list(x) for x in pairs],
+            "quinella": [list(x) for x in pairs],
             "exacta": [list(x) for x in itertools.permutations(nos, 2)],
             "trio": [list(x) for x in triples],
             "trifecta": [list(x) for x in itertools.permutations(nos, 3)],
         }
     else:
-        ticket_map = nb.build_fixed_tickets([{"no":str(p["horse_no"])} for p in ranked])
-        ticket_map = {kind:tickets for kind,tickets in ticket_map.items() if kind in {"wide","exacta","trio","trifecta"}}
+        # Keep a compact five-runner candidate pool while covering every
+        # supported NAR bet type. Ordered tickets keep the two top win ranks
+        # as first-place candidates; all combinations are duplicate-free.
+        pool = nos[:5]
+        pairs = list(itertools.combinations(pool, 2))
+        triples = list(itertools.combinations(pool, 3))
+        ticket_map = {
+            "win": [[no] for no in pool],
+            "place": [[no] for no in pool],
+            "wide": [list(x) for x in pairs],
+            "quinella": [list(x) for x in pairs],
+            "exacta": [[a,b] for a in pool[:2] for b in pool if b != a],
+            "trio": [list(x) for x in triples],
+            "trifecta": [[a,b,c] for a in pool[:2] for b in pool if b != a
+                         for c in pool if c not in (a,b)],
+        }
     type_map = {
+        "単勝":"win", "複勝":"place", "馬連":"quinella",
         "ワイド":"wide", "馬単":"exacta", "3連複":"trio", "三連複":"trio",
         "3連単":"trifecta", "三連単":"trifecta",
     }
-    unordered = {"wide","trio"}
+    unordered = {"quinella","wide","trio"}
     odds_lookup = {}
     for item in odds_rows:
         label = unicodedata.normalize("NFKC", str(item.get("type") or "")).replace(" ", "")
