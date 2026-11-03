@@ -644,6 +644,52 @@ def summarize_confidence_filter_stats(stats):
     return output
 
 
+
+def summarize_condition_model_segments(stats, kinds=("wide", "exacta", "trio")):
+    """Summarize baseline/challenger condition metrics for each requested bet type."""
+    segments = {
+        kind: {"baseline": {}, "trained_no_recent_history": {}}
+        for kind in kinds
+    }
+    for (model_name, kind, dimension, label), bucket in sorted(stats.items()):
+        if kind not in segments or model_name not in segments[kind]:
+            continue
+        roi = round(100 * bucket["return"] / bucket["stake"], 2) if bucket["stake"] else None
+        hit_rate = round(100 * bucket["hits"] / bucket["tickets"], 2) if bucket["tickets"] else None
+        segments[kind][model_name][f"{dimension}:{label}"] = {
+            **bucket, "roi": roi, "hit_rate": hit_rate,
+            "profit": bucket["return"] - bucket["stake"]
+        }
+    comparisons = {}
+    for kind in kinds:
+        comparison = []
+        baseline_segments = segments[kind]["baseline"]
+        candidate_segments = segments[kind]["trained_no_recent_history"]
+        for segment_key in sorted(set(baseline_segments) | set(candidate_segments)):
+            baseline_bucket = baseline_segments.get(segment_key)
+            candidate_bucket = candidate_segments.get(segment_key)
+            baseline_roi = baseline_bucket.get("roi") if baseline_bucket else None
+            candidate_roi = candidate_bucket.get("roi") if candidate_bucket else None
+            comparison.append({
+                "segment": segment_key,
+                "baseline_races": baseline_bucket.get("races", 0) if baseline_bucket else 0,
+                "candidate_races": candidate_bucket.get("races", 0) if candidate_bucket else 0,
+                "baseline_tickets": baseline_bucket.get("tickets", 0) if baseline_bucket else 0,
+                "candidate_tickets": candidate_bucket.get("tickets", 0) if candidate_bucket else 0,
+                "baseline_hits": baseline_bucket.get("hits", 0) if baseline_bucket else 0,
+                "candidate_hits": candidate_bucket.get("hits", 0) if candidate_bucket else 0,
+                "baseline_hit_rate": baseline_bucket.get("hit_rate") if baseline_bucket else None,
+                "candidate_hit_rate": candidate_bucket.get("hit_rate") if candidate_bucket else None,
+                "baseline_roi": baseline_roi, "candidate_roi": candidate_roi,
+                "roi_delta": round(candidate_roi - baseline_roi, 2)
+                    if baseline_roi is not None and candidate_roi is not None else None,
+                "baseline_profit": baseline_bucket.get("profit") if baseline_bucket else None,
+                "candidate_profit": candidate_bucket.get("profit") if candidate_bucket else None,
+            })
+        comparisons[kind] = comparison
+    return segments, comparisons
+
+
 def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     train_set = set(train_dates)
     test_set = set(test_dates)
@@ -845,46 +891,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             "winner_top3_rate": round(100 * segment["winner_top3"] / n, 2),
             "bet_types": bet_types,
         }
-    condition_segments = {
-        kind: {"baseline": {}, "trained_no_recent_history": {}}
-        for kind in condition_bet_types
-    }
-    for (model_name, kind, dimension, label), bucket in sorted(
-            condition_model_segment_stats.items()):
-        roi = round(100 * bucket["return"] / bucket["stake"], 2) if bucket["stake"] else None
-        hit_rate = round(100 * bucket["hits"] / bucket["tickets"], 2) if bucket["tickets"] else None
-        condition_segments[kind][model_name][f"{dimension}:{label}"] = {
-            **bucket, "roi": roi, "hit_rate": hit_rate,
-            "profit": bucket["return"] - bucket["stake"]
-        }
-    condition_comparisons = {}
-    for kind in condition_bet_types:
-        comparison = []
-        baseline_segments = condition_segments[kind]["baseline"]
-        candidate_segments = condition_segments[kind]["trained_no_recent_history"]
-        segment_keys = sorted(set(baseline_segments) | set(candidate_segments))
-        for segment_key in segment_keys:
-            baseline_bucket = baseline_segments.get(segment_key)
-            candidate_bucket = candidate_segments.get(segment_key)
-            baseline_roi = baseline_bucket.get("roi") if baseline_bucket else None
-            candidate_roi = candidate_bucket.get("roi") if candidate_bucket else None
-            comparison.append({
-                "segment": segment_key,
-                "baseline_races": baseline_bucket.get("races", 0) if baseline_bucket else 0,
-                "candidate_races": candidate_bucket.get("races", 0) if candidate_bucket else 0,
-                "baseline_tickets": baseline_bucket.get("tickets", 0) if baseline_bucket else 0,
-                "candidate_tickets": candidate_bucket.get("tickets", 0) if candidate_bucket else 0,
-                "baseline_hits": baseline_bucket.get("hits", 0) if baseline_bucket else 0,
-                "candidate_hits": candidate_bucket.get("hits", 0) if candidate_bucket else 0,
-                "baseline_hit_rate": baseline_bucket.get("hit_rate") if baseline_bucket else None,
-                "candidate_hit_rate": candidate_bucket.get("hit_rate") if candidate_bucket else None,
-                "baseline_roi": baseline_roi, "candidate_roi": candidate_roi,
-                "roi_delta": round(candidate_roi - baseline_roi, 2)
-                    if baseline_roi is not None and candidate_roi is not None else None,
-                "baseline_profit": baseline_bucket.get("profit") if baseline_bucket else None,
-                "candidate_profit": candidate_bucket.get("profit") if candidate_bucket else None,
-            })
-        condition_comparisons[kind] = comparison
+    condition_segments, condition_comparisons = summarize_condition_model_segments(
+        condition_model_segment_stats, condition_bet_types)
     return {"train_start":min(train_dates).isoformat(),"train_end":max(train_dates).isoformat(),
             "test_start":min(test_dates).isoformat(),"test_end":max(test_dates).isoformat(),
             "train_races":len(train_races),"test_races":len(ordered),
