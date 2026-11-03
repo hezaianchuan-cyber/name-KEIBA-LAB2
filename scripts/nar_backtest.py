@@ -483,28 +483,28 @@ def update_trifecta_diagnostics(bucket, ranked, field, payout):
     winners = {str(numbers[0]) for numbers, _ in payout.get("win", [])}
     second = {str(h["no"]) for h in field if h.get("finish") == 2}
     third = {str(h["no"]) for h in field if h.get("finish") == 3}
-    if not winners or not second or not third:
-        return
     def covered(group, top_n):
         return any(rank.get(no, 10**9) <= top_n for no in group)
-    bucket["races"] += 1
-    bucket["winner_top1"] += int(covered(winners, 1))
-    bucket["winner_top2"] += int(covered(winners, 2))
-    bucket["winner_top3"] += int(covered(winners, 3))
-    bucket["second_top2"] += int(covered(second, 2))
-    bucket["second_top3"] += int(covered(second, 3))
-    bucket["second_top5"] += int(covered(second, 5))
-    bucket["second_top7"] += int(covered(second, 7))
-    bucket["third_top3"] += int(covered(third, 3))
-    bucket["third_top5"] += int(covered(third, 5))
-    bucket["third_top7"] += int(covered(third, 7))
-    podium = winners | second | third
-    bucket["all_podium_top5"] += int(all(covered({no}, 5) for no in podium))
-    bucket["all_podium_top6"] += int(all(covered({no}, 6) for no in podium))
-    bucket["all_podium_top7"] += int(all(covered({no}, 7) for no in podium))
-    current = build_trifecta_tickets(ranked, 2, 5)
-    if any(payout_for("trifecta", ticket, payout) for ticket in current):
-        bucket["current_structure_exact_hit_races"] += 1
+    if winners and second and third:
+        bucket["races"] += 1
+        bucket["winner_top1"] += int(covered(winners, 1))
+        bucket["winner_top2"] += int(covered(winners, 2))
+        bucket["winner_top3"] += int(covered(winners, 3))
+        bucket["second_top2"] += int(covered(second, 2))
+        bucket["second_top3"] += int(covered(second, 3))
+        bucket["second_top5"] += int(covered(second, 5))
+        bucket["second_top7"] += int(covered(second, 7))
+        bucket["third_top3"] += int(covered(third, 3))
+        bucket["third_top5"] += int(covered(third, 5))
+        bucket["third_top7"] += int(covered(third, 7))
+        podium = winners | second | third
+        bucket["all_podium_top5"] += int(all(covered({no}, 5) for no in podium))
+        bucket["all_podium_top6"] += int(all(covered({no}, 6) for no in podium))
+        bucket["all_podium_top7"] += int(all(covered({no}, 7) for no in podium))
+        current = build_trifecta_tickets(ranked, 2, 5)
+        if any(payout_for("trifecta", ticket, payout) for ticket in current):
+            bucket["current_structure_exact_hit_races"] += 1
+    # Ticket ROI is evaluated for every race with a valid payout, even if finish-role fields are incomplete.
     for (first_count, pool_size), stats in bucket["structures"].items():
         tickets = build_trifecta_tickets(ranked, first_count, pool_size)
         if not tickets:
@@ -563,12 +563,13 @@ def update_trio_diagnostics(bucket, ranked, field, payout):
     if not ranked:
         return
     podium = {str(h["no"]) for h in field if h.get("finish") in (1, 2, 3)}
-    if len(podium) != 3:
-        return
     rank = {str(h["no"]): i + 1 for i, h in enumerate(ranked)}
-    bucket["races"] += 1
+    if len(podium) == 3:
+        bucket["races"] += 1
+        for pool in (4, 5, 6, 7):
+            bucket[f"all_podium_top{pool}"] += int(all(rank.get(no, 10**9) <= pool for no in podium))
+    # Ticket ROI is evaluated even when the finish-position fields are incomplete.
     for pool in (4, 5, 6, 7):
-        bucket[f"all_podium_top{pool}"] += int(all(rank.get(no, 10**9) <= pool for no in podium))
         stats = bucket["structures"][pool]
         tickets = build_trio_tickets(ranked, pool)
         if not tickets:
