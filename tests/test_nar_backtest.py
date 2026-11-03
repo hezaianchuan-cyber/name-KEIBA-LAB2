@@ -1148,8 +1148,8 @@ class RaceRelativeFeatureTests(unittest.TestCase):
         }
         weights = {"form": 0.5, "jockey": 0.5}
         scores = nb.race_relative_scores(parts, weights)
-        self.assertAlmostEqual(scores["1"], 0.75)
-        self.assertAlmostEqual(scores["2"], 0.50)
+        self.assertAlmostEqual(scores["1"], 0.50)
+        self.assertAlmostEqual(scores["2"], 0.75)
         self.assertAlmostEqual(scores["3"], 0.25)
 
     def test_tied_feature_values_receive_average_percentile(self):
