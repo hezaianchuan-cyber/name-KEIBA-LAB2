@@ -706,6 +706,11 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
         "bet_types": {kind: {"tickets": 0, "hits": 0, "stake": 0, "return": 0}
                       for kind in ("win","place","wide","quinella","exacta","trio","trifecta")}
     })
+    # Focused comparison of the wide model that improved in both prior folds
+    # against baseline, stratified by venue/surface/going/distance.
+    wide_model_segment_stats = defaultdict(lambda: {
+        "races": 0, "tickets": 0, "hits": 0, "stake": 0, "return": 0
+    })
     def commit(items):
         for field,race in items:
             performance = field_performance_features(field)
@@ -763,6 +768,17 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             if ranked[0]["no"] in winners: m["winner_top1"]+=1
             if any(h["no"] in winners for h in ranked[:3]): m["winner_top3"]+=1
             ticket_map=build_fixed_tickets(ranked)
+            if model_name in ("baseline", "trained_no_recent_history"):
+                for dimension, label in race_segment_labels(race).items():
+                    wide_bucket = wide_model_segment_stats[(model_name, dimension, label)]
+                    wide_bucket["races"] += 1
+                    for wide_ticket in ticket_map.get("wide", []):
+                        wide_bucket["tickets"] += 1
+                        wide_bucket["stake"] += 100
+                        wide_return = payout_for("wide", wide_ticket, payout) or 0
+                        if wide_return:
+                            wide_bucket["hits"] += 1
+                            wide_bucket["return"] += wide_return
             if model_name == "trained":
                 update_confidence_filter_stats(confidence_filter_stats, top_probability,
                                                ranked, winners, ticket_map, payout)
@@ -825,12 +841,38 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             "winner_top3_rate": round(100 * segment["winner_top3"] / n, 2),
             "bet_types": bet_types,
         }
+    wide_segments = {"baseline": {}, "trained_no_recent_history": {}}
+    for (model_name, dimension, label), bucket in sorted(wide_model_segment_stats.items()):
+        roi = round(100 * bucket["return"] / bucket["stake"], 2) if bucket["stake"] else None
+        wide_segments[model_name][f"{dimension}:{label}"] = {
+            **bucket, "roi": roi, "profit": bucket["return"] - bucket["stake"]
+        }
+    wide_comparison = []
+    segment_keys = sorted(set(wide_segments["baseline"]) |
+                          set(wide_segments["trained_no_recent_history"]))
+    for segment_key in segment_keys:
+        baseline_bucket = wide_segments["baseline"].get(segment_key)
+        candidate_bucket = wide_segments["trained_no_recent_history"].get(segment_key)
+        baseline_roi = baseline_bucket.get("roi") if baseline_bucket else None
+        candidate_roi = candidate_bucket.get("roi") if candidate_bucket else None
+        wide_comparison.append({
+            "segment": segment_key,
+            "baseline_races": baseline_bucket.get("races", 0) if baseline_bucket else 0,
+            "candidate_races": candidate_bucket.get("races", 0) if candidate_bucket else 0,
+            "baseline_roi": baseline_roi, "candidate_roi": candidate_roi,
+            "roi_delta": round(candidate_roi - baseline_roi, 2)
+                if baseline_roi is not None and candidate_roi is not None else None,
+            "baseline_tickets": baseline_bucket.get("tickets", 0) if baseline_bucket else 0,
+            "candidate_tickets": candidate_bucket.get("tickets", 0) if candidate_bucket else 0,
+        })
     return {"train_start":min(train_dates).isoformat(),"train_end":max(train_dates).isoformat(),
             "test_start":min(test_dates).isoformat(),"test_end":max(test_dates).isoformat(),
             "train_races":len(train_races),"test_races":len(ordered),
             "training_updates":updates,"trained_weights":learned,"temperature":round(temperature,4),
             "calibration":calibration_metrics(test_calibration_records,temperature),"models":out,
             "trained_condition_segments":segment_output,
+            "wide_model_condition_segments":wide_segments,
+            "wide_condition_comparison":wide_comparison,
             "confidence_filter_backtest":summarize_confidence_filter_stats(confidence_filter_stats)}
 
 
@@ -1012,12 +1054,18 @@ def preoff_value_backtest(payouts):
         development = summarize(development_records)
         holdout = summarize(holdout_records)
         eligible_thresholds = [(float(key), value) for key, value in development.items()
-                               if value["minimum_sample_met"]]
+                               if value["candidate_pass"]]
         if eligible_thresholds:
             selected_threshold = f"{max(eligible_thresholds, key=lambda item:item[1]['roi'] or 0)[0]:.2f}"
             selected_holdout = holdout.get(selected_threshold)
-    validation_status = "ready" if selected_threshold is not None else (
-        "awaiting_sample_size" if len(dates) >= 10 else "awaiting_more_dates")
+    if selected_threshold is None:
+        validation_status = "awaiting_sample_size" if len(dates) >= 10 else "awaiting_more_dates"
+    elif selected_holdout and selected_holdout.get("candidate_pass"):
+        validation_status = "ready"
+    elif selected_holdout and selected_holdout.get("minimum_sample_met"):
+        validation_status = "holdout_failed"
+    else:
+        validation_status = "awaiting_holdout_sample"
     return {
         "status": "ok" if eligible_records else ("awaiting_settled_snapshots" if records else "awaiting_snapshots"),
         "snapshot_races": len(records),
@@ -1128,14 +1176,23 @@ def preoff_ticket_type_backtest(payouts):
         overall = summarize(records,kind)
         development = summarize(development_records,kind) if split else {}
         holdout = summarize(holdout_records,kind) if split else {}
-        eligible = [(float(k),v) for k,v in development.items() if v["minimum_sample_met"]]
+        eligible = [(float(k),v) for k,v in development.items() if v["candidate_pass"]]
         selected = max(eligible,key=lambda x:x[1]["roi"] or 0)[0] if eligible else None
         selected_key = f"{selected:.2f}" if selected is not None else None
+        selected_holdout = holdout.get(selected_key) if selected_key else None
+        if selected_key is None:
+            type_validation_status = "awaiting_sample_size" if split else "awaiting_more_dates"
+        elif selected_holdout and selected_holdout.get("candidate_pass"):
+            type_validation_status = "ready"
+        elif selected_holdout and selected_holdout.get("minimum_sample_met"):
+            type_validation_status = "holdout_failed"
+        else:
+            type_validation_status = "awaiting_holdout_sample"
         by_type[kind] = {
             "overall":overall,"development":development,"holdout":holdout,
             "selected_threshold":selected_key,
-            "selected_holdout":holdout.get(selected_key) if selected_key else None,
-            "validation_status":"ready" if selected_key else ("awaiting_sample_size" if split else "awaiting_more_dates"),
+            "selected_holdout":selected_holdout,
+            "validation_status":type_validation_status,
         }
     return {
         "status":"ok" if records else "awaiting_snapshots",
@@ -1147,46 +1204,92 @@ def preoff_ticket_type_backtest(payouts):
     }
 
 
-def select_models_from_prior_fold(prior_fold, min_tickets=300, min_roi_gain=5.0):
-    """Select one candidate per bet type using only the immediately prior validation fold.
+BET_TYPE_SELECTION_RULES = {
+    # Trifecta has the largest combination space and showed unstable fold-to-fold
+    # results. Require a materially larger prior-fold edge and sample.
+    "trifecta": {"min_tickets": 5000, "min_roi_gain": 12.0},
+}
 
-    The baseline remains the fallback. A challenger must have enough tickets and
-    beat baseline ROI by a fixed margin; the selected model is evaluated only on
-    the next, untouched fold.
+
+def select_models_from_prior_folds(prior_folds, min_tickets=300, min_roi_gain=5.0):
+    """Select candidates only when the edge is repeated across every prior fold.
+
+    The trifecta uses a stricter 5,000-ticket / 12-point hurdle. All other types
+    use the caller's default hurdle. Baseline is always the fallback.
     """
-    models = prior_fold.get("models", {})
-    baseline = models.get("baseline", {})
+    prior_folds = list(prior_folds or [])
+    if not prior_folds:
+        return {}
     selected = {}
-    for kind in ("win", "place", "wide", "quinella", "exacta", "trio", "trifecta"):
-        base = (baseline.get("bet_types") or {}).get(kind, {})
-        base_roi = number(base.get("roi"))
+    kinds = ("win", "place", "wide", "quinella", "exacta", "trio", "trifecta")
+    for kind in kinds:
+        rule = BET_TYPE_SELECTION_RULES.get(kind, {})
+        required_tickets = int(rule.get("min_tickets", min_tickets))
+        required_gain = float(rule.get("min_roi_gain", min_roi_gain))
+        model_names = set()
+        for fold in prior_folds:
+            model_names.update((fold.get("models") or {}).keys())
+        model_names.discard("baseline")
         candidates = []
-        for model_name, model in models.items():
-            bucket = (model.get("bet_types") or {}).get(kind, {})
-            roi = number(bucket.get("roi"))
-            tickets = int(bucket.get("tickets") or 0)
-            if model_name == "baseline" or roi is None or tickets < min_tickets:
-                continue
-            if base_roi is not None and roi >= base_roi + min_roi_gain:
-                candidates.append((roi, model_name, tickets))
+        baseline_history = []
+        for fold in prior_folds:
+            baseline_bucket = ((fold.get("models") or {}).get("baseline", {})
+                               .get("bet_types") or {}).get(kind, {})
+            baseline_history.append(number(baseline_bucket.get("roi")))
+        for model_name in model_names:
+            edges, model_rois, model_tickets = [], [], []
+            valid = True
+            for fold, baseline_roi in zip(prior_folds, baseline_history):
+                model_bucket = ((fold.get("models") or {}).get(model_name, {})
+                                .get("bet_types") or {}).get(kind, {})
+                model_roi = number(model_bucket.get("roi"))
+                tickets = int(model_bucket.get("tickets") or 0)
+                if (baseline_roi is None or model_roi is None or tickets < required_tickets
+                        or model_roi < baseline_roi + required_gain):
+                    valid = False
+                    break
+                edges.append(model_roi - baseline_roi)
+                model_rois.append(model_roi)
+                model_tickets.append(tickets)
+            if valid and edges:
+                candidates.append((sum(edges) / len(edges), model_name,
+                                   model_rois, model_tickets, edges))
+        baseline_roi = baseline_history[-1]
+        baseline_bucket = ((prior_folds[-1].get("models") or {}).get("baseline", {})
+                           .get("bet_types") or {}).get(kind, {})
         if candidates:
-            roi, model_name, tickets = max(candidates, key=lambda item: (item[0], item[2]))
-            selected[kind] = {"model": model_name, "development_roi": roi,
-                              "development_tickets": tickets, "baseline_roi": base_roi}
+            edge, model_name, rois, tickets, edges = max(
+                candidates, key=lambda item: (item[0], min(item[3])))
+            selected[kind] = {
+                "model": model_name, "development_roi": rois[-1],
+                "development_tickets": tickets[-1], "baseline_roi": baseline_roi,
+                "development_roi_history": rois, "edge_history": [round(x, 2) for x in edges],
+                "required_min_tickets": required_tickets,
+                "required_min_roi_gain": required_gain,
+            }
         else:
-            selected[kind] = {"model": "baseline", "development_roi": base_roi,
-                              "development_tickets": int(base.get("tickets") or 0),
-                              "baseline_roi": base_roi}
+            selected[kind] = {
+                "model": "baseline", "development_roi": baseline_roi,
+                "development_tickets": int(baseline_bucket.get("tickets") or 0),
+                "baseline_roi": baseline_roi, "development_roi_history": [baseline_roi],
+                "edge_history": [], "required_min_tickets": required_tickets,
+                "required_min_roi_gain": required_gain,
+            }
     return selected
 
 
+def select_models_from_prior_fold(prior_fold, min_tickets=300, min_roi_gain=5.0):
+    """Backward-compatible single-fold selector used by tests and diagnostics."""
+    return select_models_from_prior_folds([prior_fold], min_tickets, min_roi_gain)
+
+
 def evaluate_walk_forward_selection(folds, min_tickets=300, min_roi_gain=5.0):
-    """Choose candidates on one completed fold and score them on the next fold."""
+    """Select from all available prior folds, then evaluate on the next untouched fold."""
     evaluations = []
     for index in range(1, len(folds)):
         prior = folds[index - 1]
         current = folds[index]
-        choices = select_models_from_prior_fold(prior, min_tickets, min_roi_gain)
+        choices = select_models_from_prior_folds(folds[:index], min_tickets, min_roi_gain)
         per_type = {}
         for kind, choice in choices.items():
             model_name = choice["model"]
@@ -1203,11 +1306,17 @@ def evaluate_walk_forward_selection(folds, min_tickets=300, min_roi_gain=5.0):
                     if actual.get("roi") is not None and baseline.get("roi") is not None else None),
             }
         evaluations.append({"selection_fold": prior.get("fold"),
+                            "prior_folds_used": [fold.get("fold") for fold in folds[:index]],
                             "validation_fold": current.get("fold"), "bet_types": per_type})
     return {
         "status": "ok" if evaluations else "awaiting_next_fold",
-        "selection_method": "For each bet type, select among the fixed candidate models using only the immediately preceding fold. A challenger must have at least min_tickets and exceed that fold's baseline ROI by min_roi_gain percentage points. The selected model is evaluated on the next untouched fold; baseline is the fallback.",
+        "selection_method": "Each candidate must clear its type-specific sample and ROI-edge hurdle in every available prior fold. Selection uses no validation-fold outcomes; baseline is the fallback.",
         "min_tickets": min_tickets, "min_roi_gain_percentage_points": min_roi_gain,
+        "selection_rules_by_bet_type": {
+            kind: {"min_tickets": int(BET_TYPE_SELECTION_RULES.get(kind, {}).get("min_tickets", min_tickets)),
+                   "min_roi_gain_percentage_points": float(BET_TYPE_SELECTION_RULES.get(kind, {}).get("min_roi_gain", min_roi_gain))}
+            for kind in ("win", "place", "wide", "quinella", "exacta", "trio", "trifecta")
+        },
         "evaluations": evaluations,
         "promotion_policy": "No model is automatically promoted from a single fold. Require repeated next-fold gains, adequate samples, and independent market-odds validation before production use."
     }
