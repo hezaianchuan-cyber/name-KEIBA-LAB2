@@ -1,6 +1,6 @@
 {
   "model_version": "nar-chronological-v7-fieldsize-calibrated",
-  "generated_at": "2026-11-03T03:10:33.355772+00:00",
+  "generated_at": "2026-11-03T03:17:26.296346+00:00",
   "training_period": {
     "start": "2023-11-03",
     "end": "2026-11-02"
@@ -10,7 +10,101 @@
     "status": "ok",
     "auto_improvement_loop": {
       "status": "ok",
-      "selection_method": "Each candidate must clear its type-specific sample and ROI-edge hurdle in every available prior fold. Selection uses no validation-fold outcomes; baseline is the fallback.",
+      "selection_method": "Each candidate must clear its type-specific sample and ROI-edge hurdle in every available prior fold. Selection uses no validation-fold outcomes; baseline is the fallback. Selection hurdles are not profitability gates.",
+      "selected_portfolio": {
+        "wide": {
+          "tickets": 48909,
+          "hits": 8193,
+          "stake": 4890900,
+          "return": 3613860,
+          "profit": -1277040,
+          "roi": 73.89,
+          "hit_rate": 16.75,
+          "validation_folds": [
+            {
+              "fold": 2,
+              "model": "trained_no_recent_history",
+              "roi": 72.6,
+              "tickets": 19905
+            },
+            {
+              "fold": 3,
+              "model": "trained_no_recent_history",
+              "roi": 74.78,
+              "tickets": 29004
+            }
+          ]
+        },
+        "exacta": {
+          "tickets": 65212,
+          "hits": 3768,
+          "stake": 6521200,
+          "return": 4227810,
+          "profit": -2293390,
+          "roi": 64.83,
+          "hit_rate": 5.78,
+          "validation_folds": [
+            {
+              "fold": 2,
+              "model": "trained_performance_with_pace",
+              "roi": 67.26,
+              "tickets": 26540
+            },
+            {
+              "fold": 3,
+              "model": "trained_performance_with_pace",
+              "roi": 63.17,
+              "tickets": 38672
+            }
+          ]
+        },
+        "trio": {
+          "tickets": 163030,
+          "hits": 4053,
+          "stake": 16303000,
+          "return": 9724470,
+          "profit": -6578530,
+          "roi": 59.65,
+          "hit_rate": 2.49,
+          "validation_folds": [
+            {
+              "fold": 2,
+              "model": "trained_no_recent_history",
+              "roi": 59.03,
+              "tickets": 66350
+            },
+            {
+              "fold": 3,
+              "model": "trained_no_recent_history",
+              "roi": 60.08,
+              "tickets": 96680
+            }
+          ]
+        },
+        "trifecta": {
+          "tickets": 391272,
+          "hits": 3585,
+          "stake": 39127200,
+          "return": 21233840,
+          "profit": -17893360,
+          "roi": 54.27,
+          "hit_rate": 0.92,
+          "validation_folds": [
+            {
+              "fold": 2,
+              "model": "baseline",
+              "roi": 54.8,
+              "tickets": 159240
+            },
+            {
+              "fold": 3,
+              "model": "baseline",
+              "roi": 53.9,
+              "tickets": 232032
+            }
+          ]
+        }
+      },
       "min_tickets": 300,
       "min_roi_gain_percentage_points": 5.0,
       "selection_rules_by_bet_type": {
@@ -24,7 +118,7 @@
         },
         "wide": {
           "min_tickets": 300,
-          "min_roi_gain_percentage_points": 5.0
+          "min_roi_gain_percentage_points": 2.5
         },
         "quinella": {
           "min_tickets": 300,
@@ -32,11 +126,11 @@
         },
         "exacta": {
           "min_tickets": 300,
-          "min_roi_gain_percentage_points": 5.0
+          "min_roi_gain_percentage_points": 2.5
         },
         "trio": {
           "min_tickets": 300,
-          "min_roi_gain_percentage_points": 5.0
+          "min_roi_gain_percentage_points": 2.5
         },
         "trifecta": {
           "min_tickets": 5000,
@@ -105,7 +199,7 @@
                 7.23
               ],
               "required_min_tickets": 300,
-              "required_min_roi_gain": 5.0,
+              "required_min_roi_gain": 2.5,
               "validation_fold": 2,
               "validation_roi": 72.6,
               "validation_tickets": 19905,
@@ -138,46 +232,50 @@
               "roi_delta_vs_baseline": null
             },
             "exacta": {
-              "model": "baseline",
-              "development_roi": 59.16,
+              "model": "trained_performance_with_pace",
+              "development_roi": 62.5,
               "development_tickets": 28432,
               "baseline_roi": 59.16,
               "development_roi_history": [
-                59.16
+                62.5
               ],
-              "edge_history": [],
+              "edge_history": [
+                3.34
+              ],
               "required_min_tickets": 300,
-              "required_min_roi_gain": 5.0,
+              "required_min_roi_gain": 2.5,
               "validation_fold": 2,
-              "validation_roi": 58.36,
+              "validation_roi": 67.26,
               "validation_tickets": 26540,
-              "validation_hits": 1492,
+              "validation_hits": 1594,
               "validation_stake": 2654000,
-              "validation_return": 1548970.0,
-              "validation_profit": -1105030.0,
+              "validation_return": 1785000.0,
+              "validation_profit": -869000.0,
               "baseline_validation_roi": 58.36,
-              "roi_delta_vs_baseline": 0.0
+              "roi_delta_vs_baseline": 8.9
             },
             "trio": {
-              "model": "baseline",
-              "development_roi": 55.44,
+              "model": "trained_no_recent_history",
+              "development_roi": 59.92,
               "development_tickets": 71080,
               "baseline_roi": 55.44,
               "development_roi_history": [
-                55.44
+                59.92
               ],
-              "edge_history": [],
+              "edge_history": [
+                4.48
+              ],
               "required_min_tickets": 300,
-              "required_min_roi_gain": 5.0,
+              "required_min_roi_gain": 2.5,
               "validation_fold": 2,
-              "validation_roi": 55.47,
+              "validation_roi": 59.03,
               "validation_tickets": 66350,
-              "validation_hits": 2404,
+              "validation_hits": 1605,
               "validation_stake": 6635000,
-              "validation_return": 3680380.0,
-              "validation_profit": -2954620.0,
+              "validation_return": 3916310.0,
+              "validation_profit": -2718690.0,
               "baseline_validation_roi": 55.47,
-              "roi_delta_vs_baseline": 0.0
+              "roi_delta_vs_baseline": 3.56
             },
             "trifecta": {
               "model": "baseline",
@@ -266,7 +364,7 @@
                 7.94
               ],
               "required_min_tickets": 300,
-              "required_min_roi_gain": 5.0,
+              "required_min_roi_gain": 2.5,
               "validation_fold": 3,
               "validation_roi": 74.78,
               "validation_tickets": 29004,
@@ -299,46 +397,54 @@
               "roi_delta_vs_baseline": null
             },
             "exacta": {
-              "model": "baseline",
-              "development_roi": 58.36,
+              "model": "trained_performance_with_pace",
+              "development_roi": 67.26,
               "development_tickets": 26540,
               "baseline_roi": 58.36,
               "development_roi_history": [
-                58.36
+                62.5,
+                67.26
               ],
-              "edge_history": [],
+              "edge_history": [
+                3.34,
+                8.9
+              ],
               "required_min_tickets": 300,
-              "required_min_roi_gain": 5.0,
+              "required_min_roi_gain": 2.5,
               "validation_fold": 3,
-              "validation_roi": 62.17,
+              "validation_roi": 63.17,
               "validation_tickets": 38672,
-              "validation_hits": 2137,
+              "validation_hits": 2174,
               "validation_stake": 3867200,
-              "validation_return": 2404250.0,
-              "validation_profit": -1462950.0,
+              "validation_return": 2442810.0,
+              "validation_profit": -1424390.0,
               "baseline_validation_roi": 62.17,
-              "roi_delta_vs_baseline": 0.0
+              "roi_delta_vs_baseline": 1.0
             },
             "trio": {
-              "model": "baseline",
-              "development_roi": 55.47,
+              "model": "trained_no_recent_history",
+              "development_roi": 59.03,
               "development_tickets": 66350,
               "baseline_roi": 55.47,
               "development_roi_history": [
-                55.47
+                59.92,
+                59.03
               ],
-              "edge_history": [],
+              "edge_history": [
+                4.48,
+                3.56
+              ],
               "required_min_tickets": 300,
-              "required_min_roi_gain": 5.0,
+              "required_min_roi_gain": 2.5,
               "validation_fold": 3,
-              "validation_roi": 56.16,
+              "validation_roi": 60.08,
               "validation_tickets": 96680,
-              "validation_hits": 3462,
+              "validation_hits": 2448,
               "validation_stake": 9668000,
-              "validation_return": 5429100.0,
-              "validation_profit": -4238900.0,
+              "validation_return": 5808160.0,
+              "validation_profit": -3859840.0,
               "baseline_validation_roi": 56.16,
-              "roi_delta_vs_baseline": 0.0
+              "roi_delta_vs_baseline": 3.92
             },
             "trifecta": {
               "model": "baseline",
