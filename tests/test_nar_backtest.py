@@ -653,3 +653,36 @@ class StrongerSelectionAndOddsGateTests(unittest.TestCase):
         selected = nb.select_models_from_prior_folds([first, second])
         self.assertEqual(selected["wide"]["model"], "baseline")
 
+
+
+class MultiBetConditionDiagnosticsTests(unittest.TestCase):
+    def test_exacta_and_trio_condition_comparisons_report_roi_hit_rate_and_sample(self):
+        stats = {
+            ("baseline", "exacta", "venue", "大井"): {
+                "races": 100, "tickets": 400, "hits": 20, "stake": 40000, "return": 32000,
+            },
+            ("trained_no_recent_history", "exacta", "venue", "大井"): {
+                "races": 100, "tickets": 400, "hits": 24, "stake": 40000, "return": 36000,
+            },
+            ("baseline", "trio", "distance_band", "mile_1201-1600m"): {
+                "races": 80, "tickets": 800, "hits": 8, "stake": 80000, "return": 44000,
+            },
+            ("trained_no_recent_history", "trio", "distance_band", "mile_1201-1600m"): {
+                "races": 80, "tickets": 800, "hits": 10, "stake": 80000, "return": 52000,
+            },
+        }
+        segments, comparisons = nb.summarize_condition_model_segments(
+            stats, ("exacta", "trio"))
+        exacta = comparisons["exacta"][0]
+        trio = comparisons["trio"][0]
+        self.assertEqual(exacta["roi_delta"], 10.0)
+        self.assertEqual(exacta["baseline_hit_rate"], 5.0)
+        self.assertEqual(exacta["candidate_hit_rate"], 6.0)
+        self.assertEqual(exacta["candidate_tickets"], 400)
+        self.assertEqual(trio["roi_delta"], 10.0)
+        self.assertEqual(trio["baseline_hit_rate"], 1.0)
+        self.assertEqual(trio["candidate_hit_rate"], 1.25)
+        self.assertEqual(trio["candidate_profit"], -28000)
+        self.assertIn("exacta", segments)
+        self.assertIn("trio", segments)
+
