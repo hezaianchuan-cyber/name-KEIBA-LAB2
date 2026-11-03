@@ -1089,3 +1089,51 @@ class RoleTrifectaUncertaintyAndSelectionTests(unittest.TestCase):
         self.assertEqual(selected["roi"], 250.0)
         self.assertFalse(selected["minimum_sample_met"])
         self.assertFalse(selected["candidate_pass"])
+
+
+class BetTypeRaceClusterUncertaintyTests(unittest.TestCase):
+    def test_profitable_roi_requires_race_level_sample_and_lower_bound(self):
+        stats = {
+            "race_count": 100,
+            "tickets": 600,
+            "stake": 60000,
+            "return": 150000,
+            "sum_return_sq": 2250000 * 100,
+            "sum_stake_sq": 360000 * 100,
+            "sum_stake_return": 900000 * 100,
+        }
+        result = nb.summarize_race_cluster_roi(stats)
+        self.assertEqual(result["roi"], 250.0)
+        self.assertEqual(result["roi_ci95_normal_low"], 250.0)
+        self.assertTrue(result["minimum_sample_met"])
+        self.assertTrue(result["candidate_pass"])
+
+    def test_high_point_roi_does_not_pass_with_too_few_races(self):
+        stats = {
+            "race_count": 99,
+            "tickets": 594,
+            "stake": 59400,
+            "return": 148500,
+            "sum_return_sq": 2250000 * 99,
+            "sum_stake_sq": 360000 * 99,
+            "sum_stake_return": 900000 * 99,
+        }
+        result = nb.summarize_race_cluster_roi(stats)
+        self.assertEqual(result["roi"], 250.0)
+        self.assertFalse(result["minimum_sample_met"])
+        self.assertFalse(result["candidate_pass"])
+
+    def test_variable_race_returns_produce_nonzero_uncertainty(self):
+        stats = {
+            "race_count": 100,
+            "tickets": 600,
+            "stake": 60000,
+            "return": 120000,
+            "sum_return_sq": 240000000,
+            "sum_stake_sq": 36000000,
+            "sum_stake_return": 72000000,
+        }
+        result = nb.summarize_race_cluster_roi(stats)
+        self.assertEqual(result["roi"], 200.0)
+        self.assertLess(result["roi_ci95_normal_low"], 200.0)
+        self.assertGreater(result["roi_ci95_normal_high"], 200.0)
