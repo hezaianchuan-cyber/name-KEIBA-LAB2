@@ -347,3 +347,44 @@ class ProbabilityCalibrationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CornerPositionAndPaceTests(unittest.TestCase):
+    def test_official_corner_order_parser_handles_groups_and_shared_ranks(self):
+        positions = nb.parse_corner_order("1,3,(2,7),4")
+        self.assertEqual(positions["1"], 1)
+        self.assertEqual(positions["3"], 2)
+        self.assertEqual(positions["2"], 3.5)
+        self.assertEqual(positions["7"], 3.5)
+        self.assertEqual(positions["4"], 5)
+
+    def test_corner_history_is_field_normalized_and_uses_first_last_available(self):
+        horse = {"no":"2"}
+        race = {"field_size":10,"corner_positions":[{"2":3},{"2":5}]}
+        features = nb.corner_history_for_runner(horse, race)
+        self.assertAlmostEqual(features["first_corner_pct"], 2/9)
+        self.assertAlmostEqual(features["last_corner_pct"], 4/9)
+
+    def test_running_style_requires_history_and_classifies_all_four_styles(self):
+        self.assertEqual(nb.pace_style([])["style"], "unknown")
+        self.assertEqual(nb.pace_style([{"first_corner_pct":0.05}])["style"], "逃げ")
+        self.assertEqual(nb.pace_style([{"first_corner_pct":0.25}])["style"], "先行")
+        self.assertEqual(nb.pace_style([{"first_corner_pct":0.55}])["style"], "差し")
+        self.assertEqual(nb.pace_style([{"first_corner_pct":0.85}])["style"], "追込")
+
+    def test_pace_adjustment_only_uses_prior_positions_and_counts_multiple_leaders(self):
+        field = [{"no":"1","name":"逃げA"},{"no":"2","name":"逃げB"},
+                 {"no":"3","name":"逃げC"},{"no":"4","name":"差しD"}]
+        history = {
+            "逃げA":[{"first_corner_pct":0.02}],
+            "逃げB":[{"first_corner_pct":0.06}],
+            "逃げC":[{"first_corner_pct":0.10}],
+            "差しD":[{"first_corner_pct":0.80}],
+        }
+        profiles, leaders, deltas = nb.pace_adjustments(field, history)
+        self.assertEqual(leaders, 3)
+        self.assertEqual(profiles["4"]["style"], "追込")
+        self.assertLess(deltas["1"], 0)
+        self.assertGreater(deltas["4"], 0)
+        unknown = nb.pace_adjustments(field, {})[2]
+        self.assertTrue(all(value == 0 for value in unknown.values()))
