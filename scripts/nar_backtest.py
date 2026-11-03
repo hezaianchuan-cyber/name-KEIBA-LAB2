@@ -1281,14 +1281,26 @@ def summarize_race_cluster_roi(stats):
         standard_error = 100.0 * math.sqrt(variance / races) / mean_stake
         ci_low = round(roi - 1.96 * standard_error, 2)
         ci_high = round(roi + 1.96 * standard_error, 2)
-    enough = races >= 100 and tickets >= 300
+    enough_races = races >= 100
+    enough_tickets = tickets >= 300
+    roi_above_100 = roi is not None and roi > 100.0
+    ci_lower_above_100 = ci_low is not None and ci_low > 100.0
+    pass_conditions = {
+        "roi_above_100": roi_above_100,
+        "races_at_least_100": enough_races,
+        "tickets_at_least_300": enough_tickets,
+        "roi_ci95_lower_above_100": ci_lower_above_100,
+    }
+    candidate_pass = all(pass_conditions.values())
     return {
         "race_count": races,
         "roi": round(roi, 2) if roi is not None else None,
+        "roi_ci95_method": "race_cluster_normal_approximation",
         "roi_ci95_normal_low": ci_low,
         "roi_ci95_normal_high": ci_high,
-        "minimum_sample_met": enough,
-        "candidate_pass": bool(enough and ci_low is not None and ci_low > 100.0),
+        "minimum_sample_met": bool(enough_races and enough_tickets),
+        "pass_conditions": pass_conditions,
+        "candidate_pass": candidate_pass,
         "profit": returned - stake,
     }
 
@@ -2267,9 +2279,10 @@ def holdout_validation(races, horses, payouts):
 
     kinds=("win","place","wide","quinella","exacta","trio","trifecta")
     aggregate={}
-    for model_name in ("baseline","trained","trained_no_recent_history","trained_with_pace",
-                       "trained_with_performance","trained_performance_with_pace",
-                       "trained_margin_only","trained_closing_only","trained_performance_light"):
+    for model_name in ("baseline","trained","trained_no_recent_history","trained_race_relative",
+                       "trained_with_pace","trained_with_performance","trained_performance_with_pace",
+                       "trained_margin_only","trained_closing_only","trained_performance_light",
+                       "trained_with_time","trained_performance_with_time"):
         total={"races":0,"winner_top1":0,"winner_top3":0,
                "winner_topk":{str(k):0 for k in (5,6,7)},
                "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0,
@@ -2369,7 +2382,16 @@ def holdout_validation(races, horses, payouts):
             "recent_history_comparison":history_comparison,
             "trained_weights":folds[-1]["trained_weights"],
             "folds_above_100_roi":{kind:sum(1 for fold in folds if (fold["models"]["trained"]["bet_types"][kind]["roi"] or 0)>=100) for kind in kinds},
-            "selection_rule":"Each fold uses only strictly earlier training data; test weights remain fixed and race results are added to history only after the entire date is scored."}
+            "selection_rule":"Each fold uses only strictly earlier training data; test weights remain fixed and race results are added to history only after the entire date is scored.",
+            "promotion_gate": {
+                "roi_strictly_above_100": true,
+                "minimum_independent_test_races": 100,
+                "minimum_tickets": 300,
+                "race_cluster_95_percent_ci_lower_strictly_above_100": true,
+                "all_conditions_required": true,
+                "ci_method": "race_cluster_normal_approximation",
+                "scope": "Aggregated untouched walk-forward validation folds; development folds are not counted toward the validation sample."
+            }}
 
 def data_quality_audit(races, horses, payouts):
     """Report source coverage before interpreting model metrics."""
