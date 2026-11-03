@@ -1125,8 +1125,10 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                 m["winner_topk"][k] += hit
             ticket_map=build_fixed_tickets(ranked)
             update_trifecta_diagnostics(m["trifecta_diagnostics"], ranked, field, payout)
-            if model_name == "trained":
-                update_role_trifecta_diagnostics(m["role_trifecta_diagnostics"], scored, history, payout)
+            # Collect role-specific trifecta diagnostics for every candidate model.
+            # Walk-forward selection may choose baseline or any trained variant;
+            # restricting this to "trained" leaves the selected model's report empty.
+            update_role_trifecta_diagnostics(m["role_trifecta_diagnostics"], scored, history, payout)
             update_trio_diagnostics(m["trio_diagnostics"], ranked, field, payout)
             if model_name in ("baseline", "trained_no_recent_history"):
                 for dimension, label in race_segment_labels(race).items():
