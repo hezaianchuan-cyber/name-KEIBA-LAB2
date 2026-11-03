@@ -1373,6 +1373,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
               "trained_race_relative":learned,
               "trained_with_pace":learned, "trained_with_performance":learned, "trained_with_time":learned,
               "trained_performance_with_pace":learned, "trained_with_conditions":learned,
+              "trained_with_conditions_and_pace":learned,
               "trained_margin_only":learned, "trained_closing_only":learned,
               "trained_performance_light":learned, "trained_performance_with_time":learned}
     performance_blends = {
@@ -1503,7 +1504,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                 }
                 relative_scores = race_relative_scores(relative_parts, weights)
                 scored = [(relative_scores[h["no"]], h) for h in field]
-            elif model_name == "trained_with_conditions":
+            elif model_name in ("trained_with_conditions", "trained_with_conditions_and_pace"):
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
                             0.0,0.0,0.0,include_recent_history,going_weight=0.10)[0],h) for h in field]
             elif model_name in performance_blends:
@@ -1513,7 +1514,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             else:
                 scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights,
                             include_recent_history=include_recent_history)[0],h) for h in field]
-            if model_name in ("trained_with_pace", "trained_performance_with_pace"):
+            if model_name in ("trained_with_pace", "trained_performance_with_pace", "trained_with_conditions_and_pace"):
                 _, _, pace_delta = pace_adjustments(field, history)
                 scored = [(score + pace_delta.get(h["no"], 0.0), h) for score, h in scored]
             if model_name == "trained":
@@ -2351,7 +2352,7 @@ def holdout_validation(races, horses, payouts):
     kinds=("win","place","wide","quinella","exacta","trio","trifecta")
     aggregate={}
     for model_name in ("baseline","trained","trained_no_recent_history","trained_race_relative",
-                       "trained_with_pace","trained_with_performance","trained_performance_with_pace","trained_with_conditions",
+                       "trained_with_pace","trained_with_performance","trained_performance_with_pace","trained_with_conditions","trained_with_conditions_and_pace",
                        "trained_margin_only","trained_closing_only","trained_performance_light",
                        "trained_with_time","trained_performance_with_time"):
         total={"races":0,"winner_top1":0,"winner_top3":0,
@@ -2705,7 +2706,9 @@ def main():
         "condition_feature_schema": ["going", "surface", "going_quality"],
         "experimental_condition_variants": {
             "C1_going_match": {"going_weight": 0.10, "minimum_prior_starts": 1,
-                               "smoothing_prior_strength": 4, "promotion_requires_holdout_gain": True}
+                               "smoothing_prior_strength": 4, "promotion_requires_holdout_gain": True},
+            "C2_going_plus_pace": {"going_weight": 0.10, "pace_adjustment": True,
+                                   "promotion_requires_holdout_gain": True}
         },
         "experimental_d_features": ["recent_margin_quality", "recent_race_relative_last3f_rank", "prior_same_going_quality"],
         "experimental_performance_variants": {
