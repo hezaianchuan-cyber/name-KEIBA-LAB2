@@ -572,8 +572,8 @@ def load_odds_snapshots():
             except (KeyError, TypeError, ValueError):
                 continue
         # Keep only snapshots captured in the production policy window:
-        # from 15 minutes down to (and including) 5 minutes before post time.
-        if minutes < 5 or minutes > 15:
+        # from 30 minutes down to (and including) 2 minutes before post time.
+        if minutes < 2 or minutes > 30:
             continue
         previous = selected.get(key)
         previous_minutes = number(previous.get("minutes_to_post")) if previous else None
@@ -603,7 +603,7 @@ def odds_snapshot_inventory():
         "last_date": max(dates) if dates else None,
         "last_captured_at": max(captured) if captured else None,
         "model_versions": sorted({str(r.get("model_version")) for r in selected.values() if r.get("model_version")}),
-        "note": "The closest valid snapshot from 15 to 5 minutes before post time is used; snapshots inside the final 5 minutes, post-off records, and monthly confirmed odds are excluded."
+        "note": "The closest valid snapshot from 30 to 2 minutes before post time is used; snapshots inside the final 2 minutes, post-off records, and monthly confirmed odds are excluded."
     }
 
 
@@ -627,7 +627,7 @@ def preoff_value_backtest(payouts):
         except (KeyError, TypeError, ValueError):
             continue
         if (captured.tzinfo is None or scheduled.tzinfo is None or captured >= scheduled
-                or not 5 <= minutes <= 15):
+                or not 2 <= minutes <= 30):
             continue
         payout = payouts.get(key)
         predictions = record.get("predictions") or []
@@ -737,7 +737,7 @@ def preoff_value_backtest(payouts):
         "validation_status": validation_status,
         "minimum_sample_rule": "At least 100 races with bets and 300 tickets per threshold; a candidate additionally needs the race-cluster bootstrap 95% lower ROI bound above 100%. Threshold selection uses the first 70% of dates only; the last 30% remains untouched holdout.",
         "policy": "Flat 100-yen win bets only when saved calibrated win probability multiplied by timestamped pre-off win odds meets the threshold. Returns use official settled 100-yen payouts.",
-        "note": "Only the closest valid pre-off snapshot per race is evaluated. No monthly confirmed odds are substituted."
+        "note": "Only the closest valid pre-off snapshot from 30 to 2 minutes before post time per race is evaluated. No monthly confirmed odds are substituted."
     }
 
 
