@@ -194,7 +194,7 @@ class OddsSnapshotParsingTests(unittest.TestCase):
             {"no":"2","name":"B","age":5,"sire":"S2","jockey":"J2"},
             {"no":"3","name":"C","age":7,"sire":"S3","jockey":"J3"},
         ]
-        with mock.patch.object(nb, "score_runner_performance", side_effect=[0.20, 0.30, 0.40]) as scorer, \
+        with mock.patch.object(nb, "score_runner_performance", side_effect=[(0.20, {}), (0.30, {}), (0.40, {})]) as scorer, \
              mock.patch.object(nb, "pace_adjustments", return_value=(None, None, {"1":0.10,"2":0.05,"3":0.0})) as pace:
             predictions = capture.predict_horses(race, horses, [], context)
         self.assertEqual(scorer.call_count, 3)
