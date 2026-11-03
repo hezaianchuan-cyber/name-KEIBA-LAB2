@@ -875,9 +875,9 @@ class IncompleteFinishDiagnosticSampleTests(unittest.TestCase):
         nb.update_trifecta_diagnostics(stats, ranked, field, payout)
         result = nb.summarize_trifecta_diagnostics(stats)
         self.assertEqual(result["races"], 0)
-        self.assertEqual(result["structures"]["first2_pool5"]["races"], 1)
-        self.assertEqual(result["structures"]["first2_pool5"]["tickets"], 24)
-        self.assertEqual(result["structures"]["first2_pool5"]["roi"], 41.67)
+        self.assertEqual(result["structures"]["2-5-5"]["races"], 1)
+        self.assertEqual(result["structures"]["2-5-5"]["tickets"], 24)
+        self.assertEqual(result["structures"]["2-5-5"]["roi"], 41.67)
 
     def test_trio_roi_keeps_valid_payout_races_without_complete_podium_fields(self):
         ranked = [{"no": str(i)} for i in range(1, 6)]
