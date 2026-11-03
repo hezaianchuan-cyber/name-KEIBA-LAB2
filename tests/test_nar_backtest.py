@@ -408,9 +408,9 @@ class ExpandedFixedTicketTests(unittest.TestCase):
         self.assertEqual(len(tickets["quinella"]), 1)
         self.assertEqual(len(tickets["exacta"]), 4)
         self.assertEqual(len(tickets["trio"]), 10)
-        self.assertEqual(len(tickets["trifecta"]), 12)
+        self.assertEqual(len(tickets["trifecta"]), 24)
         self.assertEqual(len({tuple(x) for x in tickets["exacta"]}), 4)
-        self.assertEqual(len({tuple(x) for x in tickets["trifecta"]}), 12)
+        self.assertEqual(len({tuple(x) for x in tickets["trifecta"]}), 24)
         self.assertTrue(all(len(set(x)) == 3 for x in tickets["trifecta"]))
 
     def test_three_and_four_runner_fields_do_not_create_invalid_tickets(self):
@@ -419,7 +419,7 @@ class ExpandedFixedTicketTests(unittest.TestCase):
         self.assertEqual(len(three["trifecta"]), 4)
         four = nb.build_fixed_tickets([{"no":str(i)} for i in range(1,5)])
         self.assertEqual(len(four["trio"]), 4)
-        self.assertEqual(len(four["trifecta"]), 8)
+        self.assertEqual(len(four["trifecta"]), 12)
 
     def test_expanded_exacta_and_trifecta_respect_ranked_formation(self):
         tickets = nb.build_fixed_tickets([{"no":str(i)} for i in range(1,6)])
