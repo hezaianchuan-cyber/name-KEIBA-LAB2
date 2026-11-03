@@ -216,9 +216,9 @@ def predict_horses(race, horses, odds_rows, model_context):
                 key: feature_parts[index].get(key)
                 for key in ("margin_form", "closing_form", "time_form", "going_form")
             },
-            "pace_style": (pace_profiles.get(horse["no"]) or {}).get("style", "unknown"),
+            "pace_style": ((pace_profiles or {}).get(horse["no"]) or {}).get("style", "unknown"),
             "pace_delta": round(pace_delta.get(horse["no"], 0.0), 8),
-            "pace_front_runner_count": pace_leaders,
+            "pace_front_runner_count": pace_leaders or 0,
         })
     return predictions
 
