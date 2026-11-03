@@ -2875,6 +2875,8 @@ def main():
     production_temperature = fit_temperature(calibration_records)
     production_calibration = calibration_metrics(calibration_records, production_temperature)
     validation = holdout_validation(races, horses, payouts)
+    preoff_type_report = preoff_ticket_type_backtest(payouts)
+    race_budget_report = race_budget_auto_strategy_backtest(payouts, preoff_type_report)
     result = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "period": {"start":START.isoformat(),"end":END.isoformat()},
@@ -2913,10 +2915,8 @@ def main():
         },
         "odds_snapshot_archive": odds_snapshot_inventory(),
         "preoff_value_backtest": preoff_value_backtest(payouts),
-        "preoff_ticket_type_backtest": preoff_ticket_type_backtest(payouts),
-        "race_budget_auto_strategy_backtest": race_budget_auto_strategy_backtest(
-            payouts, {"bet_types": preoff_ticket_type_backtest(payouts).get("bet_types", {})}
-        ),
+        "preoff_ticket_type_backtest": preoff_type_report,
+        "race_budget_auto_strategy_backtest": race_budget_report,
         "preoff_ranking_strategy_backtest": preoff_ranking_strategy_backtest(payouts),
         "online_learning": {"updates": learning_updates, "final_weights": learned_weights,
                             "temperature": round(production_temperature,4), "calibration": production_calibration,
