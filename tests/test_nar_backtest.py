@@ -488,10 +488,10 @@ class ExpandedFixedTicketTests(unittest.TestCase):
     def test_requested_ticket_counts_and_unique_combinations(self):
         ranked = [{"no":str(i)} for i in range(1,7)]
         tickets = nb.build_fixed_tickets(ranked)
-        self.assertEqual(len(tickets["win"]), 2)
-        self.assertEqual(len(tickets["place"]), 3)
+        self.assertNotIn("win", tickets)
+        self.assertNotIn("place", tickets)
+        self.assertNotIn("quinella", tickets)
         self.assertEqual(len(tickets["wide"]), 3)
-        self.assertEqual(len(tickets["quinella"]), 1)
         self.assertEqual(len(tickets["exacta"]), 4)
         self.assertEqual(len(tickets["trio"]), 10)
         self.assertEqual(len(tickets["trifecta"]), 24)
