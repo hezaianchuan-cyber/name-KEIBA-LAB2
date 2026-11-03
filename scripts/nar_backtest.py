@@ -202,12 +202,25 @@ def load_archives():
                             "no": horse_no, "name": name, "age": number(row[8]),
                             "sire": norm(row[11]), "jockey": norm(row[14]),
                             "carried": number(row[16]), "finish": rank_value(row[31]),
+                            "time_seconds": parse_race_time(row[32]) if len(row) > 32 else None,
                             "margin": row[33] if len(row) > 33 else "",
                             "last3f": number(row[34]) if len(row) > 34 else None,
                         })
                     elif kind == "payouts" and len(row) > 52:
                         merge_payout_row(payouts, key, row)
     return races, horses, payouts, downloaded
+
+def parse_race_time(value):
+    """Parse Japanese race time strings into seconds."""
+    raw = str(value or "").strip()
+    if not raw or raw in ("計不", "失格", "中止"):
+        return None
+    match = re.fullmatch(r"(\\d+):(\\d+(?:\\.\\d+)?)", raw)
+    if match:
+        return int(match.group(1)) * 60.0 + float(match.group(2))
+    match = re.fullmatch(r"(\\d+(?:\\.\\d+)?)", raw)
+    return float(match.group(1)) if match else None
+
 
 def margin_score(value):
     s = str(value or "").strip()
@@ -279,7 +292,7 @@ def field_performance_features(field):
 
 def score_runner_performance(h, history, sire_stats, jockey_stats, race, model_weights,
                              margin_weight=0.10, closing_weight=0.10,
-                             include_recent_history=True):
+                             time_weight=0.0, include_recent_history=True):
     """B score blended with strictly prior margin/closing-speed form."""
     base_score, parts = score_runner(h, history, sire_stats, jockey_stats, race,
                                      model_weights, include_recent_history)
@@ -293,18 +306,38 @@ def score_runner_performance(h, history, sire_stats, jockey_stats, race, model_w
         return sum(value * weight for value, weight in zip(values, weights)) / sum(weights)
     margin_form = recent_average("margin_quality")
     closing_form = recent_average("last3f_rank_score")
-    base_weight = max(0.0, 1.0 - margin_weight - closing_weight)
-    score = base_score * base_weight + margin_form * margin_weight + closing_form * closing_weight
+    target_distance = number(race.get("distance"))
+    comparable = [
+        row for row in past
+        if row.get("venue") == race.get("venue")
+        and target_distance is not None
+        and number(row.get("distance")) is not None
+        and abs(number(row.get("distance")) - target_distance) <= 200
+        and number(row.get("time_per_km")) is not None
+    ]
+    time_form = 0.5
+    if len(comparable) >= 3:
+        recent_times = [number(row["time_per_km"]) for row in comparable[-2:]]
+        baseline_times = [number(row["time_per_km"]) for row in comparable[:-2]]
+        if baseline_times:
+            improvement = (sum(baseline_times)/len(baseline_times)
+                           - sum(recent_times)/len(recent_times)) / max(sum(baseline_times)/len(baseline_times), 1.0)
+            time_form = min(1.0, max(0.0, 0.5 + improvement * 8.0))
+    base_weight = max(0.0, 1.0 - margin_weight - closing_weight - time_weight)
+    score = (base_score * base_weight + margin_form * margin_weight
+             + closing_form * closing_weight + time_form * time_weight)
     return score, {**parts, "margin_form": margin_form, "closing_form": closing_form,
+                   "time_form": time_form,
                    "performance_weights": {"base": base_weight, "margin": margin_weight,
-                                           "closing": closing_weight}}
+                                           "closing": closing_weight, "time": time_weight}}
 
 
 def score_runner_d(h, history, sire_stats, jockey_stats, race, model_weights,
                    include_recent_history=True):
     """D1 compatibility wrapper: 80% B + 10% margin + 10% closing speed."""
     return score_runner_performance(h, history, sire_stats, jockey_stats, race,
-                                    model_weights, 0.10, 0.10, include_recent_history)
+                                    model_weights, 0.10, 0.10,
+                                    include_recent_history=include_recent_history)
 
 
 def score_runner(h, history, sire_stats, jockey_stats, race, model_weights, include_recent_history=True):
@@ -948,6 +981,9 @@ def run_backtest(races, horses, payouts):
                         **performance.get(runner["no"], {}),
                         "date":pending_race["date"],"venue":pending_race["venue"],"distance":pending_race.get("distance"),"field_size":pending_race.get("field_size"),
                         "finish":runner["finish"],"margin":margin_score(runner.get("margin")),"last3f":runner.get("last3f"),
+                        "time_seconds": runner.get("time_seconds"),
+                        "time_per_km": (runner.get("time_seconds") * 1000 / pending_race["distance"]
+                                        if runner.get("time_seconds") and pending_race.get("distance") else None),
                         **corner_history_for_runner(runner, pending_race)
                     })
                     if runner.get("sire"):
@@ -1271,16 +1307,18 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     # accidentally reduce the B contribution to 0.64.
     models = {"baseline":baseline, "trained":learned, "trained_no_recent_history":learned,
               "trained_race_relative":learned,
-              "trained_with_pace":learned, "trained_with_performance":learned,
+              "trained_with_pace":learned, "trained_with_performance":learned, "trained_with_time":learned,
               "trained_performance_with_pace":learned,
               "trained_margin_only":learned, "trained_closing_only":learned,
-              "trained_performance_light":learned}
+              "trained_performance_light":learned, "trained_performance_with_time":learned}
     performance_blends = {
-        "trained_with_performance": (0.10, 0.10),
-        "trained_performance_with_pace": (0.10, 0.10),
-        "trained_margin_only": (0.10, 0.00),
-        "trained_closing_only": (0.00, 0.10),
-        "trained_performance_light": (0.05, 0.05),
+        "trained_with_performance": (0.10, 0.10, 0.00),
+        "trained_performance_with_pace": (0.10, 0.10, 0.00),
+        "trained_margin_only": (0.10, 0.00, 0.00),
+        "trained_closing_only": (0.00, 0.10, 0.00),
+        "trained_performance_light": (0.05, 0.05, 0.00),
+        "trained_with_time": (0.00, 0.00, 0.10),
+        "trained_performance_with_time": (0.07, 0.08, 0.10),
     }
     kinds = ("win","place","wide","quinella","exacta","trio","trifecta")
     results = {name:{"races":0,"winner_top1":0,"winner_top3":0,
@@ -1309,6 +1347,9 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                 **train_performance.get(h["no"], {}),
                 "distance":train_race.get("distance"),"field_size":train_race.get("field_size"),"finish":h["finish"],
                 "margin":margin_score(h.get("margin")),"last3f":h.get("last3f"),
+                "time_seconds": h.get("time_seconds"),
+                "time_per_km": (h.get("time_seconds") * 1000 / train_race["distance"]
+                                if h.get("time_seconds") and train_race.get("distance") else None),
                 **corner_history_for_runner(h, train_race)})
             if h.get("sire"):
                 sire_stats[h["sire"]]["runs"] += 1
@@ -1363,6 +1404,9 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                     **performance.get(h["no"], {}),
                     "distance":race.get("distance"),"field_size":race.get("field_size"),"finish":h["finish"],
                     "margin":margin_score(h.get("margin")),"last3f":h.get("last3f"),
+                    "time_seconds": h.get("time_seconds"),
+                    "time_per_km": (h.get("time_seconds") * 1000 / race["distance"]
+                                    if h.get("time_seconds") and race.get("distance") else None),
                     **corner_history_for_runner(h, race)})
                 if h.get("sire"):
                     sire_stats[h["sire"]]["runs"]+=1
@@ -1394,9 +1438,9 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                 relative_scores = race_relative_scores(relative_parts, weights)
                 scored = [(relative_scores[h["no"]], h) for h in field]
             elif model_name in performance_blends:
-                margin_weight, closing_weight = performance_blends[model_name]
+                margin_weight, closing_weight, time_weight = performance_blends[model_name]
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
-                            margin_weight,closing_weight,include_recent_history)[0],h) for h in field]
+                            margin_weight,closing_weight,time_weight,include_recent_history)[0],h) for h in field]
             else:
                 scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights,
                             include_recent_history=include_recent_history)[0],h) for h in field]
