@@ -260,40 +260,53 @@ def combination_probability(kind, numbers, probabilities):
 
 
 def predict_combinations(odds_rows, horse_predictions):
-    """Attach a model probability and EV to each quoted ticket."""
-    import unicodedata
+    """Generate the full rank-based ticket portfolio and attach available official odds."""
+    import itertools
     probabilities = {str(p["horse_no"]): float(p["win_probability"]) for p in horse_predictions}
+    ranked = sorted(horse_predictions, key=lambda p: (
+        float(p.get("win_probability") or 0), float(p.get("score") or 0)), reverse=True)
+    ticket_map = nb.build_fixed_tickets([{"no":str(p["horse_no"])} for p in ranked])
     type_map = {
         "単勝":"win", "複勝":"place", "ワイド":"wide", "馬連":"quinella",
         "馬単":"exacta", "3連複":"trio", "三連複":"trio",
         "3連単":"trifecta", "三連単":"trifecta",
     }
-    output = []
+    unordered = {"place","wide","quinella","trio"}
+    odds_lookup = {}
     for item in odds_rows:
         label = unicodedata.normalize("NFKC", str(item.get("type") or "")).replace(" ", "")
-        kind = next((value for key, value in type_map.items() if key in label), None)
+        kind = next((value for key,value in type_map.items() if key in label), None)
         if not kind:
             continue
         numbers = [str(int(re.sub(r"\D", "", str(item.get(key) or "")) or 0))
                    for key in ("n1","n2","n3") if re.sub(r"\D", "", str(item.get(key) or ""))]
         required = {"win":1,"place":1,"wide":2,"quinella":2,"exacta":2,"trio":3,"trifecta":3}[kind]
-        if len(numbers) < required:
+        if len(numbers) != required:
             continue
-        numbers = numbers[:required]
         try:
             odds_value = float(item.get("odds"))
         except (TypeError, ValueError):
             continue
         if odds_value <= 0:
             continue
-        probability = combination_probability(kind, numbers, probabilities)
-        output.append({
-            "bet_type":kind, "numbers":numbers, "odds":odds_value,
-            "probability":round(probability, 10),
-            "expected_value":round(probability*odds_value, 6),
-        })
-    return output
+        key_numbers = tuple(sorted(numbers)) if kind in unordered else tuple(numbers)
+        odds_lookup[(kind,key_numbers)] = odds_value
 
+    output = []
+    for kind,tickets in ticket_map.items():
+        for numbers in tickets:
+            key_numbers = tuple(sorted(numbers)) if kind in unordered else tuple(numbers)
+            odds_value = odds_lookup.get((kind,key_numbers))
+            probability = combination_probability(kind,numbers,probabilities)
+            output.append({
+                "bet_type":kind,
+                "numbers":numbers,
+                "odds":odds_value,
+                "probability":round(probability,10),
+                "expected_value":round(probability*odds_value,6) if odds_value is not None else None,
+                "odds_status":"取得済み" if odds_value is not None else "オッズ待ち",
+            })
+    return output
 
 def append_snapshot(path: Path, record: dict) -> bool:
     """Append a race once as a concatenated gzip member; return whether it was new."""
