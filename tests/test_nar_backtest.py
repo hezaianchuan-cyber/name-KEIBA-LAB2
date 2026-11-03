@@ -1207,6 +1207,39 @@ class BetTypeRaceClusterUncertaintyTests(unittest.TestCase):
         self.assertFalse(result["minimum_sample_met"])
         self.assertFalse(result["candidate_pass"])
 
+    def test_strict_promotion_gate_reports_each_required_condition(self):
+        stats = {
+            "race_count": 100,
+            "tickets": 600,
+            "stake": 60000,
+            "return": 120000,
+            "sum_return_sq": 240000000,
+            "sum_stake_sq": 36000000,
+            "sum_stake_return": 72000000,
+        }
+        result = nb.summarize_race_cluster_roi(stats)
+        self.assertTrue(result["pass_conditions"]["roi_above_100"])
+        self.assertTrue(result["pass_conditions"]["races_at_least_100"])
+        self.assertTrue(result["pass_conditions"]["tickets_at_least_300"])
+        self.assertTrue(result["pass_conditions"]["roi_ci95_lower_above_100"])
+        self.assertEqual(result["roi_ci95_method"], "race_cluster_normal_approximation")
+        self.assertTrue(result["candidate_pass"])
+
+    def test_point_roi_above_100_is_not_enough_when_ci_lower_is_not(self):
+        stats = {
+            "race_count": 100,
+            "tickets": 600,
+            "stake": 60000,
+            "return": 66000,
+            "sum_return_sq": 2000000000,
+            "sum_stake_sq": 36000000,
+            "sum_stake_return": 39600000,
+        }
+        result = nb.summarize_race_cluster_roi(stats)
+        self.assertTrue(result["pass_conditions"]["roi_above_100"])
+        self.assertFalse(result["pass_conditions"]["roi_ci95_lower_above_100"])
+        self.assertFalse(result["candidate_pass"])
+
     def test_variable_race_returns_produce_nonzero_uncertainty(self):
         stats = {
             "race_count": 100,
