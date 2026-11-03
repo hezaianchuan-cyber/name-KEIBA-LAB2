@@ -21,6 +21,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import nar_backtest as nb
+import nar_model_g as mg
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
@@ -180,12 +181,14 @@ def predict_horses(race, horses, odds_rows, model_context):
     model, history, sire_stats, jockey_stats, weights = model_context
     # D starts from the full C feature set: prior going suitability,
     # margin/closing-speed/comparable-time form, and race-pace adjustment.
-    scored = [nb.score_runner_performance(
+    scored_parts = [nb.score_runner_performance(
         horse, history, sire_stats, jockey_stats, race, weights,
         margin_weight=0.10, closing_weight=0.10, time_weight=0.10,
         going_weight=0.10,
-    )[0] for horse in horses]
-    _, _, pace_delta = nb.pace_adjustments(horses, history)
+    ) for horse in horses]
+    scored = [item[0] for item in scored_parts]
+    feature_parts = [item[1] for item in scored_parts]
+    pace_profiles, pace_leaders, pace_delta = nb.pace_adjustments(horses, history)
     scored = [score + pace_delta.get(horse["no"], 0.0)
               for score, horse in zip(scored, horses)]
     temperature = float(model.get("temperature") or 0.18)
@@ -209,6 +212,13 @@ def predict_horses(race, horses, odds_rows, model_context):
             "win_odds": odds_value,
             "expected_value": round(ev, 6) if ev is not None else None,
             "prior_runs": len(history.get(nb.norm(horse["name"]), [])),
+            "features": {
+                key: feature_parts[index].get(key)
+                for key in ("margin_form", "closing_form", "time_form", "going_form")
+            },
+            "pace_style": (pace_profiles.get(horse["no"]) or {}).get("style", "unknown"),
+            "pace_delta": round(pace_delta.get(horse["no"], 0.0), 8),
+            "pace_front_runner_count": pace_leaders,
         })
     return predictions
 
@@ -506,6 +516,14 @@ def main():
         readiness = race_readiness(race, field, entries, predictions, model_context)
         path = SNAPSHOT_DIR / f"{race_date.isoformat()}.jsonl.gz"
         model = model_context[0] if model_context else {}
+        calibration_races = int((model.get("calibration") or {}).get("races") or 0)
+        g_predictions = mg.build_g_predictions(
+            predictions, entries, calibration_races, model.get("temperature") or 0.18
+        )
+        g_candidate_combinations = predict_combinations(entries, g_predictions, full_universe=True)
+        model_g_strategy = mg.select_g_strategy(
+            race, g_predictions, g_candidate_combinations, calibration_races
+        )
         record = {
             "race_key": "|".join(key),
             "venue": race["venue"],
@@ -520,6 +538,10 @@ def main():
             "predictions": predictions,
             "combination_predictions": combination_predictions,
             "candidate_combinations": candidate_combinations,
+            "model_g_version": mg.MODEL_VERSION,
+            "model_g_predictions": g_predictions,
+            "model_g_candidate_combinations": g_candidate_combinations,
+            "model_g_strategy": model_g_strategy,
             "candidate_universe_policy": "All valid runner combinations are retained for independent pre-off ranking tests; production ticket display remains fixed-size.",
             "race_readiness": readiness,
             "odds": entries,
