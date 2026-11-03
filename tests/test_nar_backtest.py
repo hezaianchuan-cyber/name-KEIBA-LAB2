@@ -1542,13 +1542,13 @@ class RaceBudgetAutoStrategyTests(unittest.TestCase):
         records = {}
         for day_num in range(1, 8):
             day = f"2026-10-{day_num:02d}"
-            records[str(day_num)] = self._snapshot(day, [])
+            records[str(day_num)] = self._snapshot(day, [self._ticket("wide", 100 + day_num, 0.90)])
         records["8"] = self._snapshot(
             "2026-10-08",
             [self._ticket("wide", i, 1.50) for i in range(1, 26)] +
             [self._ticket("place", i, 1.20) for i in range(30, 55)]
         )
-        records["9"] = self._snapshot("2026-10-09", [])
+        records["9"] = self._snapshot("2026-10-09", [self._ticket("wide", 60, 0.90)])
         records["10"] = self._snapshot(
             "2026-10-10", [self._ticket("place", 70, 1.30)]
         )
@@ -1560,9 +1560,8 @@ class RaceBudgetAutoStrategyTests(unittest.TestCase):
                        "exacta": {}, "trio": {}, "trifecta": {}},
         }
         payouts = {
-            ("大井", "20261008", "1"): payout,
-            ("大井", "20261009", "1"): payout,
-            ("大井", "20261010", "1"): payout,
+            ("大井", f"202610{day_num:02d}", "1"): payout
+            for day_num in range(1, 11)
         }
         validation = {
             "bet_types": {
@@ -1587,7 +1586,9 @@ class RaceBudgetAutoStrategyTests(unittest.TestCase):
     @mock.patch.object(nb, "load_odds_snapshots")
     def test_no_development_validated_type_means_no_bets(self, load_snapshots):
         records = {
-            str(i): self._snapshot(f"2026-10-{i:02d}", [])
+            str(i): self._snapshot(
+                f"2026-10-{i:02d}", [self._ticket("wide", i, 0.90)]
+            )
             for i in range(1, 11)
         }
         records["10"] = self._snapshot(
@@ -1595,7 +1596,9 @@ class RaceBudgetAutoStrategyTests(unittest.TestCase):
         )
         load_snapshots.return_value = records
         payout = {"win": [(["1"], 100)]}
-        payouts = {("大井", "20261010", "1"): payout}
+        payouts = {
+            ("大井", f"202610{i:02d}", "1"): payout for i in range(1, 11)
+        }
 
         result = nb.race_budget_auto_strategy_backtest(payouts, {"bet_types": {}})
         self.assertEqual(result["status"], "awaiting_development_validation")
