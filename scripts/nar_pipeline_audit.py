@@ -47,6 +47,11 @@ def main() -> int:
             and "pace_adjustments(horses, history)" in capture_source
             and '"time_per_km":' in source
         ),
+        "D_requires_versioned_C_model_snapshots": (
+            'expected_model_version = "nar-chronological-v8-abcd-C-preoff"' in source
+            and 'if record.get("model_version") != expected_model_version:' in source
+            and '"model_version": "nar-chronological-v8-abcd-C-preoff"' in source
+        ),
     }
     limitations = []
     if not checks["four_year_source_window"]:
@@ -64,6 +69,7 @@ def main() -> int:
         "A_C_share_holdout_and_ticket_rules",
         "D_is_timestamped_snapshot_only",
         "D_uses_C_features_before_odds_overlay",
+        "D_requires_versioned_C_model_snapshots",
     )):
         limitations.append("Canonical A-D feature ablation wiring needs further review.")
     limitations.append("D is evaluated only where valid timestamped pre-off odds snapshots exist; coverage may be insufficient.")
@@ -77,7 +83,7 @@ def main() -> int:
             "A": "fixed baseline ranking",
             "B": "learned base ranking + prior venue/distance and going suitability",
             "C": "B + prior margin, last-3F, comparable time and race-pace adjustment",
-            "D": "C feature scoring + race pace + genuine 2-30 minute timestamped pre-off odds overlay",
+            "D": "C feature scoring + race pace + genuine 2-30 minute timestamped odds from the v8 C-model only",
         },
         "limitations": limitations,
         "note": "This is a source-level audit, not a historical performance result. No ROI or hit-rate claims are made.",
