@@ -7,6 +7,7 @@ metrics and a small set of race-level examples are written to data/backtest-summ
 from __future__ import annotations
 import csv, datetime as dt, gzip, io, json, math, os, random, re, sys, time, urllib.parse, urllib.request, zipfile
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -119,6 +120,13 @@ def download_month(y, m):
     url = "https://www.keiba.go.jp/KeibaWeb/DataDownload/RaceDataDownload?" + urllib.parse.urlencode({
         "type": "monthly", "k_year": y, "k_month": m
     })
+    cache_dir = Path(os.environ.get("NAR_CACHE_DIR", ROOT / ".cache" / "nar-monthly"))
+    cache_path = cache_dir / f"{y}-{m:02d}.zip"
+    current = dt.date.today()
+    if (y, m) < (current.year, current.month) and cache_path.is_file():
+        data = cache_path.read_bytes()
+        if data.startswith(b"PK"):
+            return data, url
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Referer": "https://www.keiba.go.jp/"})
     last = None
     for attempt in range(3):
@@ -127,6 +135,9 @@ def download_month(y, m):
                 data = res.read()
             if not data.startswith(b"PK"):
                 raise RuntimeError(f"{y}-{m:02d}: response is not a ZIP archive")
+            if (y, m) < (current.year, current.month):
+                cache_dir.mkdir(parents=True, exist_ok=True)
+                cache_path.write_bytes(data)
             return data, url
         except Exception as exc:
             last = exc
@@ -170,9 +181,11 @@ def merge_payout_row(payouts, key, row):
 
 def load_archives():
     races, horses, payouts = {}, defaultdict(list), {}
+    months = list(month_iter(START, END))
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        archives = list(pool.map(lambda ym: (ym, download_month(*ym)), months))
     downloaded = []
-    for y, m in month_iter(START, END):
-        blob, url = download_month(y, m)
+    for (y, m), (blob, url) in archives:
         downloaded.append({"month": f"{y}-{m:02d}", "bytes": len(blob)})
         with zipfile.ZipFile(io.BytesIO(blob)) as zf:
             for info in zf.infolist():
@@ -208,7 +221,23 @@ def load_archives():
                         })
                     elif kind == "payouts" and len(row) > 52:
                         merge_payout_row(payouts, key, row)
+    finalize_payout_indexes(payouts)
     return races, horses, payouts, downloaded
+
+def finalize_payout_indexes(payouts):
+    """Build constant-time payout lookups while preserving dead-heat combinations."""
+    for payout in payouts.values():
+        index = {}
+        for kind in ("win", "place", "quinella", "exacta", "wide", "trio", "trifecta"):
+            kind_index = {}
+            for numbers, pay in payout.get(kind, []):
+                key = tuple(str(x) for x in numbers)
+                if kind in ("quinella", "wide", "trio"):
+                    key = tuple(sorted(key))
+                kind_index.setdefault(key, pay)
+            index[kind] = kind_index
+        payout["_index"] = index
+    return payouts
 
 def parse_race_time(value):
     """Parse Japanese race time strings into seconds."""
@@ -498,6 +527,12 @@ def payout_for(kind, ticket, p):
     """Return the official 100-yen payout for a ticket, including dead heats."""
     if not p:
         return 0
+    index = p.get("_index")
+    if index is not None:
+        key = tuple(str(x) for x in ticket)
+        if kind in ("quinella", "wide", "trio"):
+            key = tuple(sorted(key))
+        return index.get(kind, {}).get(key, 0)
     for numbers, pay in p.get(kind, []):
         if kind in ("win", "place"):
             matched = len(ticket) == 1 and ticket[0] == numbers[0]
@@ -2277,6 +2312,20 @@ def holdout_validation(races, horses, payouts):
     if len(folds)<2:
         return {"status":"insufficient_folds","folds":folds}
 
+    recent_start = END - dt.timedelta(days=364)
+    recent_train_dates = [d for d in dates if d < recent_start]
+    recent_test_dates = [d for d in dates if recent_start <= d <= END]
+    recent_year_validation = {
+        "status": "evaluated" if recent_train_dates and recent_test_dates else "insufficient_dates",
+        "period": {"start": recent_start.isoformat(), "end": END.isoformat()},
+        "train_end": recent_train_dates[-1].isoformat() if recent_train_dates else None,
+        "test_races_expected": sum(1 for r in races.values() if recent_start <= r["date"] <= END),
+    }
+    if recent_train_dates and recent_test_dates:
+        recent_year_validation.update(
+            evaluate_holdout_fold(races, horses, payouts, recent_train_dates, recent_test_dates)
+        )
+
     kinds=("win","place","wide","quinella","exacta","trio","trifecta")
     aggregate={}
     for model_name in ("baseline","trained","trained_no_recent_history","trained_race_relative",
@@ -2376,6 +2425,7 @@ def holdout_validation(races, horses, payouts):
     return {"status":"ok","auto_improvement_loop":auto_selection,
             "integrated_strategy_E": integrated_e_oos,"method":"three rolling-origin folds with non-overlapping test windows; weights frozen within each test window; prior results added only after all races on a date are scored; market-value bets use timestamped official pre-off odds snapshots",
             "folds":folds,
+            "recent_year_validation":recent_year_validation,
             "test_races":sum(x["models"]["trained"]["races"] for x in folds),
             "test_start":folds[0]["test_start"],"test_end":folds[-1]["test_end"],
             "train_end":folds[-1]["train_end"],"models":aggregate,
@@ -2384,11 +2434,11 @@ def holdout_validation(races, horses, payouts):
             "folds_above_100_roi":{kind:sum(1 for fold in folds if (fold["models"]["trained"]["bet_types"][kind]["roi"] or 0)>=100) for kind in kinds},
             "selection_rule":"Each fold uses only strictly earlier training data; test weights remain fixed and race results are added to history only after the entire date is scored.",
             "promotion_gate": {
-                "roi_strictly_above_100": true,
+                "roi_strictly_above_100": True,
                 "minimum_independent_test_races": 100,
                 "minimum_tickets": 300,
-                "race_cluster_95_percent_ci_lower_strictly_above_100": true,
-                "all_conditions_required": true,
+                "race_cluster_95_percent_ci_lower_strictly_above_100": True,
+                "all_conditions_required": True,
                 "ci_method": "race_cluster_normal_approximation",
                 "scope": "Aggregated untouched walk-forward validation folds; development folds are not counted toward the validation sample."
             }}

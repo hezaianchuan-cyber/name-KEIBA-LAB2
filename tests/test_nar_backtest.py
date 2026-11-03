@@ -124,6 +124,19 @@ class PayoutParsingTests(unittest.TestCase):
         self.assertEqual(len(payouts[key]["win"]), 1)
         self.assertEqual(payouts[key]["source_rows"], 2)
 
+    def test_indexed_payout_lookup_matches_all_bet_types_and_dead_heats(self):
+        payouts = {}
+        key = ("大井", "20261103", "10")
+        nb.merge_payout_row(payouts, key, self.payout_row("1", "250"))
+        nb.merge_payout_row(payouts, key, self.payout_row("2", "300"))
+        nb.finalize_payout_indexes(payouts)
+        payout = payouts[key]
+        self.assertEqual(nb.payout_for("win", ["2"], payout), 300)
+        self.assertEqual(nb.payout_for("quinella", ["2", "1"], payout), 400)
+        self.assertEqual(nb.payout_for("exacta", ["2", "1"], payout), 0)
+        self.assertEqual(nb.payout_for("trio", ["3", "1", "2"], payout), 800)
+        self.assertEqual(nb.payout_for("trifecta", ["1", "2", "3"], payout), 1500)
+
 
 class OddsSnapshotParsingTests(unittest.TestCase):
     def test_race_id_normalizes_race_number(self):

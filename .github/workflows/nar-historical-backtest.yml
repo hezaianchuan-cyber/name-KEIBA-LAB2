@@ -25,7 +25,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Restore official monthly archive cache
+        uses: actions/cache@v4
+        with:
+          path: .cache/nar-monthly
+          key: nar-monthly-v1-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            nar-monthly-v1-${{ runner.os }}-
+
       - name: Run three-year backtest
+        env:
+          NAR_CACHE_DIR: .cache/nar-monthly
         run: python3 scripts/nar_backtest.py
 
       - name: Publish aggregate report only
