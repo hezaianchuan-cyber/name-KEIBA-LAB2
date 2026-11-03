@@ -1033,7 +1033,64 @@ def race_segment_labels(race):
         else:
             band = "long_>2000m"
         labels["distance_band"] = band
+    field_size = number(race.get("field_size"))
+    if field_size is not None and field_size > 0:
+        if field_size <= 8:
+            labels["field_size_band"] = "small_<=8"
+        elif field_size <= 12:
+            labels["field_size_band"] = "medium_9-12"
+        else:
+            labels["field_size_band"] = "large_>12"
     return labels
+
+
+def new_condition_finish_bucket():
+    return {
+        str(role): {
+            ranking: {"races": 0, "topk": {str(k): 0 for k in (1, 2, 3, 5, 7)}}
+            for ranking in ("ordinary", "role_specific")
+        }
+        for role in (1, 2, 3)
+    }
+
+
+def update_condition_finish_bucket(bucket, ordinary_ranking, role_rankings, field):
+    finishers = {
+        role: {str(h["no"]) for h in field if h.get("finish") == role}
+        for role in (1, 2, 3)
+    }
+    rankings = {
+        "ordinary": {role: ordinary_ranking for role in (1, 2, 3)},
+        "role_specific": role_rankings,
+    }
+    for role in (1, 2, 3):
+        targets = finishers[role]
+        for ranking_name, by_role in rankings.items():
+            stats = bucket[str(role)][ranking_name]
+            stats["races"] += 1
+            positions = [i + 1 for i, horse in enumerate(by_role[role])
+                         if str(horse["no"]) in targets]
+            for k in (1, 2, 3, 5, 7):
+                stats["topk"][str(k)] += int(any(position <= k for position in positions))
+
+
+def summarize_condition_finish_segments(stats):
+    output = {}
+    for segment, roles in sorted(stats.items()):
+        output[segment] = {}
+        for role, rankings in roles.items():
+            output[segment][role] = {}
+            for ranking, bucket in rankings.items():
+                races = bucket["races"]
+                output[segment][role][ranking] = {
+                    "races": races,
+                    "topk_hits": bucket["topk"],
+                    "topk_rate": {
+                        k: round(100 * value / races, 2) if races else None
+                        for k, value in bucket["topk"].items()
+                    },
+                }
+    return output
 
 
 CONFIDENCE_THRESHOLDS = (0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50)
@@ -1265,7 +1322,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     condition_model_segment_stats = defaultdict(lambda: {
         "races": 0, "tickets": 0, "hits": 0, "stake": 0, "return": 0
     })
-    condition_bet_types = ("wide", "exacta", "trio")
+    condition_bet_types = ("wide", "exacta", "trio", "trifecta")
+    condition_finish_stats = defaultdict(new_condition_finish_bucket)
     def commit(items):
         for field,race in items:
             performance = field_performance_features(field)
@@ -1345,6 +1403,15 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             update_finish_position_diagnostics(
                 m["finish_position_diagnostics"], ranked, role_rankings_for_positions, field)
             update_trio_diagnostics(m["trio_diagnostics"], ranked, field, payout)
+            if model_name == "trained":
+                role_segment_rankings = {
+                    role: role_specific_ranking(scored, history, role, 0.10)
+                    for role in (1, 2, 3)
+                }
+                for dimension, label in race_segment_labels(race).items():
+                    update_condition_finish_bucket(
+                        condition_finish_stats[f"{dimension}:{label}"],
+                        ranked, role_segment_rankings, field)
             if model_name in ("baseline", "trained_no_recent_history"):
                 for dimension, label in race_segment_labels(race).items():
                     for condition_kind in condition_bet_types:
@@ -1483,6 +1550,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
         }
     condition_segments, condition_comparisons = summarize_condition_model_segments(
         condition_model_segment_stats, condition_bet_types)
+    condition_finish_segments = summarize_condition_finish_segments(condition_finish_stats)
     integrated_bets = {}
     for kind, bucket in integrated_stats["bet_types"].items():
         integrated_bets[kind] = {
@@ -1525,6 +1593,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             "trained_condition_segments":segment_output,
             "condition_model_segments":condition_segments,
             "condition_model_comparisons":condition_comparisons,
+            "condition_finish_position_segments":condition_finish_segments,
             "confidence_filter_backtest":summarize_confidence_filter_stats(confidence_filter_stats),
             "integrated_strategy_E": integrated_summary}
 
