@@ -434,14 +434,20 @@ def top_k_winner_coverage(ranked, winners, ks=(5, 6, 7)):
             for k in ks}
 
 
-def build_trifecta_tickets(ranked, first_count=2, candidate_count=5):
-    """Build ordered trifecta tickets with independently adjustable 1st-place and coverage pools."""
-    nos = [str(h["no"]) for h in ranked[:candidate_count]]
-    first_candidates = nos[:min(first_count, len(nos))]
+def build_trifecta_formation(ranked, first_count=2, second_count=5, third_count=5):
+    """Build an ordered 1st/2nd/3rd formation with independent candidate pools."""
+    firsts = [str(h["no"]) for h in ranked[:first_count]]
+    seconds = [str(h["no"]) for h in ranked[:second_count]]
+    thirds = [str(h["no"]) for h in ranked[:third_count]]
     return [[first, second, third]
-            for first in first_candidates
-            for second in nos if second != first
-            for third in nos if third not in (first, second)]
+            for first in firsts
+            for second in seconds if second != first
+            for third in thirds if third not in (first, second)]
+
+
+def build_trifecta_tickets(ranked, first_count=2, candidate_count=5):
+    """Backward-compatible symmetric formation helper."""
+    return build_trifecta_formation(ranked, first_count, candidate_count, candidate_count)
 
 
 def build_fixed_tickets(ranked):
@@ -461,9 +467,12 @@ def build_fixed_tickets(ranked):
 
 
 def new_trifecta_diagnostics():
-    structures = {(first, pool): {"races": 0, "tickets": 0, "hits": 0,
-                                  "stake": 0, "return": 0}
-                  for first, pool in ((1,5),(2,5),(3,5),(2,6),(2,7))}
+    structures = {(first, second, third): {"races": 0, "tickets": 0, "hits": 0,
+                                               "stake": 0, "return": 0}
+                  for first, second, third in (
+                      (1,5,5), (2,4,5), (2,5,4), (2,5,5),
+                      (2,5,6), (2,6,5), (3,5,5), (2,6,6), (2,7,7)
+                  )}
     return {
         "races": 0,
         "winner_top1": 0, "winner_top2": 0, "winner_top3": 0,
@@ -505,8 +514,9 @@ def update_trifecta_diagnostics(bucket, ranked, field, payout):
         if any(payout_for("trifecta", ticket, payout) for ticket in current):
             bucket["current_structure_exact_hit_races"] += 1
     # Ticket ROI is evaluated for every race with a valid payout, even if finish-role fields are incomplete.
-    for (first_count, pool_size), stats in bucket["structures"].items():
-        tickets = build_trifecta_tickets(ranked, first_count, pool_size)
+    for (formation, stats) in bucket["structures"].items():
+        first_count, second_count, third_count = formation
+        tickets = build_trifecta_formation(ranked, first_count, second_count, third_count)
         if not tickets:
             continue
         stats["races"] += 1
@@ -526,8 +536,9 @@ def summarize_trifecta_diagnostics(bucket):
     output = {key: bucket[key] for key in ("races", *rate_keys)}
     output["rates"] = {key: round(100 * bucket[key] / n, 2) if n else None for key in rate_keys}
     structures = {}
-    for (first_count, pool_size), stats in bucket["structures"].items():
-        structures[f"first{first_count}_pool{pool_size}"] = {
+    for (formation, stats in bucket["structures"].items():
+        first_count, second_count, third_count = formation
+        structures[f"{first_count}-{second_count}-{third_count}"] = {
             **stats,
             "hit_rate": round(100 * stats["hits"] / stats["tickets"], 4) if stats["tickets"] else None,
             "roi": round(100 * stats["return"] / stats["stake"], 2) if stats["stake"] else None,
