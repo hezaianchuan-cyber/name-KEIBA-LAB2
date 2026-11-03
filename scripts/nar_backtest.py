@@ -1369,7 +1369,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     # Keep the learned B weights normalized to 1.0. The performance scorer
     # applies the 0.80/0.10/0.10 blend itself; pre-scaling these weights would
     # accidentally reduce the B contribution to 0.64.
-    models = {"baseline":baseline, "trained":learned, "trained_no_recent_history":learned,
+    models = {"A_baseline":baseline, "B_condition":learned, "C_performance_pace":learned,
+              "baseline":baseline, "trained":learned, "trained_no_recent_history":learned,
               "trained_race_relative":learned,
               "trained_with_pace":learned, "trained_with_performance":learned, "trained_with_time":learned,
               "trained_performance_with_pace":learned, "trained_with_conditions":learned,
@@ -1504,9 +1505,12 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                 }
                 relative_scores = race_relative_scores(relative_parts, weights)
                 scored = [(relative_scores[h["no"]], h) for h in field]
-            elif model_name in ("trained_with_conditions", "trained_with_conditions_and_pace"):
+            elif model_name in ("B_condition", "trained_with_conditions", "trained_with_conditions_and_pace"):
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
                             0.0,0.0,0.0,include_recent_history,going_weight=0.10)[0],h) for h in field]
+            elif model_name == "C_performance_pace":
+                scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
+                            0.10,0.10,0.10,include_recent_history,going_weight=0.10)[0],h) for h in field]
             elif model_name in performance_blends:
                 margin_weight, closing_weight, time_weight = performance_blends[model_name]
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
@@ -1514,7 +1518,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             else:
                 scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights,
                             include_recent_history=include_recent_history)[0],h) for h in field]
-            if model_name in ("trained_with_pace", "trained_performance_with_pace", "trained_with_conditions_and_pace"):
+            if model_name in ("C_performance_pace", "trained_with_pace", "trained_performance_with_pace", "trained_with_conditions_and_pace"):
                 _, _, pace_delta = pace_adjustments(field, history)
                 scored = [(score + pace_delta.get(h["no"], 0.0), h) for score, h in scored]
             if model_name == "trained":
@@ -2400,7 +2404,8 @@ def holdout_validation(races, horses, payouts):
 
     kinds=("win","place","wide","quinella","exacta","trio","trifecta")
     aggregate={}
-    for model_name in ("baseline","trained","trained_no_recent_history","trained_race_relative",
+    for model_name in ("A_baseline","B_condition","C_performance_pace",
+                       "baseline","trained","trained_no_recent_history","trained_race_relative",
                        "trained_with_pace","trained_with_performance","trained_performance_with_pace","trained_with_conditions","trained_with_conditions_and_pace",
                        "trained_margin_only","trained_closing_only","trained_performance_light",
                        "trained_with_time","trained_performance_with_time"):
@@ -2712,10 +2717,11 @@ def main():
         "metrics": metrics,
         "out_of_sample_validation": validation,
         "strategy_comparison": {
-            "A_baseline": "out_of_sample_validation.models.baseline",
-            "B_confidence_filter": "out_of_sample_validation.folds[*].confidence_filter_backtest (fixed thresholds; inspect each fold)",
-            "C_role_specific_trifecta": "out_of_sample_validation.folds[*].models.trained.role_trifecta_diagnostics",
-            "D_preoff_odds": "preoff_ranking_strategy_backtest (timestamped 2-30 minute snapshots only)",
+            "A_baseline": "out_of_sample_validation.models.A_baseline (fixed reference weights)",
+            "B_condition": "out_of_sample_validation.models.B_condition (learned base weights + prior track/going suitability)",
+            "C_performance_pace": "out_of_sample_validation.models.C_performance_pace (B + prior margin/last3f/time + race pace)",
+            "D_preoff_odds": "preoff_ranking_strategy_backtest (timestamped 2-30 minute snapshots only; separately reports snapshot coverage)",
+            "comparison_design": "A-C are evaluated on identical chronological holdout races with identical ticket construction and 100 JPY per ticket. B and C share the same learned base weights intentionally so their difference isolates the added feature blocks; A is the fixed baseline. D is evaluated only on races with valid genuine pre-off snapshots and is never imputed for missing snapshots.",
             "E_integrated": "out_of_sample_validation.integrated_strategy_E",
             "comparison_policy": "A-E are reported separately. D is marked unevaluable until enough genuine pre-off snapshots exist. No strategy is declared profitable unless sample minimums are met and the 95% race-cluster ROI lower bound exceeds 100%."
         },
