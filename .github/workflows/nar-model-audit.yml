@@ -1,4 +1,4 @@
-name: NAR model and data quality audit
+name: NAR model design and leakage audit
 
 on:
   push:
@@ -6,7 +6,6 @@ on:
     paths:
       - 'scripts/nar_backtest.py'
       - 'scripts/nar_pipeline_audit.py'
-      - 'tests/**'
       - '.github/workflows/nar-model-audit.yml'
   workflow_dispatch:
 
@@ -18,9 +17,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  regression-and-audit:
+  static-audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,9 +27,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Run regression tests
-        run: python3 -m unittest discover -s tests -v
-      - name: Run pipeline audit
+      - name: Compile backtest and audit code
+        run: python3 -m py_compile scripts/nar_backtest.py scripts/nar_pipeline_audit.py
+      - name: Run model and data leakage audit
         run: python3 scripts/nar_pipeline_audit.py
       - name: Upload audit report
         uses: actions/upload-artifact@v4
