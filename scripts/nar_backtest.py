@@ -321,7 +321,8 @@ def field_performance_features(field):
 
 def score_runner_performance(h, history, sire_stats, jockey_stats, race, model_weights,
                              margin_weight=0.10, closing_weight=0.10,
-                             time_weight=0.0, include_recent_history=True):
+                             time_weight=0.0, include_recent_history=True,
+                             going_weight=0.0):
     """B score blended with strictly prior margin/closing-speed form."""
     base_score, parts = score_runner(h, history, sire_stats, jockey_stats, race,
                                      model_weights, include_recent_history)
@@ -335,6 +336,15 @@ def score_runner_performance(h, history, sire_stats, jockey_stats, race, model_w
         return sum(value * weight for value, weight in zip(values, weights)) / sum(weights)
     margin_form = recent_average("margin_quality")
     closing_form = recent_average("last3f_rank_score")
+    # Going suitability is calculated only from this horse's earlier starts.
+    # Sparse samples shrink toward neutral; no same-day/current-race outcome leaks in.
+    target_going = norm(race.get("going"))
+    going_rows = [row for row in past if target_going and norm(row.get("going")) == target_going
+                  and number(row.get("going_quality")) is not None]
+    going_quality = [number(row.get("going_quality")) for row in going_rows]
+    going_form = smoothed_rate(
+        sum(going_quality), len(going_quality), prior_rate=0.5, prior_strength=4.0
+    ) if going_quality else 0.5
     target_distance = number(race.get("distance"))
     comparable = [
         row for row in past
@@ -352,13 +362,15 @@ def score_runner_performance(h, history, sire_stats, jockey_stats, race, model_w
             improvement = (sum(baseline_times)/len(baseline_times)
                            - sum(recent_times)/len(recent_times)) / max(sum(baseline_times)/len(baseline_times), 1.0)
             time_form = min(1.0, max(0.0, 0.5 + improvement * 8.0))
-    base_weight = max(0.0, 1.0 - margin_weight - closing_weight - time_weight)
+    base_weight = max(0.0, 1.0 - margin_weight - closing_weight - time_weight - going_weight)
     score = (base_score * base_weight + margin_form * margin_weight
-             + closing_form * closing_weight + time_form * time_weight)
+             + closing_form * closing_weight + time_form * time_weight
+             + going_form * going_weight)
     return score, {**parts, "margin_form": margin_form, "closing_form": closing_form,
-                   "time_form": time_form,
+                   "time_form": time_form, "going_form": going_form,
                    "performance_weights": {"base": base_weight, "margin": margin_weight,
-                                           "closing": closing_weight, "time": time_weight}}
+                                           "closing": closing_weight, "time": time_weight,
+                                           "going": going_weight}}
 
 
 def score_runner_d(h, history, sire_stats, jockey_stats, race, model_weights,
@@ -1014,8 +1026,9 @@ def run_backtest(races, horses, payouts):
                 if runner.get("finish"):
                     history[runner["name"]].append({
                         **performance.get(runner["no"], {}),
-                        "date":pending_race["date"],"venue":pending_race["venue"],"distance":pending_race.get("distance"),"field_size":pending_race.get("field_size"),
+                        "date":pending_race["date"],"venue":pending_race["venue"],"distance":pending_race.get("distance"),"going":pending_race.get("going"),"surface":pending_race.get("surface"),"field_size":pending_race.get("field_size"),
                         "finish":runner["finish"],"margin":margin_score(runner.get("margin")),"last3f":runner.get("last3f"),
+                        "going_quality": rank_quality(runner["finish"], pending_race.get("field_size")) / 100.0,
                         "time_seconds": runner.get("time_seconds"),
                         "time_per_km": (runner.get("time_seconds") * 1000 / pending_race["distance"]
                                         if runner.get("time_seconds") and pending_race.get("distance") else None),
@@ -1093,7 +1106,9 @@ def build_live_history(races, horses):
             if not finish:
                 continue
             item = {"date": race["date"].isoformat(), "venue": race["venue"],
-                    "distance": race.get("distance"), "field_size": race.get("field_size"), "finish": finish,
+                    "distance": race.get("distance"), "going": race.get("going"),
+                    "surface": race.get("surface"), "field_size": race.get("field_size"), "finish": finish,
+                    "going_quality": rank_quality(finish, race.get("field_size")) / 100.0,
                     **performance.get(h["no"], {}),
                     "margin": h.get("margin", ""), "last3f": h.get("last3f"),
                     **corner_history_for_runner(h, race)}
@@ -1355,7 +1370,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     models = {"baseline":baseline, "trained":learned, "trained_no_recent_history":learned,
               "trained_race_relative":learned,
               "trained_with_pace":learned, "trained_with_performance":learned, "trained_with_time":learned,
-              "trained_performance_with_pace":learned,
+              "trained_performance_with_pace":learned, "trained_with_conditions":learned,
               "trained_margin_only":learned, "trained_closing_only":learned,
               "trained_performance_light":learned, "trained_performance_with_time":learned}
     performance_blends = {
@@ -1449,7 +1464,9 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                 if not h.get("finish"): continue
                 history[h["name"]].append({"date":race["date"],"venue":race["venue"],
                     **performance.get(h["no"], {}),
-                    "distance":race.get("distance"),"field_size":race.get("field_size"),"finish":h["finish"],
+                    "distance":race.get("distance"),"going":race.get("going"),"surface":race.get("surface"),
+                    "going_quality": rank_quality(h["finish"], race.get("field_size")) / 100.0,
+                    "field_size":race.get("field_size"),"finish":h["finish"],
                     "margin":margin_score(h.get("margin")),"last3f":h.get("last3f"),
                     "time_seconds": h.get("time_seconds"),
                     "time_per_km": (h.get("time_seconds") * 1000 / race["distance"]
@@ -1484,6 +1501,9 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                 }
                 relative_scores = race_relative_scores(relative_parts, weights)
                 scored = [(relative_scores[h["no"]], h) for h in field]
+            elif model_name == "trained_with_conditions":
+                scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
+                            0.0,0.0,0.0,include_recent_history,going_weight=0.10)[0],h) for h in field]
             elif model_name in performance_blends:
                 margin_weight, closing_weight, time_weight = performance_blends[model_name]
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
@@ -2329,7 +2349,7 @@ def holdout_validation(races, horses, payouts):
     kinds=("win","place","wide","quinella","exacta","trio","trifecta")
     aggregate={}
     for model_name in ("baseline","trained","trained_no_recent_history","trained_race_relative",
-                       "trained_with_pace","trained_with_performance","trained_performance_with_pace",
+                       "trained_with_pace","trained_with_performance","trained_performance_with_pace","trained_with_conditions",
                        "trained_margin_only","trained_closing_only","trained_performance_light",
                        "trained_with_time","trained_performance_with_time"):
         total={"races":0,"winner_top1":0,"winner_top3":0,
@@ -2680,7 +2700,12 @@ def main():
         "updates": learning_updates,
         "validation": validation,
         "feature_schema": ["form", "venue", "distance", "sire", "jockey", "age"],
-        "experimental_d_features": ["recent_margin_quality", "recent_race_relative_last3f_rank"],
+        "condition_feature_schema": ["going", "surface", "going_quality"],
+        "experimental_condition_variants": {
+            "C1_going_match": {"going_weight": 0.10, "minimum_prior_starts": 1,
+                               "smoothing_prior_strength": 4, "promotion_requires_holdout_gain": True}
+        },
+        "experimental_d_features": ["recent_margin_quality", "recent_race_relative_last3f_rank", "prior_same_going_quality"],
         "experimental_performance_variants": {
             "D1_combined": {"margin_weight": 0.10, "closing_weight": 0.10},
             "D2_combined_with_pace": {"margin_weight": 0.10, "closing_weight": 0.10, "pace": True},
@@ -2690,6 +2715,7 @@ def main():
         },
         "pace_feature_schema": ["first_corner_pct", "last_corner_pct"],
         "pace_feature_note": "Experimental trained_with_pace model is holdout-only; production weights remain unchanged until validation passes.",
+        "condition_feature_note": "Going suitability uses only prior starts on the same official going label, with shrinkage toward neutral for sparse samples. The C1 variant remains experimental until untouched holdout validation supports promotion.",
         "weights": validated_weights,
         "temperature": production_temperature,
         "calibration": production_calibration,
