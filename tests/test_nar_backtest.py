@@ -882,6 +882,7 @@ class IncompleteFinishDiagnosticSampleTests(unittest.TestCase):
         self.assertEqual(result["race_hit_rate"], 50.0)
         self.assertIsNotNone(result["roi_ci95_normal_low"])
         self.assertLess(result["roi_ci95_normal_low"], result["roi_ci95_normal_high"])
+        self.assertIn("sum_return_sq", result["roi_variance_components"])
 
     def test_trifecta_roi_keeps_valid_payout_races_without_complete_finish_roles(self):
         ranked = [{"no": str(i)} for i in range(1, 6)]
