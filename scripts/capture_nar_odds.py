@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture official NAR odds snapshots from 15 to 5 minutes before post time.
+"""Capture official NAR odds snapshots from 30 to 2 minutes before post time.
 
 The monthly NAR odds archive contains confirmed odds and must not be used as
 pre-race information. This collector uses only the frequently refreshed daily
@@ -25,8 +25,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 SNAPSHOT_DIR = DATA / "odds-snapshots"
 JST = ZoneInfo("Asia/Tokyo")
-CAPTURE_WINDOW_MINUTES = 15
-STOP_BEFORE_POST_MINUTES = 5
+CAPTURE_WINDOW_MINUTES = 30
+STOP_BEFORE_POST_MINUTES = 2
 
 
 def decode(raw: bytes) -> str:
