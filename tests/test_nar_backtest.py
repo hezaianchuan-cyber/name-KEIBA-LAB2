@@ -357,6 +357,31 @@ class ProbabilityCalibrationTests(unittest.TestCase):
         self.assertEqual(metrics["top1_accuracy"], 100.0)
 
 
+class ConfidenceFilterBacktestTests(unittest.TestCase):
+    def test_confidence_filter_applies_threshold_and_tracks_each_bet_type(self):
+        stats = nb.new_confidence_filter_stats()
+        ranked = [{"no":"1"}, {"no":"2"}, {"no":"3"}]
+        tickets = {"win":[["1"]], "place":[["1"],["2"]]}
+        payout = {
+            "win":[(["1"],250)], "place":[(["1"],130)],
+            "wide":[], "quinella":[], "exacta":[], "trio":[], "trifecta":[]
+        }
+        nb.update_confidence_filter_stats(stats, 0.30, ranked, {"1"}, tickets, payout)
+        result = nb.summarize_confidence_filter_stats(stats)
+        self.assertEqual(result["0.20"]["races"], 1)
+        self.assertEqual(result["0.30"]["races"], 1)
+        self.assertEqual(result["0.35"]["races"], 0)
+        self.assertEqual(result["0.30"]["bet_types"]["win"]["stake"], 100)
+        self.assertEqual(result["0.30"]["bet_types"]["win"]["return"], 250)
+        self.assertEqual(result["0.30"]["bet_types"]["win"]["roi"], 250.0)
+        self.assertEqual(result["0.30"]["bet_types"]["place"]["tickets"], 2)
+
+    def test_confidence_filter_empty_bucket_has_no_fabricated_roi(self):
+        result = nb.summarize_confidence_filter_stats(nb.new_confidence_filter_stats())
+        self.assertIsNone(result["0.50"]["bet_types"]["win"]["roi"])
+        self.assertIsNone(result["0.50"]["winner_top1_rate"])
+
+
 if __name__ == "__main__":
     unittest.main()
 
