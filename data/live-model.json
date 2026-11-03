@@ -1,6 +1,6 @@
 {
   "model_version": "nar-chronological-v7-fieldsize-calibrated",
-  "generated_at": "2026-11-03T05:16:42.358552+00:00",
+  "generated_at": "2026-11-03T06:01:15.679205+00:00",
   "training_period": {
     "start": "2023-11-03",
     "end": "2026-11-02"
@@ -45,25 +45,25 @@
         },
         "exacta": {
           "tickets": 65212,
-          "hits": 3768,
+          "hits": 3769,
           "stake": 6521200,
-          "return": 4227810,
+          "return": 4194730,
           "race_count": 16303,
-          "sum_return_sq": 15443434500.0,
+          "sum_return_sq": 14938335700.0,
           "sum_stake_sq": 2608480000.0,
-          "sum_stake_return": 1691124000.0,
-          "roi": 64.83,
-          "roi_ci95_normal_low": 61.23,
-          "roi_ci95_normal_high": 68.43,
+          "sum_stake_return": 1677892000.0,
+          "roi": 64.32,
+          "roi_ci95_normal_low": 60.79,
+          "roi_ci95_normal_high": 67.86,
           "minimum_sample_met": true,
           "candidate_pass": false,
-          "profit": -2293390.0,
+          "profit": -2326470.0,
           "hit_rate": 5.78,
           "validation_folds": [
             {
               "fold": 2,
-              "model": "trained_performance_with_pace",
-              "roi": 67.26,
+              "model": "trained_with_performance",
+              "roi": 66.01,
               "tickets": 26540
             },
             {
@@ -1795,7 +1795,7 @@
               "roi_delta_vs_baseline": null
             },
             "exacta": {
-              "model": "trained_performance_with_pace",
+              "model": "trained_with_performance",
               "development_roi": 62.5,
               "development_tickets": 28432,
               "baseline_roi": 59.16,
@@ -1808,18 +1808,18 @@
               "required_min_tickets": 300,
               "required_min_roi_gain": 2.5,
               "validation_fold": 2,
-              "validation_roi": 67.26,
+              "validation_roi": 66.01,
               "validation_tickets": 26540,
-              "validation_hits": 1594,
+              "validation_hits": 1595,
               "validation_stake": 2654000,
-              "validation_return": 1785000.0,
+              "validation_return": 1751920.0,
               "validation_race_count": 6635,
-              "validation_sum_return_sq": 7908312200.0,
+              "validation_sum_return_sq": 7403213400.0,
               "validation_sum_stake_sq": 1061600000,
-              "validation_sum_stake_return": 714000000.0,
-              "validation_profit": -869000.0,
+              "validation_sum_stake_return": 700768000.0,
+              "validation_profit": -902080.0,
               "baseline_validation_roi": 58.36,
-              "roi_delta_vs_baseline": 8.9
+              "roi_delta_vs_baseline": 7.65
             },
             "trio": {
               "model": "trained_no_recent_history",
@@ -2074,6 +2074,168 @@
         }
       ],
       "promotion_policy": "No model is automatically promoted from a single fold. Require repeated next-fold gains, adequate samples, and independent market-odds validation before production use."
+    },
+    "integrated_strategy_E": {
+      "status": "evaluated",
+      "confidence_threshold": 0.3,
+      "role_blend": 0.1,
+      "trifecta_formation": [
+        2,
+        3,
+        4
+      ],
+      "races": 9037,
+      "bet_types": {
+        "wide": {
+          "tickets": 27111,
+          "hits": 7931,
+          "stake": 2711100,
+          "return": 1856850.0,
+          "race_count": 9037,
+          "sum_return_sq": 1045494100.0,
+          "sum_stake_sq": 813330000,
+          "sum_stake_return": 557055000.0,
+          "hit_rate": 29.25,
+          "roi": 68.49,
+          "roi_ci95_normal_low": 66.63,
+          "roi_ci95_normal_high": 70.35,
+          "minimum_sample_met": true,
+          "candidate_pass": false,
+          "profit": -854250.0
+        },
+        "exacta": {
+          "tickets": 36148,
+          "hits": 2872,
+          "stake": 3614800,
+          "return": 2262340.0,
+          "race_count": 9037,
+          "sum_return_sq": 5101057800.0,
+          "sum_stake_sq": 1445920000,
+          "sum_stake_return": 904936000.0,
+          "hit_rate": 7.95,
+          "roi": 62.59,
+          "roi_ci95_normal_low": 58.93,
+          "roi_ci95_normal_high": 66.24,
+          "minimum_sample_met": true,
+          "candidate_pass": false,
+          "profit": -1352460.0
+        },
+        "trio": {
+          "tickets": 90370,
+          "hits": 4206,
+          "stake": 9037000,
+          "return": 5155610.0,
+          "race_count": 9037,
+          "sum_return_sq": 22402611500.0,
+          "sum_stake_sq": 9037000000,
+          "sum_stake_return": 5155610000.0,
+          "hit_rate": 4.65,
+          "roi": 57.05,
+          "roi_ci95_normal_low": 54.02,
+          "roi_ci95_normal_high": 60.08,
+          "minimum_sample_met": true,
+          "candidate_pass": false,
+          "profit": -3881390.0
+        },
+        "trifecta": {
+          "tickets": 72329,
+          "hits": 1486,
+          "stake": 7232900,
+          "return": 4128000.0,
+          "race_count": 9037,
+          "sum_return_sq": 35919899400.0,
+          "sum_stake_sq": 5789650000,
+          "sum_stake_return": 3304228000.0,
+          "hit_rate": 2.05,
+          "roi": 57.07,
+          "roi_ci95_normal_low": 52.07,
+          "roi_ci95_normal_high": 62.07,
+          "minimum_sample_met": true,
+          "candidate_pass": false,
+          "profit": -3104900.0
+        }
+      },
+      "folds": [
+        {
+          "fold": 1,
+          "races": 2205,
+          "bet_types": {
+            "wide": {
+              "roi": 68.3,
+              "hit_rate": 29.01,
+              "tickets": 6615
+            },
+            "exacta": {
+              "roi": 58.21,
+              "hit_rate": 7.56,
+              "tickets": 8820
+            },
+            "trio": {
+              "roi": 60.46,
+              "hit_rate": 4.77,
+              "tickets": 22050
+            },
+            "trifecta": {
+              "roi": 55.38,
+              "hit_rate": 2.03,
+              "tickets": 17646
+            }
+          }
+        },
+        {
+          "fold": 2,
+          "races": 2714,
+          "bet_types": {
+            "wide": {
+              "roi": 68.84,
+              "hit_rate": 30.32,
+              "tickets": 8142
+            },
+            "exacta": {
+              "roi": 63.98,
+              "hit_rate": 8.49,
+              "tickets": 10856
+            },
+            "trio": {
+              "roi": 53.62,
+              "hit_rate": 4.64,
+              "tickets": 27140
+            },
+            "trifecta": {
+              "roi": 54.99,
+              "hit_rate": 2.05,
+              "tickets": 21729
+            }
+          }
+        },
+        {
+          "fold": 3,
+          "races": 4118,
+          "bet_types": {
+            "wide": {
+              "roi": 68.36,
+              "hit_rate": 28.68,
+              "tickets": 12354
+            },
+            "exacta": {
+              "roi": 64.01,
+              "hit_rate": 7.79,
+              "tickets": 16472
+            },
+            "trio": {
+              "roi": 57.48,
+              "hit_rate": 4.6,
+              "tickets": 41180
+            },
+            "trifecta": {
+              "roi": 59.35,
+              "hit_rate": 2.07,
+              "tickets": 32954
+            }
+          }
+        }
+      ],
+      "policy": "Pre-registered integrated challenger; no parameter selection on the validation folds."
     },
     "method": "three rolling-origin folds with non-overlapping test windows; weights frozen within each test window; prior results added only after all races on a date are scored; market-value bets use timestamped official pre-off odds snapshots",
     "folds": [
@@ -31756,6 +31918,88 @@
               }
             }
           }
+        },
+        "integrated_strategy_E": {
+          "status": "evaluated",
+          "confidence_threshold": 0.3,
+          "role_blend": 0.1,
+          "trifecta_formation": [
+            2,
+            3,
+            4
+          ],
+          "races": 2205,
+          "bet_types": {
+            "wide": {
+              "tickets": 6615,
+              "hits": 1919,
+              "stake": 661500,
+              "return": 451780.0,
+              "race_count": 2205,
+              "sum_return_sq": 263639800.0,
+              "sum_stake_sq": 198450000,
+              "sum_stake_return": 135534000.0,
+              "hit_rate": 29.01,
+              "roi": 68.3,
+              "roi_ci95_normal_low": 64.42,
+              "roi_ci95_normal_high": 72.17,
+              "minimum_sample_met": true,
+              "candidate_pass": false,
+              "profit": -209720.0
+            },
+            "exacta": {
+              "tickets": 8820,
+              "hits": 667,
+              "stake": 882000,
+              "return": 513390.0,
+              "race_count": 2205,
+              "sum_return_sq": 1308486300.0,
+              "sum_stake_sq": 352800000,
+              "sum_stake_return": 205356000.0,
+              "hit_rate": 7.56,
+              "roi": 58.21,
+              "roi_ci95_normal_low": 50.54,
+              "roi_ci95_normal_high": 65.87,
+              "minimum_sample_met": true,
+              "candidate_pass": false,
+              "profit": -368610.0
+            },
+            "trio": {
+              "tickets": 22050,
+              "hits": 1051,
+              "stake": 2205000,
+              "return": 1333110.0,
+              "race_count": 2205,
+              "sum_return_sq": 7573827900.0,
+              "sum_stake_sq": 2205000000,
+              "sum_stake_return": 1333110000.0,
+              "hit_rate": 4.77,
+              "roi": 60.46,
+              "roi_ci95_normal_low": 53.14,
+              "roi_ci95_normal_high": 67.77,
+              "minimum_sample_met": true,
+              "candidate_pass": false,
+              "profit": -871890.0
+            },
+            "trifecta": {
+              "tickets": 17646,
+              "hits": 358,
+              "stake": 1764600,
+              "return": 977290.0,
+              "race_count": 2205,
+              "sum_return_sq": 8936718500.0,
+              "sum_stake_sq": 1412280000,
+              "sum_stake_return": 781832000.0,
+              "hit_rate": 2.03,
+              "roi": 55.38,
+              "roi_ci95_normal_low": 45.14,
+              "roi_ci95_normal_high": 65.63,
+              "minimum_sample_met": true,
+              "candidate_pass": false,
+              "profit": -787310.0
+            }
+          },
+          "policy": "Fixed 0.30 calibrated top-win probability gate; role-specific trifecta ranking blend 0.10; 2-3-4 formation. Parameters are not selected on the holdout fold."
         }
       },
       {
@@ -62697,6 +62941,88 @@
               }
             }
           }
+        },
+        "integrated_strategy_E": {
+          "status": "evaluated",
+          "confidence_threshold": 0.3,
+          "role_blend": 0.1,
+          "trifecta_formation": [
+            2,
+            3,
+            4
+          ],
+          "races": 2714,
+          "bet_types": {
+            "wide": {
+              "tickets": 8142,
+              "hits": 2469,
+              "stake": 814200,
+              "return": 560520.0,
+              "race_count": 2714,
+              "sum_return_sq": 305006600.0,
+              "sum_stake_sq": 244260000,
+              "sum_stake_return": 168156000.0,
+              "hit_rate": 30.32,
+              "roi": 68.84,
+              "roi_ci95_normal_low": 65.53,
+              "roi_ci95_normal_high": 72.16,
+              "minimum_sample_met": true,
+              "candidate_pass": false,
+              "profit": -253680.0
+            },
+            "exacta": {
+              "tickets": 10856,
+              "hits": 922,
+              "stake": 1085600,
+              "return": 694610.0,
+              "race_count": 2714,
+              "sum_return_sq": 1588880300.0,
+              "sum_stake_sq": 434240000,
+              "sum_stake_return": 277844000.0,
+              "hit_rate": 8.49,
+              "roi": 63.98,
+              "roi_ci95_normal_low": 57.2,
+              "roi_ci95_normal_high": 70.77,
+              "minimum_sample_met": true,
+              "candidate_pass": false,
+              "profit": -390990.0
+            },
+            "trio": {
+              "tickets": 27140,
+              "hits": 1260,
+              "stake": 2714000,
+              "return": 1455290.0,
+              "race_count": 2714,
+              "sum_return_sq": 4574702500.0,
+              "sum_stake_sq": 2714000000,
+              "sum_stake_return": 1455290000.0,
+              "hit_rate": 4.64,
+              "roi": 53.62,
+              "roi_ci95_normal_low": 49.17,
+              "roi_ci95_normal_high": 58.07,
+              "minimum_sample_met": true,
+              "candidate_pass": false,
+              "profit": -1258710.0
+            },
+            "trifecta": {
+              "tickets": 21729,
+              "hits": 445,
+              "stake": 2172900,
+              "return": 1194790.0,
+              "race_count": 2714,
+              "sum_return_sq": 11810989100.0,
+              "sum_stake_sq": 1740050000,
+              "sum_stake_return": 956194000.0,
+              "hit_rate": 2.05,
+              "roi": 54.99,
+              "roi_ci95_normal_low": 45.4,
+              "roi_ci95_normal_high": 64.57,
+              "minimum_sample_met": true,
+              "candidate_pass": false,
+              "profit": -978110.0
+            }
+          },
+          "policy": "Fixed 0.30 calibrated top-win probability gate; role-specific trifecta ranking blend 0.10; 2-3-4 formation. Parameters are not selected on the holdout fold."
         }
       },
       {
@@ -94178,6 +94504,88 @@
               }
             }
           }
+        },
+        "integrated_strategy_E": {
+          "status": "evaluated",
+          "confidence_threshold": 0.3,
+          "role_blend": 0.1,
+          "trifecta_formation": [
+            2,
+            3,
+            4
+          ],
+          "races": 4118,
+          "bet_types": {
+            "wide": {
+              "tickets": 12354,
+              "hits": 3543,
+              "stake": 1235400,
+              "return": 844550.0,
+              "race_count": 4118,
+              "sum_return_sq": 476847700.0,
+              "sum_stake_sq": 370620000,
+              "sum_stake_return": 253365000.0,
+              "hit_rate": 28.68,
+              "roi": 68.36,
+              "roi_ci95_normal_low": 65.6,
+              "roi_ci95_normal_high": 71.13,
+              "minimum_sample_met": true,
+              "candidate_pass": false,
+              "profit": -390850.0
+            },
+            "exacta": {
+              "tickets": 16472,
+              "hits": 1283,
+              "stake": 1647200,
+              "return": 1054340.0,
+              "race_count": 4118,
+              "sum_return_sq": 2203691200.0,
+              "sum_stake_sq": 658880000,
+              "sum_stake_return": 421736000.0,
+              "hit_rate": 7.79,
+              "roi": 64.01,
+              "roi_ci95_normal_low": 58.77,
+              "roi_ci95_normal_high": 69.24,
+              "minimum_sample_met": true,
+              "candidate_pass": false,
+              "profit": -592860.0
+            },
+            "trio": {
+              "tickets": 41180,
+              "hits": 1895,
+              "stake": 4118000,
+              "return": 2367210.0,
+              "race_count": 4118,
+              "sum_return_sq": 10254081100.0,
+              "sum_stake_sq": 4118000000,
+              "sum_stake_return": 2367210000.0,
+              "hit_rate": 4.6,
+              "roi": 57.48,
+              "roi_ci95_normal_low": 53.0,
+              "roi_ci95_normal_high": 61.97,
+              "minimum_sample_met": true,
+              "candidate_pass": false,
+              "profit": -1750790.0
+            },
+            "trifecta": {
+              "tickets": 32954,
+              "hits": 683,
+              "stake": 3295400,
+              "return": 1955920.0,
+              "race_count": 4118,
+              "sum_return_sq": 15172191800.0,
+              "sum_stake_sq": 2637320000,
+              "sum_stake_return": 1566202000.0,
+              "hit_rate": 2.07,
+              "roi": 59.35,
+              "roi_ci95_normal_low": 52.25,
+              "roi_ci95_normal_high": 66.45,
+              "minimum_sample_met": true,
+              "candidate_pass": false,
+              "profit": -1339480.0
+            }
+          },
+          "policy": "Fixed 0.30 calibrated top-win probability gate; role-specific trifecta ranking blend 0.10; 2-3-4 formation. Parameters are not selected on the holdout fold."
         }
       }
     ],
