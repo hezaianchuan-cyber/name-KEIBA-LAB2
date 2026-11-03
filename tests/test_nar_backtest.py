@@ -1177,3 +1177,17 @@ class RaceRelativeFeatureTests(unittest.TestCase):
         }
         self.assertEqual(nb.race_relative_scores(first, weights),
                          nb.race_relative_scores(scaled, weights))
+
+
+class RaceRelativeMissingFeatureTests(unittest.TestCase):
+    def test_missing_feature_is_neutral_and_tied_with_half_score(self):
+        parts = {
+            "1": {"form": 0.9},
+            "2": {"form": None},
+            "3": {"form": 0.5},
+            "4": {"form": 0.1},
+        }
+        scores = nb.race_relative_scores(parts, {"form": 1.0})
+        self.assertAlmostEqual(scores["2"], scores["3"])
+        self.assertAlmostEqual(scores["1"], 1.0)
+        self.assertAlmostEqual(scores["4"], 0.0)
