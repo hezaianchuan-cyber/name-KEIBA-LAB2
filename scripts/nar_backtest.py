@@ -817,7 +817,7 @@ def preoff_ticket_type_backtest(payouts):
         payout = payouts.get(key)
         tickets = record.get("combination_predictions") or []
         if (captured.tzinfo is None or scheduled.tzinfo is None or captured >= scheduled
-                or not 5 <= minutes <= 15 or not payout or not payout.get("win") or not tickets):
+                or not 2 <= minutes <= 30 or not payout or not payout.get("win") or not tickets):
             continue
         records.append((str(record.get("date") or key[1]), tickets, payout))
 
