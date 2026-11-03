@@ -434,24 +434,109 @@ def top_k_winner_coverage(ranked, winners, ks=(5, 6, 7)):
             for k in ks}
 
 
+def build_trifecta_tickets(ranked, first_count=2, candidate_count=5):
+    """Build ordered trifecta tickets with independently adjustable 1st-place and coverage pools."""
+    nos = [str(h["no"]) for h in ranked[:candidate_count]]
+    first_candidates = nos[:min(first_count, len(nos))]
+    return [[first, second, third]
+            for first in first_candidates
+            for second in nos if second != first
+            for third in nos if third not in (first, second)]
+
+
 def build_fixed_tickets(ranked):
-    """Build a fixed, rank-based ticket portfolio for historical payout testing."""
+    """Build the fixed research portfolio; trifecta remains top-2 x top-5 (24 tickets)."""
     nos = [str(h["no"]) for h in ranked[:5]]
     if len(nos) < 3:
         return {}
     first_candidates = nos[:2]
     second_candidates = nos[:3]
-    tickets = {
+    return {
         "wide": [[nos[0],nos[1]],[nos[0],nos[2]],[nos[1],nos[2]]],
         "exacta": [[first,second] for first in first_candidates
                    for second in second_candidates if first != second],
         "trio": [list(combo) for combo in __import__("itertools").combinations(nos,3)],
-        "trifecta": [[first,second,third]
-                     for first in first_candidates
-                     for second in nos if second != first
-                     for third in nos if third not in (first,second)],
+        "trifecta": build_trifecta_tickets(ranked, 2, 5),
     }
-    return tickets
+
+
+def new_trifecta_diagnostics():
+    structures = {(first, pool): {"races": 0, "tickets": 0, "hits": 0,
+                                  "stake": 0, "return": 0}
+                  for first, pool in ((1,5),(2,5),(3,5),(2,6),(2,7))}
+    return {
+        "races": 0,
+        "winner_top1": 0, "winner_top2": 0, "winner_top3": 0,
+        "second_top2": 0, "second_top3": 0, "second_top5": 0, "second_top7": 0,
+        "third_top3": 0, "third_top5": 0, "third_top7": 0,
+        "all_podium_top5": 0, "all_podium_top6": 0, "all_podium_top7": 0,
+        "current_structure_exact_hit_races": 0,
+        "structures": structures,
+    }
+
+
+def update_trifecta_diagnostics(bucket, ranked, field, payout):
+    """Separate horse-role coverage from ordered-ticket hits and ticket-count effects."""
+    if not ranked:
+        return
+    rank = {str(h["no"]): i + 1 for i, h in enumerate(ranked)}
+    winners = {str(numbers[0]) for numbers, _ in payout.get("win", [])}
+    second = {str(h["no"]) for h in field if h.get("finish") == 2}
+    third = {str(h["no"]) for h in field if h.get("finish") == 3}
+    if not winners or not second or not third:
+        return
+    def covered(group, top_n):
+        return any(rank.get(no, 10**9) <= top_n for no in group)
+    bucket["races"] += 1
+    bucket["winner_top1"] += int(covered(winners, 1))
+    bucket["winner_top2"] += int(covered(winners, 2))
+    bucket["winner_top3"] += int(covered(winners, 3))
+    bucket["second_top2"] += int(covered(second, 2))
+    bucket["second_top3"] += int(covered(second, 3))
+    bucket["second_top5"] += int(covered(second, 5))
+    bucket["second_top7"] += int(covered(second, 7))
+    bucket["third_top3"] += int(covered(third, 3))
+    bucket["third_top5"] += int(covered(third, 5))
+    bucket["third_top7"] += int(covered(third, 7))
+    podium = winners | second | third
+    bucket["all_podium_top5"] += int(all(covered({no}, 5) for no in podium))
+    bucket["all_podium_top6"] += int(all(covered({no}, 6) for no in podium))
+    bucket["all_podium_top7"] += int(all(covered({no}, 7) for no in podium))
+    current = build_trifecta_tickets(ranked, 2, 5)
+    if any(payout_for("trifecta", ticket, payout) for ticket in current):
+        bucket["current_structure_exact_hit_races"] += 1
+    for (first_count, pool_size), stats in bucket["structures"].items():
+        tickets = build_trifecta_tickets(ranked, first_count, pool_size)
+        if not tickets:
+            continue
+        stats["races"] += 1
+        stats["tickets"] += len(tickets)
+        stats["stake"] += 100 * len(tickets)
+        returned = sum(payout_for("trifecta", ticket, payout) or 0 for ticket in tickets)
+        stats["return"] += returned
+        stats["hits"] += sum(1 for ticket in tickets if payout_for("trifecta", ticket, payout))
+
+
+def summarize_trifecta_diagnostics(bucket):
+    n = bucket["races"]
+    rate_keys = ("winner_top1","winner_top2","winner_top3","second_top2","second_top3",
+                 "second_top5","second_top7","third_top3","third_top5","third_top7",
+                 "all_podium_top5","all_podium_top6","all_podium_top7",
+                 "current_structure_exact_hit_races")
+    output = {key: bucket[key] for key in ("races", *rate_keys)}
+    output["rates"] = {key: round(100 * bucket[key] / n, 2) if n else None for key in rate_keys}
+    structures = {}
+    for (first_count, pool_size), stats in bucket["structures"].items():
+        structures[f"first{first_count}_pool{pool_size}"] = {
+            **stats,
+            "hit_rate": round(100 * stats["hits"] / stats["tickets"], 4) if stats["tickets"] else None,
+            "roi": round(100 * stats["return"] / stats["stake"], 2) if stats["stake"] else None,
+            "profit": stats["return"] - stats["stake"],
+            "tickets_per_race": round(stats["tickets"] / stats["races"], 2) if stats["races"] else None,
+        }
+    output["structures"] = structures
+    output["interpretation"] = "Role coverage measures whether actual 1st/2nd/3rd horses are inside each rank pool. Structure hit rate and ROI also depend on order and ticket count; wider pools are not assumed better."
+    return output
 
 
 def run_backtest(races, horses, payouts):
@@ -723,7 +808,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     results = {name:{"races":0,"winner_top1":0,"winner_top3":0,
                      "winner_topk":{str(k):0 for k in (5,6,7)},
                      "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0}
-                                  for kind in kinds}} for name in models}
+                                  for kind in kinds},
+                     "trifecta_diagnostics":new_trifecta_diagnostics()} for name in models}
 
     history = defaultdict(list)
     sire_stats = defaultdict(lambda:{"runs":0,"top3":0})
@@ -822,6 +908,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             for k, hit in top_k_winner_coverage(ranked, winners).items():
                 m["winner_topk"][k] += hit
             ticket_map=build_fixed_tickets(ranked)
+            update_trifecta_diagnostics(m["trifecta_diagnostics"], ranked, field, payout)
             if model_name in ("baseline", "trained_no_recent_history"):
                 for dimension, label in race_segment_labels(race).items():
                     for condition_kind in condition_bet_types:
@@ -874,6 +961,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                 "roi":round(100*bm["return"]/bm["stake"],2) if bm["stake"] else None,
                 "profit":bm["return"]-bm["stake"]}
         out[name]={**m,"bet_types":bet_summary,
+          "trifecta_diagnostics":summarize_trifecta_diagnostics(m["trifecta_diagnostics"]),
           "winner_top1_rate":round(100*m["winner_top1"]/n,2),
           "winner_top3_rate":round(100*m["winner_top3"]/n,2),
           "winner_topk_rate":{k:round(100*v/n,2) for k,v in m["winner_topk"].items()},
