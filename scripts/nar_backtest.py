@@ -568,6 +568,27 @@ def build_live_history(races, horses):
         "note": "Snapshot through period end; only use for target dates after training_period.end. Historical corner-position features are included where available."
     }
 
+def race_segment_labels(race):
+    """Stable, source-grounded condition buckets for out-of-sample diagnostics."""
+    labels = {}
+    for key in ("venue", "surface", "going"):
+        value = norm(race.get(key))
+        if value:
+            labels[key] = value
+    distance = number(race.get("distance"))
+    if distance is not None and distance > 0:
+        if distance <= 1200:
+            band = "short_<=1200m"
+        elif distance <= 1600:
+            band = "mile_1201-1600m"
+        elif distance <= 2000:
+            band = "middle_1601-2000m"
+        else:
+            band = "long_>2000m"
+        labels["distance_band"] = band
+    return labels
+
+
 def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     train_set = set(train_dates)
     test_set = set(test_dates)
@@ -624,6 +645,11 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     ordered = sorted(test_races.values(), key=lambda r:(r["date"],r["venue"],int(r["race"])))
     pending=[]; current=None
     test_calibration_records=[]
+    segment_stats = defaultdict(lambda: {
+        "races": 0, "winner_top1": 0, "winner_top3": 0,
+        "bet_types": {kind: {"tickets": 0, "hits": 0, "stake": 0, "return": 0}
+                      for kind in ("win","place","wide","quinella","exacta","trio","trifecta")}
+    })
     def commit(items):
         for field,race in items:
             performance = field_performance_features(field)
@@ -676,6 +702,23 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             if ranked[0]["no"] in winners: m["winner_top1"]+=1
             if any(h["no"] in winners for h in ranked[:3]): m["winner_top3"]+=1
             ticket_map=build_fixed_tickets(ranked)
+            if model_name == "trained":
+                winners_in_race = winners
+                labels = race_segment_labels(race)
+                for dimension, label in labels.items():
+                    segment = segment_stats[(dimension, label)]
+                    segment["races"] += 1
+                    segment["winner_top1"] += int(ranked[0]["no"] in winners_in_race)
+                    segment["winner_top3"] += int(any(h["no"] in winners_in_race for h in ranked[:3]))
+                    for segment_kind, segment_tickets in ticket_map.items():
+                        bucket = segment["bet_types"][segment_kind]
+                        for segment_ticket in segment_tickets:
+                            bucket["tickets"] += 1
+                            bucket["stake"] += 100
+                            segment_return = payout_for(segment_kind, segment_ticket, payout) or 0
+                            if segment_return:
+                                bucket["hits"] += 1
+                                bucket["return"] += segment_return
             for kind,tickets in ticket_map.items():
                 bm=m["bet_types"][kind]
                 for ticket in tickets:
@@ -702,11 +745,29 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
           "wide_stake":bet_summary["wide"]["stake"],"wide_return":bet_summary["wide"]["return"],
           "win_roi":bet_summary["win"]["roi"],"place_roi":bet_summary["place"]["roi"],
           "wide_roi":bet_summary["wide"]["roi"]}
+    segment_output = {}
+    for (dimension, label), segment in sorted(segment_stats.items()):
+        n = segment["races"] or 1
+        bet_types = {}
+        for kind, bucket in segment["bet_types"].items():
+            bet_types[kind] = {
+                **bucket,
+                "hit_rate": round(100 * bucket["hits"] / bucket["tickets"], 2) if bucket["tickets"] else None,
+                "roi": round(100 * bucket["return"] / bucket["stake"], 2) if bucket["stake"] else None,
+                "profit": bucket["return"] - bucket["stake"],
+            }
+        segment_output[f"{dimension}:{label}"] = {
+            "dimension": dimension, "label": label, "races": segment["races"],
+            "winner_top1_rate": round(100 * segment["winner_top1"] / n, 2),
+            "winner_top3_rate": round(100 * segment["winner_top3"] / n, 2),
+            "bet_types": bet_types,
+        }
     return {"train_start":min(train_dates).isoformat(),"train_end":max(train_dates).isoformat(),
             "test_start":min(test_dates).isoformat(),"test_end":max(test_dates).isoformat(),
             "train_races":len(train_races),"test_races":len(ordered),
             "training_updates":updates,"trained_weights":learned,"temperature":round(temperature,4),
-            "calibration":calibration_metrics(test_calibration_records,temperature),"models":out}
+            "calibration":calibration_metrics(test_calibration_records,temperature),"models":out,
+            "trained_condition_segments":segment_output}
 
 
 def load_odds_snapshot_records():
