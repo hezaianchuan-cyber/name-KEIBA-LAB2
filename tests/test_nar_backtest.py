@@ -207,6 +207,46 @@ class PreoffValueBacktestTests(unittest.TestCase):
 
 
 
+
+class PerBetTypeProbabilityTests(unittest.TestCase):
+    def test_plackett_luce_ticket_probabilities_are_consistent(self):
+        probabilities = {"1":0.5,"2":0.3,"3":0.2}
+        self.assertAlmostEqual(sum(capture.combination_probability("win",[n],probabilities)
+                                   for n in probabilities),1.0,places=10)
+        self.assertAlmostEqual(sum(capture.combination_probability("place",[n],probabilities)
+                                   for n in probabilities),3.0,places=10)
+        pairs = [(a,b) for a in probabilities for b in probabilities if a < b]
+        self.assertAlmostEqual(sum(capture.combination_probability("quinella",[a,b],probabilities)
+                                   for a,b in pairs),1.0,places=10)
+        self.assertAlmostEqual(sum(capture.combination_probability("wide",[a,b],probabilities)
+                                   for a,b in pairs),3.0,places=10)
+        self.assertAlmostEqual(capture.combination_probability("trio",["1","2","3"],probabilities),1.0,places=10)
+        exactas = [(a,b) for a in probabilities for b in probabilities if a != b]
+        self.assertAlmostEqual(sum(capture.combination_probability("exacta",[a,b],probabilities)
+                                   for a,b in exactas),1.0,places=10)
+        trifectas = [(a,b,c) for a in probabilities for b in probabilities for c in probabilities
+                     if len({a,b,c}) == 3]
+        self.assertAlmostEqual(sum(capture.combination_probability("trifecta",[a,b,c],probabilities)
+                                   for a,b,c in trifectas),1.0,places=10)
+
+    def test_snapshot_combination_ev_uses_each_market_quote(self):
+        horses = [
+            {"horse_no":"1","win_probability":0.5},
+            {"horse_no":"2","win_probability":0.3},
+            {"horse_no":"3","win_probability":0.2},
+        ]
+        odds = [
+            {"type":"単勝","n1":"01","odds":2.5},
+            {"type":"馬連","n1":"01","n2":"02","odds":4.0},
+            {"type":"3連複","n1":"01","n2":"02","n3":"03","odds":8.0},
+            {"type":"3連単","n1":"01","n2":"02","n3":"03","odds":15.0},
+        ]
+        result = capture.predict_combinations(odds, horses)
+        self.assertEqual([x["bet_type"] for x in result],["win","quinella","trio","trifecta"])
+        self.assertTrue(all(x["expected_value"] > 0 for x in result))
+        self.assertEqual(result[0]["numbers"],["1"])
+
+
 class FieldSizeNormalizationTests(unittest.TestCase):
     def test_finish_rank_is_normalized_by_field_size(self):
         self.assertEqual(nb.rank_quality(1, 16), 100.0)
