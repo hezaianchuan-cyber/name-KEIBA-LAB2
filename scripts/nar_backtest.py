@@ -360,6 +360,29 @@ def payout_for(kind, ticket, p):
             return pay or 0
     return 0
 
+def build_fixed_tickets(ranked):
+    """Build a fixed, rank-based ticket portfolio for historical payout testing."""
+    nos = [str(h["no"]) for h in ranked[:5]]
+    if len(nos) < 3:
+        return {}
+    first_candidates = nos[:2]
+    second_candidates = nos[:3]
+    tickets = {
+        "win": [[no] for no in nos[:2]],
+        "place": [[no] for no in nos[:3]],
+        "wide": [[nos[0],nos[1]],[nos[0],nos[2]],[nos[1],nos[2]]],
+        "quinella": [[nos[0],nos[1]]],
+        "exacta": [[first,second] for first in first_candidates
+                   for second in second_candidates if first != second],
+        "trio": [list(combo) for combo in __import__("itertools").combinations(nos,3)],
+        "trifecta": [[first,second,third]
+                     for first in first_candidates
+                     for second in second_candidates if second != first
+                     for third in nos if third not in (first,second)],
+    }
+    return tickets
+
+
 def run_backtest(races, horses, payouts):
     history = defaultdict(list)
     sire_stats = defaultdict(lambda: {"runs":0,"top3":0})
@@ -412,18 +435,8 @@ def run_backtest(races, horses, payouts):
             calibration_records.append({"scores":[score for score,_ in scored],
                                         "winner_indices":winner_indices})
         ranked = [h for score,h in sorted(scored,key=lambda item:item[0],reverse=True)]
-        top = ranked[:6]
-        if len(top) < 3: continue
-        nos = [h["no"] for h in top]
-        t = {
-            "win":[[nos[0]]],
-            "place":[[x] for x in nos[:3]],
-            "wide":[[nos[0],nos[1]],[nos[0],nos[2]],[nos[1],nos[2]]],
-            "quinella":[[nos[0],nos[1]]],
-            "exacta":[[nos[0],nos[1]]],
-            "trio":[nos[:3]],
-            "trifecta":[nos[:3]],
-        }
+        t = build_fixed_tickets(ranked)
+        if not t: continue
         payout = payouts.get(key)
         if payout and payout.get("win"):
             for kind, tickets in t.items():
@@ -565,16 +578,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             m=results[model_name]; m["races"]+=1
             if ranked[0]["no"] in winners: m["winner_top1"]+=1
             if any(h["no"] in winners for h in ranked[:3]): m["winner_top3"]+=1
-            n=[h["no"] for h in ranked[:3]]
-            ticket_map={
-                "win":[[n[0]]],
-                "place":[[x] for x in n],
-                "wide":[[n[0],n[1]],[n[0],n[2]],[n[1],n[2]]],
-                "quinella":[[n[0],n[1]]],
-                "exacta":[[n[0],n[1]]],
-                "trio":[n[:3]],
-                "trifecta":[n[:3]],
-            }
+            ticket_map=build_fixed_tickets(ranked)
             for kind,tickets in ticket_map.items():
                 bm=m["bet_types"][kind]
                 for ticket in tickets:
@@ -1011,8 +1015,9 @@ def main():
             "odds_feature": False,
             "market_value_policy": "Simulate win bets only when calibrated model probability multiplied by timestamped official pre-off win odds meets a fixed threshold; thresholds are reported independently and not selected on test folds.",
             "probability_calibration": "temperature fitted on chronological prequential training predictions; out-of-sample calibration reported per walk-forward fold",
-            "ticket_policy": "fixed top-rank tickets per race; 100 JPY per ticket; not a betting recommendation",
-            "ticket_counts_per_race": {"win":1,"place":3,"wide":3,"quinella":1,"exacta":1,"trio":1,"trifecta":1},
+            "ticket_policy": "Expanded fixed top-rank ticket portfolio per race; 100 JPY per ticket; not a betting recommendation",
+            "ticket_counts_per_race": {"win":2,"place":3,"wide":3,"quinella":1,"exacta":4,"trio":10,"trifecta":12},
+            "ticket_generation": "Top-5 rank-based portfolio: win top 2; place top 3; wide all pairs among top 3; quinella top 2; exacta first-place top 2 x second-place top 3 excluding same horse (4); trio all combinations from top 5 (10); trifecta first-place top 2 x second-place top 3 excluding first x third-place remaining top 5 (12). Each ticket costs 100 JPY.",
             "limitations": ["No historical pre-race odds feature; NAR monthly odds are confirmed odds and are not used.",
                             "All payout rows for dead-heat races are retained and matched across every winning combination.",
                             "Ticket ranks use field-size-normalized historical finishes; probabilities are temperature-calibrated and evaluated in rolling holdout folds.",
