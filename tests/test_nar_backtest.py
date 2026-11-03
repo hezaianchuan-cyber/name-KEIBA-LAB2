@@ -365,12 +365,13 @@ class CornerPositionAndPaceTests(unittest.TestCase):
         self.assertAlmostEqual(features["first_corner_pct"], 2/9)
         self.assertAlmostEqual(features["last_corner_pct"], 4/9)
 
-    def test_running_style_requires_history_and_classifies_all_four_styles(self):
+    def test_running_style_uses_both_early_and_late_corner_positions(self):
         self.assertEqual(nb.pace_style([])["style"], "unknown")
-        self.assertEqual(nb.pace_style([{"first_corner_pct":0.05}])["style"], "逃げ")
-        self.assertEqual(nb.pace_style([{"first_corner_pct":0.25}])["style"], "先行")
-        self.assertEqual(nb.pace_style([{"first_corner_pct":0.55}])["style"], "差し")
-        self.assertEqual(nb.pace_style([{"first_corner_pct":0.85}])["style"], "追込")
+        self.assertEqual(nb.pace_style([{"first_corner_pct":0.05,"last_corner_pct":0.08}])["style"], "逃げ")
+        self.assertEqual(nb.pace_style([{"first_corner_pct":0.25,"last_corner_pct":0.30}])["style"], "先行")
+        self.assertEqual(nb.pace_style([{"first_corner_pct":0.75,"last_corner_pct":0.30}])["style"], "差し")
+        self.assertEqual(nb.pace_style([{"first_corner_pct":0.85,"last_corner_pct":0.90}])["style"], "追込")
+        self.assertGreater(nb.pace_style([{"first_corner_pct":0.75,"last_corner_pct":0.30}])["position_gain"], 0)
 
     def test_pace_adjustment_only_uses_prior_positions_and_counts_multiple_leaders(self):
         field = [{"no":"1","name":"逃げA"},{"no":"2","name":"逃げB"},
