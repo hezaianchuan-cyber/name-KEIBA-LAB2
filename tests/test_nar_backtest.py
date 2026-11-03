@@ -329,6 +329,12 @@ class IndependentBetTypeBacktestTests(unittest.TestCase):
 
 
 class FieldSizeNormalizationTests(unittest.TestCase):
+    def test_numeric_zero_is_not_treated_as_missing(self):
+        self.assertEqual(nb.number(0), 0.0)
+        self.assertEqual(nb.number("0"), 0.0)
+        self.assertIsNone(nb.number(None))
+        self.assertIsNone(nb.number(""))
+
     def test_finish_rank_is_normalized_by_field_size(self):
         self.assertEqual(nb.rank_quality(1, 16), 100.0)
         self.assertAlmostEqual(nb.rank_quality(8, 16), 53.3333333333, places=6)
