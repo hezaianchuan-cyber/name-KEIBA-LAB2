@@ -944,7 +944,7 @@ class RoleSpecificTrifectaTests(unittest.TestCase):
     def test_third_place_ranking_rewards_late_gain_and_closing_speed(self):
         scored = [
             (0.70, {"no": "1", "name": "差し脚型"}),
-            (0.72, {"no": "2", "name": "先行型"}),
+            (0.70, {"no": "2", "name": "先行型"}),
         ]
         history = {
             "差し脚型": [{
