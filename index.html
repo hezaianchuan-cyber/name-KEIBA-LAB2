@@ -206,7 +206,25 @@ function setCloudStatus(message,ok=false){
  if($('cloudSignOut'))$('cloudSignOut').disabled=!cloudUser;
 }
 function initCloudSync(){
- if(!window.supabase?.createClient){setCloudStatus('Supabaseライブラリを読み込めません。通信環境を確認してください。');return;}
+ // Registration uses the Supabase Auth HTTP endpoint directly so it still works
+ // if the optional Supabase JS CDN fails to load.
+ $('cloudSignUp').onclick=async()=>{
+  const email=$('cloudEmail').value.trim(),password=$('cloudPassword').value;
+  if(!email||password.length<8){setCloudStatus('メールアドレスと8文字以上のパスワードを入力してください。');return;}
+  $('cloudSignUp').disabled=true;
+  setCloudStatus('アカウントを作成しています…');
+  try{
+   const response=await fetch(KEIBA_SUPABASE_URL+'/auth/v1/signup',{method:'POST',headers:{'Content-Type':'application/json','apikey':KEIBA_SUPABASE_KEY},body:JSON.stringify({email,password})});
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok)throw new Error(result.msg||result.message||result.error_description||result.error||('HTTP '+response.status));
+   if(result.access_token){
+    setCloudStatus('アカウントを作成しました。ログイン状態を確認しています。',true);
+    if(window.supabase?.createClient){keibaSupabase=window.supabase.createClient(KEIBA_SUPABASE_URL,KEIBA_SUPABASE_KEY);await keibaSupabase.auth.setSession({access_token:result.access_token,refresh_token:result.refresh_token});}
+   }else setCloudStatus('確認メールを送信しました。メール内のリンクで登録を確認してからログインしてください。',true);
+  }catch(e){setCloudStatus('登録できません：'+(e.message||String(e)));}
+  finally{$('cloudSignUp').disabled=false;}
+ };
+ if(!window.supabase?.createClient){setCloudStatus('登録機能は利用できますが、ログイン・履歴同期用ライブラリを読み込めません。登録後にページを再読み込みしてください。');return;}
  keibaSupabase=window.supabase.createClient(KEIBA_SUPABASE_URL,KEIBA_SUPABASE_KEY);
  $('cloudSignIn').onclick=async()=>{
   const email=$('cloudEmail').value.trim(),password=$('cloudPassword').value;
@@ -215,16 +233,6 @@ function initCloudSync(){
   const {error}=await keibaSupabase.auth.signInWithPassword({email,password});
   $('cloudSignIn').disabled=false;
   if(error)setCloudStatus('ログインできません：'+error.message);
- };
- $('cloudSignUp').onclick=async()=>{
-  const email=$('cloudEmail').value.trim(),password=$('cloudPassword').value;
-  if(!email||password.length<8){setCloudStatus('メールアドレスと8文字以上のパスワードを入力してください。');return;}
-  $('cloudSignUp').disabled=true;
-  const {data,error}=await keibaSupabase.auth.signUp({email,password});
-  $('cloudSignUp').disabled=false;
-  if(error)setCloudStatus('登録できません：'+error.message);
-  else if(!data.session)setCloudStatus('確認メールを送信しました。メール内のリンクで登録を確認してからログインしてください。',true);
-  else setCloudStatus('アカウントを作成しました。同期を開始します。',true);
  };
  $('cloudSignOut').onclick=async()=>{const {error}=await keibaSupabase.auth.signOut();if(error)setCloudStatus('ログアウトできません：'+error.message);};
  keibaSupabase.auth.onAuthStateChange((event,session)=>{
