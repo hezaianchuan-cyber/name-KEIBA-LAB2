@@ -1196,3 +1196,26 @@ class RaceRelativeMissingFeatureTests(unittest.TestCase):
         self.assertAlmostEqual(scores["2"], scores["3"])
         self.assertAlmostEqual(scores["1"], 1.0)
         self.assertAlmostEqual(scores["4"], 0.0)
+
+
+class TrifectaFormationUniquenessTests(unittest.TestCase):
+    def test_formation_never_repeats_a_horse_within_a_ticket(self):
+        ranked = [{"no": str(i)} for i in range(1, 9)]
+        for counts in ((1, 4, 4), (2, 3, 4), (2, 5, 5), (3, 5, 4)):
+            tickets = nb.build_trifecta_formation(ranked, *counts)
+            self.assertTrue(tickets)
+            self.assertTrue(all(len(ticket) == 3 and len(set(ticket)) == 3
+                                for ticket in tickets))
+            self.assertEqual(len(tickets), len({tuple(ticket) for ticket in tickets}))
+
+    def test_role_formation_never_repeats_a_horse_within_a_ticket(self):
+        role_rankings = {
+            1: [{"no": str(i)} for i in (1, 2, 3, 4)],
+            2: [{"no": str(i)} for i in (2, 1, 5, 6)],
+            3: [{"no": str(i)} for i in (1, 2, 3, 7)],
+        }
+        tickets = nb.build_role_trifecta_formation(role_rankings, 2, 3, 4)
+        self.assertTrue(tickets)
+        self.assertTrue(all(len(ticket) == 3 and len(set(ticket)) == 3
+                            for ticket in tickets))
+        self.assertEqual(len(tickets), len({tuple(ticket) for ticket in tickets}))
