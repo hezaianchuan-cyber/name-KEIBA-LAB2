@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-03T14:27:26.997008+00:00",
+  "generated_at": "2026-11-03T15:50:21.579556+00:00",
   "period": {
     "start": "2022-11-03",
     "end": "2026-11-02"
@@ -311321,6 +311321,17 @@
       "exacta": 0,
       "trio": 0,
       "trifecta": 0
+    },
+    "risk_diagnostics": {
+      "bet_races": 0,
+      "losing_races": 0,
+      "losing_race_rate": null,
+      "max_drawdown_jpy": 0,
+      "max_losing_streak_races": 0,
+      "max_losing_streak_loss_jpy": 0,
+      "worst_10_consecutive_race_roi_percent": null,
+      "net_profit_jpy": 0,
+      "note": "Drawdown is measured from the running peak of cumulative net profit, starting at zero; no assumed starting bankroll is used."
     },
     "stake_rule": "Up to 20 qualified tickets; target stake is 100 JPY per qualified ticket (max 2,000 JPY), allocated proportionally by max(0.0001, (EV-1) * sqrt(probability)) in 100-yen units. Unused budget is not forced into a race.",
     "selection_rule": "Use only bet-type thresholds that passed development-date validation. For each holdout race, choose the eligible bet type with the highest mean expected value using same-snapshot pre-off odds; if none qualifies, skip the race.",
