@@ -2169,28 +2169,52 @@ def race_budget_auto_strategy_backtest(payouts, type_validation):
                               len(item[1][1]),
                               -kinds.index(item[0]))
         )
-        # The cap is implemented as at most twenty 100-yen tickets per race.
-        # Fewer qualified candidates mean less spend; the unused amount is not forced.
+        # Match the app: up to twenty qualified tickets, with a 100-yen
+        # minimum unit and EV x sqrt(probability) weighting. The target spend
+        # is 100 yen per qualified ticket, capped at 2,000 yen; unused budget
+        # is never forced into a race.
         selected = candidates[:20]
-        race_stake = 100 * len(selected)
-        race_return = sum(
-            payout_for(chosen_kind, [str(x) for x in ticket.get("numbers") or []], payout) or 0
+        weights = [
+            max(0.0001, (number(ticket.get("expected_value")) - 1.0) *
+                math.sqrt(max(number(ticket.get("probability")) or 0.000001, 0.000001)))
             for ticket in selected
-        )
-        race_hits = sum(
-            1 for ticket in selected
-            if payout_for(chosen_kind, [str(x) for x in ticket.get("numbers") or []], payout)
-        )
+        ]
+        weight_total = sum(weights)
+        target_stake = min(2000, len(selected) * 100)
+        allocations = [
+            (ticket, math.floor((target_stake * weight / weight_total) / 100) * 100
+             if weight_total else 0)
+            for ticket, weight in zip(selected, weights)
+        ]
+        allocations = [(ticket, amount) for ticket, amount in allocations if amount >= 100]
+        race_stake = sum(amount for _, amount in allocations)
+        index = 0
+        while allocations and race_stake + 100 <= target_stake:
+            ticket, amount = allocations[index]
+            allocations[index] = (ticket, amount + 100)
+            race_stake += 100
+            index = (index + 1) % len(allocations)
+        race_return = 0
+        race_hits = 0
+        for ticket, amount in allocations:
+            pay = payout_for(chosen_kind, [str(x) for x in ticket.get("numbers") or []], payout) or 0
+            if pay:
+                race_hits += 1
+                race_return += int(pay * amount / 100)
         if race_stake > 2000:
             raise AssertionError("per-race stake exceeded JPY 2,000")
-        races_with_bets += 1
-        tickets_count += len(selected)
-        hits += race_hits
-        stake += race_stake
-        returned += race_return
-        max_race_stake = max(max_race_stake, race_stake)
-        selected_type_counts[chosen_kind] += 1
-        race_results.append((race_stake, race_return))
+        if race_stake:
+            races_with_bets += 1
+            tickets_count += len(allocations)
+            hits += race_hits
+            stake += race_stake
+            returned += race_return
+            max_race_stake = max(max_race_stake, race_stake)
+            selected_type_counts[chosen_kind] += 1
+            race_results.append((race_stake, race_return))
+        else:
+            skipped += 1
+            skip_reasons["no_qualifying_ticket"] += 1
 
     ci_low = ci_high = None
     if len(race_results) >= 30:
@@ -2245,7 +2269,7 @@ def race_budget_auto_strategy_backtest(payouts, type_validation):
         "max_race_stake_jpy": max_race_stake,
         "race_stake_cap_jpy": 2000,
         "selected_bet_type_race_counts": selected_type_counts,
-        "stake_rule": "100 JPY per qualified ticket, up to 20 tickets per race; never spend the unused portion just to reach the cap.",
+        "stake_rule": "Up to 20 qualified tickets; target stake is 100 JPY per qualified ticket (max 2,000 JPY), allocated proportionally by max(0.0001, (EV-1) * sqrt(probability)) in 100-yen units. Unused budget is not forced into a race.",
         "selection_rule": "Use only bet-type thresholds that passed development-date validation. For each holdout race, choose the eligible bet type with the highest mean expected value using same-snapshot pre-off odds; if none qualifies, skip the race.",
         "profitability_rule": "At least 100 holdout races with bets and 300 tickets, plus a race-cluster bootstrap 95% ROI lower bound above 100%.",
         "note": "ROI is a historical simulation using official settled payouts, not proof of future profit. If current-version snapshots are too few, the workflow reports insufficient evidence rather than inventing results."
