@@ -468,7 +468,9 @@ def build_fixed_tickets(ranked):
 
 def new_trifecta_diagnostics():
     structures = {(first, second, third): {"races": 0, "tickets": 0, "hits": 0,
-                                               "stake": 0, "return": 0}
+                                               "hit_races": 0, "stake": 0, "return": 0,
+                                               "sum_return_sq": 0, "sum_stake_sq": 0,
+                                               "sum_stake_return": 0}
                   for first, second, third in (
                       (1,5,5), (2,4,5), (2,5,4), (2,5,5),
                       (2,5,6), (2,6,5), (3,5,5), (2,6,6), (2,7,7)
@@ -519,12 +521,18 @@ def update_trifecta_diagnostics(bucket, ranked, field, payout):
         tickets = build_trifecta_formation(ranked, first_count, second_count, third_count)
         if not tickets:
             continue
+        race_stake = 100 * len(tickets)
+        returned = sum(payout_for("trifecta", ticket, payout) or 0 for ticket in tickets)
+        race_hits = sum(1 for ticket in tickets if payout_for("trifecta", ticket, payout))
         stats["races"] += 1
         stats["tickets"] += len(tickets)
-        stats["stake"] += 100 * len(tickets)
-        returned = sum(payout_for("trifecta", ticket, payout) or 0 for ticket in tickets)
+        stats["stake"] += race_stake
         stats["return"] += returned
-        stats["hits"] += sum(1 for ticket in tickets if payout_for("trifecta", ticket, payout))
+        stats["hits"] += race_hits
+        stats["hit_races"] += int(race_hits > 0)
+        stats["sum_return_sq"] += returned * returned
+        stats["sum_stake_sq"] += race_stake * race_stake
+        stats["sum_stake_return"] += race_stake * returned
 
 
 def summarize_trifecta_diagnostics(bucket):
@@ -538,12 +546,26 @@ def summarize_trifecta_diagnostics(bucket):
     structures = {}
     for formation, stats in bucket["structures"].items():
         first_count, second_count, third_count = formation
+        n = stats["races"]
+        roi = 100 * stats["return"] / stats["stake"] if stats["stake"] else None
+        ci_low = ci_high = None
+        if n > 1 and roi is not None:
+            ratio = roi / 100
+            sum_z_sq = (stats["sum_return_sq"] - 2 * ratio * stats["sum_stake_return"]
+                        + ratio * ratio * stats["sum_stake_sq"])
+            variance = max(0.0, sum_z_sq / (n - 1))
+            mean_stake = stats["stake"] / n
+            standard_error = 100 * (variance / n) ** 0.5 / mean_stake if mean_stake else 0
+            ci_low, ci_high = round(roi - 1.96 * standard_error, 2), round(roi + 1.96 * standard_error, 2)
         structures[f"{first_count}-{second_count}-{third_count}"] = {
-            **stats,
+            "races": n, "tickets": stats["tickets"], "hits": stats["hits"],
+            "hit_races": stats["hit_races"], "stake": stats["stake"], "return": stats["return"],
             "hit_rate": round(100 * stats["hits"] / stats["tickets"], 4) if stats["tickets"] else None,
-            "roi": round(100 * stats["return"] / stats["stake"], 2) if stats["stake"] else None,
+            "race_hit_rate": round(100 * stats["hit_races"] / n, 2) if n else None,
+            "roi": round(roi, 2) if roi is not None else None,
+            "roi_ci95_normal_low": ci_low, "roi_ci95_normal_high": ci_high,
             "profit": stats["return"] - stats["stake"],
-            "tickets_per_race": round(stats["tickets"] / stats["races"], 2) if stats["races"] else None,
+            "tickets_per_race": round(stats["tickets"] / n, 2) if n else None,
         }
     output["structures"] = structures
     output["interpretation"] = "Role coverage measures whether actual 1st/2nd/3rd horses are inside each rank pool. Structure hit rate and ROI also depend on order and ticket count; wider pools are not assumed better."
@@ -563,7 +585,8 @@ def new_trio_diagnostics():
         "all_podium_top4": 0, "all_podium_top5": 0,
         "all_podium_top6": 0, "all_podium_top7": 0,
         "structures": {
-            pool: {"races": 0, "tickets": 0, "hits": 0, "stake": 0, "return": 0}
+            pool: {"races": 0, "tickets": 0, "hits": 0, "hit_races": 0, "stake": 0, "return": 0,
+                   "sum_return_sq": 0, "sum_stake_sq": 0, "sum_stake_return": 0}
             for pool in (4, 5, 6, 7)
         },
     }
@@ -585,12 +608,18 @@ def update_trio_diagnostics(bucket, ranked, field, payout):
         tickets = build_trio_tickets(ranked, pool)
         if not tickets:
             continue
+        race_stake = 100 * len(tickets)
+        returned = sum(payout_for("trio", ticket, payout) or 0 for ticket in tickets)
+        race_hits = sum(1 for ticket in tickets if payout_for("trio", ticket, payout))
         stats["races"] += 1
         stats["tickets"] += len(tickets)
-        stats["stake"] += 100 * len(tickets)
-        returned = sum(payout_for("trio", ticket, payout) or 0 for ticket in tickets)
+        stats["stake"] += race_stake
         stats["return"] += returned
-        stats["hits"] += sum(1 for ticket in tickets if payout_for("trio", ticket, payout))
+        stats["hits"] += race_hits
+        stats["hit_races"] += int(race_hits > 0)
+        stats["sum_return_sq"] += returned * returned
+        stats["sum_stake_sq"] += race_stake * race_stake
+        stats["sum_stake_return"] += race_stake * returned
 
 
 def summarize_trio_diagnostics(bucket):
@@ -600,12 +629,26 @@ def summarize_trio_diagnostics(bucket):
     output["rates"] = {key: round(100 * bucket[key] / n, 2) if n else None for key in keys}
     structures = {}
     for pool, stats in bucket["structures"].items():
+        n = stats["races"]
+        roi = 100 * stats["return"] / stats["stake"] if stats["stake"] else None
+        ci_low = ci_high = None
+        if n > 1 and roi is not None:
+            ratio = roi / 100
+            sum_z_sq = (stats["sum_return_sq"] - 2 * ratio * stats["sum_stake_return"]
+                        + ratio * ratio * stats["sum_stake_sq"])
+            variance = max(0.0, sum_z_sq / (n - 1))
+            mean_stake = stats["stake"] / n
+            standard_error = 100 * (variance / n) ** 0.5 / mean_stake if mean_stake else 0
+            ci_low, ci_high = round(roi - 1.96 * standard_error, 2), round(roi + 1.96 * standard_error, 2)
         structures[f"top{pool}"] = {
-            **stats,
+            "races": n, "tickets": stats["tickets"], "hits": stats["hits"],
+            "hit_races": stats["hit_races"], "stake": stats["stake"], "return": stats["return"],
             "hit_rate": round(100 * stats["hits"] / stats["tickets"], 4) if stats["tickets"] else None,
-            "roi": round(100 * stats["return"] / stats["stake"], 2) if stats["stake"] else None,
+            "race_hit_rate": round(100 * stats["hit_races"] / n, 2) if n else None,
+            "roi": round(roi, 2) if roi is not None else None,
+            "roi_ci95_normal_low": ci_low, "roi_ci95_normal_high": ci_high,
             "profit": stats["return"] - stats["stake"],
-            "tickets_per_race": round(stats["tickets"] / stats["races"], 2) if stats["races"] else None,
+            "tickets_per_race": round(stats["tickets"] / n, 2) if n else None,
         }
     output["structures"] = structures
     output["interpretation"] = "Trio tickets are unordered combinations. Top-N coverage and ticket ROI are reported separately; top5 is the unchanged fixed baseline."
