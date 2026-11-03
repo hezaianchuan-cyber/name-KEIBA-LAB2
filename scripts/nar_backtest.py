@@ -1447,6 +1447,120 @@ def data_quality_audit(races, horses, payouts):
     }
 
 
+
+def preoff_ranking_strategy_backtest(payouts):
+    """Compare candidate ranking rules on timestamped pre-off odds, with date holdout."""
+    top_n = {"win":2, "place":3, "wide":3, "quinella":1,
+             "exacta":4, "trio":10, "trifecta":24}
+    strategies = ("expected_value", "probability", "odds")
+    records = []
+    for record in load_odds_snapshots().values():
+        parts = str(record.get("race_key") or "").split("|")
+        if len(parts) != 3:
+            continue
+        key = race_key(parts[0], parts[1], parts[2])
+        if not key:
+            continue
+        try:
+            captured = dt.datetime.fromisoformat(str(record["captured_at"]))
+            scheduled = dt.datetime.fromisoformat(str(record["scheduled_post_time"]))
+            minutes = float(record["minutes_to_post"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        payout = payouts.get(key)
+        candidates = record.get("candidate_combinations") or []
+        if (captured.tzinfo is None or scheduled.tzinfo is None or captured >= scheduled
+                or not 2 <= minutes <= 30 or not payout or not payout.get("win")
+                or not candidates):
+            continue
+        records.append((str(record.get("date") or key[1]), candidates, payout))
+    records.sort(key=lambda item:item[0])
+    dates = sorted({item[0] for item in records})
+    split = max(1, min(len(dates)-1, int(len(dates)*0.70))) if len(dates) >= 10 else 0
+    development_dates = set(dates[:split])
+    development = [item for item in records if item[0] in development_dates]
+    holdout = [item for item in records if split and item[0] not in development_dates]
+
+    def evaluate(subset, kind, strategy):
+        races = tickets = hits = stake = returned = 0
+        race_results = []
+        for _, candidates, payout in subset:
+            eligible = [ticket for ticket in candidates
+                        if ticket.get("bet_type") == kind
+                        and number(ticket.get("probability")) is not None
+                        and number(ticket.get("odds")) is not None
+                        and number(ticket.get("odds")) > 0]
+            eligible.sort(key=lambda ticket: (
+                number(ticket.get(strategy)) if number(ticket.get(strategy)) is not None else -1,
+                number(ticket.get("expected_value")) or -1,
+                number(ticket.get("probability")) or -1), reverse=True)
+            selected = eligible[:top_n[kind]]
+            if not selected:
+                continue
+            race_stake = 100 * len(selected)
+            race_return = sum(payout_for(kind, [str(x) for x in ticket.get("numbers") or []], payout) or 0
+                              for ticket in selected)
+            race_hits = sum(1 for ticket in selected
+                            if payout_for(kind, [str(x) for x in ticket.get("numbers") or []], payout))
+            races += 1
+            tickets += len(selected)
+            hits += race_hits
+            stake += race_stake
+            returned += race_return
+            race_results.append((race_stake, race_return))
+        ci_low = ci_high = None
+        if len(race_results) >= 30:
+            rng = random.Random(20261103 + sum(ord(c) for c in kind + strategy))
+            samples = []
+            for _ in range(1000):
+                sample = [race_results[rng.randrange(len(race_results))] for _ in race_results]
+                sample_stake = sum(x[0] for x in sample)
+                sample_return = sum(x[1] for x in sample)
+                if sample_stake:
+                    samples.append(100 * sample_return / sample_stake)
+            samples.sort()
+            if samples:
+                ci_low = round(samples[int(0.025*(len(samples)-1))], 2)
+                ci_high = round(samples[int(0.975*(len(samples)-1))], 2)
+        enough = races >= 100 and tickets >= 300
+        return {
+            "races_with_bets":races, "tickets":tickets, "hits":hits, "stake":stake,
+            "return":returned, "hit_rate":round(100*hits/tickets,2) if tickets else None,
+            "roi":round(100*returned/stake,2) if stake else None,
+            "profit":returned-stake, "roi_ci95_low":ci_low, "roi_ci95_high":ci_high,
+            "minimum_sample_met":enough,
+            "candidate_pass":bool(enough and ci_low is not None and ci_low > 100),
+        }
+
+    result = {"status":"ok" if records else "awaiting_preoff_candidate_snapshots",
+              "snapshot_races":len(records), "date_count":len(dates),
+              "development_date_count":len(development_dates),
+              "holdout_date_count":len(dates)-len(development_dates) if split else 0,
+              "top_n_per_race":top_n, "strategies":{}, "selected_by_development":{}}
+    for kind in top_n:
+        result["strategies"][kind] = {}
+        best = None
+        for strategy in strategies:
+            overall = evaluate(records, kind, strategy)
+            dev = evaluate(development, kind, strategy)
+            test = evaluate(holdout, kind, strategy)
+            result["strategies"][kind][strategy] = {
+                "overall":overall, "development":dev, "holdout":test}
+            if dev["minimum_sample_met"] and (best is None or (dev["roi"] or 0) > best[1]):
+                best = (strategy, dev["roi"] or 0)
+        selected = best[0] if best else None
+        result["selected_by_development"][kind] = {
+            "strategy":selected,
+            "holdout":result["strategies"][kind][selected]["holdout"] if selected else None,
+            "status":"selected_for_holdout" if selected else "awaiting_development_sample",
+        }
+    result["policy"] = ("For each bet type, rank the full pre-off candidate universe by expected value, "
+                        "model hit probability, or market odds; buy the same fixed top-N count. "
+                        "Select a ranking only on the first 70% of dates and evaluate it on the untouched last 30%. "
+                        "A strategy is not validated unless its holdout has adequate sample and race-cluster "
+                        "bootstrap 95% ROI lower bound above 100%.")
+    return result
+
 def main():
     print(f"Backtest range: {START} through {END}", flush=True)
     races, horses, payouts, months = load_archives()
@@ -1484,6 +1598,7 @@ def main():
         "odds_snapshot_archive": odds_snapshot_inventory(),
         "preoff_value_backtest": preoff_value_backtest(payouts),
         "preoff_ticket_type_backtest": preoff_ticket_type_backtest(payouts),
+        "preoff_ranking_strategy_backtest": preoff_ranking_strategy_backtest(payouts),
         "online_learning": {"updates": learning_updates, "final_weights": learned_weights,
                             "temperature": round(production_temperature,4), "calibration": production_calibration,
                             "note": "Daily batch learning: all races on a date are scored before that date's results update weights for later dates."},
