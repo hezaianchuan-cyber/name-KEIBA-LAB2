@@ -382,6 +382,44 @@ class ConfidenceFilterBacktestTests(unittest.TestCase):
         self.assertIsNone(result["0.50"]["winner_top1_rate"])
 
 
+class AutomaticImprovementLoopTests(unittest.TestCase):
+    def _fold(self, fold_no, model_rois):
+        models = {}
+        for model_name, roi in model_rois.items():
+            models[model_name] = {"bet_types": {
+                "win": {"roi": roi, "tickets": 500, "hits": 50,
+                        "stake": 50000, "return": int(50000*roi/100),
+                        "profit": int(50000*roi/100)-50000}
+            }}
+        return {"fold": fold_no, "models": models}
+
+    def test_selects_challenger_only_from_prior_fold_with_required_edge(self):
+        prior = self._fold(1, {"baseline": 60.0, "trained": 70.0, "pace": 63.0})
+        selected = nb.select_models_from_prior_fold(prior)
+        self.assertEqual(selected["win"]["model"], "trained")
+        self.assertEqual(selected["win"]["development_roi"], 70.0)
+
+    def test_falls_back_to_baseline_when_sample_or_edge_is_insufficient(self):
+        prior = self._fold(1, {"baseline": 60.0, "trained": 64.0})
+        prior["models"]["trained"]["bet_types"]["win"]["tickets"] = 299
+        selected = nb.select_models_from_prior_fold(prior)
+        self.assertEqual(selected["win"]["model"], "baseline")
+        prior["models"]["trained"]["bet_types"]["win"]["tickets"] = 500
+        prior["models"]["trained"]["bet_types"]["win"]["roi"] = 64.9
+        selected = nb.select_models_from_prior_fold(prior)
+        self.assertEqual(selected["win"]["model"], "baseline")
+
+    def test_walk_forward_evaluates_selected_model_on_next_fold(self):
+        prior = self._fold(1, {"baseline": 60.0, "trained": 70.0})
+        following = self._fold(2, {"baseline": 65.0, "trained": 72.0})
+        result = nb.evaluate_walk_forward_selection([prior, following])
+        win = result["evaluations"][0]["bet_types"]["win"]
+        self.assertEqual(win["model"], "trained")
+        self.assertEqual(win["validation_fold"], 2)
+        self.assertEqual(win["validation_roi"], 72.0)
+        self.assertEqual(win["roi_delta_vs_baseline"], 7.0)
+
+
 if __name__ == "__main__":
     unittest.main()
 
