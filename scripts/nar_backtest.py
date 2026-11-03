@@ -326,6 +326,40 @@ def score_runner(h, history, sire_stats, jockey_stats, race, model_weights, incl
     score = sum(model_weights[k]*v for k,v in parts.items())
     return score, parts
 
+
+def race_relative_scores(parts_by_no, model_weights):
+    """Convert each feature to a within-race percentile before weighted scoring.
+
+    This mirrors the race-relative normalization approach documented by public
+    racing model builders. Ties receive their average rank; no outcome data is used.
+    """
+    horse_numbers = list(parts_by_no)
+    if not horse_numbers:
+        return {}
+    n = len(horse_numbers)
+    relative = {no: {} for no in horse_numbers}
+    for feature in model_weights:
+        ordered = sorted(
+            ((number(parts_by_no[no].get(feature)), no) for no in horse_numbers),
+            key=lambda item: (item[0] if item[0] is not None else 0.5),
+            reverse=True,
+        )
+        position = 0
+        while position < n:
+            value = ordered[position][0]
+            end = position + 1
+            while end < n and ordered[end][0] == value:
+                end += 1
+            average_rank = (position + end - 1) / 2.0
+            percentile = 1.0 if n == 1 else 1.0 - average_rank / (n - 1)
+            for _, no in ordered[position:end]:
+                relative[no][feature] = percentile
+            position = end
+    return {
+        no: sum(model_weights[key] * values.get(key, 0.5) for key in model_weights)
+        for no, values in relative.items()
+    }
+
 def update_model(field, parts_by_no, model_weights):
     valid = [h for h in field if h.get("finish") and h["no"] in parts_by_no]
     if len(valid) < 3: return False
@@ -1067,6 +1101,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     # applies the 0.80/0.10/0.10 blend itself; pre-scaling these weights would
     # accidentally reduce the B contribution to 0.64.
     models = {"baseline":baseline, "trained":learned, "trained_no_recent_history":learned,
+              "trained_race_relative":learned,
               "trained_with_pace":learned, "trained_with_performance":learned,
               "trained_performance_with_pace":learned,
               "trained_margin_only":learned, "trained_closing_only":learned,
@@ -1158,7 +1193,15 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
         if not winners: continue
         for model_name,weights in models.items():
             include_recent_history = model_name != "trained_no_recent_history"
-            if model_name in performance_blends:
+            if model_name == "trained_race_relative":
+                relative_parts = {
+                    h["no"]: score_runner(h,history,sire_stats,jockey_stats,race,weights,
+                                          include_recent_history=include_recent_history)[1]
+                    for h in field
+                }
+                relative_scores = race_relative_scores(relative_parts, weights)
+                scored = [(relative_scores[h["no"]], h) for h in field]
+            elif model_name in performance_blends:
                 margin_weight, closing_weight = performance_blends[model_name]
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
                             margin_weight,closing_weight,include_recent_history)[0],h) for h in field]
