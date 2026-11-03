@@ -464,6 +464,26 @@ class CornerPositionAndPaceTests(unittest.TestCase):
 
 
 
+class TopKPredictionCoverageTests(unittest.TestCase):
+    def test_top_five_six_seven_use_same_ranked_race_and_detect_winner(self):
+        ranked = [{"no":str(i)} for i in range(1, 9)]
+        self.assertEqual(nb.top_k_winner_coverage(ranked, {"6"}),
+                         {"5":0, "6":1, "7":1})
+        self.assertEqual(nb.top_k_winner_coverage(ranked, {"8"}),
+                         {"5":0, "6":0, "7":0})
+
+    def test_selected_ticket_portfolio_is_unchanged_by_display_top_k(self):
+        ranked = [{"no":str(i)} for i in range(1, 9)]
+        tickets = nb.build_fixed_tickets(ranked)
+        self.assertEqual(len(tickets["wide"]), 3)
+        self.assertEqual(len(tickets["exacta"]), 4)
+        self.assertEqual(len(tickets["trio"]), 10)
+        self.assertEqual(len(tickets["trifecta"]), 24)
+        self.assertNotIn("win", tickets)
+        self.assertNotIn("place", tickets)
+        self.assertNotIn("quinella", tickets)
+
+
 class ExpandedFixedTicketTests(unittest.TestCase):
     def test_requested_ticket_counts_and_unique_combinations(self):
         ranked = [{"no":str(i)} for i in range(1,7)]
