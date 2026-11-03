@@ -1232,7 +1232,7 @@ class FinishPositionDiagnosticsTests(unittest.TestCase):
         ordinary = [{"no": str(i)} for i in (1, 2, 3, 4)]
         role_rankings = {
             1: [{"no": str(i)} for i in (2, 1, 3, 4)],
-            2: [{"no": str(i)} for i in (1, 2, 3, 4)],
+            2: [{"no": str(i)} for i in (2, 1, 3, 4)],
             3: [{"no": str(i)} for i in (4, 3, 2, 1)],
         }
         nb.update_finish_position_diagnostics(stats, ordinary, role_rankings, field)
