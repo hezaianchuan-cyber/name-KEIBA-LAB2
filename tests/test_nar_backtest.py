@@ -800,7 +800,7 @@ class TrifectaDiagnosticTests(unittest.TestCase):
         self.assertTrue(all(ticket[1] in {"1", "2", "3", "4"} for ticket in a))
         self.assertTrue(all(ticket[2] in {"1", "2", "3", "4", "5"} for ticket in a))
         self.assertTrue(all(len(set(ticket)) == 3 for ticket in a + b))
-        self.assertEqual(a, nb.build_trifecta_tickets(ranked, 2, 5)[:0] + a)
+        self.assertEqual(nb.build_trifecta_tickets(ranked, 2, 5), nb.build_trifecta_formation(ranked, 2, 5, 5))
 
     def test_role_coverage_and_ordered_hit_are_reported_separately(self):
         ranked = [{"no": str(i)} for i in range(1, 8)]
