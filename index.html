@@ -587,7 +587,7 @@ function generateTickets(){
  ticketTop.slice(0,3).forEach(h=>add('複勝',[h]));
  for(let i=0;i<Math.min(3,ticketTop.length);i++)for(let j=i+1;j<Math.min(3,ticketTop.length);j++)add('ワイド',[ticketTop[i],ticketTop[j]]);
  if(ticketTop.length>=2)add('馬連',[ticketTop[0],ticketTop[1]]);
- const firstCandidates=ticketTop.slice(0,2),secondCandidates=ticketTop.slice(0,3);
+ const firstCandidates=ticketTop.slice(0,2),secondCandidates=ticketTop.slice(0,5);
  firstCandidates.forEach(first=>secondCandidates.filter(second=>second!==first).forEach(second=>add('馬単',[first,second])));
  for(let i=0;i<ticketTop.length;i++)for(let j=i+1;j<ticketTop.length;j++)for(let k=j+1;k<ticketTop.length;k++)add('3連複',[ticketTop[i],ticketTop[j],ticketTop[k]]);
  firstCandidates.forEach(first=>ticketTop.filter(second=>second!==first).forEach(second=>ticketTop.filter(third=>third!==first&&third!==second).forEach(third=>add('3連単',[first,second,third]))));
