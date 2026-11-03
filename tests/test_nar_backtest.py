@@ -1279,6 +1279,22 @@ class ConditionSpecificFinishDiagnosticsTests(unittest.TestCase):
         self.assertEqual(summary["venue:大井"]["2"]["role_specific"]["topk_hits"]["1"], 0)
         self.assertEqual(summary["venue:大井"]["3"]["role_specific"]["topk_hits"]["1"], 1)
  
+    def test_condition_diagnostics_exclude_missing_finish_roles_from_denominator(self):
+        stats = nb.new_condition_finish_bucket()
+        field = [
+            {"no": "1", "finish": 1},
+            {"no": "2", "finish": 4},
+            {"no": "3", "finish": 5},
+        ]
+        ordinary = [{"no": str(i)} for i in (1, 2, 3)]
+        role_rankings = {role: ordinary for role in (1, 2, 3)}
+        nb.update_condition_finish_bucket(stats, ordinary, role_rankings, field)
+        summary = nb.summarize_condition_finish_segments({"field_size:small": stats})
+        self.assertEqual(summary["field_size:small"]["1"]["ordinary"]["races"], 1)
+        self.assertEqual(summary["field_size:small"]["2"]["ordinary"]["races"], 0)
+        self.assertIsNone(summary["field_size:small"]["2"]["ordinary"]["topk_rate"]["1"])
+        self.assertEqual(summary["field_size:small"]["3"]["ordinary"]["races"], 0)
+
     def test_research_fold_export_keeps_condition_diagnostics(self):
         fold = {
             "fold": 2,
