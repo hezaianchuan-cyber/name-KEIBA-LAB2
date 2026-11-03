@@ -123,6 +123,7 @@ def read_archives():
             raw_rows = csv_rows(archive.read(name)) if not name.endswith("/") else []
             if raw_rows:
                 print(f"Odds member {name}: classified={kind}, rows={len(raw_rows)}, first_row_columns={len(raw_rows[0])}", flush=True)
+                print("Odds sample rows:", [row[:10] for row in raw_rows[:4]], flush=True)
             if kind != "odds":
                 continue
             for row in raw_rows:
