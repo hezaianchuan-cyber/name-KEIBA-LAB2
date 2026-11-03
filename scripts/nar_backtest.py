@@ -1706,10 +1706,78 @@ def evaluate_walk_forward_selection(folds, min_tickets=300, min_roi_gain=5.0):
             for item in chosen
         ]
         selected_portfolio[kind] = totals
-    # Aggregate role-specific trifecta diagnostics only for the model selected
-    # from prior folds, evaluated on the next untouched fold. This is the
-    # selection-aware out-of-sample view; all-candidate diagnostics remain on
-    # each fold for research comparison.
+    # Select role-specific trifecta blend/formation using only prior folds,
+    # then score that exact choice on the next untouched fold.
+    selected_role_strategy_rows = []
+    selected_role_portfolio_stats = {
+        "races": 0, "tickets": 0, "hits": 0, "hit_races": 0,
+        "stake": 0, "return": 0, "sum_return_sq": 0,
+        "sum_stake_sq": 0, "sum_stake_return": 0,
+    }
+    for index in range(1, len(folds)):
+        prior_folds = folds[:index]
+        current = folds[index]
+        choices = select_models_from_prior_folds(prior_folds, min_tickets, min_roi_gain)
+        model_name = (choices.get("trifecta") or {}).get("model", "baseline")
+        candidates = []
+        for blend, formations in new_role_trifecta_diagnostics().items():
+            for formation in formations:
+                prior_stats = []
+                valid = True
+                for prior_fold in prior_folds:
+                    prior_model = ((prior_fold.get("models") or {}).get(model_name) or {})
+                    stats = ((prior_model.get("role_trifecta_diagnostics") or {})
+                             .get(blend) or {}).get(formation)
+                    if (not stats or int(stats.get("races") or 0) < 100
+                            or int(stats.get("tickets") or 0) < 300
+                            or not int(stats.get("stake") or 0)):
+                        valid = False
+                        break
+                    prior_stats.append(stats)
+                if not valid:
+                    continue
+                stake = sum(int(x.get("stake") or 0) for x in prior_stats)
+                returned = sum(int(x.get("return") or 0) for x in prior_stats)
+                if stake:
+                    candidates.append({
+                        "blend": blend, "formation": formation,
+                        "development_roi": 100 * returned / stake,
+                        "development_races": sum(int(x.get("races") or 0) for x in prior_stats),
+                        "development_tickets": sum(int(x.get("tickets") or 0) for x in prior_stats),
+                    })
+        selected_strategy = max(
+            candidates,
+            key=lambda x: (x["development_roi"], x["development_tickets"]),
+        ) if candidates else None
+        row = {
+            "selection_folds": [x.get("fold") for x in prior_folds],
+            "validation_fold": current.get("fold"),
+            "model": model_name,
+            "status": "selected_from_prior_folds" if selected_strategy else "awaiting_development_sample",
+            "strategy": selected_strategy,
+            "validation": None,
+        }
+        if selected_strategy:
+            current_model = ((current.get("models") or {}).get(model_name) or {})
+            validation_stats = (((current_model.get("role_trifecta_diagnostics") or {})
+                                 .get(selected_strategy["blend"]) or {})
+                                .get(selected_strategy["formation"]))
+            if validation_stats:
+                validation_summary = summarize_role_trifecta_diagnostics({
+                    "selected": {selected_strategy["formation"]: validation_stats}
+                })["selected"][selected_strategy["formation"]]
+                row["validation"] = validation_summary
+                for key in selected_role_portfolio_stats:
+                    selected_role_portfolio_stats[key] += int(validation_stats.get(key) or 0)
+        selected_role_strategy_rows.append(row)
+
+    selected_role_strategy_portfolio = summarize_role_trifecta_diagnostics({
+        "selected": {"walk_forward": selected_role_portfolio_stats}
+    })["selected"]["walk_forward"]
+
+    # Aggregate all role-specific combinations for the model selected from
+    # prior folds, evaluated on the next untouched fold. This diagnostic grid
+    # is descriptive; strategy promotion uses the walk-forward selection above.
     selected_role_stats = new_role_trifecta_diagnostics()
     selected_role_models = []
     fold_by_number = {fold.get("fold"): fold for fold in folds}
@@ -1736,6 +1804,8 @@ def evaluate_walk_forward_selection(folds, min_tickets=300, min_roi_gain=5.0):
         "selection_method": "Each candidate must clear its type-specific sample and ROI-edge hurdle in every available prior fold. Selection uses no validation-fold outcomes; baseline is the fallback. Selection hurdles are not profitability gates.",
         "selected_portfolio": selected_portfolio,
         "selected_role_trifecta_models_by_validation_fold": selected_role_models,
+        "selected_role_trifecta_strategy_by_validation_fold": selected_role_strategy_rows,
+        "selected_role_trifecta_strategy_portfolio": selected_role_strategy_portfolio,
         "selected_role_trifecta_diagnostics": summarize_role_trifecta_diagnostics(selected_role_stats),
         "min_tickets": min_tickets, "min_roi_gain_percentage_points": min_roi_gain,
         "selection_rules_by_bet_type": {
