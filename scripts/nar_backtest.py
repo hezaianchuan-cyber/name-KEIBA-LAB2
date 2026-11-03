@@ -215,10 +215,10 @@ def parse_race_time(value):
     raw = str(value or "").strip()
     if not raw or raw in ("計不", "失格", "中止"):
         return None
-    match = re.fullmatch(r"(\\d+):(\\d+(?:\\.\\d+)?)", raw)
+    match = re.fullmatch(r"(\d+):(\d+(?:\.\d+)?)", raw)
     if match:
         return int(match.group(1)) * 60.0 + float(match.group(2))
-    match = re.fullmatch(r"(\\d+(?:\\.\\d+)?)", raw)
+    match = re.fullmatch(r"(\d+(?:\.\d+)?)", raw)
     return float(match.group(1)) if match else None
 
 
