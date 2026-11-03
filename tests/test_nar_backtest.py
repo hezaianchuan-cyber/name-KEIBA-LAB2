@@ -1245,3 +1245,36 @@ class FinishPositionDiagnosticsTests(unittest.TestCase):
         self.assertEqual(summary["role_specific"]["3"]["topk_hits"]["2"], 1)
         self.assertEqual(summary["role_specific"]["3"]["mean_rank_when_found"], 2.0)
         self.assertEqual(summary["role_specific"]["3"]["mean_reciprocal_rank"], 0.5)
+
+
+
+class ConditionSpecificFinishDiagnosticsTests(unittest.TestCase):
+    def test_race_segments_include_field_size(self):
+        labels = nb.race_segment_labels({
+            "venue": "大井", "surface": "ダ", "going": "良",
+            "distance": 1600, "field_size": 14,
+        })
+        self.assertEqual(labels["distance_band"], "mile_1201-1600m")
+        self.assertEqual(labels["field_size_band"], "large_>12")
+
+    def test_condition_finish_diagnostics_compare_role_rankings(self):
+        stats = nb.new_condition_finish_bucket()
+        field = [
+            {"no": "1", "finish": 2},
+            {"no": "2", "finish": 1},
+            {"no": "3", "finish": 3},
+            {"no": "4", "finish": 4},
+        ]
+        ordinary = [{"no": str(i)} for i in (1, 2, 3, 4)]
+        role_rankings = {
+            1: [{"no": str(i)} for i in (2, 1, 3, 4)],
+            2: [{"no": str(i)} for i in (1, 2, 3, 4)],
+            3: [{"no": str(i)} for i in (3, 2, 1, 4)],
+        }
+        nb.update_condition_finish_bucket(stats, ordinary, role_rankings, field)
+        summary = nb.summarize_condition_finish_segments({"venue:大井": stats})
+        self.assertEqual(summary["venue:大井"]["1"]["ordinary"]["topk_hits"]["1"], 0)
+        self.assertEqual(summary["venue:大井"]["1"]["role_specific"]["topk_hits"]["1"], 1)
+        self.assertEqual(summary["venue:大井"]["2"]["ordinary"]["topk_hits"]["1"], 1)
+        self.assertEqual(summary["venue:大井"]["2"]["role_specific"]["topk_hits"]["1"], 0)
+        self.assertEqual(summary["venue:大井"]["3"]["role_specific"]["topk_hits"]["1"], 1)
