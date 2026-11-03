@@ -371,6 +371,7 @@ class IndependentBetTypeBacktestTests(unittest.TestCase):
     def test_each_bet_type_has_its_own_stake_return_and_roi(self):
         record = {
             "race_key":"大井|20261103|10",
+            "model_version":"nar-chronological-v8-abcd-C-preoff",
             "date":"20261103",
             "captured_at":"2026-11-03T15:10:00+09:00",
             "scheduled_post_time":"2026-11-03T15:30:00+09:00",
