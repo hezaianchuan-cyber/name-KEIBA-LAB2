@@ -427,6 +427,13 @@ def payout_for(kind, ticket, p):
             return pay or 0
     return 0
 
+def top_k_winner_coverage(ranked, winners, ks=(5, 6, 7)):
+    """Return winner-in-top-K indicators for identical race rankings."""
+    winner_set = {str(no) for no in winners}
+    return {str(k): int(any(str(h.get("no")) in winner_set for h in ranked[:k]))
+            for k in ks}
+
+
 def build_fixed_tickets(ranked):
     """Build a fixed, rank-based ticket portfolio for historical payout testing."""
     nos = [str(h["no"]) for h in ranked[:5]]
@@ -717,6 +724,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     }
     kinds = ("win","place","wide","quinella","exacta","trio","trifecta")
     results = {name:{"races":0,"winner_top1":0,"winner_top3":0,
+                     "winner_topk":{str(k):0 for k in (5,6,7)},
                      "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0}
                                   for kind in kinds}} for name in models}
 
@@ -814,6 +822,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             m=results[model_name]; m["races"]+=1
             if ranked[0]["no"] in winners: m["winner_top1"]+=1
             if any(h["no"] in winners for h in ranked[:3]): m["winner_top3"]+=1
+            for k, hit in top_k_winner_coverage(ranked, winners).items():
+                m["winner_topk"][k] += hit
             ticket_map=build_fixed_tickets(ranked)
             if model_name in ("baseline", "trained_no_recent_history"):
                 for dimension, label in race_segment_labels(race).items():
@@ -869,6 +879,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
         out[name]={**m,"bet_types":bet_summary,
           "winner_top1_rate":round(100*m["winner_top1"]/n,2),
           "winner_top3_rate":round(100*m["winner_top3"]/n,2),
+          "winner_topk_rate":{k:round(100*v/n,2) for k,v in m["winner_topk"].items()},
           "win_stake":bet_summary["win"]["stake"],"win_return":bet_summary["win"]["return"],
           "place_stake":bet_summary["place"]["stake"],"place_return":bet_summary["place"]["return"],
           "wide_stake":bet_summary["wide"]["stake"],"wide_return":bet_summary["wide"]["return"],
@@ -1375,12 +1386,15 @@ def holdout_validation(races, horses, payouts):
                        "trained_with_performance","trained_performance_with_pace",
                        "trained_margin_only","trained_closing_only","trained_performance_light"):
         total={"races":0,"winner_top1":0,"winner_top3":0,
+               "winner_topk":{str(k):0 for k in (5,6,7)},
                "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0} for kind in kinds}}
         for fold in folds:
             fm=fold["models"][model_name]
             total["races"]+=fm["races"]
             total["winner_top1"]+=fm["winner_top1"]
             total["winner_top3"]+=fm["winner_top3"]
+            for k in ("5","6","7"):
+                total["winner_topk"][k] += fm["winner_topk"][k]
             for kind in kinds:
                 for key in ("tickets","hits","stake","return"):
                     total["bet_types"][kind][key]+=fm["bet_types"][kind][key]
@@ -1394,6 +1408,8 @@ def holdout_validation(races, horses, payouts):
         aggregate[model_name]={**total,"bet_types":bet_summary,
             "winner_top1_rate":round(100*total["winner_top1"]/n,2),
             "winner_top3_rate":round(100*total["winner_top3"]/n,2),
+            "winner_topk_rate":{k:round(100*v/n,2) for k,v in total["winner_topk"].items()},
+            "selected_bet_types":{kind:bet_summary[kind] for kind in ("wide","exacta","trio","trifecta")},
             "win_roi":bet_summary["win"]["roi"],"place_roi":bet_summary["place"]["roi"],
             "wide_roi":bet_summary["wide"]["roi"]}
     history_comparison = {}
