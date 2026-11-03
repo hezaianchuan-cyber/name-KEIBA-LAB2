@@ -38,6 +38,34 @@ class BayesianSmoothingTests(unittest.TestCase):
         self.assertGreater(abs(large - 0.50), abs(sparse - 0.50))
 
 
+class RaceTimeFeatureTests(unittest.TestCase):
+    def test_parse_minutes_seconds(self):
+        self.assertAlmostEqual(nb.parse_race_time("1:38.7"), 98.7)
+
+    def test_parse_seconds_without_minutes(self):
+        self.assertAlmostEqual(nb.parse_race_time("59.8"), 59.8)
+
+    def test_invalid_or_missing_time_is_neutral(self):
+        self.assertIsNone(nb.parse_race_time(""))
+        self.assertIsNone(nb.parse_race_time("計不"))
+
+    def test_time_feature_uses_comparable_prior_runs(self):
+        horse = {"name": "馬A", "sire": "", "jockey": "", "age": 5}
+        history = {"馬A": [
+            {"venue": "大井", "distance": 1600, "time_per_km": 65.0},
+            {"venue": "大井", "distance": 1600, "time_per_km": 64.0},
+            {"venue": "大井", "distance": 1600, "time_per_km": 62.0},
+        ]}
+        weights = {"form": 0.55, "venue": 0.12, "distance": 0.12,
+                   "sire": 0.10, "jockey": 0.07, "age": 0.04}
+        _, parts = nb.score_runner_performance(
+            horse, history, defaultdict(lambda: {"runs": 0, "top3": 0}),
+            defaultdict(lambda: {"runs": 0, "top3": 0}),
+            {"venue": "大井", "distance": 1600}, weights,
+            margin_weight=0.0, closing_weight=0.0, time_weight=0.10)
+        self.assertGreater(parts["time_form"], 0.5)
+
+
 class RecentHistoryAblationTests(unittest.TestCase):
     def test_recent_history_is_an_explicit_optional_prediction_input(self):
         h={"name":"馬A","sire":"父A","jockey":"騎手A","age":5}
