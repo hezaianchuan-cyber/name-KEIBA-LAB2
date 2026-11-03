@@ -539,6 +539,67 @@ def summarize_trifecta_diagnostics(bucket):
     return output
 
 
+def build_trio_tickets(ranked, candidate_count=5):
+    """Build unordered trio combinations from the top-N ranked runners."""
+    import itertools
+    nos = [str(h["no"]) for h in ranked[:candidate_count]]
+    return [list(combo) for combo in itertools.combinations(nos, 3)] if len(nos) >= 3 else []
+
+
+def new_trio_diagnostics():
+    return {
+        "races": 0,
+        "all_podium_top4": 0, "all_podium_top5": 0,
+        "all_podium_top6": 0, "all_podium_top7": 0,
+        "structures": {
+            pool: {"races": 0, "tickets": 0, "hits": 0, "stake": 0, "return": 0}
+            for pool in (4, 5, 6, 7)
+        },
+    }
+
+
+def update_trio_diagnostics(bucket, ranked, field, payout):
+    """Compare unordered top-N trio combinations without changing the fixed baseline."""
+    if not ranked:
+        return
+    podium = {str(h["no"]) for h in field if h.get("finish") in (1, 2, 3)}
+    if len(podium) != 3:
+        return
+    rank = {str(h["no"]): i + 1 for i, h in enumerate(ranked)}
+    bucket["races"] += 1
+    for pool in (4, 5, 6, 7):
+        bucket[f"all_podium_top{pool}"] += int(all(rank.get(no, 10**9) <= pool for no in podium))
+        stats = bucket["structures"][pool]
+        tickets = build_trio_tickets(ranked, pool)
+        if not tickets:
+            continue
+        stats["races"] += 1
+        stats["tickets"] += len(tickets)
+        stats["stake"] += 100 * len(tickets)
+        returned = sum(payout_for("trio", ticket, payout) or 0 for ticket in tickets)
+        stats["return"] += returned
+        stats["hits"] += sum(1 for ticket in tickets if payout_for("trio", ticket, payout))
+
+
+def summarize_trio_diagnostics(bucket):
+    n = bucket["races"]
+    keys = ("all_podium_top4", "all_podium_top5", "all_podium_top6", "all_podium_top7")
+    output = {key: bucket[key] for key in ("races", *keys)}
+    output["rates"] = {key: round(100 * bucket[key] / n, 2) if n else None for key in keys}
+    structures = {}
+    for pool, stats in bucket["structures"].items():
+        structures[f"top{pool}"] = {
+            **stats,
+            "hit_rate": round(100 * stats["hits"] / stats["tickets"], 4) if stats["tickets"] else None,
+            "roi": round(100 * stats["return"] / stats["stake"], 2) if stats["stake"] else None,
+            "profit": stats["return"] - stats["stake"],
+            "tickets_per_race": round(stats["tickets"] / stats["races"], 2) if stats["races"] else None,
+        }
+    output["structures"] = structures
+    output["interpretation"] = "Trio tickets are unordered combinations. Top-N coverage and ticket ROI are reported separately; top5 is the unchanged fixed baseline."
+    return output
+
+
 def run_backtest(races, horses, payouts):
     history = defaultdict(list)
     sire_stats = defaultdict(lambda: {"runs":0,"top3":0})
@@ -809,7 +870,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                      "winner_topk":{str(k):0 for k in (5,6,7)},
                      "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0}
                                   for kind in kinds},
-                     "trifecta_diagnostics":new_trifecta_diagnostics()} for name in models}
+                     "trifecta_diagnostics":new_trifecta_diagnostics(),
+                     "trio_diagnostics":new_trio_diagnostics()} for name in models}
 
     history = defaultdict(list)
     sire_stats = defaultdict(lambda:{"runs":0,"top3":0})
@@ -909,6 +971,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                 m["winner_topk"][k] += hit
             ticket_map=build_fixed_tickets(ranked)
             update_trifecta_diagnostics(m["trifecta_diagnostics"], ranked, field, payout)
+            update_trio_diagnostics(m["trio_diagnostics"], ranked, field, payout)
             if model_name in ("baseline", "trained_no_recent_history"):
                 for dimension, label in race_segment_labels(race).items():
                     for condition_kind in condition_bet_types:
@@ -962,6 +1025,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                 "profit":bm["return"]-bm["stake"]}
         out[name]={**m,"bet_types":bet_summary,
           "trifecta_diagnostics":summarize_trifecta_diagnostics(m["trifecta_diagnostics"]),
+          "trio_diagnostics":summarize_trio_diagnostics(m["trio_diagnostics"]),
           "winner_top1_rate":round(100*m["winner_top1"]/n,2),
           "winner_top3_rate":round(100*m["winner_top3"]/n,2),
           "winner_topk_rate":{k:round(100*v/n,2) for k,v in m["winner_topk"].items()},
