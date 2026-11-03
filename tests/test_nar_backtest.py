@@ -941,6 +941,35 @@ class RoleSpecificTrifectaTests(unittest.TestCase):
         self.assertEqual(second[0]["no"], "2")
         self.assertEqual(third[0]["no"], "3")
 
+    def test_third_place_ranking_rewards_late_gain_and_closing_speed(self):
+        scored = [
+            (0.70, {"no": "1", "name": "差し脚型"}),
+            (0.72, {"no": "2", "name": "先行型"}),
+        ]
+        history = {
+            "差し脚型": [{
+                "finish": 3, "field_size": 10,
+                "first_corner_pct": 0.90, "last_corner_pct": 0.10,
+                "last3f_rank_score": 0.95,
+            }],
+            "先行型": [{
+                "finish": 3, "field_size": 10,
+                "first_corner_pct": 0.10, "last_corner_pct": 0.10,
+                "last3f_rank_score": 0.10,
+            }],
+        }
+        third = nb.role_specific_ranking(scored, history, 3, 0.40)
+        self.assertEqual(third[0]["no"], "1")
+
+    def test_third_place_ranking_handles_missing_corner_gain(self):
+        scored = [(0.70, {"no": "1", "name": "closing"})]
+        history = {"closing": [{
+            "finish": 3, "field_size": 10,
+            "last_corner_pct": 0.20, "last3f_rank_score": 0.80,
+        }]}
+        ranked = nb.role_specific_ranking(scored, history, 3, 0.20)
+        self.assertEqual(ranked[0]["no"], "1")
+
     def test_role_formation_excludes_duplicate_horses(self):
         rankings = {
             1:[{"no":"1"},{"no":"2"}],
