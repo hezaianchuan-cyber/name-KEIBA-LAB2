@@ -779,3 +779,37 @@ class CandidateRankingResearchTests(unittest.TestCase):
         self.assertFalse(ev["minimum_sample_met"])
         self.assertEqual(result["selected_by_development"]["exacta"]["status"],
                          "awaiting_development_sample")
+
+
+class TrifectaDiagnosticTests(unittest.TestCase):
+    def test_ticket_structures_separate_first_place_pool_from_coverage_pool(self):
+        ranked = [{"no": str(i)} for i in range(1, 8)]
+        self.assertEqual(len(nb.build_trifecta_tickets(ranked, 1, 5)), 12)
+        self.assertEqual(len(nb.build_trifecta_tickets(ranked, 2, 5)), 24)
+        self.assertEqual(len(nb.build_trifecta_tickets(ranked, 3, 5)), 36)
+        self.assertEqual(len(nb.build_trifecta_tickets(ranked, 2, 6)), 60)
+        self.assertEqual(len(nb.build_trifecta_tickets(ranked, 2, 7)), 120)
+
+    def test_role_coverage_and_ordered_hit_are_reported_separately(self):
+        ranked = [{"no": str(i)} for i in range(1, 8)]
+        field = [
+            {"no": "1", "finish": 2}, {"no": "2", "finish": 1},
+            {"no": "3", "finish": 3}, {"no": "4", "finish": 4},
+            {"no": "5", "finish": 5}, {"no": "6", "finish": 6},
+            {"no": "7", "finish": 7},
+        ]
+        payout = {kind: [] for kind in
+                  ("win", "place", "wide", "quinella", "exacta", "trio", "trifecta")}
+        payout["win"] = [(["2"], 100)]
+        payout["trifecta"] = [(["2", "1", "3"], 12000)]
+        stats = nb.new_trifecta_diagnostics()
+        nb.update_trifecta_diagnostics(stats, ranked, field, payout)
+        result = nb.summarize_trifecta_diagnostics(stats)
+        self.assertEqual(result["rates"]["winner_top2"], 100.0)
+        self.assertEqual(result["rates"]["second_top2"], 100.0)
+        self.assertEqual(result["rates"]["third_top3"], 100.0)
+        self.assertEqual(result["rates"]["all_podium_top5"], 100.0)
+        self.assertEqual(result["structures"]["first1_pool5"]["hits"], 0)
+        self.assertEqual(result["structures"]["first2_pool5"]["hits"], 1)
+        self.assertEqual(result["structures"]["first2_pool5"]["tickets"], 24)
+        self.assertEqual(result["structures"]["first2_pool5"]["roi"], 50.0)
