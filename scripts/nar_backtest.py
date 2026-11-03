@@ -530,9 +530,23 @@ def role_specific_ranking(scored, history, target_finish, blend):
                 positions = [1.0 - value for value in (first_pos, last_pos) if value is not None]
                 role_signal = sum(positions) / len(positions) if positions else 0.5
             else:
-                signals = [1.0 - last_pos if last_pos is not None else None, closing]
-                signals = [value for value in signals if value is not None]
-                role_signal = sum(signals) / len(signals) if signals else 0.5
+                # Third-place candidates often differ from winners: retain a
+                # late-position signal, but also reward runners that made up
+                # ground from the first to last corner. Normalize the gain
+                # signal to [0, 1] and renormalize weights when data is missing.
+                gain = (0.5 + 0.5 * (first_pos - last_pos)
+                        if first_pos is not None and last_pos is not None else None)
+                signals = [
+                    (0.40, 1.0 - last_pos if last_pos is not None else None),
+                    (0.35, closing),
+                    (0.25, gain),
+                ]
+                available = [(weight, value) for weight, value in signals if value is not None]
+                weight_total = sum(weight for weight, _ in available)
+                role_signal = (
+                    sum(weight * value for weight, value in available) / weight_total
+                    if weight_total else 0.5
+                )
             values.append(0.70 * finish_fit + 0.30 * role_signal)
             weights.append(1.25 ** (index - 1))
         if values:
