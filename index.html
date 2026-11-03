@@ -519,7 +519,7 @@ async function loadLearnedModel(){
   weights=mapped;learnedModelLoaded=true;
   localStorage.setItem('keibaLabLearnedModelVersion',model.model_version||'');
   const status=document.getElementById('dataStatus');
-  if(status)status.textContent='NAR時系列学習モデル適用済み（'+(model.updates||0).toLocaleString()+'回更新）';
+  if(status)status.textContent='NAR時系列学習モデル適用済み（'+(model.updates||0).toLocaleString()+'回更新）／過去走データ '+Object.keys(learnedHistory.horse_history||{}).length.toLocaleString()+'頭分';
   if(document.querySelector('.tabs button.active')?.dataset.tab==='settings')renderWeights();
  }catch(e){console.warn('学習済みモデルを読み込めません。標準配点で予想します。',e);}
 }
