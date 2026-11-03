@@ -564,6 +564,11 @@ def summarize_trifecta_diagnostics(bucket):
             "race_hit_rate": round(100 * stats["hit_races"] / n, 2) if n else None,
             "roi": round(roi, 2) if roi is not None else None,
             "roi_ci95_normal_low": ci_low, "roi_ci95_normal_high": ci_high,
+            "roi_variance_components": {
+                "sum_return_sq": stats["sum_return_sq"],
+                "sum_stake_sq": stats["sum_stake_sq"],
+                "sum_stake_return": stats["sum_stake_return"],
+            },
             "profit": stats["return"] - stats["stake"],
             "tickets_per_race": round(stats["tickets"] / n, 2) if n else None,
         }
@@ -647,6 +652,11 @@ def summarize_trio_diagnostics(bucket):
             "race_hit_rate": round(100 * stats["hit_races"] / n, 2) if n else None,
             "roi": round(roi, 2) if roi is not None else None,
             "roi_ci95_normal_low": ci_low, "roi_ci95_normal_high": ci_high,
+            "roi_variance_components": {
+                "sum_return_sq": stats["sum_return_sq"],
+                "sum_stake_sq": stats["sum_stake_sq"],
+                "sum_stake_return": stats["sum_stake_return"],
+            },
             "profit": stats["return"] - stats["stake"],
             "tickets_per_race": round(stats["tickets"] / n, 2) if n else None,
         }
