@@ -229,6 +229,63 @@ def rank_quality(finish, field_size=None):
     return max(5.0, 100.0-(rank-1)*8.0)
 
 
+def field_performance_features(field):
+    """Store race-relative closing-speed rank and margin quality for future races."""
+    valid_last3f = [(h["no"], number(h.get("last3f"))) for h in field]
+    valid_last3f = [(no, value) for no, value in valid_last3f if value is not None and value > 0]
+    ordered = sorted(valid_last3f, key=lambda item: item[1])
+    last3f_scores = {}
+    if ordered:
+        groups = defaultdict(list)
+        for no, value in ordered:
+            groups[value].append(no)
+        position = 0
+        total = len(ordered)
+        for value in sorted(groups):
+            group = groups[value]
+            average_rank = position + (len(group) - 1) / 2
+            score = 1.0 if total == 1 else 1.0 - average_rank / (total - 1)
+            for no in group:
+                last3f_scores[no] = score
+            position += len(group)
+    output = {}
+    for h in field:
+        raw = str(h.get("margin") or "").strip()
+        if "ハナ" in raw: gap = 0.1
+        elif "アタマ" in raw: gap = 0.2
+        elif "クビ" in raw: gap = 0.3
+        elif any(token in raw for token in ("大差", "失格", "中止")): gap = 10.0
+        else:
+            parsed = number(raw)
+            gap = max(0.0, parsed) if parsed is not None else None
+        margin_quality = math.exp(-gap / 2.0) if gap is not None else None
+        output[h["no"]] = {
+            "margin_quality": margin_quality,
+            "last3f_rank_score": last3f_scores.get(h["no"]),
+        }
+    return output
+
+
+def score_runner_d(h, history, sire_stats, jockey_stats, race, model_weights,
+                   include_recent_history=True):
+    """B score plus race-relative recent margin and closing-speed features."""
+    base_score, parts = score_runner(h, history, sire_stats, jockey_stats, race,
+                                     model_weights, include_recent_history)
+    past = history.get(h["name"], [])[-5:] if include_recent_history else []
+    def recent_average(key):
+        values = [number(row.get(key)) for row in past]
+        values = [value for value in values if value is not None]
+        if not values:
+            return 0.5
+        weights = list(range(1, len(values) + 1))
+        return sum(value * weight for value, weight in zip(values, weights)) / sum(weights)
+    margin_form = recent_average("margin_quality")
+    closing_form = recent_average("last3f_rank_score")
+    return base_score * 0.80 + margin_form * 0.10 + closing_form * 0.10, {
+        **parts, "margin_form": margin_form, "closing_form": closing_form
+    }
+
+
 def score_runner(h, history, sire_stats, jockey_stats, race, model_weights, include_recent_history=True):
     past = history.get(h["name"], [])[-5:] if include_recent_history else []
     if past:
@@ -401,9 +458,11 @@ def run_backtest(races, horses, payouts):
         for pending_field, pending_parts, pending_race in items:
             if update_model(pending_field, pending_parts, model_weights):
                 learning_updates += 1
+            performance = field_performance_features(pending_field)
             for runner in pending_field:
                 if runner.get("finish"):
                     history[runner["name"]].append({
+                        **performance.get(runner["no"], {}),
                         "date":pending_race["date"],"venue":pending_race["venue"],"distance":pending_race.get("distance"),"field_size":pending_race.get("field_size"),
                         "finish":runner["finish"],"margin":margin_score(runner.get("margin")),"last3f":runner.get("last3f"),
                         **corner_history_for_runner(runner, pending_race)
@@ -473,12 +532,15 @@ def build_live_history(races, horses):
     jockey_stats = defaultdict(lambda: {"runs": 0, "top3": 0})
     ordered = sorted(races.values(), key=lambda r:(r["date"],r["venue"],int(r["race"])))
     for race in ordered:
-        for h in horses.get(race["key"], []):
+        field = horses.get(race["key"], [])
+        performance = field_performance_features(field)
+        for h in field:
             finish = h.get("finish")
             if not finish:
                 continue
             item = {"date": race["date"].isoformat(), "venue": race["venue"],
                     "distance": race.get("distance"), "field_size": race.get("field_size"), "finish": finish,
+                    **performance.get(h["no"], {}),
                     "margin": h.get("margin", ""), "last3f": h.get("last3f"),
                     **corner_history_for_runner(h, race)}
             horse_history[norm(h["name"])].append(item)
@@ -506,7 +568,10 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     _, _, _, learned, updates, train_calibration_records = run_backtest(train_races, train_horses, train_payouts)
     temperature = fit_temperature(train_calibration_records)
     baseline = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
-    models = {"baseline":baseline, "trained":learned, "trained_no_recent_history":learned, "trained_with_pace":learned}
+    d_weights = {key: value * 0.80 for key, value in learned.items()}
+    models = {"baseline":baseline, "trained":learned, "trained_no_recent_history":learned,
+              "trained_with_pace":learned, "trained_with_performance":d_weights,
+              "trained_performance_with_pace":d_weights}
     kinds = ("win","place","wide","quinella","exacta","trio","trifecta")
     results = {name:{"races":0,"winner_top1":0,"winner_top3":0,
                      "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0}
@@ -518,10 +583,13 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     train_ordered = sorted(train_races.values(),
                            key=lambda r:(r["date"],r["venue"],int(r["race"])))
     for train_race in train_ordered:
-        for h in train_horses.get(train_race["key"], []):
+        train_field = train_horses.get(train_race["key"], [])
+        train_performance = field_performance_features(train_field)
+        for h in train_field:
             if not h.get("finish"):
                 continue
             history[h["name"]].append({"date":train_race["date"],"venue":train_race["venue"],
+                **train_performance.get(h["no"], {}),
                 "distance":train_race.get("distance"),"field_size":train_race.get("field_size"),"finish":h["finish"],
                 "margin":margin_score(h.get("margin")),"last3f":h.get("last3f"),
                 **corner_history_for_runner(h, train_race)})
@@ -537,9 +605,11 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
     test_calibration_records=[]
     def commit(items):
         for field,race in items:
+            performance = field_performance_features(field)
             for h in field:
                 if not h.get("finish"): continue
                 history[h["name"]].append({"date":race["date"],"venue":race["venue"],
+                    **performance.get(h["no"], {}),
                     "distance":race.get("distance"),"field_size":race.get("field_size"),"finish":h["finish"],
                     "margin":margin_score(h.get("margin")),"last3f":h.get("last3f"),
                     **corner_history_for_runner(h, race)})
@@ -564,8 +634,11 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
         if not winners: continue
         for model_name,weights in models.items():
             include_recent_history = model_name != "trained_no_recent_history"
-            scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights,include_recent_history=include_recent_history)[0],h) for h in field]
-            if model_name == "trained_with_pace":
+            use_performance = model_name in ("trained_with_performance", "trained_performance_with_pace")
+            scorer = score_runner_d if use_performance else score_runner
+            scored=[(scorer(h,history,sire_stats,jockey_stats,race,weights,
+                            include_recent_history=include_recent_history)[0],h) for h in field]
+            if model_name in ("trained_with_pace", "trained_performance_with_pace"):
                 _, _, pace_delta = pace_adjustments(field, history)
                 scored = [(score + pace_delta.get(h["no"], 0.0), h) for score, h in scored]
             if model_name == "trained":
@@ -946,7 +1019,8 @@ def holdout_validation(races, horses, payouts):
 
     kinds=("win","place","wide","quinella","exacta","trio","trifecta")
     aggregate={}
-    for model_name in ("baseline","trained","trained_no_recent_history","trained_with_pace"):
+    for model_name in ("baseline","trained","trained_no_recent_history","trained_with_pace",
+                       "trained_with_performance","trained_performance_with_pace"):
         total={"races":0,"winner_top1":0,"winner_top3":0,
                "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0} for kind in kinds}}
         for fold in folds:
@@ -1042,6 +1116,7 @@ def main():
         "updates": learning_updates,
         "validation": validation,
         "feature_schema": ["form", "venue", "distance", "sire", "jockey", "age"],
+        "experimental_d_features": ["recent_margin_quality", "recent_race_relative_last3f_rank"],
         "pace_feature_schema": ["first_corner_pct", "last_corner_pct"],
         "pace_feature_note": "Experimental trained_with_pace model is holdout-only; production weights remain unchanged until validation passes.",
         "weights": validated_weights,
