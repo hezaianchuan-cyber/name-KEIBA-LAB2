@@ -1,6 +1,6 @@
 {
   "model_version": "nar-chronological-v7-fieldsize-calibrated",
-  "generated_at": "2026-11-03T04:35:37.427999+00:00",
+  "generated_at": "2026-11-03T04:40:16.846156+00:00",
   "training_period": {
     "start": "2023-11-03",
     "end": "2026-11-02"
@@ -37,17 +37,17 @@
         },
         "exacta": {
           "tickets": 65212,
-          "hits": 3768,
+          "hits": 3769,
           "stake": 6521200,
-          "return": 4227810,
-          "profit": -2293390,
-          "roi": 64.83,
+          "return": 4194730,
+          "profit": -2326470,
+          "roi": 64.32,
           "hit_rate": 5.78,
           "validation_folds": [
             {
               "fold": 2,
-              "model": "trained_performance_with_pace",
-              "roi": 67.26,
+              "model": "trained_with_performance",
+              "roi": 66.01,
               "tickets": 26540
             },
             {
@@ -115,6 +115,99 @@
           "model": "baseline"
         }
       ],
+      "selected_role_trifecta_strategy_by_validation_fold": [
+        {
+          "selection_folds": [
+            1
+          ],
+          "validation_fold": 2,
+          "model": "baseline",
+          "status": "selected_from_prior_folds",
+          "strategy": {
+            "blend": "0.20",
+            "formation": "2-5-5",
+            "development_roi": 55.897919170936085,
+            "development_races": 7108,
+            "development_tickets": 171374
+          },
+          "validation": {
+            "races": 6635,
+            "tickets": 159832,
+            "hits": 1468,
+            "hit_races": 1466,
+            "stake": 15983200,
+            "return": 8873570.0,
+            "sum_return_sq": 279996293100.0,
+            "sum_stake_sq": 38513600000,
+            "sum_stake_return": 21419006000.0,
+            "tickets_per_race": 24.09,
+            "hit_rate": 0.9185,
+            "race_hit_rate": 22.09,
+            "roi": 55.52,
+            "roi_ci95_normal_low": 49.17,
+            "roi_ci95_normal_high": 61.87,
+            "minimum_sample_met": true,
+            "candidate_pass": false,
+            "profit": -7109630.0
+          }
+        },
+        {
+          "selection_folds": [
+            1,
+            2
+          ],
+          "validation_fold": 3,
+          "model": "baseline",
+          "status": "selected_from_prior_folds",
+          "strategy": {
+            "blend": "0.15",
+            "formation": "2-5-5",
+            "development_roi": 56.240486740374905,
+            "development_races": 13743,
+            "development_tickets": 330854
+          },
+          "validation": {
+            "races": 9668,
+            "tickets": 232804,
+            "hits": 2094,
+            "hit_races": 2089,
+            "stake": 23280400,
+            "return": 12545560.0,
+            "sum_return_sq": 325797175200.0,
+            "sum_stake_sq": 56073760000,
+            "sum_stake_return": 30173326000.0,
+            "tickets_per_race": 24.08,
+            "hit_rate": 0.8995,
+            "race_hit_rate": 21.61,
+            "roi": 53.89,
+            "roi_ci95_normal_low": 49.2,
+            "roi_ci95_normal_high": 58.57,
+            "minimum_sample_met": true,
+            "candidate_pass": false,
+            "profit": -10734840.0
+          }
+        }
+      ],
+      "selected_role_trifecta_strategy_portfolio": {
+        "races": 16303,
+        "tickets": 392636,
+        "hits": 3562,
+        "hit_races": 3555,
+        "stake": 39263600,
+        "return": 21419130,
+        "sum_return_sq": 605793468300,
+        "sum_stake_sq": 94587360000,
+        "sum_stake_return": 51592332000,
+        "tickets_per_race": 24.08,
+        "hit_rate": 0.9072,
+        "race_hit_rate": 21.81,
+        "roi": 54.55,
+        "roi_ci95_normal_low": 50.76,
+        "roi_ci95_normal_high": 58.35,
+        "minimum_sample_met": true,
+        "candidate_pass": false,
+        "profit": -17844470
+      },
       "selected_role_trifecta_diagnostics": {
         "0.05": {
           "1-4-4": {
@@ -572,7 +665,7 @@
               "roi_delta_vs_baseline": null
             },
             "exacta": {
-              "model": "trained_performance_with_pace",
+              "model": "trained_with_performance",
               "development_roi": 62.5,
               "development_tickets": 28432,
               "baseline_roi": 59.16,
@@ -585,14 +678,14 @@
               "required_min_tickets": 300,
               "required_min_roi_gain": 2.5,
               "validation_fold": 2,
-              "validation_roi": 67.26,
+              "validation_roi": 66.01,
               "validation_tickets": 26540,
-              "validation_hits": 1594,
+              "validation_hits": 1595,
               "validation_stake": 2654000,
-              "validation_return": 1785000.0,
-              "validation_profit": -869000.0,
+              "validation_return": 1751920.0,
+              "validation_profit": -902080.0,
               "baseline_validation_roi": 58.36,
-              "roi_delta_vs_baseline": 8.9
+              "roi_delta_vs_baseline": 7.65
             },
             "trio": {
               "model": "trained_no_recent_history",
