@@ -790,6 +790,18 @@ class TrifectaDiagnosticTests(unittest.TestCase):
         self.assertEqual(len(nb.build_trifecta_tickets(ranked, 2, 6)), 40)
         self.assertEqual(len(nb.build_trifecta_tickets(ranked, 2, 7)), 60)
 
+    def test_asymmetric_formation_uses_independent_rank_pools(self):
+        ranked = [{"no": str(i)} for i in range(1, 8)]
+        a = nb.build_trifecta_formation(ranked, 2, 4, 5)
+        b = nb.build_trifecta_formation(ranked, 2, 5, 4)
+        self.assertEqual(len(a), 23)
+        self.assertEqual(len(b), 25)
+        self.assertTrue(all(ticket[0] in {"1", "2"} for ticket in a))
+        self.assertTrue(all(ticket[1] in {"1", "2", "3", "4"} for ticket in a))
+        self.assertTrue(all(ticket[2] in {"1", "2", "3", "4", "5"} for ticket in a))
+        self.assertTrue(all(len(set(ticket)) == 3 for ticket in a + b))
+        self.assertEqual(a, nb.build_trifecta_tickets(ranked, 2, 5)[:0] + a)
+
     def test_role_coverage_and_ordered_hit_are_reported_separately(self):
         ranked = [{"no": str(i)} for i in range(1, 8)]
         field = [
@@ -809,8 +821,8 @@ class TrifectaDiagnosticTests(unittest.TestCase):
         self.assertEqual(result["rates"]["second_top2"], 100.0)
         self.assertEqual(result["rates"]["third_top3"], 100.0)
         self.assertEqual(result["rates"]["all_podium_top5"], 100.0)
-        self.assertEqual(result["structures"]["first1_pool5"]["hits"], 0)
-        self.assertEqual(result["structures"]["first2_pool5"]["hits"], 1)
+        self.assertEqual(result["structures"]["1-5-5"]["hits"], 0)
+        self.assertEqual(result["structures"]["2-5-5"]["hits"], 1)
         self.assertEqual(result["structures"]["first2_pool5"]["tickets"], 24)
         self.assertEqual(result["structures"]["first2_pool5"]["roi"], 500.0)
 
