@@ -1278,3 +1278,24 @@ class ConditionSpecificFinishDiagnosticsTests(unittest.TestCase):
         self.assertEqual(summary["venue:大井"]["2"]["ordinary"]["topk_hits"]["1"], 1)
         self.assertEqual(summary["venue:大井"]["2"]["role_specific"]["topk_hits"]["1"], 0)
         self.assertEqual(summary["venue:大井"]["3"]["role_specific"]["topk_hits"]["1"], 1)
+ 
+    def test_research_fold_export_keeps_condition_diagnostics(self):
+        fold = {
+            "fold": 2,
+            "train_end": "2025-01-01",
+            "test_start": "2025-01-02",
+            "test_end": "2025-02-01",
+            "models": {"trained": {"races": 123, "finish_position_diagnostics": {"ordinary": {}}}},
+            "condition_finish_position_segments": {"venue:大井": {"1": {"ordinary": {"races": 20}}}},
+            "condition_model_segments": {"trifecta": {"baseline": {"venue:大井": {"roi": 61.0}}}},
+            "condition_model_comparisons": {"trifecta": [{"segment": "venue:大井"}]},
+            "trained_condition_segments": {"venue:大井": {"races": 20}},
+        }
+        exported = nb.build_trifecta_research_fold(fold)
+        self.assertEqual(exported["races"], 123)
+        self.assertEqual(exported["condition_finish_position_segments"],
+                         fold["condition_finish_position_segments"])
+        self.assertEqual(exported["condition_model_segments"], fold["condition_model_segments"])
+        self.assertEqual(exported["condition_model_comparisons"], fold["condition_model_comparisons"])
+        self.assertEqual(exported["trained_condition_segments"], fold["trained_condition_segments"])
+
