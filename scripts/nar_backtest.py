@@ -706,11 +706,12 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
         "bet_types": {kind: {"tickets": 0, "hits": 0, "stake": 0, "return": 0}
                       for kind in ("win","place","wide","quinella","exacta","trio","trifecta")}
     })
-    # Focused comparison of the wide model that improved in both prior folds
-    # against baseline, stratified by venue/surface/going/distance.
-    wide_model_segment_stats = defaultdict(lambda: {
+    # Compare the baseline and challenger on wide, exacta (馬単), and trio
+    # (3連複), stratified by venue/surface/going/distance.
+    condition_model_segment_stats = defaultdict(lambda: {
         "races": 0, "tickets": 0, "hits": 0, "stake": 0, "return": 0
     })
+    condition_bet_types = ("wide", "exacta", "trio")
     def commit(items):
         for field,race in items:
             performance = field_performance_features(field)
@@ -770,15 +771,18 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             ticket_map=build_fixed_tickets(ranked)
             if model_name in ("baseline", "trained_no_recent_history"):
                 for dimension, label in race_segment_labels(race).items():
-                    wide_bucket = wide_model_segment_stats[(model_name, dimension, label)]
-                    wide_bucket["races"] += 1
-                    for wide_ticket in ticket_map.get("wide", []):
-                        wide_bucket["tickets"] += 1
-                        wide_bucket["stake"] += 100
-                        wide_return = payout_for("wide", wide_ticket, payout) or 0
-                        if wide_return:
-                            wide_bucket["hits"] += 1
-                            wide_bucket["return"] += wide_return
+                    for condition_kind in condition_bet_types:
+                        condition_bucket = condition_model_segment_stats[
+                            (model_name, condition_kind, dimension, label)]
+                        condition_bucket["races"] += 1
+                        for condition_ticket in ticket_map.get(condition_kind, []):
+                            condition_bucket["tickets"] += 1
+                            condition_bucket["stake"] += 100
+                            condition_return = payout_for(
+                                condition_kind, condition_ticket, payout) or 0
+                            if condition_return:
+                                condition_bucket["hits"] += 1
+                                condition_bucket["return"] += condition_return
             if model_name == "trained":
                 update_confidence_filter_stats(confidence_filter_stats, top_probability,
                                                ranked, winners, ticket_map, payout)
@@ -841,38 +845,54 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
             "winner_top3_rate": round(100 * segment["winner_top3"] / n, 2),
             "bet_types": bet_types,
         }
-    wide_segments = {"baseline": {}, "trained_no_recent_history": {}}
-    for (model_name, dimension, label), bucket in sorted(wide_model_segment_stats.items()):
+    condition_segments = {
+        kind: {"baseline": {}, "trained_no_recent_history": {}}
+        for kind in condition_bet_types
+    }
+    for (model_name, kind, dimension, label), bucket in sorted(
+            condition_model_segment_stats.items()):
         roi = round(100 * bucket["return"] / bucket["stake"], 2) if bucket["stake"] else None
-        wide_segments[model_name][f"{dimension}:{label}"] = {
-            **bucket, "roi": roi, "profit": bucket["return"] - bucket["stake"]
+        hit_rate = round(100 * bucket["hits"] / bucket["tickets"], 2) if bucket["tickets"] else None
+        condition_segments[kind][model_name][f"{dimension}:{label}"] = {
+            **bucket, "roi": roi, "hit_rate": hit_rate,
+            "profit": bucket["return"] - bucket["stake"]
         }
-    wide_comparison = []
-    segment_keys = sorted(set(wide_segments["baseline"]) |
-                          set(wide_segments["trained_no_recent_history"]))
-    for segment_key in segment_keys:
-        baseline_bucket = wide_segments["baseline"].get(segment_key)
-        candidate_bucket = wide_segments["trained_no_recent_history"].get(segment_key)
-        baseline_roi = baseline_bucket.get("roi") if baseline_bucket else None
-        candidate_roi = candidate_bucket.get("roi") if candidate_bucket else None
-        wide_comparison.append({
-            "segment": segment_key,
-            "baseline_races": baseline_bucket.get("races", 0) if baseline_bucket else 0,
-            "candidate_races": candidate_bucket.get("races", 0) if candidate_bucket else 0,
-            "baseline_roi": baseline_roi, "candidate_roi": candidate_roi,
-            "roi_delta": round(candidate_roi - baseline_roi, 2)
-                if baseline_roi is not None and candidate_roi is not None else None,
-            "baseline_tickets": baseline_bucket.get("tickets", 0) if baseline_bucket else 0,
-            "candidate_tickets": candidate_bucket.get("tickets", 0) if candidate_bucket else 0,
-        })
+    condition_comparisons = {}
+    for kind in condition_bet_types:
+        comparison = []
+        baseline_segments = condition_segments[kind]["baseline"]
+        candidate_segments = condition_segments[kind]["trained_no_recent_history"]
+        segment_keys = sorted(set(baseline_segments) | set(candidate_segments))
+        for segment_key in segment_keys:
+            baseline_bucket = baseline_segments.get(segment_key)
+            candidate_bucket = candidate_segments.get(segment_key)
+            baseline_roi = baseline_bucket.get("roi") if baseline_bucket else None
+            candidate_roi = candidate_bucket.get("roi") if candidate_bucket else None
+            comparison.append({
+                "segment": segment_key,
+                "baseline_races": baseline_bucket.get("races", 0) if baseline_bucket else 0,
+                "candidate_races": candidate_bucket.get("races", 0) if candidate_bucket else 0,
+                "baseline_tickets": baseline_bucket.get("tickets", 0) if baseline_bucket else 0,
+                "candidate_tickets": candidate_bucket.get("tickets", 0) if candidate_bucket else 0,
+                "baseline_hits": baseline_bucket.get("hits", 0) if baseline_bucket else 0,
+                "candidate_hits": candidate_bucket.get("hits", 0) if candidate_bucket else 0,
+                "baseline_hit_rate": baseline_bucket.get("hit_rate") if baseline_bucket else None,
+                "candidate_hit_rate": candidate_bucket.get("hit_rate") if candidate_bucket else None,
+                "baseline_roi": baseline_roi, "candidate_roi": candidate_roi,
+                "roi_delta": round(candidate_roi - baseline_roi, 2)
+                    if baseline_roi is not None and candidate_roi is not None else None,
+                "baseline_profit": baseline_bucket.get("profit") if baseline_bucket else None,
+                "candidate_profit": candidate_bucket.get("profit") if candidate_bucket else None,
+            })
+        condition_comparisons[kind] = comparison
     return {"train_start":min(train_dates).isoformat(),"train_end":max(train_dates).isoformat(),
             "test_start":min(test_dates).isoformat(),"test_end":max(test_dates).isoformat(),
             "train_races":len(train_races),"test_races":len(ordered),
             "training_updates":updates,"trained_weights":learned,"temperature":round(temperature,4),
             "calibration":calibration_metrics(test_calibration_records,temperature),"models":out,
             "trained_condition_segments":segment_output,
-            "wide_model_condition_segments":wide_segments,
-            "wide_condition_comparison":wide_comparison,
+            "condition_model_segments":condition_segments,
+            "condition_model_comparisons":condition_comparisons,
             "confidence_filter_backtest":summarize_confidence_filter_stats(confidence_filter_stats)}
 
 
