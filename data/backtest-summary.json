@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-03T02:28:12.556808+00:00",
+  "generated_at": "2026-11-03T02:39:33.154891+00:00",
   "period": {
     "start": "2023-11-03",
     "end": "2026-11-02"
@@ -275,12 +275,45 @@
     "status": "ok",
     "auto_improvement_loop": {
       "status": "ok",
-      "selection_method": "For each bet type, select among the fixed candidate models using only the immediately preceding fold. A challenger must have at least min_tickets and exceed that fold's baseline ROI by min_roi_gain percentage points. The selected model is evaluated on the next untouched fold; baseline is the fallback.",
+      "selection_method": "Each candidate must clear its type-specific sample and ROI-edge hurdle in every available prior fold. Selection uses no validation-fold outcomes; baseline is the fallback.",
       "min_tickets": 300,
       "min_roi_gain_percentage_points": 5.0,
+      "selection_rules_by_bet_type": {
+        "win": {
+          "min_tickets": 300,
+          "min_roi_gain_percentage_points": 5.0
+        },
+        "place": {
+          "min_tickets": 300,
+          "min_roi_gain_percentage_points": 5.0
+        },
+        "wide": {
+          "min_tickets": 300,
+          "min_roi_gain_percentage_points": 5.0
+        },
+        "quinella": {
+          "min_tickets": 300,
+          "min_roi_gain_percentage_points": 5.0
+        },
+        "exacta": {
+          "min_tickets": 300,
+          "min_roi_gain_percentage_points": 5.0
+        },
+        "trio": {
+          "min_tickets": 300,
+          "min_roi_gain_percentage_points": 5.0
+        },
+        "trifecta": {
+          "min_tickets": 5000,
+          "min_roi_gain_percentage_points": 12.0
+        }
+      },
       "evaluations": [
         {
           "selection_fold": 1,
+          "prior_folds_used": [
+            1
+          ],
           "validation_fold": 2,
           "bet_types": {
             "win": {
@@ -288,6 +321,14 @@
               "development_roi": 74.58,
               "development_tickets": 14216,
               "baseline_roi": 68.64,
+              "development_roi_history": [
+                74.58
+              ],
+              "edge_history": [
+                5.94
+              ],
+              "required_min_tickets": 300,
+              "required_min_roi_gain": 5.0,
               "validation_fold": 2,
               "validation_roi": 72.11,
               "validation_tickets": 13270,
@@ -303,6 +344,12 @@
               "development_roi": 74.14,
               "development_tickets": 21324,
               "baseline_roi": 74.14,
+              "development_roi_history": [
+                74.14
+              ],
+              "edge_history": [],
+              "required_min_tickets": 300,
+              "required_min_roi_gain": 5.0,
               "validation_fold": 2,
               "validation_roi": 75.85,
               "validation_tickets": 19905,
@@ -318,6 +365,14 @@
               "development_roi": 70.56,
               "development_tickets": 21324,
               "baseline_roi": 63.33,
+              "development_roi_history": [
+                70.56
+              ],
+              "edge_history": [
+                7.23
+              ],
+              "required_min_tickets": 300,
+              "required_min_roi_gain": 5.0,
               "validation_fold": 2,
               "validation_roi": 72.6,
               "validation_tickets": 19905,
@@ -333,6 +388,12 @@
               "development_roi": 60.93,
               "development_tickets": 7108,
               "baseline_roi": 60.93,
+              "development_roi_history": [
+                60.93
+              ],
+              "edge_history": [],
+              "required_min_tickets": 300,
+              "required_min_roi_gain": 5.0,
               "validation_fold": 2,
               "validation_roi": 58.57,
               "validation_tickets": 6635,
@@ -348,6 +409,12 @@
               "development_roi": 59.16,
               "development_tickets": 28432,
               "baseline_roi": 59.16,
+              "development_roi_history": [
+                59.16
+              ],
+              "edge_history": [],
+              "required_min_tickets": 300,
+              "required_min_roi_gain": 5.0,
               "validation_fold": 2,
               "validation_roi": 58.36,
               "validation_tickets": 26540,
@@ -363,6 +430,12 @@
               "development_roi": 55.44,
               "development_tickets": 71080,
               "baseline_roi": 55.44,
+              "development_roi_history": [
+                55.44
+              ],
+              "edge_history": [],
+              "required_min_tickets": 300,
+              "required_min_roi_gain": 5.0,
               "validation_fold": 2,
               "validation_roi": 55.47,
               "validation_tickets": 66350,
@@ -374,24 +447,34 @@
               "roi_delta_vs_baseline": 0.0
             },
             "trifecta": {
-              "model": "trained_no_recent_history",
-              "development_roi": 65.62,
+              "model": "baseline",
+              "development_roi": 54.14,
               "development_tickets": 170592,
               "baseline_roi": 54.14,
+              "development_roi_history": [
+                54.14
+              ],
+              "edge_history": [],
+              "required_min_tickets": 5000,
+              "required_min_roi_gain": 12.0,
               "validation_fold": 2,
-              "validation_roi": 51.39,
+              "validation_roi": 54.8,
               "validation_tickets": 159240,
-              "validation_hits": 859,
+              "validation_hits": 1479,
               "validation_stake": 15924000,
-              "validation_return": 8182640.0,
-              "validation_profit": -7741360.0,
+              "validation_return": 8727060.0,
+              "validation_profit": -7196940.0,
               "baseline_validation_roi": 54.8,
-              "roi_delta_vs_baseline": -3.41
+              "roi_delta_vs_baseline": 0.0
             }
           }
         },
         {
           "selection_fold": 2,
+          "prior_folds_used": [
+            1,
+            2
+          ],
           "validation_fold": 3,
           "bet_types": {
             "win": {
@@ -399,6 +482,12 @@
               "development_roi": 72.9,
               "development_tickets": 13270,
               "baseline_roi": 72.9,
+              "development_roi_history": [
+                72.9
+              ],
+              "edge_history": [],
+              "required_min_tickets": 300,
+              "required_min_roi_gain": 5.0,
               "validation_fold": 3,
               "validation_roi": 70.01,
               "validation_tickets": 19336,
@@ -414,6 +503,12 @@
               "development_roi": 75.85,
               "development_tickets": 19905,
               "baseline_roi": 75.85,
+              "development_roi_history": [
+                75.85
+              ],
+              "edge_history": [],
+              "required_min_tickets": 300,
+              "required_min_roi_gain": 5.0,
               "validation_fold": 3,
               "validation_roi": 74.75,
               "validation_tickets": 29004,
@@ -429,6 +524,16 @@
               "development_roi": 72.6,
               "development_tickets": 19905,
               "baseline_roi": 64.66,
+              "development_roi_history": [
+                70.56,
+                72.6
+              ],
+              "edge_history": [
+                7.23,
+                7.94
+              ],
+              "required_min_tickets": 300,
+              "required_min_roi_gain": 5.0,
               "validation_fold": 3,
               "validation_roi": 74.78,
               "validation_tickets": 29004,
@@ -440,40 +545,58 @@
               "roi_delta_vs_baseline": 9.88
             },
             "quinella": {
-              "model": "trained",
-              "development_roi": 65.74,
+              "model": "baseline",
+              "development_roi": 58.57,
               "development_tickets": 6635,
               "baseline_roi": 58.57,
+              "development_roi_history": [
+                58.57
+              ],
+              "edge_history": [],
+              "required_min_tickets": 300,
+              "required_min_roi_gain": 5.0,
               "validation_fold": 3,
-              "validation_roi": 62.6,
+              "validation_roi": 60.68,
               "validation_tickets": 9668,
-              "validation_hits": 1363,
+              "validation_hits": 1277,
               "validation_stake": 966800,
-              "validation_return": 605240.0,
-              "validation_profit": -361560.0,
+              "validation_return": 586630.0,
+              "validation_profit": -380170.0,
               "baseline_validation_roi": 60.68,
-              "roi_delta_vs_baseline": 1.92
+              "roi_delta_vs_baseline": 0.0
             },
             "exacta": {
-              "model": "trained_margin_only",
-              "development_roi": 68.16,
+              "model": "baseline",
+              "development_roi": 58.36,
               "development_tickets": 26540,
               "baseline_roi": 58.36,
+              "development_roi_history": [
+                58.36
+              ],
+              "edge_history": [],
+              "required_min_tickets": 300,
+              "required_min_roi_gain": 5.0,
               "validation_fold": 3,
-              "validation_roi": 65.24,
+              "validation_roi": 62.17,
               "validation_tickets": 38672,
-              "validation_hits": 2212,
+              "validation_hits": 2137,
               "validation_stake": 3867200,
-              "validation_return": 2522930.0,
-              "validation_profit": -1344270.0,
+              "validation_return": 2404250.0,
+              "validation_profit": -1462950.0,
               "baseline_validation_roi": 62.17,
-              "roi_delta_vs_baseline": 3.07
+              "roi_delta_vs_baseline": 0.0
             },
             "trio": {
               "model": "baseline",
               "development_roi": 55.47,
               "development_tickets": 66350,
               "baseline_roi": 55.47,
+              "development_roi_history": [
+                55.47
+              ],
+              "edge_history": [],
+              "required_min_tickets": 300,
+              "required_min_roi_gain": 5.0,
               "validation_fold": 3,
               "validation_roi": 56.16,
               "validation_tickets": 96680,
@@ -485,19 +608,25 @@
               "roi_delta_vs_baseline": 0.0
             },
             "trifecta": {
-              "model": "trained_performance_with_pace",
-              "development_roi": 60.12,
+              "model": "baseline",
+              "development_roi": 54.8,
               "development_tickets": 159240,
               "baseline_roi": 54.8,
+              "development_roi_history": [
+                54.8
+              ],
+              "edge_history": [],
+              "required_min_tickets": 5000,
+              "required_min_roi_gain": 12.0,
               "validation_fold": 3,
-              "validation_roi": 63.28,
+              "validation_roi": 53.9,
               "validation_tickets": 232032,
-              "validation_hits": 2168,
+              "validation_hits": 2106,
               "validation_stake": 23203200,
-              "validation_return": 14683460.0,
-              "validation_profit": -8519740.0,
+              "validation_return": 12506780.0,
+              "validation_profit": -10696420.0,
               "baseline_validation_roi": 53.9,
-              "roi_delta_vs_baseline": 9.38
+              "roi_delta_vs_baseline": 0.0
             }
           }
         }
@@ -4793,6 +4922,1386 @@
             }
           }
         },
+        "wide_model_condition_segments": {
+          "baseline": {
+            "distance_band:long_>2000m": {
+              "races": 15,
+              "tickets": 45,
+              "hits": 9,
+              "stake": 4500,
+              "return": 3860.0,
+              "roi": 85.78,
+              "profit": -640.0
+            },
+            "distance_band:middle_1601-2000m": {
+              "races": 508,
+              "tickets": 1524,
+              "hits": 335,
+              "stake": 152400,
+              "return": 100260.0,
+              "roi": 65.79,
+              "profit": -52140.0
+            },
+            "distance_band:mile_1201-1600m": {
+              "races": 4088,
+              "tickets": 12264,
+              "hits": 2718,
+              "stake": 1226400,
+              "return": 755220.0,
+              "roi": 61.58,
+              "profit": -471180.0
+            },
+            "distance_band:short_<=1200m": {
+              "races": 2497,
+              "tickets": 7491,
+              "hits": 1523,
+              "stake": 749100,
+              "return": 491060.0,
+              "roi": 65.55,
+              "profit": -258040.0
+            },
+            "going:0.4": {
+              "races": 18,
+              "tickets": 54,
+              "hits": 8,
+              "stake": 5400,
+              "return": 3880.0,
+              "roi": 71.85,
+              "profit": -1520.0
+            },
+            "going:0.5": {
+              "races": 32,
+              "tickets": 96,
+              "hits": 23,
+              "stake": 9600,
+              "return": 11140.0,
+              "roi": 116.04,
+              "profit": 1540.0
+            },
+            "going:0.6": {
+              "races": 22,
+              "tickets": 66,
+              "hits": 11,
+              "stake": 6600,
+              "return": 2920.0,
+              "roi": 44.24,
+              "profit": -3680.0
+            },
+            "going:0.7": {
+              "races": 12,
+              "tickets": 36,
+              "hits": 3,
+              "stake": 3600,
+              "return": 900.0,
+              "roi": 25.0,
+              "profit": -2700.0
+            },
+            "going:0.8": {
+              "races": 28,
+              "tickets": 84,
+              "hits": 18,
+              "stake": 8400,
+              "return": 6190.0,
+              "roi": 73.69,
+              "profit": -2210.0
+            },
+            "going:0.9": {
+              "races": 32,
+              "tickets": 96,
+              "hits": 13,
+              "stake": 9600,
+              "return": 5510.0,
+              "roi": 57.4,
+              "profit": -4090.0
+            },
+            "going:1.0": {
+              "races": 36,
+              "tickets": 108,
+              "hits": 18,
+              "stake": 10800,
+              "return": 5340.0,
+              "roi": 49.44,
+              "profit": -5460.0
+            },
+            "going:1.1": {
+              "races": 36,
+              "tickets": 108,
+              "hits": 14,
+              "stake": 10800,
+              "return": 7270.0,
+              "roi": 67.31,
+              "profit": -3530.0
+            },
+            "going:1.2": {
+              "races": 47,
+              "tickets": 141,
+              "hits": 24,
+              "stake": 14100,
+              "return": 7600.0,
+              "roi": 53.9,
+              "profit": -6500.0
+            },
+            "going:1.3": {
+              "races": 61,
+              "tickets": 183,
+              "hits": 21,
+              "stake": 18300,
+              "return": 8540.0,
+              "roi": 46.67,
+              "profit": -9760.0
+            },
+            "going:1.4": {
+              "races": 58,
+              "tickets": 174,
+              "hits": 23,
+              "stake": 17400,
+              "return": 8290.0,
+              "roi": 47.64,
+              "profit": -9110.0
+            },
+            "going:1.5": {
+              "races": 76,
+              "tickets": 228,
+              "hits": 35,
+              "stake": 22800,
+              "return": 17580.0,
+              "roi": 77.11,
+              "profit": -5220.0
+            },
+            "going:1.6": {
+              "races": 62,
+              "tickets": 186,
+              "hits": 21,
+              "stake": 18600,
+              "return": 9730.0,
+              "roi": 52.31,
+              "profit": -8870.0
+            },
+            "going:1.7": {
+              "races": 60,
+              "tickets": 180,
+              "hits": 34,
+              "stake": 18000,
+              "return": 13110.0,
+              "roi": 72.83,
+              "profit": -4890.0
+            },
+            "going:1.8": {
+              "races": 34,
+              "tickets": 102,
+              "hits": 12,
+              "stake": 10200,
+              "return": 5690.0,
+              "roi": 55.78,
+              "profit": -4510.0
+            },
+            "going:1.9": {
+              "races": 20,
+              "tickets": 60,
+              "hits": 8,
+              "stake": 6000,
+              "return": 2950.0,
+              "roi": 49.17,
+              "profit": -3050.0
+            },
+            "going:2.0": {
+              "races": 44,
+              "tickets": 132,
+              "hits": 26,
+              "stake": 13200,
+              "return": 9650.0,
+              "roi": 73.11,
+              "profit": -3550.0
+            },
+            "going:2.1": {
+              "races": 36,
+              "tickets": 108,
+              "hits": 18,
+              "stake": 10800,
+              "return": 7340.0,
+              "roi": 67.96,
+              "profit": -3460.0
+            },
+            "going:2.2": {
+              "races": 30,
+              "tickets": 90,
+              "hits": 17,
+              "stake": 9000,
+              "return": 7350.0,
+              "roi": 81.67,
+              "profit": -1650.0
+            },
+            "going:2.3": {
+              "races": 16,
+              "tickets": 48,
+              "hits": 7,
+              "stake": 4800,
+              "return": 3180.0,
+              "roi": 66.25,
+              "profit": -1620.0
+            },
+            "going:2.4": {
+              "races": 8,
+              "tickets": 24,
+              "hits": 0,
+              "stake": 2400,
+              "return": 0,
+              "roi": 0.0,
+              "profit": -2400
+            },
+            "going:2.5": {
+              "races": 10,
+              "tickets": 30,
+              "hits": 5,
+              "stake": 3000,
+              "return": 2690.0,
+              "roi": 89.67,
+              "profit": -310.0
+            },
+            "going:2.6": {
+              "races": 6,
+              "tickets": 18,
+              "hits": 1,
+              "stake": 1800,
+              "return": 230.0,
+              "roi": 12.78,
+              "profit": -1570.0
+            },
+            "going:2.8": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 0,
+              "stake": 600,
+              "return": 0,
+              "roi": 0.0,
+              "profit": -600
+            },
+            "going:3.7": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 0,
+              "stake": 600,
+              "return": 0,
+              "roi": 0.0,
+              "profit": -600
+            },
+            "going:不良": {
+              "races": 688,
+              "tickets": 2064,
+              "hits": 425,
+              "stake": 206400,
+              "return": 123100.0,
+              "roi": 59.64,
+              "profit": -83300.0
+            },
+            "going:稍重": {
+              "races": 1230,
+              "tickets": 3690,
+              "hits": 813,
+              "stake": 369000,
+              "return": 232560.0,
+              "roi": 63.02,
+              "profit": -136440.0
+            },
+            "going:良": {
+              "races": 3649,
+              "tickets": 10947,
+              "hits": 2468,
+              "stake": 1094700,
+              "return": 702710.0,
+              "roi": 64.19,
+              "profit": -391990.0
+            },
+            "going:重": {
+              "races": 753,
+              "tickets": 2259,
+              "hits": 519,
+              "stake": 225900,
+              "return": 144950.0,
+              "roi": 64.17,
+              "profit": -80950.0
+            },
+            "surface:ダート": {
+              "races": 6297,
+              "tickets": 18891,
+              "hits": 4209,
+              "stake": 1889100,
+              "return": 1195310.0,
+              "roi": 63.27,
+              "profit": -693790.0
+            },
+            "surface:芝": {
+              "races": 23,
+              "tickets": 69,
+              "hits": 16,
+              "stake": 6900,
+              "return": 8010.0,
+              "roi": 116.09,
+              "profit": 1110.0
+            },
+            "venue:佐賀": {
+              "races": 542,
+              "tickets": 1626,
+              "hits": 352,
+              "stake": 162600,
+              "return": 87740.0,
+              "roi": 53.96,
+              "profit": -74860.0
+            },
+            "venue:名古屋": {
+              "races": 586,
+              "tickets": 1758,
+              "hits": 300,
+              "stake": 175800,
+              "return": 99680.0,
+              "roi": 56.7,
+              "profit": -76120.0
+            },
+            "venue:園田": {
+              "races": 839,
+              "tickets": 2517,
+              "hits": 629,
+              "stake": 251700,
+              "return": 170200.0,
+              "roi": 67.62,
+              "profit": -81500.0
+            },
+            "venue:大井": {
+              "races": 486,
+              "tickets": 1458,
+              "hits": 291,
+              "stake": 145800,
+              "return": 87640.0,
+              "roi": 60.11,
+              "profit": -58160.0
+            },
+            "venue:川崎": {
+              "races": 360,
+              "tickets": 1080,
+              "hits": 212,
+              "stake": 108000,
+              "return": 63850.0,
+              "roi": 59.12,
+              "profit": -44150.0
+            },
+            "venue:帯広ば": {
+              "races": 788,
+              "tickets": 2364,
+              "hits": 360,
+              "stake": 236400,
+              "return": 147080.0,
+              "roi": 62.22,
+              "profit": -89320.0
+            },
+            "venue:水沢": {
+              "races": 283,
+              "tickets": 849,
+              "hits": 222,
+              "stake": 84900,
+              "return": 69790.0,
+              "roi": 82.2,
+              "profit": -15110.0
+            },
+            "venue:浦和": {
+              "races": 283,
+              "tickets": 849,
+              "hits": 181,
+              "stake": 84900,
+              "return": 45090.0,
+              "roi": 53.11,
+              "profit": -39810.0
+            },
+            "venue:盛岡": {
+              "races": 572,
+              "tickets": 1716,
+              "hits": 382,
+              "stake": 171600,
+              "return": 121630.0,
+              "roi": 70.88,
+              "profit": -49970.0
+            },
+            "venue:笠松": {
+              "races": 331,
+              "tickets": 993,
+              "hits": 228,
+              "stake": 99300,
+              "return": 54520.0,
+              "roi": 54.9,
+              "profit": -44780.0
+            },
+            "venue:船橋": {
+              "races": 357,
+              "tickets": 1071,
+              "hits": 224,
+              "stake": 107100,
+              "return": 72680.0,
+              "roi": 67.86,
+              "profit": -34420.0
+            },
+            "venue:金沢": {
+              "races": 479,
+              "tickets": 1437,
+              "hits": 318,
+              "stake": 143700,
+              "return": 81070.0,
+              "roi": 56.42,
+              "profit": -62630.0
+            },
+            "venue:門別": {
+              "races": 767,
+              "tickets": 2301,
+              "hits": 589,
+              "stake": 230100,
+              "return": 171270.0,
+              "roi": 74.43,
+              "profit": -58830.0
+            },
+            "venue:高知": {
+              "races": 435,
+              "tickets": 1305,
+              "hits": 297,
+              "stake": 130500,
+              "return": 78160.0,
+              "roi": 59.89,
+              "profit": -52340.0
+            }
+          },
+          "trained_no_recent_history": {
+            "distance_band:long_>2000m": {
+              "races": 15,
+              "tickets": 45,
+              "hits": 9,
+              "stake": 4500,
+              "return": 3730.0,
+              "roi": 82.89,
+              "profit": -770.0
+            },
+            "distance_band:middle_1601-2000m": {
+              "races": 508,
+              "tickets": 1524,
+              "hits": 286,
+              "stake": 152400,
+              "return": 122650.0,
+              "roi": 80.48,
+              "profit": -29750.0
+            },
+            "distance_band:mile_1201-1600m": {
+              "races": 4088,
+              "tickets": 12264,
+              "hits": 1981,
+              "stake": 1226400,
+              "return": 840760.0,
+              "roi": 68.56,
+              "profit": -385640.0
+            },
+            "distance_band:short_<=1200m": {
+              "races": 2497,
+              "tickets": 7491,
+              "hits": 1066,
+              "stake": 749100,
+              "return": 537550.0,
+              "roi": 71.76,
+              "profit": -211550.0
+            },
+            "going:0.4": {
+              "races": 18,
+              "tickets": 54,
+              "hits": 4,
+              "stake": 5400,
+              "return": 4570.0,
+              "roi": 84.63,
+              "profit": -830.0
+            },
+            "going:0.5": {
+              "races": 32,
+              "tickets": 96,
+              "hits": 19,
+              "stake": 9600,
+              "return": 19760.0,
+              "roi": 205.83,
+              "profit": 10160.0
+            },
+            "going:0.6": {
+              "races": 22,
+              "tickets": 66,
+              "hits": 8,
+              "stake": 6600,
+              "return": 7470.0,
+              "roi": 113.18,
+              "profit": 870.0
+            },
+            "going:0.7": {
+              "races": 12,
+              "tickets": 36,
+              "hits": 1,
+              "stake": 3600,
+              "return": 250.0,
+              "roi": 6.94,
+              "profit": -3350.0
+            },
+            "going:0.8": {
+              "races": 28,
+              "tickets": 84,
+              "hits": 8,
+              "stake": 8400,
+              "return": 4770.0,
+              "roi": 56.79,
+              "profit": -3630.0
+            },
+            "going:0.9": {
+              "races": 32,
+              "tickets": 96,
+              "hits": 11,
+              "stake": 9600,
+              "return": 12100.0,
+              "roi": 126.04,
+              "profit": 2500.0
+            },
+            "going:1.0": {
+              "races": 36,
+              "tickets": 108,
+              "hits": 10,
+              "stake": 10800,
+              "return": 3980.0,
+              "roi": 36.85,
+              "profit": -6820.0
+            },
+            "going:1.1": {
+              "races": 36,
+              "tickets": 108,
+              "hits": 10,
+              "stake": 10800,
+              "return": 4840.0,
+              "roi": 44.81,
+              "profit": -5960.0
+            },
+            "going:1.2": {
+              "races": 47,
+              "tickets": 141,
+              "hits": 16,
+              "stake": 14100,
+              "return": 10330.0,
+              "roi": 73.26,
+              "profit": -3770.0
+            },
+            "going:1.3": {
+              "races": 61,
+              "tickets": 183,
+              "hits": 16,
+              "stake": 18300,
+              "return": 8180.0,
+              "roi": 44.7,
+              "profit": -10120.0
+            },
+            "going:1.4": {
+              "races": 58,
+              "tickets": 174,
+              "hits": 21,
+              "stake": 17400,
+              "return": 11580.0,
+              "roi": 66.55,
+              "profit": -5820.0
+            },
+            "going:1.5": {
+              "races": 76,
+              "tickets": 228,
+              "hits": 29,
+              "stake": 22800,
+              "return": 16110.0,
+              "roi": 70.66,
+              "profit": -6690.0
+            },
+            "going:1.6": {
+              "races": 62,
+              "tickets": 186,
+              "hits": 19,
+              "stake": 18600,
+              "return": 17740.0,
+              "roi": 95.38,
+              "profit": -860.0
+            },
+            "going:1.7": {
+              "races": 60,
+              "tickets": 180,
+              "hits": 21,
+              "stake": 18000,
+              "return": 11610.0,
+              "roi": 64.5,
+              "profit": -6390.0
+            },
+            "going:1.8": {
+              "races": 34,
+              "tickets": 102,
+              "hits": 11,
+              "stake": 10200,
+              "return": 6410.0,
+              "roi": 62.84,
+              "profit": -3790.0
+            },
+            "going:1.9": {
+              "races": 20,
+              "tickets": 60,
+              "hits": 11,
+              "stake": 6000,
+              "return": 6150.0,
+              "roi": 102.5,
+              "profit": 150.0
+            },
+            "going:2.0": {
+              "races": 44,
+              "tickets": 132,
+              "hits": 17,
+              "stake": 13200,
+              "return": 11280.0,
+              "roi": 85.45,
+              "profit": -1920.0
+            },
+            "going:2.1": {
+              "races": 36,
+              "tickets": 108,
+              "hits": 11,
+              "stake": 10800,
+              "return": 4460.0,
+              "roi": 41.3,
+              "profit": -6340.0
+            },
+            "going:2.2": {
+              "races": 30,
+              "tickets": 90,
+              "hits": 13,
+              "stake": 9000,
+              "return": 9100.0,
+              "roi": 101.11,
+              "profit": 100.0
+            },
+            "going:2.3": {
+              "races": 16,
+              "tickets": 48,
+              "hits": 2,
+              "stake": 4800,
+              "return": 440.0,
+              "roi": 9.17,
+              "profit": -4360.0
+            },
+            "going:2.4": {
+              "races": 8,
+              "tickets": 24,
+              "hits": 1,
+              "stake": 2400,
+              "return": 450.0,
+              "roi": 18.75,
+              "profit": -1950.0
+            },
+            "going:2.5": {
+              "races": 10,
+              "tickets": 30,
+              "hits": 4,
+              "stake": 3000,
+              "return": 1010.0,
+              "roi": 33.67,
+              "profit": -1990.0
+            },
+            "going:2.6": {
+              "races": 6,
+              "tickets": 18,
+              "hits": 3,
+              "stake": 1800,
+              "return": 1710.0,
+              "roi": 95.0,
+              "profit": -90.0
+            },
+            "going:2.8": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 1,
+              "stake": 600,
+              "return": 1240.0,
+              "roi": 206.67,
+              "profit": 640.0
+            },
+            "going:3.7": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 1,
+              "stake": 600,
+              "return": 1040.0,
+              "roi": 173.33,
+              "profit": 440.0
+            },
+            "going:不良": {
+              "races": 688,
+              "tickets": 2064,
+              "hits": 343,
+              "stake": 206400,
+              "return": 152980.0,
+              "roi": 74.12,
+              "profit": -53420.0
+            },
+            "going:稍重": {
+              "races": 1230,
+              "tickets": 3690,
+              "hits": 556,
+              "stake": 369000,
+              "return": 270910.0,
+              "roi": 73.42,
+              "profit": -98090.0
+            },
+            "going:良": {
+              "races": 3649,
+              "tickets": 10947,
+              "hits": 1813,
+              "stake": 1094700,
+              "return": 750440.0,
+              "roi": 68.55,
+              "profit": -344260.0
+            },
+            "going:重": {
+              "races": 753,
+              "tickets": 2259,
+              "hits": 362,
+              "stake": 225900,
+              "return": 153780.0,
+              "roi": 68.07,
+              "profit": -72120.0
+            },
+            "surface:ダート": {
+              "races": 6297,
+              "tickets": 18891,
+              "hits": 3063,
+              "stake": 1889100,
+              "return": 1323910.0,
+              "roi": 70.08,
+              "profit": -565190.0
+            },
+            "surface:芝": {
+              "races": 23,
+              "tickets": 69,
+              "hits": 11,
+              "stake": 6900,
+              "return": 4200.0,
+              "roi": 60.87,
+              "profit": -2700.0
+            },
+            "venue:佐賀": {
+              "races": 542,
+              "tickets": 1626,
+              "hits": 277,
+              "stake": 162600,
+              "return": 112340.0,
+              "roi": 69.09,
+              "profit": -50260.0
+            },
+            "venue:名古屋": {
+              "races": 586,
+              "tickets": 1758,
+              "hits": 196,
+              "stake": 175800,
+              "return": 114950.0,
+              "roi": 65.39,
+              "profit": -60850.0
+            },
+            "venue:園田": {
+              "races": 839,
+              "tickets": 2517,
+              "hits": 413,
+              "stake": 251700,
+              "return": 153160.0,
+              "roi": 60.85,
+              "profit": -98540.0
+            },
+            "venue:大井": {
+              "races": 486,
+              "tickets": 1458,
+              "hits": 225,
+              "stake": 145800,
+              "return": 103170.0,
+              "roi": 70.76,
+              "profit": -42630.0
+            },
+            "venue:川崎": {
+              "races": 360,
+              "tickets": 1080,
+              "hits": 189,
+              "stake": 108000,
+              "return": 74370.0,
+              "roi": 68.86,
+              "profit": -33630.0
+            },
+            "venue:帯広ば": {
+              "races": 788,
+              "tickets": 2364,
+              "hits": 268,
+              "stake": 236400,
+              "return": 176580.0,
+              "roi": 74.7,
+              "profit": -59820.0
+            },
+            "venue:水沢": {
+              "races": 283,
+              "tickets": 849,
+              "hits": 125,
+              "stake": 84900,
+              "return": 60320.0,
+              "roi": 71.05,
+              "profit": -24580.0
+            },
+            "venue:浦和": {
+              "races": 283,
+              "tickets": 849,
+              "hits": 151,
+              "stake": 84900,
+              "return": 81960.0,
+              "roi": 96.54,
+              "profit": -2940.0
+            },
+            "venue:盛岡": {
+              "races": 572,
+              "tickets": 1716,
+              "hits": 253,
+              "stake": 171600,
+              "return": 110330.0,
+              "roi": 64.29,
+              "profit": -61270.0
+            },
+            "venue:笠松": {
+              "races": 331,
+              "tickets": 993,
+              "hits": 190,
+              "stake": 99300,
+              "return": 88180.0,
+              "roi": 88.8,
+              "profit": -11120.0
+            },
+            "venue:船橋": {
+              "races": 357,
+              "tickets": 1071,
+              "hits": 162,
+              "stake": 107100,
+              "return": 61280.0,
+              "roi": 57.22,
+              "profit": -45820.0
+            },
+            "venue:金沢": {
+              "races": 479,
+              "tickets": 1437,
+              "hits": 261,
+              "stake": 143700,
+              "return": 98240.0,
+              "roi": 68.36,
+              "profit": -45460.0
+            },
+            "venue:門別": {
+              "races": 767,
+              "tickets": 2301,
+              "hits": 403,
+              "stake": 230100,
+              "return": 180820.0,
+              "roi": 78.58,
+              "profit": -49280.0
+            },
+            "venue:高知": {
+              "races": 435,
+              "tickets": 1305,
+              "hits": 229,
+              "stake": 130500,
+              "return": 88990.0,
+              "roi": 68.19,
+              "profit": -41510.0
+            }
+          }
+        },
+        "wide_condition_comparison": [
+          {
+            "segment": "distance_band:long_>2000m",
+            "baseline_races": 15,
+            "candidate_races": 15,
+            "baseline_roi": 85.78,
+            "candidate_roi": 82.89,
+            "roi_delta": -2.89,
+            "baseline_tickets": 45,
+            "candidate_tickets": 45
+          },
+          {
+            "segment": "distance_band:middle_1601-2000m",
+            "baseline_races": 508,
+            "candidate_races": 508,
+            "baseline_roi": 65.79,
+            "candidate_roi": 80.48,
+            "roi_delta": 14.69,
+            "baseline_tickets": 1524,
+            "candidate_tickets": 1524
+          },
+          {
+            "segment": "distance_band:mile_1201-1600m",
+            "baseline_races": 4088,
+            "candidate_races": 4088,
+            "baseline_roi": 61.58,
+            "candidate_roi": 68.56,
+            "roi_delta": 6.98,
+            "baseline_tickets": 12264,
+            "candidate_tickets": 12264
+          },
+          {
+            "segment": "distance_band:short_<=1200m",
+            "baseline_races": 2497,
+            "candidate_races": 2497,
+            "baseline_roi": 65.55,
+            "candidate_roi": 71.76,
+            "roi_delta": 6.21,
+            "baseline_tickets": 7491,
+            "candidate_tickets": 7491
+          },
+          {
+            "segment": "going:0.4",
+            "baseline_races": 18,
+            "candidate_races": 18,
+            "baseline_roi": 71.85,
+            "candidate_roi": 84.63,
+            "roi_delta": 12.78,
+            "baseline_tickets": 54,
+            "candidate_tickets": 54
+          },
+          {
+            "segment": "going:0.5",
+            "baseline_races": 32,
+            "candidate_races": 32,
+            "baseline_roi": 116.04,
+            "candidate_roi": 205.83,
+            "roi_delta": 89.79,
+            "baseline_tickets": 96,
+            "candidate_tickets": 96
+          },
+          {
+            "segment": "going:0.6",
+            "baseline_races": 22,
+            "candidate_races": 22,
+            "baseline_roi": 44.24,
+            "candidate_roi": 113.18,
+            "roi_delta": 68.94,
+            "baseline_tickets": 66,
+            "candidate_tickets": 66
+          },
+          {
+            "segment": "going:0.7",
+            "baseline_races": 12,
+            "candidate_races": 12,
+            "baseline_roi": 25.0,
+            "candidate_roi": 6.94,
+            "roi_delta": -18.06,
+            "baseline_tickets": 36,
+            "candidate_tickets": 36
+          },
+          {
+            "segment": "going:0.8",
+            "baseline_races": 28,
+            "candidate_races": 28,
+            "baseline_roi": 73.69,
+            "candidate_roi": 56.79,
+            "roi_delta": -16.9,
+            "baseline_tickets": 84,
+            "candidate_tickets": 84
+          },
+          {
+            "segment": "going:0.9",
+            "baseline_races": 32,
+            "candidate_races": 32,
+            "baseline_roi": 57.4,
+            "candidate_roi": 126.04,
+            "roi_delta": 68.64,
+            "baseline_tickets": 96,
+            "candidate_tickets": 96
+          },
+          {
+            "segment": "going:1.0",
+            "baseline_races": 36,
+            "candidate_races": 36,
+            "baseline_roi": 49.44,
+            "candidate_roi": 36.85,
+            "roi_delta": -12.59,
+            "baseline_tickets": 108,
+            "candidate_tickets": 108
+          },
+          {
+            "segment": "going:1.1",
+            "baseline_races": 36,
+            "candidate_races": 36,
+            "baseline_roi": 67.31,
+            "candidate_roi": 44.81,
+            "roi_delta": -22.5,
+            "baseline_tickets": 108,
+            "candidate_tickets": 108
+          },
+          {
+            "segment": "going:1.2",
+            "baseline_races": 47,
+            "candidate_races": 47,
+            "baseline_roi": 53.9,
+            "candidate_roi": 73.26,
+            "roi_delta": 19.36,
+            "baseline_tickets": 141,
+            "candidate_tickets": 141
+          },
+          {
+            "segment": "going:1.3",
+            "baseline_races": 61,
+            "candidate_races": 61,
+            "baseline_roi": 46.67,
+            "candidate_roi": 44.7,
+            "roi_delta": -1.97,
+            "baseline_tickets": 183,
+            "candidate_tickets": 183
+          },
+          {
+            "segment": "going:1.4",
+            "baseline_races": 58,
+            "candidate_races": 58,
+            "baseline_roi": 47.64,
+            "candidate_roi": 66.55,
+            "roi_delta": 18.91,
+            "baseline_tickets": 174,
+            "candidate_tickets": 174
+          },
+          {
+            "segment": "going:1.5",
+            "baseline_races": 76,
+            "candidate_races": 76,
+            "baseline_roi": 77.11,
+            "candidate_roi": 70.66,
+            "roi_delta": -6.45,
+            "baseline_tickets": 228,
+            "candidate_tickets": 228
+          },
+          {
+            "segment": "going:1.6",
+            "baseline_races": 62,
+            "candidate_races": 62,
+            "baseline_roi": 52.31,
+            "candidate_roi": 95.38,
+            "roi_delta": 43.07,
+            "baseline_tickets": 186,
+            "candidate_tickets": 186
+          },
+          {
+            "segment": "going:1.7",
+            "baseline_races": 60,
+            "candidate_races": 60,
+            "baseline_roi": 72.83,
+            "candidate_roi": 64.5,
+            "roi_delta": -8.33,
+            "baseline_tickets": 180,
+            "candidate_tickets": 180
+          },
+          {
+            "segment": "going:1.8",
+            "baseline_races": 34,
+            "candidate_races": 34,
+            "baseline_roi": 55.78,
+            "candidate_roi": 62.84,
+            "roi_delta": 7.06,
+            "baseline_tickets": 102,
+            "candidate_tickets": 102
+          },
+          {
+            "segment": "going:1.9",
+            "baseline_races": 20,
+            "candidate_races": 20,
+            "baseline_roi": 49.17,
+            "candidate_roi": 102.5,
+            "roi_delta": 53.33,
+            "baseline_tickets": 60,
+            "candidate_tickets": 60
+          },
+          {
+            "segment": "going:2.0",
+            "baseline_races": 44,
+            "candidate_races": 44,
+            "baseline_roi": 73.11,
+            "candidate_roi": 85.45,
+            "roi_delta": 12.34,
+            "baseline_tickets": 132,
+            "candidate_tickets": 132
+          },
+          {
+            "segment": "going:2.1",
+            "baseline_races": 36,
+            "candidate_races": 36,
+            "baseline_roi": 67.96,
+            "candidate_roi": 41.3,
+            "roi_delta": -26.66,
+            "baseline_tickets": 108,
+            "candidate_tickets": 108
+          },
+          {
+            "segment": "going:2.2",
+            "baseline_races": 30,
+            "candidate_races": 30,
+            "baseline_roi": 81.67,
+            "candidate_roi": 101.11,
+            "roi_delta": 19.44,
+            "baseline_tickets": 90,
+            "candidate_tickets": 90
+          },
+          {
+            "segment": "going:2.3",
+            "baseline_races": 16,
+            "candidate_races": 16,
+            "baseline_roi": 66.25,
+            "candidate_roi": 9.17,
+            "roi_delta": -57.08,
+            "baseline_tickets": 48,
+            "candidate_tickets": 48
+          },
+          {
+            "segment": "going:2.4",
+            "baseline_races": 8,
+            "candidate_races": 8,
+            "baseline_roi": 0.0,
+            "candidate_roi": 18.75,
+            "roi_delta": 18.75,
+            "baseline_tickets": 24,
+            "candidate_tickets": 24
+          },
+          {
+            "segment": "going:2.5",
+            "baseline_races": 10,
+            "candidate_races": 10,
+            "baseline_roi": 89.67,
+            "candidate_roi": 33.67,
+            "roi_delta": -56.0,
+            "baseline_tickets": 30,
+            "candidate_tickets": 30
+          },
+          {
+            "segment": "going:2.6",
+            "baseline_races": 6,
+            "candidate_races": 6,
+            "baseline_roi": 12.78,
+            "candidate_roi": 95.0,
+            "roi_delta": 82.22,
+            "baseline_tickets": 18,
+            "candidate_tickets": 18
+          },
+          {
+            "segment": "going:2.8",
+            "baseline_races": 2,
+            "candidate_races": 2,
+            "baseline_roi": 0.0,
+            "candidate_roi": 206.67,
+            "roi_delta": 206.67,
+            "baseline_tickets": 6,
+            "candidate_tickets": 6
+          },
+          {
+            "segment": "going:3.7",
+            "baseline_races": 2,
+            "candidate_races": 2,
+            "baseline_roi": 0.0,
+            "candidate_roi": 173.33,
+            "roi_delta": 173.33,
+            "baseline_tickets": 6,
+            "candidate_tickets": 6
+          },
+          {
+            "segment": "going:不良",
+            "baseline_races": 688,
+            "candidate_races": 688,
+            "baseline_roi": 59.64,
+            "candidate_roi": 74.12,
+            "roi_delta": 14.48,
+            "baseline_tickets": 2064,
+            "candidate_tickets": 2064
+          },
+          {
+            "segment": "going:稍重",
+            "baseline_races": 1230,
+            "candidate_races": 1230,
+            "baseline_roi": 63.02,
+            "candidate_roi": 73.42,
+            "roi_delta": 10.4,
+            "baseline_tickets": 3690,
+            "candidate_tickets": 3690
+          },
+          {
+            "segment": "going:良",
+            "baseline_races": 3649,
+            "candidate_races": 3649,
+            "baseline_roi": 64.19,
+            "candidate_roi": 68.55,
+            "roi_delta": 4.36,
+            "baseline_tickets": 10947,
+            "candidate_tickets": 10947
+          },
+          {
+            "segment": "going:重",
+            "baseline_races": 753,
+            "candidate_races": 753,
+            "baseline_roi": 64.17,
+            "candidate_roi": 68.07,
+            "roi_delta": 3.9,
+            "baseline_tickets": 2259,
+            "candidate_tickets": 2259
+          },
+          {
+            "segment": "surface:ダート",
+            "baseline_races": 6297,
+            "candidate_races": 6297,
+            "baseline_roi": 63.27,
+            "candidate_roi": 70.08,
+            "roi_delta": 6.81,
+            "baseline_tickets": 18891,
+            "candidate_tickets": 18891
+          },
+          {
+            "segment": "surface:芝",
+            "baseline_races": 23,
+            "candidate_races": 23,
+            "baseline_roi": 116.09,
+            "candidate_roi": 60.87,
+            "roi_delta": -55.22,
+            "baseline_tickets": 69,
+            "candidate_tickets": 69
+          },
+          {
+            "segment": "venue:佐賀",
+            "baseline_races": 542,
+            "candidate_races": 542,
+            "baseline_roi": 53.96,
+            "candidate_roi": 69.09,
+            "roi_delta": 15.13,
+            "baseline_tickets": 1626,
+            "candidate_tickets": 1626
+          },
+          {
+            "segment": "venue:名古屋",
+            "baseline_races": 586,
+            "candidate_races": 586,
+            "baseline_roi": 56.7,
+            "candidate_roi": 65.39,
+            "roi_delta": 8.69,
+            "baseline_tickets": 1758,
+            "candidate_tickets": 1758
+          },
+          {
+            "segment": "venue:園田",
+            "baseline_races": 839,
+            "candidate_races": 839,
+            "baseline_roi": 67.62,
+            "candidate_roi": 60.85,
+            "roi_delta": -6.77,
+            "baseline_tickets": 2517,
+            "candidate_tickets": 2517
+          },
+          {
+            "segment": "venue:大井",
+            "baseline_races": 486,
+            "candidate_races": 486,
+            "baseline_roi": 60.11,
+            "candidate_roi": 70.76,
+            "roi_delta": 10.65,
+            "baseline_tickets": 1458,
+            "candidate_tickets": 1458
+          },
+          {
+            "segment": "venue:川崎",
+            "baseline_races": 360,
+            "candidate_races": 360,
+            "baseline_roi": 59.12,
+            "candidate_roi": 68.86,
+            "roi_delta": 9.74,
+            "baseline_tickets": 1080,
+            "candidate_tickets": 1080
+          },
+          {
+            "segment": "venue:帯広ば",
+            "baseline_races": 788,
+            "candidate_races": 788,
+            "baseline_roi": 62.22,
+            "candidate_roi": 74.7,
+            "roi_delta": 12.48,
+            "baseline_tickets": 2364,
+            "candidate_tickets": 2364
+          },
+          {
+            "segment": "venue:水沢",
+            "baseline_races": 283,
+            "candidate_races": 283,
+            "baseline_roi": 82.2,
+            "candidate_roi": 71.05,
+            "roi_delta": -11.15,
+            "baseline_tickets": 849,
+            "candidate_tickets": 849
+          },
+          {
+            "segment": "venue:浦和",
+            "baseline_races": 283,
+            "candidate_races": 283,
+            "baseline_roi": 53.11,
+            "candidate_roi": 96.54,
+            "roi_delta": 43.43,
+            "baseline_tickets": 849,
+            "candidate_tickets": 849
+          },
+          {
+            "segment": "venue:盛岡",
+            "baseline_races": 572,
+            "candidate_races": 572,
+            "baseline_roi": 70.88,
+            "candidate_roi": 64.29,
+            "roi_delta": -6.59,
+            "baseline_tickets": 1716,
+            "candidate_tickets": 1716
+          },
+          {
+            "segment": "venue:笠松",
+            "baseline_races": 331,
+            "candidate_races": 331,
+            "baseline_roi": 54.9,
+            "candidate_roi": 88.8,
+            "roi_delta": 33.9,
+            "baseline_tickets": 993,
+            "candidate_tickets": 993
+          },
+          {
+            "segment": "venue:船橋",
+            "baseline_races": 357,
+            "candidate_races": 357,
+            "baseline_roi": 67.86,
+            "candidate_roi": 57.22,
+            "roi_delta": -10.64,
+            "baseline_tickets": 1071,
+            "candidate_tickets": 1071
+          },
+          {
+            "segment": "venue:金沢",
+            "baseline_races": 479,
+            "candidate_races": 479,
+            "baseline_roi": 56.42,
+            "candidate_roi": 68.36,
+            "roi_delta": 11.94,
+            "baseline_tickets": 1437,
+            "candidate_tickets": 1437
+          },
+          {
+            "segment": "venue:門別",
+            "baseline_races": 767,
+            "candidate_races": 767,
+            "baseline_roi": 74.43,
+            "candidate_roi": 78.58,
+            "roi_delta": 4.15,
+            "baseline_tickets": 2301,
+            "candidate_tickets": 2301
+          },
+          {
+            "segment": "venue:高知",
+            "baseline_races": 435,
+            "candidate_races": 435,
+            "baseline_roi": 59.89,
+            "candidate_roi": 68.19,
+            "roi_delta": 8.3,
+            "baseline_tickets": 1305,
+            "candidate_tickets": 1305
+          }
+        ],
         "confidence_filter_backtest": {
           "0.20": {
             "races": 5521,
@@ -10077,6 +11586,1582 @@
             }
           }
         },
+        "wide_model_condition_segments": {
+          "baseline": {
+            "distance_band:long_>2000m": {
+              "races": 21,
+              "tickets": 63,
+              "hits": 13,
+              "stake": 6300,
+              "return": 3470.0,
+              "roi": 55.08,
+              "profit": -2830.0
+            },
+            "distance_band:middle_1601-2000m": {
+              "races": 443,
+              "tickets": 1329,
+              "hits": 331,
+              "stake": 132900,
+              "return": 90350.0,
+              "roi": 67.98,
+              "profit": -42550.0
+            },
+            "distance_band:mile_1201-1600m": {
+              "races": 4332,
+              "tickets": 12996,
+              "hits": 3166,
+              "stake": 1299600,
+              "return": 853110.0,
+              "roi": 65.64,
+              "profit": -446490.0
+            },
+            "distance_band:short_<=1200m": {
+              "races": 1839,
+              "tickets": 5517,
+              "hits": 1062,
+              "stake": 551700,
+              "return": 340050.0,
+              "roi": 61.64,
+              "profit": -211650.0
+            },
+            "going:1.0": {
+              "races": 6,
+              "tickets": 18,
+              "hits": 4,
+              "stake": 1800,
+              "return": 3450.0,
+              "roi": 191.67,
+              "profit": 1650.0
+            },
+            "going:1.1": {
+              "races": 8,
+              "tickets": 24,
+              "hits": 2,
+              "stake": 2400,
+              "return": 2260.0,
+              "roi": 94.17,
+              "profit": -140.0
+            },
+            "going:1.2": {
+              "races": 20,
+              "tickets": 60,
+              "hits": 10,
+              "stake": 6000,
+              "return": 3760.0,
+              "roi": 62.67,
+              "profit": -2240.0
+            },
+            "going:1.3": {
+              "races": 28,
+              "tickets": 84,
+              "hits": 12,
+              "stake": 8400,
+              "return": 5250.0,
+              "roi": 62.5,
+              "profit": -3150.0
+            },
+            "going:1.4": {
+              "races": 26,
+              "tickets": 78,
+              "hits": 6,
+              "stake": 7800,
+              "return": 1950.0,
+              "roi": 25.0,
+              "profit": -5850.0
+            },
+            "going:1.5": {
+              "races": 22,
+              "tickets": 66,
+              "hits": 14,
+              "stake": 6600,
+              "return": 6670.0,
+              "roi": 101.06,
+              "profit": 70.0
+            },
+            "going:1.6": {
+              "races": 29,
+              "tickets": 87,
+              "hits": 14,
+              "stake": 8700,
+              "return": 7010.0,
+              "roi": 80.57,
+              "profit": -1690.0
+            },
+            "going:1.7": {
+              "races": 60,
+              "tickets": 180,
+              "hits": 33,
+              "stake": 18000,
+              "return": 9590.0,
+              "roi": 53.28,
+              "profit": -8410.0
+            },
+            "going:1.8": {
+              "races": 44,
+              "tickets": 132,
+              "hits": 11,
+              "stake": 13200,
+              "return": 4340.0,
+              "roi": 32.88,
+              "profit": -8860.0
+            },
+            "going:1.9": {
+              "races": 36,
+              "tickets": 108,
+              "hits": 13,
+              "stake": 10800,
+              "return": 4200.0,
+              "roi": 38.89,
+              "profit": -6600.0
+            },
+            "going:2.0": {
+              "races": 45,
+              "tickets": 135,
+              "hits": 22,
+              "stake": 13500,
+              "return": 6820.0,
+              "roi": 50.52,
+              "profit": -6680.0
+            },
+            "going:2.1": {
+              "races": 58,
+              "tickets": 174,
+              "hits": 23,
+              "stake": 17400,
+              "return": 8130.0,
+              "roi": 46.72,
+              "profit": -9270.0
+            },
+            "going:2.2": {
+              "races": 37,
+              "tickets": 111,
+              "hits": 24,
+              "stake": 11100,
+              "return": 13110.0,
+              "roi": 118.11,
+              "profit": 2010.0
+            },
+            "going:2.3": {
+              "races": 48,
+              "tickets": 144,
+              "hits": 22,
+              "stake": 14400,
+              "return": 9100.0,
+              "roi": 63.19,
+              "profit": -5300.0
+            },
+            "going:2.4": {
+              "races": 51,
+              "tickets": 153,
+              "hits": 30,
+              "stake": 15300,
+              "return": 13780.0,
+              "roi": 90.07,
+              "profit": -1520.0
+            },
+            "going:2.5": {
+              "races": 48,
+              "tickets": 144,
+              "hits": 24,
+              "stake": 14400,
+              "return": 8920.0,
+              "roi": 61.94,
+              "profit": -5480.0
+            },
+            "going:2.6": {
+              "races": 52,
+              "tickets": 156,
+              "hits": 19,
+              "stake": 15600,
+              "return": 6350.0,
+              "roi": 40.71,
+              "profit": -9250.0
+            },
+            "going:2.7": {
+              "races": 40,
+              "tickets": 120,
+              "hits": 22,
+              "stake": 12000,
+              "return": 8640.0,
+              "roi": 72.0,
+              "profit": -3360.0
+            },
+            "going:2.8": {
+              "races": 14,
+              "tickets": 42,
+              "hits": 10,
+              "stake": 4200,
+              "return": 2890.0,
+              "roi": 68.81,
+              "profit": -1310.0
+            },
+            "going:2.9": {
+              "races": 26,
+              "tickets": 78,
+              "hits": 16,
+              "stake": 7800,
+              "return": 4450.0,
+              "roi": 57.05,
+              "profit": -3350.0
+            },
+            "going:3.0": {
+              "races": 24,
+              "tickets": 72,
+              "hits": 9,
+              "stake": 7200,
+              "return": 2920.0,
+              "roi": 40.56,
+              "profit": -4280.0
+            },
+            "going:3.1": {
+              "races": 20,
+              "tickets": 60,
+              "hits": 16,
+              "stake": 6000,
+              "return": 6600.0,
+              "roi": 110.0,
+              "profit": 600.0
+            },
+            "going:3.2": {
+              "races": 18,
+              "tickets": 54,
+              "hits": 5,
+              "stake": 5400,
+              "return": 1600.0,
+              "roi": 29.63,
+              "profit": -3800.0
+            },
+            "going:3.3": {
+              "races": 6,
+              "tickets": 18,
+              "hits": 4,
+              "stake": 1800,
+              "return": 1460.0,
+              "roi": 81.11,
+              "profit": -340.0
+            },
+            "going:3.4": {
+              "races": 10,
+              "tickets": 30,
+              "hits": 4,
+              "stake": 3000,
+              "return": 1510.0,
+              "roi": 50.33,
+              "profit": -1490.0
+            },
+            "going:3.5": {
+              "races": 10,
+              "tickets": 30,
+              "hits": 9,
+              "stake": 3000,
+              "return": 4230.0,
+              "roi": 141.0,
+              "profit": 1230.0
+            },
+            "going:3.6": {
+              "races": 8,
+              "tickets": 24,
+              "hits": 3,
+              "stake": 2400,
+              "return": 1760.0,
+              "roi": 73.33,
+              "profit": -640.0
+            },
+            "going:3.7": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 0,
+              "stake": 600,
+              "return": 0,
+              "roi": 0.0,
+              "profit": -600
+            },
+            "going:3.8": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 1,
+              "stake": 600,
+              "return": 270.0,
+              "roi": 45.0,
+              "profit": -330.0
+            },
+            "going:3.9": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 0,
+              "stake": 600,
+              "return": 0,
+              "roi": 0.0,
+              "profit": -600
+            },
+            "going:4.0": {
+              "races": 8,
+              "tickets": 24,
+              "hits": 1,
+              "stake": 2400,
+              "return": 520.0,
+              "roi": 21.67,
+              "profit": -1880.0
+            },
+            "going:不良": {
+              "races": 434,
+              "tickets": 1302,
+              "hits": 314,
+              "stake": 130200,
+              "return": 85940.0,
+              "roi": 66.01,
+              "profit": -44260.0
+            },
+            "going:稍重": {
+              "races": 1521,
+              "tickets": 4563,
+              "hits": 1020,
+              "stake": 456300,
+              "return": 290240.0,
+              "roi": 63.61,
+              "profit": -166060.0
+            },
+            "going:良": {
+              "races": 3071,
+              "tickets": 9213,
+              "hits": 2233,
+              "stake": 921300,
+              "return": 589140.0,
+              "roi": 63.95,
+              "profit": -332160.0
+            },
+            "going:重": {
+              "races": 801,
+              "tickets": 2403,
+              "hits": 622,
+              "stake": 240300,
+              "return": 170120.0,
+              "roi": 70.79,
+              "profit": -70180.0
+            },
+            "surface:ダート": {
+              "races": 5825,
+              "tickets": 17475,
+              "hits": 4188,
+              "stake": 1747500,
+              "return": 1135090.0,
+              "roi": 64.96,
+              "profit": -612410.0
+            },
+            "surface:芝": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 1,
+              "stake": 600,
+              "return": 350.0,
+              "roi": 58.33,
+              "profit": -250.0
+            },
+            "venue:佐賀": {
+              "races": 587,
+              "tickets": 1761,
+              "hits": 523,
+              "stake": 176100,
+              "return": 123500.0,
+              "roi": 70.13,
+              "profit": -52600.0
+            },
+            "venue:名古屋": {
+              "races": 715,
+              "tickets": 2145,
+              "hits": 520,
+              "stake": 214500,
+              "return": 149810.0,
+              "roi": 69.84,
+              "profit": -64690.0
+            },
+            "venue:園田": {
+              "races": 596,
+              "tickets": 1788,
+              "hits": 399,
+              "stake": 178800,
+              "return": 113280.0,
+              "roi": 63.36,
+              "profit": -65520.0
+            },
+            "venue:大井": {
+              "races": 548,
+              "tickets": 1644,
+              "hits": 364,
+              "stake": 164400,
+              "return": 103990.0,
+              "roi": 63.25,
+              "profit": -60410.0
+            },
+            "venue:姫路": {
+              "races": 288,
+              "tickets": 864,
+              "hits": 187,
+              "stake": 86400,
+              "return": 53880.0,
+              "roi": 62.36,
+              "profit": -32520.0
+            },
+            "venue:川崎": {
+              "races": 324,
+              "tickets": 972,
+              "hits": 186,
+              "stake": 97200,
+              "return": 55650.0,
+              "roi": 57.25,
+              "profit": -41550.0
+            },
+            "venue:帯広ば": {
+              "races": 808,
+              "tickets": 2424,
+              "hits": 383,
+              "stake": 242400,
+              "return": 151540.0,
+              "roi": 62.52,
+              "profit": -90860.0
+            },
+            "venue:水沢": {
+              "races": 313,
+              "tickets": 939,
+              "hits": 182,
+              "stake": 93900,
+              "return": 52600.0,
+              "roi": 56.02,
+              "profit": -41300.0
+            },
+            "venue:浦和": {
+              "races": 324,
+              "tickets": 972,
+              "hits": 217,
+              "stake": 97200,
+              "return": 67920.0,
+              "roi": 69.88,
+              "profit": -29280.0
+            },
+            "venue:盛岡": {
+              "races": 180,
+              "tickets": 540,
+              "hits": 127,
+              "stake": 54000,
+              "return": 30340.0,
+              "roi": 56.19,
+              "profit": -23660.0
+            },
+            "venue:笠松": {
+              "races": 504,
+              "tickets": 1512,
+              "hits": 412,
+              "stake": 151200,
+              "return": 97190.0,
+              "roi": 64.28,
+              "profit": -54010.0
+            },
+            "venue:船橋": {
+              "races": 300,
+              "tickets": 900,
+              "hits": 176,
+              "stake": 90000,
+              "return": 51620.0,
+              "roi": 57.36,
+              "profit": -38380.0
+            },
+            "venue:金沢": {
+              "races": 363,
+              "tickets": 1089,
+              "hits": 298,
+              "stake": 108900,
+              "return": 78840.0,
+              "roi": 72.4,
+              "profit": -30060.0
+            },
+            "venue:門別": {
+              "races": 168,
+              "tickets": 504,
+              "hits": 143,
+              "stake": 50400,
+              "return": 35380.0,
+              "roi": 70.2,
+              "profit": -15020.0
+            },
+            "venue:高知": {
+              "races": 617,
+              "tickets": 1851,
+              "hits": 455,
+              "stake": 185100,
+              "return": 121440.0,
+              "roi": 65.61,
+              "profit": -63660.0
+            }
+          },
+          "trained_no_recent_history": {
+            "distance_band:long_>2000m": {
+              "races": 21,
+              "tickets": 63,
+              "hits": 10,
+              "stake": 6300,
+              "return": 8270.0,
+              "roi": 131.27,
+              "profit": 1970.0
+            },
+            "distance_band:middle_1601-2000m": {
+              "races": 443,
+              "tickets": 1329,
+              "hits": 218,
+              "stake": 132900,
+              "return": 98320.0,
+              "roi": 73.98,
+              "profit": -34580.0
+            },
+            "distance_band:mile_1201-1600m": {
+              "races": 4332,
+              "tickets": 12996,
+              "hits": 2309,
+              "stake": 1299600,
+              "return": 949400.0,
+              "roi": 73.05,
+              "profit": -350200.0
+            },
+            "distance_band:short_<=1200m": {
+              "races": 1839,
+              "tickets": 5517,
+              "hits": 762,
+              "stake": 551700,
+              "return": 389030.0,
+              "roi": 70.51,
+              "profit": -162670.0
+            },
+            "going:1.0": {
+              "races": 6,
+              "tickets": 18,
+              "hits": 0,
+              "stake": 1800,
+              "return": 0,
+              "roi": 0.0,
+              "profit": -1800
+            },
+            "going:1.1": {
+              "races": 8,
+              "tickets": 24,
+              "hits": 3,
+              "stake": 2400,
+              "return": 1760.0,
+              "roi": 73.33,
+              "profit": -640.0
+            },
+            "going:1.2": {
+              "races": 20,
+              "tickets": 60,
+              "hits": 5,
+              "stake": 6000,
+              "return": 1500.0,
+              "roi": 25.0,
+              "profit": -4500.0
+            },
+            "going:1.3": {
+              "races": 28,
+              "tickets": 84,
+              "hits": 12,
+              "stake": 8400,
+              "return": 5120.0,
+              "roi": 60.95,
+              "profit": -3280.0
+            },
+            "going:1.4": {
+              "races": 26,
+              "tickets": 78,
+              "hits": 15,
+              "stake": 7800,
+              "return": 9700.0,
+              "roi": 124.36,
+              "profit": 1900.0
+            },
+            "going:1.5": {
+              "races": 22,
+              "tickets": 66,
+              "hits": 7,
+              "stake": 6600,
+              "return": 2600.0,
+              "roi": 39.39,
+              "profit": -4000.0
+            },
+            "going:1.6": {
+              "races": 29,
+              "tickets": 87,
+              "hits": 9,
+              "stake": 8700,
+              "return": 5740.0,
+              "roi": 65.98,
+              "profit": -2960.0
+            },
+            "going:1.7": {
+              "races": 60,
+              "tickets": 180,
+              "hits": 23,
+              "stake": 18000,
+              "return": 14150.0,
+              "roi": 78.61,
+              "profit": -3850.0
+            },
+            "going:1.8": {
+              "races": 44,
+              "tickets": 132,
+              "hits": 21,
+              "stake": 13200,
+              "return": 10920.0,
+              "roi": 82.73,
+              "profit": -2280.0
+            },
+            "going:1.9": {
+              "races": 36,
+              "tickets": 108,
+              "hits": 16,
+              "stake": 10800,
+              "return": 6980.0,
+              "roi": 64.63,
+              "profit": -3820.0
+            },
+            "going:2.0": {
+              "races": 45,
+              "tickets": 135,
+              "hits": 11,
+              "stake": 13500,
+              "return": 10520.0,
+              "roi": 77.93,
+              "profit": -2980.0
+            },
+            "going:2.1": {
+              "races": 58,
+              "tickets": 174,
+              "hits": 21,
+              "stake": 17400,
+              "return": 15940.0,
+              "roi": 91.61,
+              "profit": -1460.0
+            },
+            "going:2.2": {
+              "races": 37,
+              "tickets": 111,
+              "hits": 8,
+              "stake": 11100,
+              "return": 5600.0,
+              "roi": 50.45,
+              "profit": -5500.0
+            },
+            "going:2.3": {
+              "races": 48,
+              "tickets": 144,
+              "hits": 20,
+              "stake": 14400,
+              "return": 7210.0,
+              "roi": 50.07,
+              "profit": -7190.0
+            },
+            "going:2.4": {
+              "races": 51,
+              "tickets": 153,
+              "hits": 20,
+              "stake": 15300,
+              "return": 11910.0,
+              "roi": 77.84,
+              "profit": -3390.0
+            },
+            "going:2.5": {
+              "races": 48,
+              "tickets": 144,
+              "hits": 16,
+              "stake": 14400,
+              "return": 13560.0,
+              "roi": 94.17,
+              "profit": -840.0
+            },
+            "going:2.6": {
+              "races": 52,
+              "tickets": 156,
+              "hits": 23,
+              "stake": 15600,
+              "return": 15100.0,
+              "roi": 96.79,
+              "profit": -500.0
+            },
+            "going:2.7": {
+              "races": 40,
+              "tickets": 120,
+              "hits": 18,
+              "stake": 12000,
+              "return": 8370.0,
+              "roi": 69.75,
+              "profit": -3630.0
+            },
+            "going:2.8": {
+              "races": 14,
+              "tickets": 42,
+              "hits": 6,
+              "stake": 4200,
+              "return": 2360.0,
+              "roi": 56.19,
+              "profit": -1840.0
+            },
+            "going:2.9": {
+              "races": 26,
+              "tickets": 78,
+              "hits": 10,
+              "stake": 7800,
+              "return": 4040.0,
+              "roi": 51.79,
+              "profit": -3760.0
+            },
+            "going:3.0": {
+              "races": 24,
+              "tickets": 72,
+              "hits": 9,
+              "stake": 7200,
+              "return": 10020.0,
+              "roi": 139.17,
+              "profit": 2820.0
+            },
+            "going:3.1": {
+              "races": 20,
+              "tickets": 60,
+              "hits": 9,
+              "stake": 6000,
+              "return": 11210.0,
+              "roi": 186.83,
+              "profit": 5210.0
+            },
+            "going:3.2": {
+              "races": 18,
+              "tickets": 54,
+              "hits": 5,
+              "stake": 5400,
+              "return": 2590.0,
+              "roi": 47.96,
+              "profit": -2810.0
+            },
+            "going:3.3": {
+              "races": 6,
+              "tickets": 18,
+              "hits": 4,
+              "stake": 1800,
+              "return": 3130.0,
+              "roi": 173.89,
+              "profit": 1330.0
+            },
+            "going:3.4": {
+              "races": 10,
+              "tickets": 30,
+              "hits": 4,
+              "stake": 3000,
+              "return": 1480.0,
+              "roi": 49.33,
+              "profit": -1520.0
+            },
+            "going:3.5": {
+              "races": 10,
+              "tickets": 30,
+              "hits": 6,
+              "stake": 3000,
+              "return": 1700.0,
+              "roi": 56.67,
+              "profit": -1300.0
+            },
+            "going:3.6": {
+              "races": 8,
+              "tickets": 24,
+              "hits": 3,
+              "stake": 2400,
+              "return": 2460.0,
+              "roi": 102.5,
+              "profit": 60.0
+            },
+            "going:3.7": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 1,
+              "stake": 600,
+              "return": 1280.0,
+              "roi": 213.33,
+              "profit": 680.0
+            },
+            "going:3.8": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 0,
+              "stake": 600,
+              "return": 0,
+              "roi": 0.0,
+              "profit": -600
+            },
+            "going:3.9": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 1,
+              "stake": 600,
+              "return": 310.0,
+              "roi": 51.67,
+              "profit": -290.0
+            },
+            "going:4.0": {
+              "races": 8,
+              "tickets": 24,
+              "hits": 3,
+              "stake": 2400,
+              "return": 2120.0,
+              "roi": 88.33,
+              "profit": -280.0
+            },
+            "going:不良": {
+              "races": 434,
+              "tickets": 1302,
+              "hits": 203,
+              "stake": 130200,
+              "return": 83070.0,
+              "roi": 63.8,
+              "profit": -47130.0
+            },
+            "going:稍重": {
+              "races": 1521,
+              "tickets": 4563,
+              "hits": 800,
+              "stake": 456300,
+              "return": 334820.0,
+              "roi": 73.38,
+              "profit": -121480.0
+            },
+            "going:良": {
+              "races": 3071,
+              "tickets": 9213,
+              "hits": 1573,
+              "stake": 921300,
+              "return": 681970.0,
+              "roi": 74.02,
+              "profit": -239330.0
+            },
+            "going:重": {
+              "races": 801,
+              "tickets": 2403,
+              "hits": 414,
+              "stake": 240300,
+              "return": 155780.0,
+              "roi": 64.83,
+              "profit": -84520.0
+            },
+            "surface:ダート": {
+              "races": 5825,
+              "tickets": 17475,
+              "hits": 2990,
+              "stake": 1747500,
+              "return": 1255640.0,
+              "roi": 71.85,
+              "profit": -491860.0
+            },
+            "surface:芝": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 0,
+              "stake": 600,
+              "return": 0,
+              "roi": 0.0,
+              "profit": -600
+            },
+            "venue:佐賀": {
+              "races": 587,
+              "tickets": 1761,
+              "hits": 361,
+              "stake": 176100,
+              "return": 144510.0,
+              "roi": 82.06,
+              "profit": -31590.0
+            },
+            "venue:名古屋": {
+              "races": 715,
+              "tickets": 2145,
+              "hits": 298,
+              "stake": 214500,
+              "return": 162640.0,
+              "roi": 75.82,
+              "profit": -51860.0
+            },
+            "venue:園田": {
+              "races": 596,
+              "tickets": 1788,
+              "hits": 309,
+              "stake": 178800,
+              "return": 107400.0,
+              "roi": 60.07,
+              "profit": -71400.0
+            },
+            "venue:大井": {
+              "races": 548,
+              "tickets": 1644,
+              "hits": 249,
+              "stake": 164400,
+              "return": 104110.0,
+              "roi": 63.33,
+              "profit": -60290.0
+            },
+            "venue:姫路": {
+              "races": 288,
+              "tickets": 864,
+              "hits": 154,
+              "stake": 86400,
+              "return": 62960.0,
+              "roi": 72.87,
+              "profit": -23440.0
+            },
+            "venue:川崎": {
+              "races": 324,
+              "tickets": 972,
+              "hits": 152,
+              "stake": 97200,
+              "return": 60710.0,
+              "roi": 62.46,
+              "profit": -36490.0
+            },
+            "venue:帯広ば": {
+              "races": 808,
+              "tickets": 2424,
+              "hits": 309,
+              "stake": 242400,
+              "return": 189380.0,
+              "roi": 78.13,
+              "profit": -53020.0
+            },
+            "venue:水沢": {
+              "races": 313,
+              "tickets": 939,
+              "hits": 139,
+              "stake": 93900,
+              "return": 70940.0,
+              "roi": 75.55,
+              "profit": -22960.0
+            },
+            "venue:浦和": {
+              "races": 324,
+              "tickets": 972,
+              "hits": 166,
+              "stake": 97200,
+              "return": 87280.0,
+              "roi": 89.79,
+              "profit": -9920.0
+            },
+            "venue:盛岡": {
+              "races": 180,
+              "tickets": 540,
+              "hits": 93,
+              "stake": 54000,
+              "return": 36820.0,
+              "roi": 68.19,
+              "profit": -17180.0
+            },
+            "venue:笠松": {
+              "races": 504,
+              "tickets": 1512,
+              "hits": 289,
+              "stake": 151200,
+              "return": 118450.0,
+              "roi": 78.34,
+              "profit": -32750.0
+            },
+            "venue:船橋": {
+              "races": 300,
+              "tickets": 900,
+              "hits": 148,
+              "stake": 90000,
+              "return": 59270.0,
+              "roi": 65.86,
+              "profit": -30730.0
+            },
+            "venue:金沢": {
+              "races": 363,
+              "tickets": 1089,
+              "hits": 225,
+              "stake": 108900,
+              "return": 71100.0,
+              "roi": 65.29,
+              "profit": -37800.0
+            },
+            "venue:門別": {
+              "races": 168,
+              "tickets": 504,
+              "hits": 99,
+              "stake": 50400,
+              "return": 40100.0,
+              "roi": 79.56,
+              "profit": -10300.0
+            },
+            "venue:高知": {
+              "races": 617,
+              "tickets": 1851,
+              "hits": 308,
+              "stake": 185100,
+              "return": 129350.0,
+              "roi": 69.88,
+              "profit": -55750.0
+            }
+          }
+        },
+        "wide_condition_comparison": [
+          {
+            "segment": "distance_band:long_>2000m",
+            "baseline_races": 21,
+            "candidate_races": 21,
+            "baseline_roi": 55.08,
+            "candidate_roi": 131.27,
+            "roi_delta": 76.19,
+            "baseline_tickets": 63,
+            "candidate_tickets": 63
+          },
+          {
+            "segment": "distance_band:middle_1601-2000m",
+            "baseline_races": 443,
+            "candidate_races": 443,
+            "baseline_roi": 67.98,
+            "candidate_roi": 73.98,
+            "roi_delta": 6.0,
+            "baseline_tickets": 1329,
+            "candidate_tickets": 1329
+          },
+          {
+            "segment": "distance_band:mile_1201-1600m",
+            "baseline_races": 4332,
+            "candidate_races": 4332,
+            "baseline_roi": 65.64,
+            "candidate_roi": 73.05,
+            "roi_delta": 7.41,
+            "baseline_tickets": 12996,
+            "candidate_tickets": 12996
+          },
+          {
+            "segment": "distance_band:short_<=1200m",
+            "baseline_races": 1839,
+            "candidate_races": 1839,
+            "baseline_roi": 61.64,
+            "candidate_roi": 70.51,
+            "roi_delta": 8.87,
+            "baseline_tickets": 5517,
+            "candidate_tickets": 5517
+          },
+          {
+            "segment": "going:1.0",
+            "baseline_races": 6,
+            "candidate_races": 6,
+            "baseline_roi": 191.67,
+            "candidate_roi": 0.0,
+            "roi_delta": -191.67,
+            "baseline_tickets": 18,
+            "candidate_tickets": 18
+          },
+          {
+            "segment": "going:1.1",
+            "baseline_races": 8,
+            "candidate_races": 8,
+            "baseline_roi": 94.17,
+            "candidate_roi": 73.33,
+            "roi_delta": -20.84,
+            "baseline_tickets": 24,
+            "candidate_tickets": 24
+          },
+          {
+            "segment": "going:1.2",
+            "baseline_races": 20,
+            "candidate_races": 20,
+            "baseline_roi": 62.67,
+            "candidate_roi": 25.0,
+            "roi_delta": -37.67,
+            "baseline_tickets": 60,
+            "candidate_tickets": 60
+          },
+          {
+            "segment": "going:1.3",
+            "baseline_races": 28,
+            "candidate_races": 28,
+            "baseline_roi": 62.5,
+            "candidate_roi": 60.95,
+            "roi_delta": -1.55,
+            "baseline_tickets": 84,
+            "candidate_tickets": 84
+          },
+          {
+            "segment": "going:1.4",
+            "baseline_races": 26,
+            "candidate_races": 26,
+            "baseline_roi": 25.0,
+            "candidate_roi": 124.36,
+            "roi_delta": 99.36,
+            "baseline_tickets": 78,
+            "candidate_tickets": 78
+          },
+          {
+            "segment": "going:1.5",
+            "baseline_races": 22,
+            "candidate_races": 22,
+            "baseline_roi": 101.06,
+            "candidate_roi": 39.39,
+            "roi_delta": -61.67,
+            "baseline_tickets": 66,
+            "candidate_tickets": 66
+          },
+          {
+            "segment": "going:1.6",
+            "baseline_races": 29,
+            "candidate_races": 29,
+            "baseline_roi": 80.57,
+            "candidate_roi": 65.98,
+            "roi_delta": -14.59,
+            "baseline_tickets": 87,
+            "candidate_tickets": 87
+          },
+          {
+            "segment": "going:1.7",
+            "baseline_races": 60,
+            "candidate_races": 60,
+            "baseline_roi": 53.28,
+            "candidate_roi": 78.61,
+            "roi_delta": 25.33,
+            "baseline_tickets": 180,
+            "candidate_tickets": 180
+          },
+          {
+            "segment": "going:1.8",
+            "baseline_races": 44,
+            "candidate_races": 44,
+            "baseline_roi": 32.88,
+            "candidate_roi": 82.73,
+            "roi_delta": 49.85,
+            "baseline_tickets": 132,
+            "candidate_tickets": 132
+          },
+          {
+            "segment": "going:1.9",
+            "baseline_races": 36,
+            "candidate_races": 36,
+            "baseline_roi": 38.89,
+            "candidate_roi": 64.63,
+            "roi_delta": 25.74,
+            "baseline_tickets": 108,
+            "candidate_tickets": 108
+          },
+          {
+            "segment": "going:2.0",
+            "baseline_races": 45,
+            "candidate_races": 45,
+            "baseline_roi": 50.52,
+            "candidate_roi": 77.93,
+            "roi_delta": 27.41,
+            "baseline_tickets": 135,
+            "candidate_tickets": 135
+          },
+          {
+            "segment": "going:2.1",
+            "baseline_races": 58,
+            "candidate_races": 58,
+            "baseline_roi": 46.72,
+            "candidate_roi": 91.61,
+            "roi_delta": 44.89,
+            "baseline_tickets": 174,
+            "candidate_tickets": 174
+          },
+          {
+            "segment": "going:2.2",
+            "baseline_races": 37,
+            "candidate_races": 37,
+            "baseline_roi": 118.11,
+            "candidate_roi": 50.45,
+            "roi_delta": -67.66,
+            "baseline_tickets": 111,
+            "candidate_tickets": 111
+          },
+          {
+            "segment": "going:2.3",
+            "baseline_races": 48,
+            "candidate_races": 48,
+            "baseline_roi": 63.19,
+            "candidate_roi": 50.07,
+            "roi_delta": -13.12,
+            "baseline_tickets": 144,
+            "candidate_tickets": 144
+          },
+          {
+            "segment": "going:2.4",
+            "baseline_races": 51,
+            "candidate_races": 51,
+            "baseline_roi": 90.07,
+            "candidate_roi": 77.84,
+            "roi_delta": -12.23,
+            "baseline_tickets": 153,
+            "candidate_tickets": 153
+          },
+          {
+            "segment": "going:2.5",
+            "baseline_races": 48,
+            "candidate_races": 48,
+            "baseline_roi": 61.94,
+            "candidate_roi": 94.17,
+            "roi_delta": 32.23,
+            "baseline_tickets": 144,
+            "candidate_tickets": 144
+          },
+          {
+            "segment": "going:2.6",
+            "baseline_races": 52,
+            "candidate_races": 52,
+            "baseline_roi": 40.71,
+            "candidate_roi": 96.79,
+            "roi_delta": 56.08,
+            "baseline_tickets": 156,
+            "candidate_tickets": 156
+          },
+          {
+            "segment": "going:2.7",
+            "baseline_races": 40,
+            "candidate_races": 40,
+            "baseline_roi": 72.0,
+            "candidate_roi": 69.75,
+            "roi_delta": -2.25,
+            "baseline_tickets": 120,
+            "candidate_tickets": 120
+          },
+          {
+            "segment": "going:2.8",
+            "baseline_races": 14,
+            "candidate_races": 14,
+            "baseline_roi": 68.81,
+            "candidate_roi": 56.19,
+            "roi_delta": -12.62,
+            "baseline_tickets": 42,
+            "candidate_tickets": 42
+          },
+          {
+            "segment": "going:2.9",
+            "baseline_races": 26,
+            "candidate_races": 26,
+            "baseline_roi": 57.05,
+            "candidate_roi": 51.79,
+            "roi_delta": -5.26,
+            "baseline_tickets": 78,
+            "candidate_tickets": 78
+          },
+          {
+            "segment": "going:3.0",
+            "baseline_races": 24,
+            "candidate_races": 24,
+            "baseline_roi": 40.56,
+            "candidate_roi": 139.17,
+            "roi_delta": 98.61,
+            "baseline_tickets": 72,
+            "candidate_tickets": 72
+          },
+          {
+            "segment": "going:3.1",
+            "baseline_races": 20,
+            "candidate_races": 20,
+            "baseline_roi": 110.0,
+            "candidate_roi": 186.83,
+            "roi_delta": 76.83,
+            "baseline_tickets": 60,
+            "candidate_tickets": 60
+          },
+          {
+            "segment": "going:3.2",
+            "baseline_races": 18,
+            "candidate_races": 18,
+            "baseline_roi": 29.63,
+            "candidate_roi": 47.96,
+            "roi_delta": 18.33,
+            "baseline_tickets": 54,
+            "candidate_tickets": 54
+          },
+          {
+            "segment": "going:3.3",
+            "baseline_races": 6,
+            "candidate_races": 6,
+            "baseline_roi": 81.11,
+            "candidate_roi": 173.89,
+            "roi_delta": 92.78,
+            "baseline_tickets": 18,
+            "candidate_tickets": 18
+          },
+          {
+            "segment": "going:3.4",
+            "baseline_races": 10,
+            "candidate_races": 10,
+            "baseline_roi": 50.33,
+            "candidate_roi": 49.33,
+            "roi_delta": -1.0,
+            "baseline_tickets": 30,
+            "candidate_tickets": 30
+          },
+          {
+            "segment": "going:3.5",
+            "baseline_races": 10,
+            "candidate_races": 10,
+            "baseline_roi": 141.0,
+            "candidate_roi": 56.67,
+            "roi_delta": -84.33,
+            "baseline_tickets": 30,
+            "candidate_tickets": 30
+          },
+          {
+            "segment": "going:3.6",
+            "baseline_races": 8,
+            "candidate_races": 8,
+            "baseline_roi": 73.33,
+            "candidate_roi": 102.5,
+            "roi_delta": 29.17,
+            "baseline_tickets": 24,
+            "candidate_tickets": 24
+          },
+          {
+            "segment": "going:3.7",
+            "baseline_races": 2,
+            "candidate_races": 2,
+            "baseline_roi": 0.0,
+            "candidate_roi": 213.33,
+            "roi_delta": 213.33,
+            "baseline_tickets": 6,
+            "candidate_tickets": 6
+          },
+          {
+            "segment": "going:3.8",
+            "baseline_races": 2,
+            "candidate_races": 2,
+            "baseline_roi": 45.0,
+            "candidate_roi": 0.0,
+            "roi_delta": -45.0,
+            "baseline_tickets": 6,
+            "candidate_tickets": 6
+          },
+          {
+            "segment": "going:3.9",
+            "baseline_races": 2,
+            "candidate_races": 2,
+            "baseline_roi": 0.0,
+            "candidate_roi": 51.67,
+            "roi_delta": 51.67,
+            "baseline_tickets": 6,
+            "candidate_tickets": 6
+          },
+          {
+            "segment": "going:4.0",
+            "baseline_races": 8,
+            "candidate_races": 8,
+            "baseline_roi": 21.67,
+            "candidate_roi": 88.33,
+            "roi_delta": 66.66,
+            "baseline_tickets": 24,
+            "candidate_tickets": 24
+          },
+          {
+            "segment": "going:不良",
+            "baseline_races": 434,
+            "candidate_races": 434,
+            "baseline_roi": 66.01,
+            "candidate_roi": 63.8,
+            "roi_delta": -2.21,
+            "baseline_tickets": 1302,
+            "candidate_tickets": 1302
+          },
+          {
+            "segment": "going:稍重",
+            "baseline_races": 1521,
+            "candidate_races": 1521,
+            "baseline_roi": 63.61,
+            "candidate_roi": 73.38,
+            "roi_delta": 9.77,
+            "baseline_tickets": 4563,
+            "candidate_tickets": 4563
+          },
+          {
+            "segment": "going:良",
+            "baseline_races": 3071,
+            "candidate_races": 3071,
+            "baseline_roi": 63.95,
+            "candidate_roi": 74.02,
+            "roi_delta": 10.07,
+            "baseline_tickets": 9213,
+            "candidate_tickets": 9213
+          },
+          {
+            "segment": "going:重",
+            "baseline_races": 801,
+            "candidate_races": 801,
+            "baseline_roi": 70.79,
+            "candidate_roi": 64.83,
+            "roi_delta": -5.96,
+            "baseline_tickets": 2403,
+            "candidate_tickets": 2403
+          },
+          {
+            "segment": "surface:ダート",
+            "baseline_races": 5825,
+            "candidate_races": 5825,
+            "baseline_roi": 64.96,
+            "candidate_roi": 71.85,
+            "roi_delta": 6.89,
+            "baseline_tickets": 17475,
+            "candidate_tickets": 17475
+          },
+          {
+            "segment": "surface:芝",
+            "baseline_races": 2,
+            "candidate_races": 2,
+            "baseline_roi": 58.33,
+            "candidate_roi": 0.0,
+            "roi_delta": -58.33,
+            "baseline_tickets": 6,
+            "candidate_tickets": 6
+          },
+          {
+            "segment": "venue:佐賀",
+            "baseline_races": 587,
+            "candidate_races": 587,
+            "baseline_roi": 70.13,
+            "candidate_roi": 82.06,
+            "roi_delta": 11.93,
+            "baseline_tickets": 1761,
+            "candidate_tickets": 1761
+          },
+          {
+            "segment": "venue:名古屋",
+            "baseline_races": 715,
+            "candidate_races": 715,
+            "baseline_roi": 69.84,
+            "candidate_roi": 75.82,
+            "roi_delta": 5.98,
+            "baseline_tickets": 2145,
+            "candidate_tickets": 2145
+          },
+          {
+            "segment": "venue:園田",
+            "baseline_races": 596,
+            "candidate_races": 596,
+            "baseline_roi": 63.36,
+            "candidate_roi": 60.07,
+            "roi_delta": -3.29,
+            "baseline_tickets": 1788,
+            "candidate_tickets": 1788
+          },
+          {
+            "segment": "venue:大井",
+            "baseline_races": 548,
+            "candidate_races": 548,
+            "baseline_roi": 63.25,
+            "candidate_roi": 63.33,
+            "roi_delta": 0.08,
+            "baseline_tickets": 1644,
+            "candidate_tickets": 1644
+          },
+          {
+            "segment": "venue:姫路",
+            "baseline_races": 288,
+            "candidate_races": 288,
+            "baseline_roi": 62.36,
+            "candidate_roi": 72.87,
+            "roi_delta": 10.51,
+            "baseline_tickets": 864,
+            "candidate_tickets": 864
+          },
+          {
+            "segment": "venue:川崎",
+            "baseline_races": 324,
+            "candidate_races": 324,
+            "baseline_roi": 57.25,
+            "candidate_roi": 62.46,
+            "roi_delta": 5.21,
+            "baseline_tickets": 972,
+            "candidate_tickets": 972
+          },
+          {
+            "segment": "venue:帯広ば",
+            "baseline_races": 808,
+            "candidate_races": 808,
+            "baseline_roi": 62.52,
+            "candidate_roi": 78.13,
+            "roi_delta": 15.61,
+            "baseline_tickets": 2424,
+            "candidate_tickets": 2424
+          },
+          {
+            "segment": "venue:水沢",
+            "baseline_races": 313,
+            "candidate_races": 313,
+            "baseline_roi": 56.02,
+            "candidate_roi": 75.55,
+            "roi_delta": 19.53,
+            "baseline_tickets": 939,
+            "candidate_tickets": 939
+          },
+          {
+            "segment": "venue:浦和",
+            "baseline_races": 324,
+            "candidate_races": 324,
+            "baseline_roi": 69.88,
+            "candidate_roi": 89.79,
+            "roi_delta": 19.91,
+            "baseline_tickets": 972,
+            "candidate_tickets": 972
+          },
+          {
+            "segment": "venue:盛岡",
+            "baseline_races": 180,
+            "candidate_races": 180,
+            "baseline_roi": 56.19,
+            "candidate_roi": 68.19,
+            "roi_delta": 12.0,
+            "baseline_tickets": 540,
+            "candidate_tickets": 540
+          },
+          {
+            "segment": "venue:笠松",
+            "baseline_races": 504,
+            "candidate_races": 504,
+            "baseline_roi": 64.28,
+            "candidate_roi": 78.34,
+            "roi_delta": 14.06,
+            "baseline_tickets": 1512,
+            "candidate_tickets": 1512
+          },
+          {
+            "segment": "venue:船橋",
+            "baseline_races": 300,
+            "candidate_races": 300,
+            "baseline_roi": 57.36,
+            "candidate_roi": 65.86,
+            "roi_delta": 8.5,
+            "baseline_tickets": 900,
+            "candidate_tickets": 900
+          },
+          {
+            "segment": "venue:金沢",
+            "baseline_races": 363,
+            "candidate_races": 363,
+            "baseline_roi": 72.4,
+            "candidate_roi": 65.29,
+            "roi_delta": -7.11,
+            "baseline_tickets": 1089,
+            "candidate_tickets": 1089
+          },
+          {
+            "segment": "venue:門別",
+            "baseline_races": 168,
+            "candidate_races": 168,
+            "baseline_roi": 70.2,
+            "candidate_roi": 79.56,
+            "roi_delta": 9.36,
+            "baseline_tickets": 504,
+            "candidate_tickets": 504
+          },
+          {
+            "segment": "venue:高知",
+            "baseline_races": 617,
+            "candidate_races": 617,
+            "baseline_roi": 65.61,
+            "candidate_roi": 69.88,
+            "roi_delta": 4.27,
+            "baseline_tickets": 1851,
+            "candidate_tickets": 1851
+          }
+        ],
         "confidence_filter_backtest": {
           "0.20": {
             "races": 5730,
@@ -15577,6 +18662,1666 @@
             }
           }
         },
+        "wide_model_condition_segments": {
+          "baseline": {
+            "distance_band:long_>2000m": {
+              "races": 35,
+              "tickets": 105,
+              "hits": 17,
+              "stake": 10500,
+              "return": 3760.0,
+              "roi": 35.81,
+              "profit": -6740.0
+            },
+            "distance_band:middle_1601-2000m": {
+              "races": 648,
+              "tickets": 1944,
+              "hits": 425,
+              "stake": 194400,
+              "return": 118900.0,
+              "roi": 61.16,
+              "profit": -75500.0
+            },
+            "distance_band:mile_1201-1600m": {
+              "races": 5814,
+              "tickets": 17442,
+              "hits": 4047,
+              "stake": 1744200,
+              "return": 1135840.0,
+              "roi": 65.12,
+              "profit": -608360.0
+            },
+            "distance_band:short_<=1200m": {
+              "races": 3171,
+              "tickets": 9513,
+              "hits": 1971,
+              "stake": 951300,
+              "return": 623910.0,
+              "roi": 65.58,
+              "profit": -327390.0
+            },
+            "going:0.5": {
+              "races": 18,
+              "tickets": 54,
+              "hits": 5,
+              "stake": 5400,
+              "return": 1890.0,
+              "roi": 35.0,
+              "profit": -3510.0
+            },
+            "going:0.6": {
+              "races": 60,
+              "tickets": 180,
+              "hits": 23,
+              "stake": 18000,
+              "return": 9180.0,
+              "roi": 51.0,
+              "profit": -8820.0
+            },
+            "going:0.7": {
+              "races": 78,
+              "tickets": 234,
+              "hits": 38,
+              "stake": 23400,
+              "return": 18950.0,
+              "roi": 80.98,
+              "profit": -4450.0
+            },
+            "going:0.8": {
+              "races": 68,
+              "tickets": 204,
+              "hits": 28,
+              "stake": 20400,
+              "return": 9990.0,
+              "roi": 48.97,
+              "profit": -10410.0
+            },
+            "going:0.9": {
+              "races": 68,
+              "tickets": 204,
+              "hits": 29,
+              "stake": 20400,
+              "return": 10200.0,
+              "roi": 50.0,
+              "profit": -10200.0
+            },
+            "going:1.0": {
+              "races": 64,
+              "tickets": 192,
+              "hits": 18,
+              "stake": 19200,
+              "return": 6150.0,
+              "roi": 32.03,
+              "profit": -13050.0
+            },
+            "going:1.1": {
+              "races": 58,
+              "tickets": 174,
+              "hits": 19,
+              "stake": 17400,
+              "return": 7680.0,
+              "roi": 44.14,
+              "profit": -9720.0
+            },
+            "going:1.2": {
+              "races": 68,
+              "tickets": 204,
+              "hits": 25,
+              "stake": 20400,
+              "return": 11660.0,
+              "roi": 57.16,
+              "profit": -8740.0
+            },
+            "going:1.3": {
+              "races": 32,
+              "tickets": 96,
+              "hits": 14,
+              "stake": 9600,
+              "return": 4150.0,
+              "roi": 43.23,
+              "profit": -5450.0
+            },
+            "going:1.4": {
+              "races": 42,
+              "tickets": 126,
+              "hits": 24,
+              "stake": 12600,
+              "return": 11260.0,
+              "roi": 89.37,
+              "profit": -1340.0
+            },
+            "going:1.5": {
+              "races": 32,
+              "tickets": 96,
+              "hits": 13,
+              "stake": 9600,
+              "return": 6890.0,
+              "roi": 71.77,
+              "profit": -2710.0
+            },
+            "going:1.6": {
+              "races": 62,
+              "tickets": 186,
+              "hits": 32,
+              "stake": 18600,
+              "return": 10250.0,
+              "roi": 55.11,
+              "profit": -8350.0
+            },
+            "going:1.7": {
+              "races": 38,
+              "tickets": 114,
+              "hits": 14,
+              "stake": 11400,
+              "return": 4290.0,
+              "roi": 37.63,
+              "profit": -7110.0
+            },
+            "going:1.8": {
+              "races": 36,
+              "tickets": 108,
+              "hits": 15,
+              "stake": 10800,
+              "return": 7120.0,
+              "roi": 65.93,
+              "profit": -3680.0
+            },
+            "going:1.9": {
+              "races": 24,
+              "tickets": 72,
+              "hits": 10,
+              "stake": 7200,
+              "return": 4430.0,
+              "roi": 61.53,
+              "profit": -2770.0
+            },
+            "going:2.0": {
+              "races": 20,
+              "tickets": 60,
+              "hits": 6,
+              "stake": 6000,
+              "return": 1760.0,
+              "roi": 29.33,
+              "profit": -4240.0
+            },
+            "going:2.1": {
+              "races": 28,
+              "tickets": 84,
+              "hits": 7,
+              "stake": 8400,
+              "return": 1980.0,
+              "roi": 23.57,
+              "profit": -6420.0
+            },
+            "going:2.2": {
+              "races": 38,
+              "tickets": 114,
+              "hits": 18,
+              "stake": 11400,
+              "return": 5920.0,
+              "roi": 51.93,
+              "profit": -5480.0
+            },
+            "going:2.3": {
+              "races": 16,
+              "tickets": 48,
+              "hits": 6,
+              "stake": 4800,
+              "return": 1490.0,
+              "roi": 31.04,
+              "profit": -3310.0
+            },
+            "going:2.4": {
+              "races": 22,
+              "tickets": 66,
+              "hits": 14,
+              "stake": 6600,
+              "return": 5870.0,
+              "roi": 88.94,
+              "profit": -730.0
+            },
+            "going:2.5": {
+              "races": 20,
+              "tickets": 60,
+              "hits": 18,
+              "stake": 6000,
+              "return": 9270.0,
+              "roi": 154.5,
+              "profit": 3270.0
+            },
+            "going:2.6": {
+              "races": 33,
+              "tickets": 99,
+              "hits": 19,
+              "stake": 9900,
+              "return": 7010.0,
+              "roi": 70.81,
+              "profit": -2890.0
+            },
+            "going:2.7": {
+              "races": 20,
+              "tickets": 60,
+              "hits": 14,
+              "stake": 6000,
+              "return": 3540.0,
+              "roi": 59.0,
+              "profit": -2460.0
+            },
+            "going:2.8": {
+              "races": 16,
+              "tickets": 48,
+              "hits": 5,
+              "stake": 4800,
+              "return": 2340.0,
+              "roi": 48.75,
+              "profit": -2460.0
+            },
+            "going:2.9": {
+              "races": 14,
+              "tickets": 42,
+              "hits": 9,
+              "stake": 4200,
+              "return": 4700.0,
+              "roi": 111.9,
+              "profit": 500.0
+            },
+            "going:3.0": {
+              "races": 10,
+              "tickets": 30,
+              "hits": 2,
+              "stake": 3000,
+              "return": 580.0,
+              "roi": 19.33,
+              "profit": -2420.0
+            },
+            "going:3.1": {
+              "races": 18,
+              "tickets": 54,
+              "hits": 12,
+              "stake": 5400,
+              "return": 11630.0,
+              "roi": 215.37,
+              "profit": 6230.0
+            },
+            "going:3.2": {
+              "races": 10,
+              "tickets": 30,
+              "hits": 3,
+              "stake": 3000,
+              "return": 1900.0,
+              "roi": 63.33,
+              "profit": -1100.0
+            },
+            "going:3.3": {
+              "races": 16,
+              "tickets": 48,
+              "hits": 10,
+              "stake": 4800,
+              "return": 3570.0,
+              "roi": 74.38,
+              "profit": -1230.0
+            },
+            "going:3.4": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 0,
+              "stake": 600,
+              "return": 0,
+              "roi": 0.0,
+              "profit": -600
+            },
+            "going:3.5": {
+              "races": 4,
+              "tickets": 12,
+              "hits": 3,
+              "stake": 1200,
+              "return": 1740.0,
+              "roi": 145.0,
+              "profit": 540.0
+            },
+            "going:3.6": {
+              "races": 8,
+              "tickets": 24,
+              "hits": 3,
+              "stake": 2400,
+              "return": 1050.0,
+              "roi": 43.75,
+              "profit": -1350.0
+            },
+            "going:3.7": {
+              "races": 14,
+              "tickets": 42,
+              "hits": 4,
+              "stake": 4200,
+              "return": 1690.0,
+              "roi": 40.24,
+              "profit": -2510.0
+            },
+            "going:3.8": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 2,
+              "stake": 600,
+              "return": 870.0,
+              "roi": 145.0,
+              "profit": 270.0
+            },
+            "going:3.9": {
+              "races": 4,
+              "tickets": 12,
+              "hits": 0,
+              "stake": 1200,
+              "return": 0,
+              "roi": 0.0,
+              "profit": -1200
+            },
+            "going:不良": {
+              "races": 1312,
+              "tickets": 3936,
+              "hits": 868,
+              "stake": 393600,
+              "return": 252630.0,
+              "roi": 64.18,
+              "profit": -140970.0
+            },
+            "going:稍重": {
+              "races": 1875,
+              "tickets": 5625,
+              "hits": 1364,
+              "stake": 562500,
+              "return": 386710.0,
+              "roi": 68.75,
+              "profit": -175790.0
+            },
+            "going:良": {
+              "races": 4085,
+              "tickets": 12255,
+              "hits": 2806,
+              "stake": 1225500,
+              "return": 783650.0,
+              "roi": 63.95,
+              "profit": -441850.0
+            },
+            "going:重": {
+              "races": 1333,
+              "tickets": 3999,
+              "hits": 960,
+              "stake": 399900,
+              "return": 268420.0,
+              "roi": 67.12,
+              "profit": -131480.0
+            },
+            "surface:ダート": {
+              "races": 8651,
+              "tickets": 25953,
+              "hits": 6022,
+              "stake": 2595300,
+              "return": 1702770.0,
+              "roi": 65.61,
+              "profit": -892530.0
+            },
+            "surface:芝": {
+              "races": 26,
+              "tickets": 78,
+              "hits": 11,
+              "stake": 7800,
+              "return": 2530.0,
+              "roi": 32.44,
+              "profit": -5270.0
+            },
+            "venue:佐賀": {
+              "races": 686,
+              "tickets": 2058,
+              "hits": 555,
+              "stake": 205800,
+              "return": 136320.0,
+              "roi": 66.24,
+              "profit": -69480.0
+            },
+            "venue:名古屋": {
+              "races": 812,
+              "tickets": 2436,
+              "hits": 466,
+              "stake": 243600,
+              "return": 153080.0,
+              "roi": 62.84,
+              "profit": -90520.0
+            },
+            "venue:園田": {
+              "races": 1119,
+              "tickets": 3357,
+              "hits": 879,
+              "stake": 335700,
+              "return": 232830.0,
+              "roi": 69.36,
+              "profit": -102870.0
+            },
+            "venue:大井": {
+              "races": 661,
+              "tickets": 1983,
+              "hits": 464,
+              "stake": 198300,
+              "return": 144060.0,
+              "roi": 72.65,
+              "profit": -54240.0
+            },
+            "venue:川崎": {
+              "races": 468,
+              "tickets": 1404,
+              "hits": 260,
+              "stake": 140400,
+              "return": 82270.0,
+              "roi": 58.6,
+              "profit": -58130.0
+            },
+            "venue:帯広ば": {
+              "races": 1063,
+              "tickets": 3189,
+              "hits": 462,
+              "stake": 318900,
+              "return": 191000.0,
+              "roi": 59.89,
+              "profit": -127900.0
+            },
+            "venue:水沢": {
+              "races": 459,
+              "tickets": 1377,
+              "hits": 291,
+              "stake": 137700,
+              "return": 90280.0,
+              "roi": 65.56,
+              "profit": -47420.0
+            },
+            "venue:浦和": {
+              "races": 395,
+              "tickets": 1185,
+              "hits": 240,
+              "stake": 118500,
+              "return": 76950.0,
+              "roi": 64.94,
+              "profit": -41550.0
+            },
+            "venue:盛岡": {
+              "races": 659,
+              "tickets": 1977,
+              "hits": 382,
+              "stake": 197700,
+              "return": 113850.0,
+              "roi": 57.59,
+              "profit": -83850.0
+            },
+            "venue:笠松": {
+              "races": 628,
+              "tickets": 1884,
+              "hits": 441,
+              "stake": 188400,
+              "return": 110750.0,
+              "roi": 58.78,
+              "profit": -77650.0
+            },
+            "venue:船橋": {
+              "races": 432,
+              "tickets": 1296,
+              "hits": 251,
+              "stake": 129600,
+              "return": 78550.0,
+              "roi": 60.61,
+              "profit": -51050.0
+            },
+            "venue:金沢": {
+              "races": 747,
+              "tickets": 2241,
+              "hits": 612,
+              "stake": 224100,
+              "return": 151380.0,
+              "roi": 67.55,
+              "profit": -72720.0
+            },
+            "venue:門別": {
+              "races": 941,
+              "tickets": 2823,
+              "hits": 733,
+              "stake": 282300,
+              "return": 195450.0,
+              "roi": 69.23,
+              "profit": -86850.0
+            },
+            "venue:高知": {
+              "races": 598,
+              "tickets": 1794,
+              "hits": 424,
+              "stake": 179400,
+              "return": 125640.0,
+              "roi": 70.03,
+              "profit": -53760.0
+            }
+          },
+          "trained_no_recent_history": {
+            "distance_band:long_>2000m": {
+              "races": 35,
+              "tickets": 105,
+              "hits": 17,
+              "stake": 10500,
+              "return": 8150.0,
+              "roi": 77.62,
+              "profit": -2350.0
+            },
+            "distance_band:middle_1601-2000m": {
+              "races": 648,
+              "tickets": 1944,
+              "hits": 317,
+              "stake": 194400,
+              "return": 137520.0,
+              "roi": 70.74,
+              "profit": -56880.0
+            },
+            "distance_band:mile_1201-1600m": {
+              "races": 5814,
+              "tickets": 17442,
+              "hits": 3143,
+              "stake": 1744200,
+              "return": 1351070.0,
+              "roi": 77.46,
+              "profit": -393130.0
+            },
+            "distance_band:short_<=1200m": {
+              "races": 3171,
+              "tickets": 9513,
+              "hits": 1417,
+              "stake": 951300,
+              "return": 672100.0,
+              "roi": 70.65,
+              "profit": -279200.0
+            },
+            "going:0.5": {
+              "races": 18,
+              "tickets": 54,
+              "hits": 6,
+              "stake": 5400,
+              "return": 5010.0,
+              "roi": 92.78,
+              "profit": -390.0
+            },
+            "going:0.6": {
+              "races": 60,
+              "tickets": 180,
+              "hits": 23,
+              "stake": 18000,
+              "return": 16340.0,
+              "roi": 90.78,
+              "profit": -1660.0
+            },
+            "going:0.7": {
+              "races": 78,
+              "tickets": 234,
+              "hits": 27,
+              "stake": 23400,
+              "return": 18470.0,
+              "roi": 78.93,
+              "profit": -4930.0
+            },
+            "going:0.8": {
+              "races": 68,
+              "tickets": 204,
+              "hits": 32,
+              "stake": 20400,
+              "return": 18040.0,
+              "roi": 88.43,
+              "profit": -2360.0
+            },
+            "going:0.9": {
+              "races": 68,
+              "tickets": 204,
+              "hits": 22,
+              "stake": 20400,
+              "return": 10850.0,
+              "roi": 53.19,
+              "profit": -9550.0
+            },
+            "going:1.0": {
+              "races": 64,
+              "tickets": 192,
+              "hits": 17,
+              "stake": 19200,
+              "return": 9030.0,
+              "roi": 47.03,
+              "profit": -10170.0
+            },
+            "going:1.1": {
+              "races": 58,
+              "tickets": 174,
+              "hits": 12,
+              "stake": 17400,
+              "return": 10560.0,
+              "roi": 60.69,
+              "profit": -6840.0
+            },
+            "going:1.2": {
+              "races": 68,
+              "tickets": 204,
+              "hits": 19,
+              "stake": 20400,
+              "return": 7660.0,
+              "roi": 37.55,
+              "profit": -12740.0
+            },
+            "going:1.3": {
+              "races": 32,
+              "tickets": 96,
+              "hits": 10,
+              "stake": 9600,
+              "return": 4030.0,
+              "roi": 41.98,
+              "profit": -5570.0
+            },
+            "going:1.4": {
+              "races": 42,
+              "tickets": 126,
+              "hits": 9,
+              "stake": 12600,
+              "return": 4060.0,
+              "roi": 32.22,
+              "profit": -8540.0
+            },
+            "going:1.5": {
+              "races": 32,
+              "tickets": 96,
+              "hits": 14,
+              "stake": 9600,
+              "return": 7790.0,
+              "roi": 81.15,
+              "profit": -1810.0
+            },
+            "going:1.6": {
+              "races": 62,
+              "tickets": 186,
+              "hits": 27,
+              "stake": 18600,
+              "return": 16140.0,
+              "roi": 86.77,
+              "profit": -2460.0
+            },
+            "going:1.7": {
+              "races": 38,
+              "tickets": 114,
+              "hits": 8,
+              "stake": 11400,
+              "return": 4450.0,
+              "roi": 39.04,
+              "profit": -6950.0
+            },
+            "going:1.8": {
+              "races": 36,
+              "tickets": 108,
+              "hits": 21,
+              "stake": 10800,
+              "return": 11320.0,
+              "roi": 104.81,
+              "profit": 520.0
+            },
+            "going:1.9": {
+              "races": 24,
+              "tickets": 72,
+              "hits": 8,
+              "stake": 7200,
+              "return": 6310.0,
+              "roi": 87.64,
+              "profit": -890.0
+            },
+            "going:2.0": {
+              "races": 20,
+              "tickets": 60,
+              "hits": 3,
+              "stake": 6000,
+              "return": 4520.0,
+              "roi": 75.33,
+              "profit": -1480.0
+            },
+            "going:2.1": {
+              "races": 28,
+              "tickets": 84,
+              "hits": 9,
+              "stake": 8400,
+              "return": 3780.0,
+              "roi": 45.0,
+              "profit": -4620.0
+            },
+            "going:2.2": {
+              "races": 38,
+              "tickets": 114,
+              "hits": 18,
+              "stake": 11400,
+              "return": 19430.0,
+              "roi": 170.44,
+              "profit": 8030.0
+            },
+            "going:2.3": {
+              "races": 16,
+              "tickets": 48,
+              "hits": 6,
+              "stake": 4800,
+              "return": 6070.0,
+              "roi": 126.46,
+              "profit": 1270.0
+            },
+            "going:2.4": {
+              "races": 22,
+              "tickets": 66,
+              "hits": 13,
+              "stake": 6600,
+              "return": 4520.0,
+              "roi": 68.48,
+              "profit": -2080.0
+            },
+            "going:2.5": {
+              "races": 20,
+              "tickets": 60,
+              "hits": 7,
+              "stake": 6000,
+              "return": 4390.0,
+              "roi": 73.17,
+              "profit": -1610.0
+            },
+            "going:2.6": {
+              "races": 33,
+              "tickets": 99,
+              "hits": 7,
+              "stake": 9900,
+              "return": 4580.0,
+              "roi": 46.26,
+              "profit": -5320.0
+            },
+            "going:2.7": {
+              "races": 20,
+              "tickets": 60,
+              "hits": 7,
+              "stake": 6000,
+              "return": 4880.0,
+              "roi": 81.33,
+              "profit": -1120.0
+            },
+            "going:2.8": {
+              "races": 16,
+              "tickets": 48,
+              "hits": 5,
+              "stake": 4800,
+              "return": 1750.0,
+              "roi": 36.46,
+              "profit": -3050.0
+            },
+            "going:2.9": {
+              "races": 14,
+              "tickets": 42,
+              "hits": 4,
+              "stake": 4200,
+              "return": 1450.0,
+              "roi": 34.52,
+              "profit": -2750.0
+            },
+            "going:3.0": {
+              "races": 10,
+              "tickets": 30,
+              "hits": 4,
+              "stake": 3000,
+              "return": 1640.0,
+              "roi": 54.67,
+              "profit": -1360.0
+            },
+            "going:3.1": {
+              "races": 18,
+              "tickets": 54,
+              "hits": 6,
+              "stake": 5400,
+              "return": 3970.0,
+              "roi": 73.52,
+              "profit": -1430.0
+            },
+            "going:3.2": {
+              "races": 10,
+              "tickets": 30,
+              "hits": 4,
+              "stake": 3000,
+              "return": 2820.0,
+              "roi": 94.0,
+              "profit": -180.0
+            },
+            "going:3.3": {
+              "races": 16,
+              "tickets": 48,
+              "hits": 7,
+              "stake": 4800,
+              "return": 5160.0,
+              "roi": 107.5,
+              "profit": 360.0
+            },
+            "going:3.4": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 0,
+              "stake": 600,
+              "return": 0,
+              "roi": 0.0,
+              "profit": -600
+            },
+            "going:3.5": {
+              "races": 4,
+              "tickets": 12,
+              "hits": 1,
+              "stake": 1200,
+              "return": 260.0,
+              "roi": 21.67,
+              "profit": -940.0
+            },
+            "going:3.6": {
+              "races": 8,
+              "tickets": 24,
+              "hits": 3,
+              "stake": 2400,
+              "return": 1550.0,
+              "roi": 64.58,
+              "profit": -850.0
+            },
+            "going:3.7": {
+              "races": 14,
+              "tickets": 42,
+              "hits": 9,
+              "stake": 4200,
+              "return": 9540.0,
+              "roi": 227.14,
+              "profit": 5340.0
+            },
+            "going:3.8": {
+              "races": 2,
+              "tickets": 6,
+              "hits": 1,
+              "stake": 600,
+              "return": 330.0,
+              "roi": 55.0,
+              "profit": -270.0
+            },
+            "going:3.9": {
+              "races": 4,
+              "tickets": 12,
+              "hits": 0,
+              "stake": 1200,
+              "return": 0,
+              "roi": 0.0,
+              "profit": -1200
+            },
+            "going:不良": {
+              "races": 1312,
+              "tickets": 3936,
+              "hits": 659,
+              "stake": 393600,
+              "return": 317310.0,
+              "roi": 80.62,
+              "profit": -76290.0
+            },
+            "going:稍重": {
+              "races": 1875,
+              "tickets": 5625,
+              "hits": 993,
+              "stake": 562500,
+              "return": 427430.0,
+              "roi": 75.99,
+              "profit": -135070.0
+            },
+            "going:良": {
+              "races": 4085,
+              "tickets": 12255,
+              "hits": 2156,
+              "stake": 1225500,
+              "return": 904690.0,
+              "roi": 73.82,
+              "profit": -320810.0
+            },
+            "going:重": {
+              "races": 1333,
+              "tickets": 3999,
+              "hits": 717,
+              "stake": 399900,
+              "return": 288710.0,
+              "roi": 72.2,
+              "profit": -111190.0
+            },
+            "surface:ダート": {
+              "races": 8651,
+              "tickets": 25953,
+              "hits": 4536,
+              "stake": 2595300,
+              "return": 1948540.0,
+              "roi": 75.08,
+              "profit": -646760.0
+            },
+            "surface:芝": {
+              "races": 26,
+              "tickets": 78,
+              "hits": 16,
+              "stake": 7800,
+              "return": 5820.0,
+              "roi": 74.62,
+              "profit": -1980.0
+            },
+            "venue:佐賀": {
+              "races": 686,
+              "tickets": 2058,
+              "hits": 363,
+              "stake": 205800,
+              "return": 153720.0,
+              "roi": 74.69,
+              "profit": -52080.0
+            },
+            "venue:名古屋": {
+              "races": 812,
+              "tickets": 2436,
+              "hits": 351,
+              "stake": 243600,
+              "return": 182860.0,
+              "roi": 75.07,
+              "profit": -60740.0
+            },
+            "venue:園田": {
+              "races": 1119,
+              "tickets": 3357,
+              "hits": 653,
+              "stake": 335700,
+              "return": 239780.0,
+              "roi": 71.43,
+              "profit": -95920.0
+            },
+            "venue:大井": {
+              "races": 661,
+              "tickets": 1983,
+              "hits": 325,
+              "stake": 198300,
+              "return": 154940.0,
+              "roi": 78.13,
+              "profit": -43360.0
+            },
+            "venue:川崎": {
+              "races": 468,
+              "tickets": 1404,
+              "hits": 261,
+              "stake": 140400,
+              "return": 116780.0,
+              "roi": 83.18,
+              "profit": -23620.0
+            },
+            "venue:帯広ば": {
+              "races": 1063,
+              "tickets": 3189,
+              "hits": 369,
+              "stake": 318900,
+              "return": 230700.0,
+              "roi": 72.34,
+              "profit": -88200.0
+            },
+            "venue:水沢": {
+              "races": 459,
+              "tickets": 1377,
+              "hits": 241,
+              "stake": 137700,
+              "return": 103510.0,
+              "roi": 75.17,
+              "profit": -34190.0
+            },
+            "venue:浦和": {
+              "races": 395,
+              "tickets": 1185,
+              "hits": 174,
+              "stake": 118500,
+              "return": 74100.0,
+              "roi": 62.53,
+              "profit": -44400.0
+            },
+            "venue:盛岡": {
+              "races": 659,
+              "tickets": 1977,
+              "hits": 321,
+              "stake": 197700,
+              "return": 163890.0,
+              "roi": 82.9,
+              "profit": -33810.0
+            },
+            "venue:笠松": {
+              "races": 628,
+              "tickets": 1884,
+              "hits": 401,
+              "stake": 188400,
+              "return": 151870.0,
+              "roi": 80.61,
+              "profit": -36530.0
+            },
+            "venue:船橋": {
+              "races": 432,
+              "tickets": 1296,
+              "hits": 182,
+              "stake": 129600,
+              "return": 72100.0,
+              "roi": 55.63,
+              "profit": -57500.0
+            },
+            "venue:金沢": {
+              "races": 747,
+              "tickets": 2241,
+              "hits": 453,
+              "stake": 224100,
+              "return": 171900.0,
+              "roi": 76.71,
+              "profit": -52200.0
+            },
+            "venue:門別": {
+              "races": 941,
+              "tickets": 2823,
+              "hits": 482,
+              "stake": 282300,
+              "return": 204710.0,
+              "roi": 72.52,
+              "profit": -77590.0
+            },
+            "venue:高知": {
+              "races": 598,
+              "tickets": 1794,
+              "hits": 318,
+              "stake": 179400,
+              "return": 147980.0,
+              "roi": 82.49,
+              "profit": -31420.0
+            }
+          }
+        },
+        "wide_condition_comparison": [
+          {
+            "segment": "distance_band:long_>2000m",
+            "baseline_races": 35,
+            "candidate_races": 35,
+            "baseline_roi": 35.81,
+            "candidate_roi": 77.62,
+            "roi_delta": 41.81,
+            "baseline_tickets": 105,
+            "candidate_tickets": 105
+          },
+          {
+            "segment": "distance_band:middle_1601-2000m",
+            "baseline_races": 648,
+            "candidate_races": 648,
+            "baseline_roi": 61.16,
+            "candidate_roi": 70.74,
+            "roi_delta": 9.58,
+            "baseline_tickets": 1944,
+            "candidate_tickets": 1944
+          },
+          {
+            "segment": "distance_band:mile_1201-1600m",
+            "baseline_races": 5814,
+            "candidate_races": 5814,
+            "baseline_roi": 65.12,
+            "candidate_roi": 77.46,
+            "roi_delta": 12.34,
+            "baseline_tickets": 17442,
+            "candidate_tickets": 17442
+          },
+          {
+            "segment": "distance_band:short_<=1200m",
+            "baseline_races": 3171,
+            "candidate_races": 3171,
+            "baseline_roi": 65.58,
+            "candidate_roi": 70.65,
+            "roi_delta": 5.07,
+            "baseline_tickets": 9513,
+            "candidate_tickets": 9513
+          },
+          {
+            "segment": "going:0.5",
+            "baseline_races": 18,
+            "candidate_races": 18,
+            "baseline_roi": 35.0,
+            "candidate_roi": 92.78,
+            "roi_delta": 57.78,
+            "baseline_tickets": 54,
+            "candidate_tickets": 54
+          },
+          {
+            "segment": "going:0.6",
+            "baseline_races": 60,
+            "candidate_races": 60,
+            "baseline_roi": 51.0,
+            "candidate_roi": 90.78,
+            "roi_delta": 39.78,
+            "baseline_tickets": 180,
+            "candidate_tickets": 180
+          },
+          {
+            "segment": "going:0.7",
+            "baseline_races": 78,
+            "candidate_races": 78,
+            "baseline_roi": 80.98,
+            "candidate_roi": 78.93,
+            "roi_delta": -2.05,
+            "baseline_tickets": 234,
+            "candidate_tickets": 234
+          },
+          {
+            "segment": "going:0.8",
+            "baseline_races": 68,
+            "candidate_races": 68,
+            "baseline_roi": 48.97,
+            "candidate_roi": 88.43,
+            "roi_delta": 39.46,
+            "baseline_tickets": 204,
+            "candidate_tickets": 204
+          },
+          {
+            "segment": "going:0.9",
+            "baseline_races": 68,
+            "candidate_races": 68,
+            "baseline_roi": 50.0,
+            "candidate_roi": 53.19,
+            "roi_delta": 3.19,
+            "baseline_tickets": 204,
+            "candidate_tickets": 204
+          },
+          {
+            "segment": "going:1.0",
+            "baseline_races": 64,
+            "candidate_races": 64,
+            "baseline_roi": 32.03,
+            "candidate_roi": 47.03,
+            "roi_delta": 15.0,
+            "baseline_tickets": 192,
+            "candidate_tickets": 192
+          },
+          {
+            "segment": "going:1.1",
+            "baseline_races": 58,
+            "candidate_races": 58,
+            "baseline_roi": 44.14,
+            "candidate_roi": 60.69,
+            "roi_delta": 16.55,
+            "baseline_tickets": 174,
+            "candidate_tickets": 174
+          },
+          {
+            "segment": "going:1.2",
+            "baseline_races": 68,
+            "candidate_races": 68,
+            "baseline_roi": 57.16,
+            "candidate_roi": 37.55,
+            "roi_delta": -19.61,
+            "baseline_tickets": 204,
+            "candidate_tickets": 204
+          },
+          {
+            "segment": "going:1.3",
+            "baseline_races": 32,
+            "candidate_races": 32,
+            "baseline_roi": 43.23,
+            "candidate_roi": 41.98,
+            "roi_delta": -1.25,
+            "baseline_tickets": 96,
+            "candidate_tickets": 96
+          },
+          {
+            "segment": "going:1.4",
+            "baseline_races": 42,
+            "candidate_races": 42,
+            "baseline_roi": 89.37,
+            "candidate_roi": 32.22,
+            "roi_delta": -57.15,
+            "baseline_tickets": 126,
+            "candidate_tickets": 126
+          },
+          {
+            "segment": "going:1.5",
+            "baseline_races": 32,
+            "candidate_races": 32,
+            "baseline_roi": 71.77,
+            "candidate_roi": 81.15,
+            "roi_delta": 9.38,
+            "baseline_tickets": 96,
+            "candidate_tickets": 96
+          },
+          {
+            "segment": "going:1.6",
+            "baseline_races": 62,
+            "candidate_races": 62,
+            "baseline_roi": 55.11,
+            "candidate_roi": 86.77,
+            "roi_delta": 31.66,
+            "baseline_tickets": 186,
+            "candidate_tickets": 186
+          },
+          {
+            "segment": "going:1.7",
+            "baseline_races": 38,
+            "candidate_races": 38,
+            "baseline_roi": 37.63,
+            "candidate_roi": 39.04,
+            "roi_delta": 1.41,
+            "baseline_tickets": 114,
+            "candidate_tickets": 114
+          },
+          {
+            "segment": "going:1.8",
+            "baseline_races": 36,
+            "candidate_races": 36,
+            "baseline_roi": 65.93,
+            "candidate_roi": 104.81,
+            "roi_delta": 38.88,
+            "baseline_tickets": 108,
+            "candidate_tickets": 108
+          },
+          {
+            "segment": "going:1.9",
+            "baseline_races": 24,
+            "candidate_races": 24,
+            "baseline_roi": 61.53,
+            "candidate_roi": 87.64,
+            "roi_delta": 26.11,
+            "baseline_tickets": 72,
+            "candidate_tickets": 72
+          },
+          {
+            "segment": "going:2.0",
+            "baseline_races": 20,
+            "candidate_races": 20,
+            "baseline_roi": 29.33,
+            "candidate_roi": 75.33,
+            "roi_delta": 46.0,
+            "baseline_tickets": 60,
+            "candidate_tickets": 60
+          },
+          {
+            "segment": "going:2.1",
+            "baseline_races": 28,
+            "candidate_races": 28,
+            "baseline_roi": 23.57,
+            "candidate_roi": 45.0,
+            "roi_delta": 21.43,
+            "baseline_tickets": 84,
+            "candidate_tickets": 84
+          },
+          {
+            "segment": "going:2.2",
+            "baseline_races": 38,
+            "candidate_races": 38,
+            "baseline_roi": 51.93,
+            "candidate_roi": 170.44,
+            "roi_delta": 118.51,
+            "baseline_tickets": 114,
+            "candidate_tickets": 114
+          },
+          {
+            "segment": "going:2.3",
+            "baseline_races": 16,
+            "candidate_races": 16,
+            "baseline_roi": 31.04,
+            "candidate_roi": 126.46,
+            "roi_delta": 95.42,
+            "baseline_tickets": 48,
+            "candidate_tickets": 48
+          },
+          {
+            "segment": "going:2.4",
+            "baseline_races": 22,
+            "candidate_races": 22,
+            "baseline_roi": 88.94,
+            "candidate_roi": 68.48,
+            "roi_delta": -20.46,
+            "baseline_tickets": 66,
+            "candidate_tickets": 66
+          },
+          {
+            "segment": "going:2.5",
+            "baseline_races": 20,
+            "candidate_races": 20,
+            "baseline_roi": 154.5,
+            "candidate_roi": 73.17,
+            "roi_delta": -81.33,
+            "baseline_tickets": 60,
+            "candidate_tickets": 60
+          },
+          {
+            "segment": "going:2.6",
+            "baseline_races": 33,
+            "candidate_races": 33,
+            "baseline_roi": 70.81,
+            "candidate_roi": 46.26,
+            "roi_delta": -24.55,
+            "baseline_tickets": 99,
+            "candidate_tickets": 99
+          },
+          {
+            "segment": "going:2.7",
+            "baseline_races": 20,
+            "candidate_races": 20,
+            "baseline_roi": 59.0,
+            "candidate_roi": 81.33,
+            "roi_delta": 22.33,
+            "baseline_tickets": 60,
+            "candidate_tickets": 60
+          },
+          {
+            "segment": "going:2.8",
+            "baseline_races": 16,
+            "candidate_races": 16,
+            "baseline_roi": 48.75,
+            "candidate_roi": 36.46,
+            "roi_delta": -12.29,
+            "baseline_tickets": 48,
+            "candidate_tickets": 48
+          },
+          {
+            "segment": "going:2.9",
+            "baseline_races": 14,
+            "candidate_races": 14,
+            "baseline_roi": 111.9,
+            "candidate_roi": 34.52,
+            "roi_delta": -77.38,
+            "baseline_tickets": 42,
+            "candidate_tickets": 42
+          },
+          {
+            "segment": "going:3.0",
+            "baseline_races": 10,
+            "candidate_races": 10,
+            "baseline_roi": 19.33,
+            "candidate_roi": 54.67,
+            "roi_delta": 35.34,
+            "baseline_tickets": 30,
+            "candidate_tickets": 30
+          },
+          {
+            "segment": "going:3.1",
+            "baseline_races": 18,
+            "candidate_races": 18,
+            "baseline_roi": 215.37,
+            "candidate_roi": 73.52,
+            "roi_delta": -141.85,
+            "baseline_tickets": 54,
+            "candidate_tickets": 54
+          },
+          {
+            "segment": "going:3.2",
+            "baseline_races": 10,
+            "candidate_races": 10,
+            "baseline_roi": 63.33,
+            "candidate_roi": 94.0,
+            "roi_delta": 30.67,
+            "baseline_tickets": 30,
+            "candidate_tickets": 30
+          },
+          {
+            "segment": "going:3.3",
+            "baseline_races": 16,
+            "candidate_races": 16,
+            "baseline_roi": 74.38,
+            "candidate_roi": 107.5,
+            "roi_delta": 33.12,
+            "baseline_tickets": 48,
+            "candidate_tickets": 48
+          },
+          {
+            "segment": "going:3.4",
+            "baseline_races": 2,
+            "candidate_races": 2,
+            "baseline_roi": 0.0,
+            "candidate_roi": 0.0,
+            "roi_delta": 0.0,
+            "baseline_tickets": 6,
+            "candidate_tickets": 6
+          },
+          {
+            "segment": "going:3.5",
+            "baseline_races": 4,
+            "candidate_races": 4,
+            "baseline_roi": 145.0,
+            "candidate_roi": 21.67,
+            "roi_delta": -123.33,
+            "baseline_tickets": 12,
+            "candidate_tickets": 12
+          },
+          {
+            "segment": "going:3.6",
+            "baseline_races": 8,
+            "candidate_races": 8,
+            "baseline_roi": 43.75,
+            "candidate_roi": 64.58,
+            "roi_delta": 20.83,
+            "baseline_tickets": 24,
+            "candidate_tickets": 24
+          },
+          {
+            "segment": "going:3.7",
+            "baseline_races": 14,
+            "candidate_races": 14,
+            "baseline_roi": 40.24,
+            "candidate_roi": 227.14,
+            "roi_delta": 186.9,
+            "baseline_tickets": 42,
+            "candidate_tickets": 42
+          },
+          {
+            "segment": "going:3.8",
+            "baseline_races": 2,
+            "candidate_races": 2,
+            "baseline_roi": 145.0,
+            "candidate_roi": 55.0,
+            "roi_delta": -90.0,
+            "baseline_tickets": 6,
+            "candidate_tickets": 6
+          },
+          {
+            "segment": "going:3.9",
+            "baseline_races": 4,
+            "candidate_races": 4,
+            "baseline_roi": 0.0,
+            "candidate_roi": 0.0,
+            "roi_delta": 0.0,
+            "baseline_tickets": 12,
+            "candidate_tickets": 12
+          },
+          {
+            "segment": "going:不良",
+            "baseline_races": 1312,
+            "candidate_races": 1312,
+            "baseline_roi": 64.18,
+            "candidate_roi": 80.62,
+            "roi_delta": 16.44,
+            "baseline_tickets": 3936,
+            "candidate_tickets": 3936
+          },
+          {
+            "segment": "going:稍重",
+            "baseline_races": 1875,
+            "candidate_races": 1875,
+            "baseline_roi": 68.75,
+            "candidate_roi": 75.99,
+            "roi_delta": 7.24,
+            "baseline_tickets": 5625,
+            "candidate_tickets": 5625
+          },
+          {
+            "segment": "going:良",
+            "baseline_races": 4085,
+            "candidate_races": 4085,
+            "baseline_roi": 63.95,
+            "candidate_roi": 73.82,
+            "roi_delta": 9.87,
+            "baseline_tickets": 12255,
+            "candidate_tickets": 12255
+          },
+          {
+            "segment": "going:重",
+            "baseline_races": 1333,
+            "candidate_races": 1333,
+            "baseline_roi": 67.12,
+            "candidate_roi": 72.2,
+            "roi_delta": 5.08,
+            "baseline_tickets": 3999,
+            "candidate_tickets": 3999
+          },
+          {
+            "segment": "surface:ダート",
+            "baseline_races": 8651,
+            "candidate_races": 8651,
+            "baseline_roi": 65.61,
+            "candidate_roi": 75.08,
+            "roi_delta": 9.47,
+            "baseline_tickets": 25953,
+            "candidate_tickets": 25953
+          },
+          {
+            "segment": "surface:芝",
+            "baseline_races": 26,
+            "candidate_races": 26,
+            "baseline_roi": 32.44,
+            "candidate_roi": 74.62,
+            "roi_delta": 42.18,
+            "baseline_tickets": 78,
+            "candidate_tickets": 78
+          },
+          {
+            "segment": "venue:佐賀",
+            "baseline_races": 686,
+            "candidate_races": 686,
+            "baseline_roi": 66.24,
+            "candidate_roi": 74.69,
+            "roi_delta": 8.45,
+            "baseline_tickets": 2058,
+            "candidate_tickets": 2058
+          },
+          {
+            "segment": "venue:名古屋",
+            "baseline_races": 812,
+            "candidate_races": 812,
+            "baseline_roi": 62.84,
+            "candidate_roi": 75.07,
+            "roi_delta": 12.23,
+            "baseline_tickets": 2436,
+            "candidate_tickets": 2436
+          },
+          {
+            "segment": "venue:園田",
+            "baseline_races": 1119,
+            "candidate_races": 1119,
+            "baseline_roi": 69.36,
+            "candidate_roi": 71.43,
+            "roi_delta": 2.07,
+            "baseline_tickets": 3357,
+            "candidate_tickets": 3357
+          },
+          {
+            "segment": "venue:大井",
+            "baseline_races": 661,
+            "candidate_races": 661,
+            "baseline_roi": 72.65,
+            "candidate_roi": 78.13,
+            "roi_delta": 5.48,
+            "baseline_tickets": 1983,
+            "candidate_tickets": 1983
+          },
+          {
+            "segment": "venue:川崎",
+            "baseline_races": 468,
+            "candidate_races": 468,
+            "baseline_roi": 58.6,
+            "candidate_roi": 83.18,
+            "roi_delta": 24.58,
+            "baseline_tickets": 1404,
+            "candidate_tickets": 1404
+          },
+          {
+            "segment": "venue:帯広ば",
+            "baseline_races": 1063,
+            "candidate_races": 1063,
+            "baseline_roi": 59.89,
+            "candidate_roi": 72.34,
+            "roi_delta": 12.45,
+            "baseline_tickets": 3189,
+            "candidate_tickets": 3189
+          },
+          {
+            "segment": "venue:水沢",
+            "baseline_races": 459,
+            "candidate_races": 459,
+            "baseline_roi": 65.56,
+            "candidate_roi": 75.17,
+            "roi_delta": 9.61,
+            "baseline_tickets": 1377,
+            "candidate_tickets": 1377
+          },
+          {
+            "segment": "venue:浦和",
+            "baseline_races": 395,
+            "candidate_races": 395,
+            "baseline_roi": 64.94,
+            "candidate_roi": 62.53,
+            "roi_delta": -2.41,
+            "baseline_tickets": 1185,
+            "candidate_tickets": 1185
+          },
+          {
+            "segment": "venue:盛岡",
+            "baseline_races": 659,
+            "candidate_races": 659,
+            "baseline_roi": 57.59,
+            "candidate_roi": 82.9,
+            "roi_delta": 25.31,
+            "baseline_tickets": 1977,
+            "candidate_tickets": 1977
+          },
+          {
+            "segment": "venue:笠松",
+            "baseline_races": 628,
+            "candidate_races": 628,
+            "baseline_roi": 58.78,
+            "candidate_roi": 80.61,
+            "roi_delta": 21.83,
+            "baseline_tickets": 1884,
+            "candidate_tickets": 1884
+          },
+          {
+            "segment": "venue:船橋",
+            "baseline_races": 432,
+            "candidate_races": 432,
+            "baseline_roi": 60.61,
+            "candidate_roi": 55.63,
+            "roi_delta": -4.98,
+            "baseline_tickets": 1296,
+            "candidate_tickets": 1296
+          },
+          {
+            "segment": "venue:金沢",
+            "baseline_races": 747,
+            "candidate_races": 747,
+            "baseline_roi": 67.55,
+            "candidate_roi": 76.71,
+            "roi_delta": 9.16,
+            "baseline_tickets": 2241,
+            "candidate_tickets": 2241
+          },
+          {
+            "segment": "venue:門別",
+            "baseline_races": 941,
+            "candidate_races": 941,
+            "baseline_roi": 69.23,
+            "candidate_roi": 72.52,
+            "roi_delta": 3.29,
+            "baseline_tickets": 2823,
+            "candidate_tickets": 2823
+          },
+          {
+            "segment": "venue:高知",
+            "baseline_races": 598,
+            "candidate_races": 598,
+            "baseline_roi": 70.03,
+            "candidate_roi": 82.49,
+            "roi_delta": 12.46,
+            "baseline_tickets": 1794,
+            "candidate_tickets": 1794
+          }
+        ],
         "confidence_filter_backtest": {
           "0.20": {
             "races": 8224,
