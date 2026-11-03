@@ -1241,8 +1241,13 @@ def preoff_ticket_type_backtest(payouts):
 
 
 BET_TYPE_SELECTION_RULES = {
-    # Trifecta has the largest combination space and showed unstable fold-to-fold
-    # results. Require a materially larger prior-fold edge and sample.
+    # Wide/exacta/trio candidates must beat baseline by at least 2.5 points
+    # in every available prior fold. This is a model-selection hurdle, not a
+    # profitability gate; ROI must still clear 100% on independent validation.
+    "wide": {"min_tickets": 300, "min_roi_gain": 2.5},
+    "exacta": {"min_tickets": 300, "min_roi_gain": 2.5},
+    "trio": {"min_tickets": 300, "min_roi_gain": 2.5},
+    # Trifecta has the largest combination space and remains deliberately strict.
     "trifecta": {"min_tickets": 5000, "min_roi_gain": 12.0},
 }
 
@@ -1344,9 +1349,28 @@ def evaluate_walk_forward_selection(folds, min_tickets=300, min_roi_gain=5.0):
         evaluations.append({"selection_fold": prior.get("fold"),
                             "prior_folds_used": [fold.get("fold") for fold in folds[:index]],
                             "validation_fold": current.get("fold"), "bet_types": per_type})
+    selected_portfolio = {}
+    for kind in ("wide", "exacta", "trio", "trifecta"):
+        chosen = [entry["bet_types"][kind] for entry in evaluations]
+        totals = {
+            "tickets": sum(int(item.get("validation_tickets") or 0) for item in chosen),
+            "hits": sum(int(item.get("validation_hits") or 0) for item in chosen),
+            "stake": sum(int(item.get("validation_stake") or 0) for item in chosen),
+            "return": sum(int(item.get("validation_return") or 0) for item in chosen),
+        }
+        totals["profit"] = totals["return"] - totals["stake"]
+        totals["roi"] = round(100 * totals["return"] / totals["stake"], 2) if totals["stake"] else None
+        totals["hit_rate"] = round(100 * totals["hits"] / totals["tickets"], 2) if totals["tickets"] else None
+        totals["validation_folds"] = [
+            {"fold": item.get("validation_fold"), "model": item.get("model"),
+             "roi": item.get("validation_roi"), "tickets": item.get("validation_tickets")}
+            for item in chosen
+        ]
+        selected_portfolio[kind] = totals
     return {
         "status": "ok" if evaluations else "awaiting_next_fold",
-        "selection_method": "Each candidate must clear its type-specific sample and ROI-edge hurdle in every available prior fold. Selection uses no validation-fold outcomes; baseline is the fallback.",
+        "selection_method": "Each candidate must clear its type-specific sample and ROI-edge hurdle in every available prior fold. Selection uses no validation-fold outcomes; baseline is the fallback. Selection hurdles are not profitability gates.",
+        "selected_portfolio": selected_portfolio,
         "min_tickets": min_tickets, "min_roi_gain_percentage_points": min_roi_gain,
         "selection_rules_by_bet_type": {
             kind: {"min_tickets": int(BET_TYPE_SELECTION_RULES.get(kind, {}).get("min_tickets", min_tickets)),
