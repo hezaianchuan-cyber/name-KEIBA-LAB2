@@ -1016,7 +1016,7 @@ def main():
             "market_value_policy": "Simulate win bets only when calibrated model probability multiplied by timestamped official pre-off win odds meets a fixed threshold; thresholds are reported independently and not selected on test folds.",
             "probability_calibration": "temperature fitted on chronological prequential training predictions; out-of-sample calibration reported per walk-forward fold",
             "ticket_policy": "Expanded fixed top-rank ticket portfolio per race; 100 JPY per ticket; not a betting recommendation",
-            "ticket_counts_per_race": {"win":2,"place":3,"wide":3,"quinella":1,"exacta":4,"trio":10,"trifecta":12},
+            "ticket_counts_per_race": {"win":2,"place":3,"wide":3,"quinella":1,"exacta":4,"trio":10,"trifecta":24},
             "ticket_generation": "Top-5 rank-based portfolio: win top 2; place top 3; wide all pairs among top 3; quinella top 2; exacta first-place top 2 x second-place top 3 excluding same horse (4); trio all combinations from top 5 (10); trifecta first-place top 2 x second-place top 5 excluding first x third-place remaining top 5 excluding first and second (24). Each ticket costs 100 JPY.",
             "limitations": ["No historical pre-race odds feature; NAR monthly odds are confirmed odds and are not used.",
                             "All payout rows for dead-heat races are retained and matched across every winning combination.",
