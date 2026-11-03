@@ -428,3 +428,33 @@ class ExpandedFixedTicketTests(unittest.TestCase):
         self.assertIn(["1","2","3"],tickets["trifecta"])
         self.assertIn(["2","1","5"],tickets["trifecta"])
         self.assertNotIn(["3","1","2"],tickets["trifecta"])
+
+
+class PerformanceFeatureTests(unittest.TestCase):
+    def test_field_features_rank_last3f_within_race_and_transform_margin(self):
+        field = [
+            {"no":"1","last3f":38.0,"margin":"0"},
+            {"no":"2","last3f":36.0,"margin":"アタマ"},
+            {"no":"3","last3f":40.0,"margin":"2.0"},
+            {"no":"4","last3f":None,"margin":"大差"},
+        ]
+        features = nb.field_performance_features(field)
+        self.assertEqual(features["2"]["last3f_rank_score"], 1.0)
+        self.assertEqual(features["1"]["last3f_rank_score"], 2/3)
+        self.assertEqual(features["3"]["last3f_rank_score"], 1/3)
+        self.assertIsNone(features["4"]["last3f_rank_score"])
+        self.assertGreater(features["1"]["margin_quality"], features["3"]["margin_quality"])
+        self.assertGreater(features["2"]["margin_quality"], features["3"]["margin_quality"])
+
+    def test_d_score_uses_recent_margin_and_closing_features(self):
+        horse = {"no":"1","name":"A","sire":"","jockey":"","age":5}
+        history = {"A":[
+            {"finish":5,"field_size":10,"venue":"X","distance":1400,
+             "margin_quality":0.9,"last3f_rank_score":0.9}
+        ]}
+        weights = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
+        base, _ = nb.score_runner(horse,history,{}, {}, {"venue":"X","distance":1400},weights)
+        d_score, parts = nb.score_runner_d(horse,history,{}, {}, {"venue":"X","distance":1400},weights)
+        self.assertGreater(d_score, base)
+        self.assertEqual(parts["margin_form"], 0.9)
+        self.assertEqual(parts["closing_form"], 0.9)
