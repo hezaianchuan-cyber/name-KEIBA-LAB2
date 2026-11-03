@@ -283,7 +283,7 @@ async function syncCloudPredictions(){
    race_date:String(p.date).replace(/^(\d{4})(\d{2})(\d{2})$/,'$1-$2-$3'),
    predicted_top3:Array.isArray(p.top)?p.top:[],
    runners:Array.isArray(p.runners)?p.runners:[],
-   race_info:(db.races||[]).find(r=>r.id===p.id)||{},
+   race_info:{...((db.races||[]).find(r=>r.id===p.id)||{}),_lab_ticket_plan:p.ticketPlan||null},
    created_at:p.at||new Date().toISOString()
   }));
   if(payload.length){
@@ -297,7 +297,7 @@ async function syncCloudPredictions(){
    const localPrediction=byId.get(row.race_id)||{};
    const date=String(row.race_date||'').replace(/-/g,'');
    const raceInfo=row.race_info||{};
-   const prediction={...localPrediction,id:row.race_id,date,at:row.created_at,top:row.predicted_top3||[],runners:row.runners||[],learned:!!localPrediction.learned};
+   const prediction={...localPrediction,id:row.race_id,date,at:row.created_at,top:row.predicted_top3||[],runners:row.runners||[],ticketPlan:raceInfo._lab_ticket_plan||localPrediction.ticketPlan||null,learned:!!localPrediction.learned};
    byId.set(row.race_id,prediction);
    if(raceInfo&&raceInfo.id&&!(db.races||[]).some(r=>r.id===raceInfo.id))db.races.push(raceInfo);
   }
@@ -877,6 +877,20 @@ function generateTickets(){
  const horseHtml='<h3>予想上位馬</h3><div class="tablewrap"><table><thead><tr><th>順位</th><th>馬番・馬名</th><th>評価点</th><th>'+(learnedModelLoaded?'学習モデル推定勝率':'参考スコア比率')+'</th><th>単勝オッズ</th></tr></thead><tbody>'+top.map((h,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(h.horseNo+'番 '+(h.name||''))+'</td><td>'+(Number(h.score)||0).toFixed(1)+'</td><td>'+formatPct(h.modelProb)+'</td><td>'+formatOdds(Number(h.odds)>0?Number(h.odds):null)+'</td></tr>').join('')+'</tbody></table></div>';
  const ticketLimits={'単勝':5,'複勝':5,'ワイド':10,'馬連':10,'馬単':10,'3連複':10,'3連単':24};
  const allHtml=groups.map(type=>{const list=ranked(type).slice(0,ticketLimits[type]||0);if(type==='3連単'){const roleText='<p><b>1着：</b>'+trifectaFormation.first.join('・')+'番　<b>2着：</b>'+trifectaFormation.second.join('・')+'番　<b>3着：</b>'+trifectaFormation.third.join('・')+'番</p><p class="sub">同一馬が1着・2着・3着に重複する組合せは除外。基本形は2-5-5、計24点です。</p>';return '<h3>3連単フォーメーション（'+list.length+'点）</h3>'+roleText+'<div class="tablewrap"><table><thead><tr><th>成立買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+list.map(x=>'<tr><td><b>'+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';}return '<h3>'+type+'（'+list.length+'点）</h3><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+list.map(x=>'<tr><td><b>'+type+' '+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';}).join('');
+ // Freeze the exact recommendation at prediction time. Never recalculate this snapshot after odds/results change.
+ if(!sampleMode&&raceId){
+   const race=(db.races||[]).find(r=>String(r.id)===String(raceId))||{};
+   const snapshot={
+     version:1,createdAt:new Date().toISOString(),date:String(race.date||$('raceDate')?.value||''),
+     raceId:String(raceId),venue:String(race.venue||''),raceNo:String(race.race||''),
+     decision:selectedType&&allocation.length?'BET':'SKIP',
+     skipReason:selectedType&&allocation.length?'':(!learnedModelLoaded?'校正済みモデル未準備': '検証済みEV基準を満たす買い目なし'),
+     totalStake:allocated||0,tickets:allocation.map(x=>({type:x.type,comb:x.comb,stake:x.stake,odds:x.odds,probability:x.probability,ev:x.ev})),
+     modelLoaded:!!learnedModelLoaded,oddsCaptured:oddsRows.length>0
+   };
+   const prediction=(db.predictions||[]).find(p=>String(p.id)===String(raceId)&&!p.learned);
+   if(prediction){prediction.ticketPlan=snapshot;prediction.at=snapshot.createdAt;save();scheduleCloudSync();}
+ }
  out.innerHTML=horseHtml+selectedHtml+mainHtml+'<details style="margin-top:12px"><summary>券種別の候補一覧（比較用）</summary>'+allHtml+'</details><p>券種選択は、校正済みモデル・実オッズ・券種別EV基準を満たす候補がある場合のみ行います。候補確率はPlackett–Luce方式による近似です。各候補のオッズが未取得、モデル未校正、または基準未達の場合は見送り。1点100円単位、1レース合計2,000円を超えないよう配分します。実際の購入・払戻ではなく、アプリの推奨額です。候補 '+candidates.length+'点 / オッズ照合済み '+candidates.filter(x=>x.ev!=null).length+'点。</p>';
 }
 function dedupeRunnerRows(rows) {
