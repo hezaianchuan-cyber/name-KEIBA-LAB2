@@ -787,8 +787,8 @@ class TrifectaDiagnosticTests(unittest.TestCase):
         self.assertEqual(len(nb.build_trifecta_tickets(ranked, 1, 5)), 12)
         self.assertEqual(len(nb.build_trifecta_tickets(ranked, 2, 5)), 24)
         self.assertEqual(len(nb.build_trifecta_tickets(ranked, 3, 5)), 36)
-        self.assertEqual(len(nb.build_trifecta_tickets(ranked, 2, 6)), 60)
-        self.assertEqual(len(nb.build_trifecta_tickets(ranked, 2, 7)), 120)
+        self.assertEqual(len(nb.build_trifecta_tickets(ranked, 2, 6)), 40)
+        self.assertEqual(len(nb.build_trifecta_tickets(ranked, 2, 7)), 60)
 
     def test_role_coverage_and_ordered_hit_are_reported_separately(self):
         ranked = [{"no": str(i)} for i in range(1, 8)]
@@ -812,4 +812,4 @@ class TrifectaDiagnosticTests(unittest.TestCase):
         self.assertEqual(result["structures"]["first1_pool5"]["hits"], 0)
         self.assertEqual(result["structures"]["first2_pool5"]["hits"], 1)
         self.assertEqual(result["structures"]["first2_pool5"]["tickets"], 24)
-        self.assertEqual(result["structures"]["first2_pool5"]["roi"], 50.0)
+        self.assertEqual(result["structures"]["first2_pool5"]["roi"], 500.0)
