@@ -1720,6 +1720,10 @@ def evaluate_walk_forward_selection(folds, min_tickets=300, min_roi_gain=5.0):
                 "validation_roi": actual.get("roi"), "validation_tickets": actual.get("tickets", 0),
                 "validation_hits": actual.get("hits", 0), "validation_stake": actual.get("stake", 0),
                 "validation_return": actual.get("return", 0),
+                "validation_race_count": actual.get("race_count", 0),
+                "validation_sum_return_sq": actual.get("sum_return_sq", 0),
+                "validation_sum_stake_sq": actual.get("sum_stake_sq", 0),
+                "validation_sum_stake_return": actual.get("sum_stake_return", 0),
                 "validation_profit": actual.get("profit", 0),
                 "baseline_validation_roi": baseline.get("roi"),
                 "roi_delta_vs_baseline": (round(actual["roi"] - baseline["roi"], 2)
@@ -1736,9 +1740,12 @@ def evaluate_walk_forward_selection(folds, min_tickets=300, min_roi_gain=5.0):
             "hits": sum(int(item.get("validation_hits") or 0) for item in chosen),
             "stake": sum(int(item.get("validation_stake") or 0) for item in chosen),
             "return": sum(int(item.get("validation_return") or 0) for item in chosen),
+            "race_count": sum(int(item.get("validation_race_count") or 0) for item in chosen),
+            "sum_return_sq": sum(float(item.get("validation_sum_return_sq") or 0) for item in chosen),
+            "sum_stake_sq": sum(float(item.get("validation_sum_stake_sq") or 0) for item in chosen),
+            "sum_stake_return": sum(float(item.get("validation_sum_stake_return") or 0) for item in chosen),
         }
-        totals["profit"] = totals["return"] - totals["stake"]
-        totals["roi"] = round(100 * totals["return"] / totals["stake"], 2) if totals["stake"] else None
+        totals.update(summarize_race_cluster_roi(totals))
         totals["hit_rate"] = round(100 * totals["hits"] / totals["tickets"], 2) if totals["tickets"] else None
         totals["validation_folds"] = [
             {"fold": item.get("validation_fold"), "model": item.get("model"),
