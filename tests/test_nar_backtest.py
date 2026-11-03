@@ -158,6 +158,12 @@ class OddsSnapshotBacktestTests(unittest.TestCase):
             folder.mkdir(parents=True)
             path = folder / "2026-11-03.jsonl.gz"
             rows = [
+                {"race_key":"大井|20261103|10","captured_at":"2026-11-03T15:00:00+09:00",
+                 "scheduled_post_time":"2026-11-03T15:30:00+09:00","minutes_to_post":30,
+                 "odds":[{"type":"単勝","n1":"1","odds":2.8}]},
+                {"race_key":"大井|20261103|10","captured_at":"2026-11-03T15:10:00+09:00",
+                 "scheduled_post_time":"2026-11-03T15:30:00+09:00","minutes_to_post":20,
+                 "odds":[{"type":"単勝","n1":"1","odds":2.6}]},
                 {"race_key":"大井|20261103|10","captured_at":"2026-11-03T15:20:00+09:00",
                  "scheduled_post_time":"2026-11-03T15:30:00+09:00","minutes_to_post":10,
                  "odds":[{"type":"単勝","n1":"1","odds":2.4}]},
@@ -177,6 +183,8 @@ class OddsSnapshotBacktestTests(unittest.TestCase):
             self.assertIn(key, loaded)
             self.assertEqual(loaded[key]["minutes_to_post"], 5)
             self.assertEqual(loaded[key]["odds"][0]["odds"], 2.1)
+            self.assertGreaterEqual(loaded[key]["minutes_to_post"], 2)
+            self.assertLessEqual(loaded[key]["minutes_to_post"], 30)
 
 
 class PreoffValueBacktestTests(unittest.TestCase):
