@@ -1,0 +1,61 @@
+name: Evaluate prospective NAR Model G snapshots
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 19 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nar-model-g-prospective-backtest
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore official NAR archive cache
+        uses: actions/cache@v4
+        with:
+          path: .cache/nar-monthly
+          key: nar-monthly-g-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            nar-monthly-g-${{ runner.os }}-
+            nar-monthly-v1-${{ runner.os }}-
+      - name: Run prospective Model G evaluation
+        env:
+          NAR_CACHE_DIR: .cache/nar-monthly
+        run: python3 scripts/nar_model_g_backtest.py
+      - name: Publish Model G aggregate report
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp data/model-g-prospective-backtest.json /tmp/model-g-prospective-backtest.json
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/model-g-prospective-backtest.json data/model-g-prospective-backtest.json
+            git add data/model-g-prospective-backtest.json
+            if git diff --cached --quiet; then
+              echo "No Model G report changes"
+              exit 0
+            fi
+            git commit -m "Update prospective Model G evaluation"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Could not publish Model G report after five attempts"
+          exit 1
