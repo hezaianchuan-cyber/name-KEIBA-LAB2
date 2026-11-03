@@ -216,6 +216,7 @@ def ordered_finish_probability(order, probabilities):
 def combination_probability(kind, numbers, probabilities):
     """Probability for a ticket under a Plackett-Luce top-three finish model."""
     import itertools
+    numbers = [str(int(re.sub(r"\\D", "", str(x or "")) or 0)) for x in numbers]
     if kind == "win" and len(numbers) == 1:
         return probabilities.get(numbers[0], 0.0)
     if kind == "place" and len(numbers) == 1:
