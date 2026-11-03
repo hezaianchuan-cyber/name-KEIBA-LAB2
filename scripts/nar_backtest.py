@@ -68,7 +68,7 @@ def corner_history_for_runner(horse, race):
     first, last = available[0][horse["no"]], available[-1][horse["no"]]
     size = number(race.get("field_size")) or max(len(available[0]), 1)
     denom = max(size-1, 1)
-    return {"first_corner_pct": first/denom, "last_corner_pct": last/denom}
+    return {"first_corner_pct": (first-1)/denom, "last_corner_pct": (last-1)/denom}
 
 
 def pace_style(history_rows):
