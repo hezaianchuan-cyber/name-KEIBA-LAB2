@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-11-03T22:33:58.122796+00:00",
+  "model_version": "nar-model-g-experimental-1",
+  "snapshot_policy": "Only genuine official snapshots captured 2-30 minutes before scheduled post time; final odds are never substituted.",
+  "strategy_policy": {
+    "minimum_expected_value": 1.08,
+    "ticket_unit_jpy": 100,
+    "maximum_tickets": 20,
+    "race_budget_cap_jpy": 2000,
+    "bet_type": "One bet type selected per race from qualified candidates; races without evidence are skipped.",
+    "threshold_selection": "Fixed before prospective evaluation; no holdout tuning."
+  },
+  "snapshot_races": 0,
+  "snapshot_dates": 0,
+  "status": "awaiting_preoff_snapshots",
+  "development": null,
+  "holdout": null,
+  "profitable_candidate": false,
+  "promotion_policy": "Promote only after at least 100 holdout races and 300 tickets, with race-cluster bootstrap 95% ROI lower bound above 100%."
+}
