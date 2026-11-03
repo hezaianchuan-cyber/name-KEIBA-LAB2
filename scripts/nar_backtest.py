@@ -1187,6 +1187,13 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                    "sum_stake_sq": 0, "sum_stake_return": 0}
             for kind in ("wide", "exacta", "trio", "trifecta")
         },
+        # Same qualifying races and same 2-3-4 ticket shape, but with the
+        # ordinary single ranking. This isolates the effect of role ranking.
+        "trifecta_same_races_baseline_reference": {
+            "tickets": 0, "hits": 0, "stake": 0, "return": 0,
+            "race_count": 0, "sum_return_sq": 0,
+            "sum_stake_sq": 0, "sum_stake_return": 0,
+        },
     }
     segment_stats = defaultdict(lambda: {
         "races": 0, "winner_top1": 0, "winner_top3": 0,
@@ -1301,6 +1308,26 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                     e_tickets = dict(ticket_map)
                     e_tickets["trifecta"] = build_role_trifecta_formation(
                         role_rankings, *integrated_stats["trifecta_formation"])
+                    # Fair same-race reference: same confidence gate, same 2-3-4
+                    # formation and 100-yen unit stake, changing only the ranking.
+                    reference_tickets = build_trifecta_formation(
+                        ranked, *integrated_stats["trifecta_formation"])
+                    reference_bucket = integrated_stats["trifecta_same_races_baseline_reference"]
+                    reference_stake = 100 * len(reference_tickets)
+                    reference_return = sum(
+                        payout_for("trifecta", ticket, payout) or 0
+                        for ticket in reference_tickets)
+                    reference_hits = sum(
+                        1 for ticket in reference_tickets
+                        if payout_for("trifecta", ticket, payout))
+                    reference_bucket["tickets"] += len(reference_tickets)
+                    reference_bucket["hits"] += reference_hits
+                    reference_bucket["stake"] += reference_stake
+                    reference_bucket["return"] += reference_return
+                    reference_bucket["race_count"] += 1
+                    reference_bucket["sum_return_sq"] += reference_return * reference_return
+                    reference_bucket["sum_stake_sq"] += reference_stake * reference_stake
+                    reference_bucket["sum_stake_return"] += reference_stake * reference_return
                     integrated_stats["races"] += 1
                     for e_kind, e_ticket_list in e_tickets.items():
                         e_bucket = integrated_stats["bet_types"][e_kind]
@@ -1397,6 +1424,19 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                 if bucket["tickets"] else None,
             **summarize_race_cluster_roi(bucket),
         }
+    reference_bucket = integrated_stats["trifecta_same_races_baseline_reference"]
+    reference_summary = {
+        **reference_bucket,
+        "hit_rate": round(100 * reference_bucket["hits"] / reference_bucket["tickets"], 2)
+            if reference_bucket["tickets"] else None,
+        **summarize_race_cluster_roi(reference_bucket),
+        "tickets_per_race": round(reference_bucket["tickets"] / reference_bucket["race_count"], 2)
+            if reference_bucket["race_count"] else None,
+        "formation": [2, 3, 4],
+        "ranking": "ordinary single ranking",
+        "same_races_as_E": True,
+    }
+    e_trifecta = integrated_bets.get("trifecta", {})
     integrated_summary = {
         "status": "evaluated" if integrated_stats["races"] else "no_races_passed_confidence_gate",
         "confidence_threshold": integrated_stats["confidence_threshold"],
@@ -1404,7 +1444,11 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
         "trifecta_formation": integrated_stats["trifecta_formation"],
         "races": integrated_stats["races"],
         "bet_types": integrated_bets,
-        "policy": "Fixed 0.30 calibrated top-win probability gate; role-specific trifecta ranking blend 0.10; 2-3-4 formation. Parameters are not selected on the holdout fold.",
+        "trifecta_same_races_baseline_reference": reference_summary,
+        "trifecta_role_ranking_roi_delta": round(
+            (e_trifecta.get("roi") or 0) - (reference_summary.get("roi") or 0), 2)
+            if e_trifecta.get("roi") is not None and reference_summary.get("roi") is not None else None,
+        "policy": "Fixed 0.30 calibrated top-win probability gate; role-specific trifecta ranking blend 0.10; 2-3-4 formation. The reference uses the same qualifying races and formation with ordinary ranking, isolating the ranking change. Parameters are not selected on the holdout fold.",
     }
     return {"train_start":min(train_dates).isoformat(),"train_end":max(train_dates).isoformat(),
             "test_start":min(test_dates).isoformat(),"test_end":max(test_dates).isoformat(),
