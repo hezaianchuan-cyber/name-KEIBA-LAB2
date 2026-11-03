@@ -765,11 +765,12 @@ function generateTickets(){
  }).filter(x=>x.qualified).sort((a,b)=>(b.avg-a.avg)||(b.best.probability-a.best.probability));
  const selectedType=learnedModelLoaded?eligibleByType[0]?.type:null;
  const selectedRows=selectedType?eligibleByType[0].rows:[];
+ const targetRaceStake=Math.min(MAX_RACE_STAKE,selectedRows.length*UNIT_STAKE);
  const stakeWeights=selectedRows.map(x=>Math.max(0.0001,(x.ev-1)*Math.sqrt(Math.max(x.probability,0.000001))));
  const weightTotal=stakeWeights.reduce((a,b)=>a+b,0);
- let allocation=selectedRows.map((x,i)=>({ ...x, stake:weightTotal?Math.floor((MAX_RACE_STAKE*stakeWeights[i]/weightTotal)/UNIT_STAKE)*UNIT_STAKE:0 })).filter(x=>x.stake>=UNIT_STAKE);
+ let allocation=selectedRows.map((x,i)=>({ ...x, stake:weightTotal?Math.floor((targetRaceStake*stakeWeights[i]/weightTotal)/UNIT_STAKE)*UNIT_STAKE:0 })).filter(x=>x.stake>=UNIT_STAKE);
  let allocated=allocation.reduce((a,x)=>a+x.stake,0);
- for(let i=0;allocated+UNIT_STAKE<=MAX_RACE_STAKE&&allocation.length;i=(i+1)%allocation.length){allocation[i].stake+=UNIT_STAKE;allocated+=UNIT_STAKE;if(i===allocation.length-1)break;}
+ for(let i=0;allocated+UNIT_STAKE<=targetRaceStake&&allocation.length;i=(i+1)%allocation.length){allocation[i].stake+=UNIT_STAKE;allocated+=UNIT_STAKE;if(i===allocation.length-1)break;}
  const selectedHtml=selectedType&&allocation.length
    ? '<h3>このレースの自動選択：'+selectedType+'</h3><p>券種別の候補を比較し、検証済みEV基準を満たす候補の平均EVが最も高い券種を選択。購入上限2,000円の範囲で配分します。</p><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>EV</th><th>配分額</th></tr></thead><tbody>'+allocation.map(x=>'<tr><td><b>'+selectedType+' '+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+x.stake.toLocaleString()+'円</td></tr>').join('')+'</tbody></table></div><p><b>推奨購入額：'+allocated.toLocaleString()+'円／上限2,000円</b></p>'
    : '<h3>このレースは見送り</h3><p>校正済みモデルと実オッズがそろい、券種別の基準EVを満たす候補がありません。予算を使い切るための購入は提案しません。</p>';
