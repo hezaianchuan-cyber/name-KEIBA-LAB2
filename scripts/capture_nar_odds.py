@@ -272,20 +272,19 @@ def predict_combinations(odds_rows, horse_predictions, full_universe=False):
         pairs = list(itertools.combinations(nos, 2))
         triples = list(itertools.combinations(nos, 3))
         ticket_map = {
-            "win": [[n] for n in nos], "place": [[n] for n in nos],
-            "wide": [list(x) for x in pairs], "quinella": [list(x) for x in pairs],
+            "wide": [list(x) for x in pairs],
             "exacta": [list(x) for x in itertools.permutations(nos, 2)],
             "trio": [list(x) for x in triples],
             "trifecta": [list(x) for x in itertools.permutations(nos, 3)],
         }
     else:
         ticket_map = nb.build_fixed_tickets([{"no":str(p["horse_no"])} for p in ranked])
+        ticket_map = {kind:tickets for kind,tickets in ticket_map.items() if kind in {"wide","exacta","trio","trifecta"}}
     type_map = {
-        "単勝":"win", "複勝":"place", "ワイド":"wide", "馬連":"quinella",
-        "馬単":"exacta", "3連複":"trio", "三連複":"trio",
+        "ワイド":"wide", "馬単":"exacta", "3連複":"trio", "三連複":"trio",
         "3連単":"trifecta", "三連単":"trifecta",
     }
-    unordered = {"place","wide","quinella","trio"}
+    unordered = {"wide","trio"}
     odds_lookup = {}
     for item in odds_rows:
         label = unicodedata.normalize("NFKC", str(item.get("type") or "")).replace(" ", "")
