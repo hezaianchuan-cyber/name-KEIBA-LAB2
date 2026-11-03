@@ -46,7 +46,7 @@ def _win_market_probabilities(odds_rows):
     return ({no: value / total for no, value in raw.items()} if total > 0 else {})
 
 
-def build_g_predictions(horse_predictions, odds_rows, calibration_races):
+def build_g_predictions(horse_predictions, odds_rows, calibration_races, temperature=0.18):
     """Add a small, auditable overlooked-runner adjustment to calibrated C scores.
 
     The adjustment is intentionally capped and remains experimental until
@@ -89,16 +89,9 @@ def build_g_predictions(horse_predictions, odds_rows, calibration_races):
     # Preserve the existing chronological temperature calibration. This is a
     # calibrated-base challenger, not a claim that G itself is calibrated.
     scores = [row["g_score"] for row in temp]
-    temperature = 0.18
-    # Existing C probabilities are already temperature-scaled. Recover their
-    # effective temperature from score/probability pairs when numerically safe.
-    pairs = [(row.get("score"), row.get("win_probability")) for row in temp]
-    valid = [(_number(s), _number(p)) for s, p in pairs]
-    valid = [(s, p) for s, p in valid if s is not None and p is not None and 0 < p < 1]
-    if len(valid) >= 2:
-        # Retain the caller's calibrated probabilities when no stable estimate
-        # can be recovered; the collector passes the trained temperature below.
-        pass
+    temperature = _number(temperature) or 0.18
+    if temperature <= 0:
+        temperature = 0.18
     max_score = max(scores)
     weights = [math.exp((score - max_score) / temperature) for score in scores]
     total = sum(weights)
