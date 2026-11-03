@@ -275,9 +275,9 @@ class IndependentBetTypeBacktestTests(unittest.TestCase):
         record = {
             "race_key":"大井|20261103|10",
             "date":"20261103",
-            "captured_at":"2026-11-03T15:25:00+09:00",
+            "captured_at":"2026-11-03T15:10:00+09:00",
             "scheduled_post_time":"2026-11-03T15:30:00+09:00",
-            "minutes_to_post":5,
+            "minutes_to_post":20,
             "combination_predictions":[
                 {"bet_type":"win","numbers":["1"],"odds":2.5,"probability":0.5,"expected_value":1.25},
                 {"bet_type":"place","numbers":["1"],"odds":1.3,"probability":0.9,"expected_value":1.17},
