@@ -74,7 +74,7 @@ def main() -> int:
         "note": "This is a source-level audit, not a historical performance result. No ROI or hit-rate claims are made.",
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0
 
