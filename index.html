@@ -642,6 +642,7 @@ function renderDailyPayoutDay(date){
  }
  $('dailyPayoutRows').innerHTML=rows.length?'<div class="tablewrap"><table style="min-width:560px"><thead><tr><th>競馬場</th><th>R</th><th>券種</th><th>的中組合せ</th><th>100円払戻</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>':'この日の確定払戻データはありません。';
 }
+// Refresh the virtual ledger after restored cloud snapshots or a newly frozen ticket plan.
 function labLedgerDateKey(value){return String(value||'').replace(/[^0-9]/g,'').slice(0,8);}
 function labLedgerVenueKey(value){return String(value||'').replace(/競馬場/g,'').replace(/[\\s　]/g,'').trim();}
 function labLedgerComb(value,type){
