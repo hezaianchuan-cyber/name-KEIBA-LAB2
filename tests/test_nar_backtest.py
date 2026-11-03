@@ -247,6 +247,59 @@ class PerBetTypeProbabilityTests(unittest.TestCase):
         self.assertEqual(result[0]["numbers"],["1"])
 
 
+
+class IndependentBetTypeBacktestTests(unittest.TestCase):
+    def test_each_bet_type_has_its_own_stake_return_and_roi(self):
+        record = {
+            "race_key":"大井|20261103|10",
+            "date":"20261103",
+            "captured_at":"2026-11-03T15:25:00+09:00",
+            "scheduled_post_time":"2026-11-03T15:30:00+09:00",
+            "minutes_to_post":5,
+            "combination_predictions":[
+                {"bet_type":"win","numbers":["1"],"odds":2.5,"probability":0.5,"expected_value":1.25},
+                {"bet_type":"place","numbers":["1"],"odds":1.3,"probability":0.9,"expected_value":1.17},
+                {"bet_type":"wide","numbers":["1","2"],"odds":4.0,"probability":0.4,"expected_value":1.6},
+                {"bet_type":"quinella","numbers":["1","2"],"odds":5.0,"probability":0.3,"expected_value":1.5},
+                {"bet_type":"exacta","numbers":["1","2"],"odds":7.0,"probability":0.2,"expected_value":1.4},
+                {"bet_type":"trio","numbers":["1","2","3"],"odds":12.0,"probability":0.15,"expected_value":1.8},
+                {"bet_type":"trifecta","numbers":["1","2","3"],"odds":25.0,"probability":0.08,"expected_value":2.0},
+            ],
+        }
+        payout = {
+            "win":[(["1"],250)], "place":[(["1"],130)],
+            "wide":[(["1","2"],400)], "quinella":[(["1","2"],500)],
+            "exacta":[(["1","2"],700)], "trio":[(["1","2","3"],1200)],
+            "trifecta":[(["1","2","3"],2500)],
+        }
+        key = ("大井","20261103","10")
+        with mock.patch.object(nb,"load_odds_snapshots",return_value={key:record}):
+            result = nb.preoff_ticket_type_backtest({key:payout})
+        self.assertEqual(result["status"],"ok")
+        expected = {
+            "win":250.0,"place":130.0,"wide":400.0,"quinella":500.0,
+            "exacta":700.0,"trio":1200.0,"trifecta":2500.0,
+        }
+        for kind, roi in expected.items():
+            bucket = result["bet_types"][kind]["overall"]["1.00"]
+            self.assertEqual(bucket["stake"],100)
+            self.assertEqual(bucket["return"],int(roi))
+            self.assertEqual(bucket["roi"],roi)
+            self.assertEqual(bucket["tickets"],1)
+
+    def test_unordered_ticket_matching_is_separate_from_ordered_ticket_matching(self):
+        payout = {
+            "win":[], "place":[], "wide":[(["1","2"],400)],
+            "quinella":[(["1","2"],500)], "exacta":[(["1","2"],700)],
+            "trio":[(["1","2","3"],1200)], "trifecta":[(["1","2","3"],2500)],
+        }
+        self.assertEqual(nb.payout_for("wide",["2","1"],payout),400)
+        self.assertEqual(nb.payout_for("quinella",["2","1"],payout),500)
+        self.assertEqual(nb.payout_for("trio",["3","1","2"],payout),1200)
+        self.assertEqual(nb.payout_for("exacta",["2","1"],payout),0)
+        self.assertEqual(nb.payout_for("trifecta",["3","2","1"],payout),0)
+
+
 class FieldSizeNormalizationTests(unittest.TestCase):
     def test_finish_rank_is_normalized_by_field_size(self):
         self.assertEqual(nb.rank_quality(1, 16), 100.0)
