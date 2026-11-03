@@ -309,6 +309,7 @@ async function fetchPcOfficialData(showStatus=true){
     dedupeImportedData();
     const learned=applyResultLearning();
     save();refreshRaceChoices();updateHistory();
+    if($('raceSelect').value)analyze();
     $('importStatus').textContent='PC版 NAR公式データ取得完了：'+details.join(' / ')+' / 学習 '+learned+'レース';
     $('importDot').className='dot ok';$('dataDot').className='dot ok';
     $('dataStatus').textContent='PC版自動取得済み：出馬表 '+db.horses.length+'頭 / レース '+db.races.length+'件 / オッズ '+db.odds.length+'件 / 払戻 '+db.payouts.length+'件';
@@ -331,7 +332,7 @@ if(!window.AndroidBridge){
 }
 function refreshRaceChoices(){const date=$('raceDate').value.replaceAll('-',''),venue=$('venue').value;const known=[...new Set([...oddsRaceIndex.map(r=>r.venue),...db.races.map(r=>r.venue)])].sort((a,b)=>a.localeCompare(b,'ja'));const vs=$('venue');const current=venue;const opts=['<option value="">\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044</option>',...known.map(v=>'<option>'+esc(v)+'</option>')].join('');if(known.length){vs.innerHTML=opts;if(known.includes(current))vs.value=current;}
 const map=new Map();for(const r of [...db.races,...oddsRaceIndex])if((!date||norm(r.date)===date)&&(!venue||r.venue===venue))map.set(r.id,r);const races=[...map.values()].sort((a,b)=>Number(a.race)-Number(b.race));const select=$('raceSelect');const old=select.value;select.innerHTML='<option value="">\u30EC\u30FC\u30B9\u3092\u9078\u629E</option>';races.forEach(r=>{const o=document.createElement('option');o.value=r.id;o.textContent=r.race+'R '+(r.time||'')+' '+(r.name||'')+(r.count?' \u00B7 '+r.count+'\u4EF6':'');select.append(o)});if(races.some(r=>r.id===old))select.value=old;}
-$('raceDate').addEventListener('change',refreshRaceChoices);$('venue').addEventListener('change',refreshRaceChoices);
+$('raceDate').addEventListener('change',()=>{refreshRaceChoices();});$('venue').addEventListener('change',()=>{refreshRaceChoices();});$('raceSelect').addEventListener('change',()=>{if($('raceSelect').value)analyze();});
 function percentile(v,arr){if(v==null||!arr.length)return 50;const clean=arr.filter(x=>x!=null).sort((a,b)=>a-b);if(!clean.length)return 50;return 100*clean.filter(x=>x<=v).length/clean.length}
 function parseMarginValue(value){const s=String(value??'').replace(/[\s\u3000]/g,'');if(!s)return null;const mixed=s.match(/^(\d+)(\d+)\/(\d+)$/);if(mixed)return Number(mixed[1])+Number(mixed[2])/Number(mixed[3]);const fraction=s.match(/^(\d+)\/(\d+)$/);return fraction?Number(fraction[1])/Number(fraction[2]):(s.match(/\d+(?:\.\d+)?/)||[])[0]!==undefined?Number((s.match(/\d+(?:\.\d+)?/)||[])[0]):null;}
 function getRecentRuns(h){
