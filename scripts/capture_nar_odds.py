@@ -178,8 +178,16 @@ def predict_horses(race, horses, odds_rows, model_context):
     if not model_context or len(horses) < 3:
         return []
     model, history, sire_stats, jockey_stats, weights = model_context
-    scored = [nb.score_runner(horse, history, sire_stats, jockey_stats, race, weights)[0]
-              for horse in horses]
+    # D starts from the full C feature set: prior going suitability,
+    # margin/closing-speed/comparable-time form, and race-pace adjustment.
+    scored = [nb.score_runner_performance(
+        horse, history, sire_stats, jockey_stats, race, weights,
+        margin_weight=0.10, closing_weight=0.10, time_weight=0.10,
+        going_weight=0.10,
+    )[0] for horse in horses]
+    _, _, pace_delta = nb.pace_adjustments(horses, history)
+    scored = [score + pace_delta.get(horse["no"], 0.0)
+              for score, horse in zip(scored, horses)]
     temperature = float(model.get("temperature") or 0.18)
     probabilities = nb.softmax_probabilities(scored, temperature)
     win_odds = {}
