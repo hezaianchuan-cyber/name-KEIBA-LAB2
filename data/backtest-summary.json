@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-03T02:02:48.315792+00:00",
+  "generated_at": "2026-11-03T02:12:12.783117+00:00",
   "period": {
     "start": "2023-11-03",
     "end": "2026-11-02"
@@ -159,6 +159,21 @@
   "horse_rows": 473606,
   "payout_races": 45965,
   "payout_rows": 46454,
+  "data_quality_audit": {
+    "races": 46260,
+    "runners": 473606,
+    "races_with_payout": 45965,
+    "race_field_coverage_pct": 100.0,
+    "distance_coverage_pct": 100.0,
+    "surface_coverage_pct": 88.69,
+    "going_coverage_pct": 100.0,
+    "runner_age_coverage_pct": 100.0,
+    "runner_jockey_coverage_pct": 100.0,
+    "runner_sire_coverage_pct": 100.0,
+    "finish_coverage_pct": 97.98,
+    "last3f_coverage_pct": 87.67,
+    "policy": "Coverage diagnostics only; missing values are not imputed as observed facts and this report does not imply predictive value."
+  },
   "multi_row_payout_races": 190,
   "evaluated": 321755,
   "method": {
@@ -3310,13 +3325,13 @@
   },
   "odds_snapshot_archive": {
     "snapshot_files": 1,
-    "snapshot_records": 3,
-    "races": 2,
-    "predicted_races": 2,
-    "odds_rows": 1488,
+    "snapshot_records": 5,
+    "races": 4,
+    "predicted_races": 4,
+    "odds_rows": 3785,
     "first_date": "20261103",
     "last_date": "20261103",
-    "last_captured_at": "2026-11-03T10:20:01.561759+09:00",
+    "last_captured_at": "2026-11-03T11:06:55.919558+09:00",
     "model_versions": [
       "nar-chronological-v7-fieldsize-calibrated"
     ],
@@ -3324,7 +3339,7 @@
   },
   "preoff_value_backtest": {
     "status": "awaiting_settled_snapshots",
-    "snapshot_races": 2,
+    "snapshot_races": 4,
     "settled_evaluated_races": 0,
     "date_count": 0,
     "development_date_count": 0,
