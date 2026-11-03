@@ -1033,6 +1033,42 @@ class RoleTrifectaUncertaintyAndSelectionTests(unittest.TestCase):
         self.assertTrue(result["minimum_sample_met"])
         self.assertTrue(result["candidate_pass"])
 
+    def _role_bucket_with_roi(self, default_roi, overrides=None):
+        overrides = overrides or {}
+        bucket = nb.new_role_trifecta_diagnostics()
+        for blend, formations in bucket.items():
+            for formation, stats in formations.items():
+                roi = overrides.get((blend, formation), default_roi)
+                races, tickets, stake = 100, 500, 50000
+                returned = int(stake * roi / 100)
+                race_stake, race_return = stake / races, returned / races
+                stats.update({
+                    "races": races, "tickets": tickets, "hits": 10,
+                    "hit_races": 10, "stake": stake, "return": returned,
+                    "sum_return_sq": race_return * race_return * races,
+                    "sum_stake_sq": race_stake * race_stake * races,
+                    "sum_stake_return": race_stake * race_return * races,
+                })
+        return bucket
+
+    def test_role_strategy_is_selected_on_prior_fold_and_tested_on_next_fold(self):
+        fold1 = self._fold(1, {"baseline":60.0, "trained":70.0})
+        fold2 = self._fold(2, {"baseline":55.0, "trained":75.0})
+        fold1["models"]["baseline"]["role_trifecta_diagnostics"] = self._role_bucket_with_roi(
+            100.0, {("0.10", "2-5-3"): 130.0})
+        fold1["models"]["trained"]["role_trifecta_diagnostics"] = self._role_bucket_with_roi(100.0)
+        fold2["models"]["baseline"]["role_trifecta_diagnostics"] = self._role_bucket_with_roi(
+            100.0, {("0.20", "2-5-5"): 250.0, ("0.10", "2-5-3"): 90.0})
+        fold2["models"]["trained"]["role_trifecta_diagnostics"] = self._role_bucket_with_roi(100.0)
+        result = nb.evaluate_walk_forward_selection([fold1, fold2])
+        selected = result["selected_role_trifecta_strategy_by_validation_fold"][0]
+        self.assertEqual(selected["model"], "baseline")
+        self.assertEqual(selected["strategy"]["blend"], "0.10")
+        self.assertEqual(selected["strategy"]["formation"], "2-5-3")
+        self.assertEqual(selected["strategy"]["development_roi"], 130.0)
+        self.assertEqual(selected["validation"]["roi"], 90.0)
+        self.assertFalse(result["selected_role_trifecta_strategy_portfolio"]["candidate_pass"])
+
     def test_walk_forward_reports_role_diagnostics_for_selected_model_only(self):
         scored, history, payout = self._sample_role_inputs()
         fold1 = self._fold(1, {"baseline":60.0, "trained":70.0})
