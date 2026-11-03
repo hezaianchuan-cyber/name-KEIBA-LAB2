@@ -1,6 +1,11 @@
 name: Capture NAR pre-off odds every five minutes
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/capture_nar_odds.py'
+      - '.github/workflows/nar-preoff-odds.yml'
   workflow_dispatch:
   schedule:
     - cron: "*/5 * * * *"
