@@ -2692,7 +2692,7 @@ def main():
     result = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "period": {"start":START.isoformat(),"end":END.isoformat()},
-        "source": "NAR official monthly race data (approximately 3 years); raw archives are not retained",
+        "source": "NAR official monthly race data (approximately four years, including a final one-year holdout); raw archives are not retained",
         "downloaded_months": months,
         "race_count": race_count,
         "horse_rows": sum(len(v) for v in horses.values()),
