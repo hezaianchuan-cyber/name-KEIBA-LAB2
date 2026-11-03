@@ -11,11 +11,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "scripts" / "nar_backtest.py"
+CAPTURE_SOURCE = ROOT / "scripts" / "capture_nar_odds.py"
 OUT = ROOT / "data" / "nar-pipeline-audit.json"
 
 
 def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
+    capture_source = CAPTURE_SOURCE.read_text(encoding="utf-8")
     checks = {
         "four_year_source_window": bool(re.search(r"END\s*-\s*dt\.timedelta\(days\s*=\s*1460\)", source)),
         "final_year_starts_364_days_before_end": bool(re.search(r"recent_start\s*=\s*END\s*-\s*dt\.timedelta\(days\s*=\s*364\)", source)),
@@ -39,6 +41,12 @@ def main() -> int:
             '"D_preoff_odds"' in source
             and "timestamped 2-30 minute snapshots only" in source
         ),
+        "D_uses_C_features_before_odds_overlay": (
+            "score_runner_performance(" in capture_source
+            and "margin_weight=0.10, closing_weight=0.10, time_weight=0.10" in capture_source
+            and "pace_adjustments(horses, history)" in capture_source
+            and '"time_per_km":' in source
+        ),
     }
     limitations = []
     if not checks["four_year_source_window"]:
@@ -55,6 +63,7 @@ def main() -> int:
         "C_adds_performance_time_and_pace",
         "A_C_share_holdout_and_ticket_rules",
         "D_is_timestamped_snapshot_only",
+        "D_uses_C_features_before_odds_overlay",
     )):
         limitations.append("Canonical A-D feature ablation wiring needs further review.")
     limitations.append("D is evaluated only where valid timestamped pre-off odds snapshots exist; coverage may be insufficient.")
@@ -68,7 +77,7 @@ def main() -> int:
             "A": "fixed baseline ranking",
             "B": "learned base ranking + prior venue/distance and going suitability",
             "C": "B + prior margin, last-3F, comparable time and race-pace adjustment",
-            "D": "C-context pre-off market strategy using genuine 2-30 minute timestamped odds snapshots",
+            "D": "C feature scoring + race pace + genuine 2-30 minute timestamped pre-off odds overlay",
         },
         "limitations": limitations,
         "note": "This is a source-level audit, not a historical performance result. No ROI or hit-rate claims are made.",
