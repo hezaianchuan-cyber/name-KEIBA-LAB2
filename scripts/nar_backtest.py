@@ -2786,3 +2786,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# Re-run historical validation on 2026-11-03; no model behavior changed.
