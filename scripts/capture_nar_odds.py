@@ -201,7 +201,7 @@ def predict_horses(race, horses, odds_rows, model_context):
         if no:
             win_odds[str(int(no))] = item.get("odds")
     predictions = []
-    for horse, score, probability in zip(horses, scored, probabilities):
+    for index, (horse, score, probability) in enumerate(zip(horses, scored, probabilities)):
         odds_value = win_odds.get(horse["no"])
         ev = probability * float(odds_value) if odds_value and float(odds_value) > 0 else None
         predictions.append({
