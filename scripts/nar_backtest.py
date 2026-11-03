@@ -2077,6 +2077,181 @@ def preoff_ticket_type_backtest(payouts):
     }
 
 
+def race_budget_auto_strategy_backtest(payouts, type_validation):
+    """Choose one validated bet type per race, allow skips, and cap stake at JPY 2,000.
+
+    Type thresholds are selected on the development dates only. The integrated
+    per-race type choice and ROI are then evaluated on the untouched final 30%
+    of snapshot dates. Only genuine 2-30 minute pre-off snapshots from the
+    current C-preoff model version are eligible.
+    """
+    required_version = "nar-chronological-v8-abcd-C-preoff"
+    kinds = ("win", "place", "wide", "quinella", "exacta", "trio", "trifecta")
+    selected_thresholds = {}
+    type_validation = (type_validation or {}).get("bet_types", {})
+    for kind in kinds:
+        item = type_validation.get(kind) or {}
+        threshold = item.get("selected_threshold")
+        development = item.get("development") or {}
+        candidate = development.get(str(threshold)) if threshold is not None else None
+        if candidate and candidate.get("candidate_pass"):
+            selected_thresholds[kind] = float(threshold)
+
+    records = []
+    for record in load_odds_snapshots().values():
+        if record.get("model_version") != required_version:
+            continue
+        parts = str(record.get("race_key") or "").split("|")
+        if len(parts) != 3:
+            continue
+        key = race_key(parts[0], parts[1], parts[2])
+        if not key:
+            continue
+        try:
+            captured = dt.datetime.fromisoformat(str(record["captured_at"]))
+            scheduled = dt.datetime.fromisoformat(str(record["scheduled_post_time"]))
+            minutes = float(record["minutes_to_post"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        payout = payouts.get(key)
+        tickets = record.get("combination_predictions") or []
+        if (captured.tzinfo is None or scheduled.tzinfo is None or captured >= scheduled
+                or not 2 <= minutes <= 30 or not payout or not payout.get("win") or not tickets):
+            continue
+        records.append((str(record.get("date") or key[1]), tickets, payout))
+
+    records.sort(key=lambda item: item[0])
+    dates = sorted({item[0] for item in records})
+    split = max(1, min(len(dates)-1, int(len(dates)*0.70))) if len(dates) >= 10 else 0
+    development_dates = set(dates[:split]) if split else set()
+    holdout = [item for item in records if item[0] not in development_dates] if split else []
+
+    races_with_bets = tickets_count = hits = stake = returned = skipped = 0
+    race_results = []
+    selected_type_counts = {kind: 0 for kind in kinds}
+    skip_reasons = {"no_validated_bet_type": 0, "no_qualifying_ticket": 0}
+    max_race_stake = 0
+    for _, tickets, payout in holdout:
+        if not selected_thresholds:
+            skipped += 1
+            skip_reasons["no_validated_bet_type"] += 1
+            continue
+        by_type = {}
+        for kind, threshold in selected_thresholds.items():
+            eligible = []
+            for ticket in tickets:
+                if ticket.get("bet_type") != kind:
+                    continue
+                ev = number(ticket.get("expected_value"))
+                probability = number(ticket.get("probability"))
+                odds_value = number(ticket.get("odds"))
+                numbers = [str(x) for x in ticket.get("numbers") or []]
+                if (ev is None or ev < threshold or probability is None or probability <= 0
+                        or odds_value is None or odds_value <= 0 or not numbers):
+                    continue
+                eligible.append(ticket)
+            if eligible:
+                eligible.sort(key=lambda x: (
+                    number(x.get("expected_value")) or 0,
+                    number(x.get("probability")) or 0
+                ), reverse=True)
+                mean_ev = sum(number(x.get("expected_value")) for x in eligible) / len(eligible)
+                by_type[kind] = (mean_ev, eligible)
+        if not by_type:
+            skipped += 1
+            skip_reasons["no_qualifying_ticket"] += 1
+            continue
+
+        chosen_kind, (_, candidates) = max(
+            by_type.items(),
+            key=lambda item: (item[1][0],
+                              sum(number(x.get("probability")) or 0 for x in item[1][1]) /
+                              len(item[1][1]),
+                              -kinds.index(item[0]))
+        )
+        # The cap is implemented as at most twenty 100-yen tickets per race.
+        # Fewer qualified candidates mean less spend; the unused amount is not forced.
+        selected = candidates[:20]
+        race_stake = 100 * len(selected)
+        race_return = sum(
+            payout_for(chosen_kind, [str(x) for x in ticket.get("numbers") or []], payout) or 0
+            for ticket in selected
+        )
+        race_hits = sum(
+            1 for ticket in selected
+            if payout_for(chosen_kind, [str(x) for x in ticket.get("numbers") or []], payout)
+        )
+        if race_stake > 2000:
+            raise AssertionError("per-race stake exceeded JPY 2,000")
+        races_with_bets += 1
+        tickets_count += len(selected)
+        hits += race_hits
+        stake += race_stake
+        returned += race_return
+        max_race_stake = max(max_race_stake, race_stake)
+        selected_type_counts[chosen_kind] += 1
+        race_results.append((race_stake, race_return))
+
+    ci_low = ci_high = None
+    if len(race_results) >= 30:
+        rng = random.Random(20261103 + len(race_results))
+        samples = []
+        for _ in range(2000):
+            sample = [race_results[rng.randrange(len(race_results))] for _ in race_results]
+            sample_stake = sum(x[0] for x in sample)
+            sample_return = sum(x[1] for x in sample)
+            if sample_stake:
+                samples.append(100 * sample_return / sample_stake)
+        samples.sort()
+        if samples:
+            ci_low = round(samples[int(0.025 * (len(samples)-1))], 2)
+            ci_high = round(samples[int(0.975 * (len(samples)-1))], 2)
+
+    minimum_sample_met = races_with_bets >= 100 and tickets_count >= 300
+    if not records:
+        status = "awaiting_current_model_snapshots"
+    elif len(dates) < 10:
+        status = "awaiting_more_snapshot_dates"
+    elif not selected_thresholds:
+        status = "awaiting_development_validation"
+    elif not holdout:
+        status = "awaiting_holdout_dates"
+    elif not minimum_sample_met:
+        status = "awaiting_holdout_sample"
+    else:
+        status = "profitable_candidate" if ci_low is not None and ci_low > 100 else "not_validated_profitable"
+
+    return {
+        "status": status,
+        "required_model_version": required_version,
+        "snapshot_races": len(records),
+        "snapshot_dates": len(dates),
+        "development_dates": len(development_dates),
+        "holdout_dates": len(dates) - len(development_dates) if split else 0,
+        "development_selected_thresholds": selected_thresholds,
+        "holdout_races_with_bets": races_with_bets,
+        "skipped_races": skipped,
+        "skip_reasons": skip_reasons,
+        "tickets": tickets_count,
+        "hits": hits,
+        "hit_rate": round(100 * hits / tickets_count, 2) if tickets_count else None,
+        "stake_jpy": stake,
+        "return_jpy": returned,
+        "profit_jpy": returned - stake,
+        "roi_percent": round(100 * returned / stake, 2) if stake else None,
+        "roi_ci95_low": ci_low,
+        "roi_ci95_high": ci_high,
+        "minimum_sample_met": minimum_sample_met,
+        "max_race_stake_jpy": max_race_stake,
+        "race_stake_cap_jpy": 2000,
+        "selected_bet_type_race_counts": selected_type_counts,
+        "stake_rule": "100 JPY per qualified ticket, up to 20 tickets per race; never spend the unused portion just to reach the cap.",
+        "selection_rule": "Use only bet-type thresholds that passed development-date validation. For each holdout race, choose the eligible bet type with the highest mean expected value using same-snapshot pre-off odds; if none qualifies, skip the race.",
+        "profitability_rule": "At least 100 holdout races with bets and 300 tickets, plus a race-cluster bootstrap 95% ROI lower bound above 100%.",
+        "note": "ROI is a historical simulation using official settled payouts, not proof of future profit. If current-version snapshots are too few, the workflow reports insufficient evidence rather than inventing results."
+    }
+
+
 BET_TYPE_SELECTION_RULES = {
     # Wide/exacta/trio candidates must beat baseline by at least 2.5 points
     # in every available prior fold. This is a model-selection hurdle, not a
@@ -2739,6 +2914,9 @@ def main():
         "odds_snapshot_archive": odds_snapshot_inventory(),
         "preoff_value_backtest": preoff_value_backtest(payouts),
         "preoff_ticket_type_backtest": preoff_ticket_type_backtest(payouts),
+        "race_budget_auto_strategy_backtest": race_budget_auto_strategy_backtest(
+            payouts, {"bet_types": preoff_ticket_type_backtest(payouts).get("bet_types", {})}
+        ),
         "preoff_ranking_strategy_backtest": preoff_ranking_strategy_backtest(payouts),
         "online_learning": {"updates": learning_updates, "final_weights": learned_weights,
                             "temperature": round(production_temperature,4), "calibration": production_calibration,
@@ -2779,11 +2957,12 @@ def main():
         "ticket_policy": result["method"]["ticket_generation"],
         "stake_per_ticket_jpy": 100,
         "bet_types": (recent_models.get("C_performance_pace") or {}).get("bet_types", {}),
+        "race_budget_auto_strategy": result.get("race_budget_auto_strategy_backtest", {}),
         "all_model_bet_type_comparison": {
             name: (recent_models.get(name) or {}).get("bet_types", {})
             for name in canonical_models
         },
-        "interpretation": "Same final-year holdout, same C ranking, and fixed 100 JPY per ticket. Compare hit rate, ROI, sample size and race-cluster uncertainty across bet types; this is not a parameter-tuned betting recommendation.",
+        "interpretation": "The fixed-ticket comparison remains separate from the integrated live-policy simulation. race_budget_auto_strategy uses only current-version timestamped pre-off snapshots, development-selected thresholds, one bet type per race, a maximum of JPY 2,000 per race, and skips races with no qualified ticket.",
     }
     (OUT.parent / "backtest-2-ticket-strategy.json").write_text(
         json.dumps(ticket_report, ensure_ascii=False, indent=2), encoding="utf-8")
