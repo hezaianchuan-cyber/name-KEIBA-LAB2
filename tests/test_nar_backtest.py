@@ -852,3 +852,28 @@ class TrioDiagnosticTests(unittest.TestCase):
         stats = nb.new_trio_diagnostics()
         nb.update_trio_diagnostics(stats, ranked, field, {"trio": []})
         self.assertEqual(nb.summarize_trio_diagnostics(stats)["races"], 0)
+
+
+class IncompleteFinishDiagnosticSampleTests(unittest.TestCase):
+    def test_trifecta_roi_keeps_valid_payout_races_without_complete_finish_roles(self):
+        ranked = [{"no": str(i)} for i in range(1, 6)]
+        field = [{"no": str(i), "finish": None} for i in range(1, 6)]
+        payout = {"win": [], "trifecta": [(["1", "2", "3"], 1000)]}
+        stats = nb.new_trifecta_diagnostics()
+        nb.update_trifecta_diagnostics(stats, ranked, field, payout)
+        result = nb.summarize_trifecta_diagnostics(stats)
+        self.assertEqual(result["races"], 0)
+        self.assertEqual(result["structures"]["first2_pool5"]["races"], 1)
+        self.assertEqual(result["structures"]["first2_pool5"]["tickets"], 24)
+        self.assertEqual(result["structures"]["first2_pool5"]["roi"], 41.67)
+
+    def test_trio_roi_keeps_valid_payout_races_without_complete_podium_fields(self):
+        ranked = [{"no": str(i)} for i in range(1, 6)]
+        field = [{"no": str(i), "finish": None} for i in range(1, 6)]
+        stats = nb.new_trio_diagnostics()
+        nb.update_trio_diagnostics(stats, ranked, field, {"trio": [(["1", "2", "3"], 1000)]})
+        result = nb.summarize_trio_diagnostics(stats)
+        self.assertEqual(result["races"], 0)
+        self.assertEqual(result["structures"]["top5"]["races"], 1)
+        self.assertEqual(result["structures"]["top5"]["tickets"], 10)
+        self.assertEqual(result["structures"]["top5"]["roi"], 100.0)
