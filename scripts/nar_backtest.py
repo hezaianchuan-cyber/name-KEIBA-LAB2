@@ -229,6 +229,17 @@ def rank_quality(finish, field_size=None):
     return max(5.0, 100.0-(rank-1)*8.0)
 
 
+def smoothed_rate(successes, runs, prior_rate=0.50, prior_strength=10.0):
+    """Shrink sparse sire/jockey rates toward a neutral prior to reduce small-sample noise."""
+    successes = max(0.0, number(successes) or 0.0)
+    runs = max(0.0, number(runs) or 0.0)
+    prior_strength = max(0.0, number(prior_strength) or 0.0)
+    prior_rate = min(1.0, max(0.0, number(prior_rate) if number(prior_rate) is not None else 0.50))
+    if runs + prior_strength <= 0:
+        return prior_rate
+    return (successes + prior_rate * prior_strength) / (runs + prior_strength)
+
+
 def field_performance_features(field):
     """Store race-relative closing-speed rank and margin quality for future races."""
     valid_last3f = [(h["no"], number(h.get("last3f"))) for h in field]
@@ -316,9 +327,10 @@ def score_runner(h, history, sire_stats, jockey_stats, race, model_weights, incl
     distance_quality = [rank_quality(x.get("finish"), x.get("field_size")) for x in distance_runs]
     distance_quality = [q for q in distance_quality if q is not None]
     distance_score = sum(distance_quality)/len(distance_quality) if distance_quality else 48
-    sire_score = sire_stats[h["sire"]]["top3"]/sire_stats[h["sire"]]["runs"]*100 if h["sire"] and sire_stats[h["sire"]]["runs"] >= 5 else 50
-    j = jockey_stats[h["jockey"]]
-    jockey_score = j["top3"]/j["runs"]*100 if h["jockey"] and j["runs"] >= 5 else 50
+    sire = sire_stats[h["sire"]] if h["sire"] else {"runs": 0, "top3": 0}
+    sire_score = 100 * smoothed_rate(sire["top3"], sire["runs"])
+    j = jockey_stats[h["jockey"]] if h["jockey"] else {"runs": 0, "top3": 0}
+    jockey_score = 100 * smoothed_rate(j["top3"], j["runs"])
     age = h.get("age")
     age_score = 72 if age is not None and 4 <= age <= 6 else 58 if age in (3,7) else 45
     parts = {"form":form/100,"venue":venue_score/100,"distance":distance_score/100,
