@@ -265,12 +265,9 @@ class PerBetTypeProbabilityTests(unittest.TestCase):
         ]
         result = capture.predict_combinations(odds, horses)
         counts = {kind:sum(1 for x in result if x["bet_type"] == kind)
-                  for kind in ("win","place","wide","quinella","exacta","trio","trifecta")}
-        self.assertEqual(counts,{"win":2,"place":3,"wide":3,"quinella":1,
-                                 "exacta":4,"trio":1,"trifecta":4})
-        first_win = next(x for x in result if x["bet_type"] == "win" and x["numbers"] == ["1"])
-        self.assertEqual(first_win["odds"],2.5)
-        self.assertGreater(first_win["expected_value"],0)
+                  for kind in ("wide","exacta","trio","trifecta")}
+        self.assertEqual(counts,{"wide":3,"exacta":4,"trio":1,"trifecta":4})
+        self.assertFalse(any(x["bet_type"] in {"win","place","quinella"} for x in result))
         self.assertTrue(all(x["odds_status"] in ("取得済み","オッズ待ち") for x in result))
         self.assertTrue(any(x["expected_value"] is None for x in result))
 
@@ -697,10 +694,7 @@ class CandidateRankingResearchTests(unittest.TestCase):
         ]
         odds = []
         for kind, pairs in [
-            ("単勝", [("1",),("2",),("3",)]),
-            ("複勝", [("1",),("2",),("3",)]),
             ("ワイド", [("1","2"),("1","3"),("2","3")]),
-            ("馬連", [("1","2"),("1","3"),("2","3")]),
             ("馬単", [("1","2"),("1","3"),("2","1"),("2","3"),("3","1"),("3","2")]),
             ("3連複", [("1","2","3")]),
             ("3連単", [("1","2","3"),("1","3","2"),("2","1","3"),
@@ -713,9 +707,9 @@ class CandidateRankingResearchTests(unittest.TestCase):
                              "odds":5.0})
         result = capture.predict_combinations(odds, horses, full_universe=True)
         counts = {kind:sum(1 for row in result if row["bet_type"] == kind)
-                  for kind in ("win","place","wide","quinella","exacta","trio","trifecta")}
-        self.assertEqual(counts, {"win":3,"place":3,"wide":3,"quinella":3,
-                                  "exacta":6,"trio":1,"trifecta":6})
+                  for kind in ("wide","exacta","trio","trifecta")}
+        self.assertEqual(counts, {"wide":3,"exacta":6,"trio":1,"trifecta":6})
+        self.assertFalse(any(row["bet_type"] in {"win","place","quinella"} for row in result))
 
     def test_preoff_ranking_backtest_selects_same_top_n_and_uses_settled_payouts(self):
         key = ("大井","20261103","10")
