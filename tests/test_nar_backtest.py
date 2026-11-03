@@ -670,6 +670,24 @@ class StrongerSelectionAndOddsGateTests(unittest.TestCase):
         selected = nb.select_models_from_prior_folds([first, second])
         self.assertEqual(selected["wide"]["model"], "baseline")
 
+    def test_type_specific_hurdles_keep_trifecta_strict(self):
+        selected = nb.select_models_from_prior_folds([
+            self._fold(1, wide_roi=63.0, win_roi=60.0, trifecta_roi=71.5)
+        ])
+        self.assertEqual(selected["wide"]["model"], "challenger")
+        self.assertEqual(selected["wide"]["required_min_roi_gain"], 2.5)
+        self.assertEqual(selected["trifecta"]["model"], "baseline")
+        self.assertEqual(selected["trifecta"]["required_min_roi_gain"], 12.0)
+
+    def test_walk_forward_reports_aggregate_selected_portfolio(self):
+        prior = self._fold(1, wide_roi=70.0, win_roi=60.0, trifecta_roi=60.0)
+        following = self._fold(2, wide_roi=72.0, win_roi=60.0, trifecta_roi=60.0)
+        result = nb.evaluate_walk_forward_selection([prior, following])
+        wide = result["selected_portfolio"]["wide"]
+        self.assertEqual(wide["roi"], 72.0)
+        self.assertEqual(wide["tickets"], 12000)
+        self.assertEqual(wide["validation_folds"][0]["model"], "challenger")
+
 
 
 class MultiBetConditionDiagnosticsTests(unittest.TestCase):
