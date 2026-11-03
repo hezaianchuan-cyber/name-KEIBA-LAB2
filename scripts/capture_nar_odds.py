@@ -10,6 +10,7 @@ from __future__ import annotations
 import csv
 from collections import defaultdict
 import gzip
+import math
 import datetime as dt
 import io
 import json
@@ -199,6 +200,7 @@ def predict_horses(race, horses, odds_rows, model_context):
             "win_probability": round(probability, 8),
             "win_odds": odds_value,
             "expected_value": round(ev, 6) if ev is not None else None,
+            "prior_runs": len(history.get(nb.norm(horse["name"]), [])),
         })
     return predictions
 
@@ -308,6 +310,65 @@ def predict_combinations(odds_rows, horse_predictions):
             })
     return output
 
+def race_readiness(race, horses, odds_rows, predictions, model_context):
+    """Evidence-quality gate for research display; never a betting instruction."""
+    reasons = []
+    if not model_context:
+        reasons.append("model_unavailable")
+    if len(horses) < 5:
+        reasons.append("small_field")
+    prediction_by_no = {str(p.get("horse_no")): p for p in predictions}
+    win_odds = {
+        str(int(re.sub(r"\\D", "", str(item.get("n1") or "")) or 0))
+        for item in odds_rows
+        if "単勝" in unicodedata.normalize("NFKC", str(item.get("type") or ""))
+        and re.sub(r"\\D", "", str(item.get("n1") or ""))
+        and nb.number(item.get("odds")) is not None
+        and nb.number(item.get("odds")) > 0
+    }
+    odds_coverage = len(win_odds.intersection(prediction_by_no)) / max(1, len(horses))
+    history_coverage = (
+        sum(1 for p in predictions if int(p.get("prior_runs") or 0) > 0) / max(1, len(horses))
+        if predictions else 0.0
+    )
+    calibration_races = 0
+    if model_context:
+        calibration_races = int((model_context[0].get("calibration") or {}).get("races") or 0)
+    if odds_coverage < 0.70:
+        reasons.append("win_odds_coverage_below_70pct")
+    if history_coverage < 0.50:
+        reasons.append("historical_form_coverage_below_50pct")
+    if calibration_races < 500:
+        reasons.append("calibration_sample_below_500")
+    probabilities = [max(0.0, float(p.get("win_probability") or 0)) for p in predictions]
+    probability_sum = sum(probabilities)
+    if not probabilities or abs(probability_sum - 1.0) > 0.01:
+        reasons.append("invalid_probability_distribution")
+    normalized_entropy = None
+    top_gap = None
+    top_probability = None
+    if probabilities:
+        normalized_entropy = (
+            -sum(p * math.log(max(p, 1e-12)) for p in probabilities) / math.log(len(probabilities))
+            if len(probabilities) > 1 else 0.0
+        )
+        ranked = sorted(probabilities, reverse=True)
+        top_probability = ranked[0]
+        top_gap = ranked[0] - ranked[1] if len(ranked) > 1 else ranked[0]
+    return {
+        "status": "eligible_for_research_evaluation" if not reasons else "skip_insufficient_evidence",
+        "reasons": reasons,
+        "field_size": len(horses),
+        "win_odds_coverage": round(odds_coverage, 4),
+        "historical_form_coverage": round(history_coverage, 4),
+        "calibration_races": calibration_races,
+        "normalized_entropy": round(normalized_entropy, 6) if normalized_entropy is not None else None,
+        "top_win_probability": round(top_probability, 6) if top_probability is not None else None,
+        "top_two_probability_gap": round(top_gap, 6) if top_gap is not None else None,
+        "policy": "Research-quality filter only. Eligible does not mean profitable or a recommendation to bet; confidence metrics require prospective validation."
+    }
+
+
 def append_snapshot(path: Path, record: dict) -> bool:
     """Append a race once as a concatenated gzip member; return whether it was new."""
     race_key_text = record.get("race_key")
@@ -404,6 +465,7 @@ def main():
     for key, race, race_date, post, minutes, entries, field in candidates:
         predictions = predict_horses(race, field, entries, model_context)
         combination_predictions = predict_combinations(entries, predictions)
+        readiness = race_readiness(race, field, entries, predictions, model_context)
         path = SNAPSHOT_DIR / f"{race_date.isoformat()}.jsonl.gz"
         model = model_context[0] if model_context else {}
         record = {
@@ -419,6 +481,7 @@ def main():
             "model_temperature": model.get("temperature"),
             "predictions": predictions,
             "combination_predictions": combination_predictions,
+            "race_readiness": readiness,
             "odds": entries,
         }
         if append_snapshot(path, record):
