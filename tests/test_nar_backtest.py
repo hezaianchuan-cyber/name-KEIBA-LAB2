@@ -954,8 +954,11 @@ class RoleSpecificTrifectaTests(unittest.TestCase):
 
     def test_role_diagnostics_cover_multiple_blends_and_formations(self):
         diagnostics = nb.new_role_trifecta_diagnostics()
-        self.assertEqual(set(diagnostics), {"0.05","0.10","0.15","0.20"})
-        self.assertEqual(set(diagnostics["0.10"]), {"1-4-4","2-4-3","2-5-3","2-5-5"})
+        self.assertEqual(set(diagnostics), {"0.05","0.10","0.20","0.30","0.40"})
+        self.assertEqual(set(diagnostics["0.10"]), {
+            "1-3-4","1-4-3","1-4-4","1-4-5","1-5-4",
+            "2-3-3","2-3-4","2-4-3","2-4-4","2-5-3",
+            "2-3-5","2-5-4","3-4-4","3-5-4"})
 
     def test_role_diagnostics_record_nonempty_results_for_any_model_bucket(self):
         scored = [
@@ -975,8 +978,10 @@ class RoleSpecificTrifectaTests(unittest.TestCase):
         diagnostics = nb.new_role_trifecta_diagnostics()
         nb.update_role_trifecta_diagnostics(diagnostics, scored, history, payout)
         summary = nb.summarize_role_trifecta_diagnostics(diagnostics)
-        for blend in ("0.05","0.10","0.15","0.20"):
-            for formation in ("1-4-4","2-4-3","2-5-3","2-5-5"):
+        for blend in ("0.05","0.10","0.20","0.30","0.40"):
+            for formation in ("1-3-4","1-4-3","1-4-4","1-4-5","1-5-4",
+                              "2-3-3","2-3-4","2-4-3","2-4-4","2-5-3",
+                              "2-3-5","2-5-4","3-4-4","3-5-4"):
                 result = summary[blend][formation]
                 self.assertEqual(result["races"], 1)
                 self.assertGreater(result["tickets"], 0)
