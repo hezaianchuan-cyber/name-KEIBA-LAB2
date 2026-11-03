@@ -1137,3 +1137,43 @@ class BetTypeRaceClusterUncertaintyTests(unittest.TestCase):
         self.assertEqual(result["roi"], 200.0)
         self.assertLess(result["roi_ci95_normal_low"], 200.0)
         self.assertGreater(result["roi_ci95_normal_high"], 200.0)
+
+
+class RaceRelativeFeatureTests(unittest.TestCase):
+    def test_features_are_ranked_within_race_and_weighted(self):
+        parts = {
+            "1": {"form": 0.9, "jockey": 0.2},
+            "2": {"form": 0.5, "jockey": 0.8},
+            "3": {"form": 0.1, "jockey": 0.5},
+        }
+        weights = {"form": 0.5, "jockey": 0.5}
+        scores = nb.race_relative_scores(parts, weights)
+        self.assertAlmostEqual(scores["1"], 0.75)
+        self.assertAlmostEqual(scores["2"], 0.50)
+        self.assertAlmostEqual(scores["3"], 0.25)
+
+    def test_tied_feature_values_receive_average_percentile(self):
+        parts = {
+            "1": {"form": 0.8},
+            "2": {"form": 0.8},
+            "3": {"form": 0.2},
+        }
+        scores = nb.race_relative_scores(parts, {"form": 1.0})
+        self.assertAlmostEqual(scores["1"], 0.75)
+        self.assertAlmostEqual(scores["2"], 0.75)
+        self.assertAlmostEqual(scores["3"], 0.0)
+
+    def test_relative_scores_are_invariant_to_monotonic_feature_scaling(self):
+        weights = {"form": 0.6, "jockey": 0.4}
+        first = {
+            "1": {"form": 0.9, "jockey": 0.3},
+            "2": {"form": 0.5, "jockey": 0.8},
+            "3": {"form": 0.1, "jockey": 0.5},
+        }
+        scaled = {
+            no: {"form": values["form"] * 100 + 17,
+                 "jockey": values["jockey"] * 10 - 3}
+            for no, values in first.items()
+        }
+        self.assertEqual(nb.race_relative_scores(first, weights),
+                         nb.race_relative_scores(scaled, weights))
