@@ -1,0 +1,25 @@
+name: Probe NAR monthly final odds archive
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/probe_nar_monthly_odds.py'
+      - '.github/workflows/nar-monthly-odds-probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe official monthly odds ZIP endpoint and schema
+        run: python scripts/probe_nar_monthly_odds.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nar-monthly-odds-probe
+          path: odds-monthly-probe.json
