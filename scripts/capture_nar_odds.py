@@ -76,6 +76,7 @@ def read_archives():
     race_rows = {}
     horse_rows = {}
     odds_rows = {}
+    odds_diagnostics = {"rows": 0, "positive_rows": 0, "zero_rows": 0, "races_with_positive_odds": 0}
     race_zip = DATA / "latest-race.zip"
     odds_zip = DATA / "latest-odds.zip"
     if not race_zip.exists() or not odds_zip.exists():
@@ -136,8 +137,11 @@ def read_archives():
                     odds_value = float(str(row[7]).replace(",", "").strip())
                 except (ValueError, TypeError):
                     continue
+                odds_diagnostics["rows"] += 1
                 if odds_value <= 0:
+                    odds_diagnostics["zero_rows"] += 1
                     continue
+                odds_diagnostics["positive_rows"] += 1
                 item = {
                     "type": str(row[3]).strip(),
                     "n1": str(row[4]).strip(),
@@ -148,6 +152,8 @@ def read_archives():
                     "popularity": str(row[9]).strip(),
                 }
                 odds_rows.setdefault(key, []).append(item)
+    odds_diagnostics["races_with_positive_odds"] = len(odds_rows)
+    print("Odds diagnostics:", json.dumps(odds_diagnostics, ensure_ascii=False), flush=True)
     return race_rows, horse_rows, odds_rows
 
 
@@ -314,10 +320,13 @@ def append_snapshot(path: Path, record: dict) -> bool:
 def main():
     now = dt.datetime.now(JST)
     races, horses_by_race, odds = read_archives()
-    if not races or not odds:
-        print(f"No current official race/odds rows; race_rows={len(races)} odds_races={len(odds)}")
+    if not races:
+        print(f"No current official race rows; race_rows={len(races)}")
         return
     candidates = []
+    window_races = 0
+    window_with_field = 0
+    window_with_positive_odds = 0
     for key, race in races.items():
         try:
             race_date = dt.datetime.strptime(race["date"], "%Y%m%d").date()
@@ -330,13 +339,27 @@ def main():
         minutes = (post - now).total_seconds() / 60
         if not (STOP_BEFORE_POST_MINUTES <= minutes <= CAPTURE_WINDOW_MINUTES):
             continue
+        window_races += 1
         entries = odds.get(key, [])
         field = horses_by_race.get(key, [])
-        if not entries or len(field) < 3:
-            continue
-        candidates.append((key, race, race_date, post, minutes, entries, field))
+        if len(field) >= 3:
+            window_with_field += 1
+        if entries and len(field) >= 3:
+            window_with_positive_odds += 1
+            candidates.append((key, race, race_date, post, minutes, entries, field))
+    print(
+        "Pre-off eligibility:",
+        json.dumps({
+            "window_minutes": [CAPTURE_WINDOW_MINUTES, STOP_BEFORE_POST_MINUTES],
+            "races_in_window": window_races,
+            "window_races_with_field": window_with_field,
+            "window_races_with_positive_odds": window_with_positive_odds,
+            "odds_races_with_positive_quotes": len(odds),
+        }, ensure_ascii=False),
+        flush=True,
+    )
     if not candidates:
-        print(f"No race inside {CAPTURE_WINDOW_MINUTES}-to-{STOP_BEFORE_POST_MINUTES}-minute pre-off window; race_rows={len(races)} odds_races={len(odds)}")
+        print("No eligible pre-off races yet; the next scheduled capture will retry.")
         return
     model_context = load_model_context()
     additions = 0
