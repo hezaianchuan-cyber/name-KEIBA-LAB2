@@ -478,3 +478,10 @@ class PerformanceFeatureTests(unittest.TestCase):
         self.assertGreater(margin, base)
         self.assertLess(closing, base)
         self.assertAlmostEqual(light, base + (margin-base + closing-base)/2, places=10)
+        # Blend weights must apply to the full normalized B score, not a
+        # pre-scaled 0.8 copy of B's weights.
+        self.assertAlmostEqual(
+            nb.score_runner_performance(*args,margin_weight=0.10,closing_weight=0.10)[0],
+            base * 0.80 + 0.10 * 1.0 + 0.10 * 0.0,
+            places=10,
+        )
