@@ -466,6 +466,90 @@ def build_fixed_tickets(ranked):
     }
 
 
+
+def role_specific_ranking(scored, history, target_finish, blend):
+    """Rank runners for one finishing role using only strictly prior results."""
+    ranked = []
+    for base_score, horse in scored:
+        past = history.get(horse["name"], [])[-5:]
+        values, weights = [], []
+        for index, row in enumerate(past, start=1):
+            finish = number(row.get("finish"))
+            field_size = number(row.get("field_size"))
+            if finish is None or field_size is None or field_size < 2:
+                continue
+            values.append(max(0.0, 1.0 - abs(finish - target_finish) / (field_size - 1)))
+            weights.append(index)
+        if values:
+            role_form = sum(v*w for v,w in zip(values,weights)) / sum(weights)
+            reliability = len(values) / (len(values) + 3.0)
+            role_form = reliability * role_form + (1.0 - reliability) * 0.5
+        else:
+            role_form = 0.5
+        adjusted = (1.0 - blend) * base_score + blend * role_form
+        ranked.append((adjusted, horse))
+    return [horse for _, horse in sorted(ranked, key=lambda item:item[0], reverse=True)]
+
+
+def build_role_trifecta_formation(role_rankings, first_count, second_count, third_count):
+    """Build ordered tickets from separate, role-specific candidate rankings."""
+    firsts = [str(h["no"]) for h in role_rankings[1][:first_count]]
+    seconds = [str(h["no"]) for h in role_rankings[2][:second_count]]
+    thirds = [str(h["no"]) for h in role_rankings[3][:third_count]]
+    return [[first, second, third]
+            for first in firsts
+            for second in seconds if second != first
+            for third in thirds if third not in (first, second)]
+
+
+def new_role_trifecta_diagnostics():
+    formations = ((1,4,4), (2,4,3), (2,5,3), (2,5,5))
+    blends = (0.05, 0.10, 0.15, 0.20)
+    return {
+        f"{blend:.2f}": {
+            f"{a}-{b}-{c}": {"races":0,"tickets":0,"hits":0,"hit_races":0,
+                              "stake":0,"return":0}
+            for a,b,c in formations
+        } for blend in blends
+    }
+
+
+def update_role_trifecta_diagnostics(bucket, scored, history, payout):
+    for blend_key, formations in bucket.items():
+        blend = float(blend_key)
+        role_rankings = {
+            role: role_specific_ranking(scored, history, role, blend)
+            for role in (1,2,3)
+        }
+        for formation, stats in formations.items():
+            a,b,c = (int(x) for x in formation.split("-"))
+            tickets = build_role_trifecta_formation(role_rankings, a, b, c)
+            if not tickets:
+                continue
+            returned = sum(payout_for("trifecta", ticket, payout) or 0 for ticket in tickets)
+            hits = sum(1 for ticket in tickets if payout_for("trifecta", ticket, payout))
+            stats["races"] += 1
+            stats["tickets"] += len(tickets)
+            stats["hits"] += hits
+            stats["hit_races"] += int(hits > 0)
+            stats["stake"] += 100 * len(tickets)
+            stats["return"] += returned
+
+
+def summarize_role_trifecta_diagnostics(bucket):
+    output = {}
+    for blend, formations in bucket.items():
+        output[blend] = {}
+        for formation, stats in formations.items():
+            output[blend][formation] = {
+                **stats,
+                "tickets_per_race": round(stats["tickets"] / stats["races"], 2) if stats["races"] else None,
+                "race_hit_rate": round(100 * stats["hit_races"] / stats["races"], 2) if stats["races"] else None,
+                "roi": round(100 * stats["return"] / stats["stake"], 2) if stats["stake"] else None,
+                "profit": stats["return"] - stats["stake"],
+            }
+    return output
+
 def new_trifecta_diagnostics():
     structures = {(first, second, third): {"races": 0, "tickets": 0, "hits": 0,
                                                "hit_races": 0, "stake": 0, "return": 0,
@@ -1040,6 +1124,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                 m["winner_topk"][k] += hit
             ticket_map=build_fixed_tickets(ranked)
             update_trifecta_diagnostics(m["trifecta_diagnostics"], ranked, field, payout)
+            if model_name == "trained":
+                update_role_trifecta_diagnostics(m["role_trifecta_diagnostics"], scored, history, payout)
             update_trio_diagnostics(m["trio_diagnostics"], ranked, field, payout)
             if model_name in ("baseline", "trained_no_recent_history"):
                 for dimension, label in race_segment_labels(race).items():
@@ -1094,6 +1180,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                 "profit":bm["return"]-bm["stake"]}
         out[name]={**m,"bet_types":bet_summary,
           "trifecta_diagnostics":summarize_trifecta_diagnostics(m["trifecta_diagnostics"]),
+          "role_trifecta_diagnostics":summarize_role_trifecta_diagnostics(m["role_trifecta_diagnostics"]),
           "trio_diagnostics":summarize_trio_diagnostics(m["trio_diagnostics"]),
           "winner_top1_rate":round(100*m["winner_top1"]/n,2),
           "winner_top3_rate":round(100*m["winner_top3"]/n,2),
