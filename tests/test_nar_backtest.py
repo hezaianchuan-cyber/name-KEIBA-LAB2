@@ -825,6 +825,9 @@ class TrifectaDiagnosticTests(unittest.TestCase):
         self.assertEqual(result["structures"]["2-5-5"]["hits"], 1)
         self.assertEqual(result["structures"]["2-5-5"]["tickets"], 24)
         self.assertEqual(result["structures"]["2-5-5"]["roi"], 500.0)
+        self.assertEqual(result["structures"]["2-5-5"]["hit_races"], 1)
+        self.assertEqual(result["structures"]["2-5-5"]["race_hit_rate"], 100.0)
+        self.assertIsNone(result["structures"]["2-5-5"]["roi_ci95_normal_low"])
 
 
 
@@ -867,6 +870,19 @@ class TrioDiagnosticTests(unittest.TestCase):
 
 
 class IncompleteFinishDiagnosticSampleTests(unittest.TestCase):
+    def test_trifecta_diagnostics_report_race_hit_rate_and_roi_interval(self):
+        ranked = [{"no": str(i)} for i in range(1, 6)]
+        field = [{"no": str(i), "finish": None} for i in range(1, 6)]
+        stats = nb.new_trifecta_diagnostics()
+        nb.update_trifecta_diagnostics(stats, ranked, field,
+            {"trifecta": [(["1", "2", "3"], 5000)]})
+        nb.update_trifecta_diagnostics(stats, ranked, field, {"trifecta": []})
+        result = nb.summarize_trifecta_diagnostics(stats)["structures"]["2-5-5"]
+        self.assertEqual(result["hit_races"], 1)
+        self.assertEqual(result["race_hit_rate"], 50.0)
+        self.assertIsNotNone(result["roi_ci95_normal_low"])
+        self.assertLess(result["roi_ci95_normal_low"], result["roi_ci95_normal_high"])
+
     def test_trifecta_roi_keeps_valid_payout_races_without_complete_finish_roles(self):
         ranked = [{"no": str(i)} for i in range(1, 6)]
         field = [{"no": str(i), "finish": None} for i in range(1, 6)]
