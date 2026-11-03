@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-03T00:25:32.477138+00:00",
+  "generated_at": "2026-11-03T01:05:18.433386+00:00",
   "period": {
     "start": "2023-11-03",
     "end": "2026-11-02"
@@ -1409,7 +1409,7 @@
     "last_date": null,
     "last_captured_at": null,
     "model_versions": [],
-    "note": "The closest valid snapshot from 15 to 5 minutes before post time is used; snapshots inside the final 5 minutes, post-off records, and monthly confirmed odds are excluded."
+    "note": "The closest valid snapshot from 30 to 2 minutes before post time is used; snapshots inside the final 2 minutes, post-off records, and monthly confirmed odds are excluded."
   },
   "preoff_value_backtest": {
     "status": "awaiting_snapshots",
@@ -1536,7 +1536,7 @@
     "validation_status": "awaiting_more_dates",
     "minimum_sample_rule": "At least 100 races with bets and 300 tickets per threshold; a candidate additionally needs the race-cluster bootstrap 95% lower ROI bound above 100%. Threshold selection uses the first 70% of dates only; the last 30% remains untouched holdout.",
     "policy": "Flat 100-yen win bets only when saved calibrated win probability multiplied by timestamped pre-off win odds meets the threshold. Returns use official settled 100-yen payouts.",
-    "note": "Only the closest valid pre-off snapshot per race is evaluated. No monthly confirmed odds are substituted."
+    "note": "Only the closest valid pre-off snapshot from 30 to 2 minutes before post time per race is evaluated. No monthly confirmed odds are substituted."
   },
   "preoff_ticket_type_backtest": {
     "status": "awaiting_snapshots",
