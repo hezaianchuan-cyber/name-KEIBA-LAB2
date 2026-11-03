@@ -1024,6 +1024,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates):
                      "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0}
                                   for kind in kinds},
                      "trifecta_diagnostics":new_trifecta_diagnostics(),
+                     "role_trifecta_diagnostics":new_role_trifecta_diagnostics(),
                      "trio_diagnostics":new_trio_diagnostics()} for name in models}
 
     history = defaultdict(list)
