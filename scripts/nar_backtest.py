@@ -1113,6 +1113,9 @@ def build_live_history(races, horses):
                     "going_quality": rank_quality(finish, race.get("field_size")) / 100.0,
                     **performance.get(h["no"], {}),
                     "margin": h.get("margin", ""), "last3f": h.get("last3f"),
+                    "time_seconds": h.get("time_seconds"),
+                    "time_per_km": (h.get("time_seconds") * 1000 / race["distance"]
+                                    if h.get("time_seconds") and race.get("distance") else None),
                     **corner_history_for_runner(h, race)}
             horse_history[norm(h["name"])].append(item)
             if h.get("sire"):
