@@ -86,6 +86,8 @@ Deno.serve(async (request) => {
       diagnostics: {
         authorization_header_present: authorizationHeader.length > 0,
         token_matches: supplied.length > 0 && supplied === expectedToken,
+        supplied_token_length: supplied.length,
+        expected_token_length: expectedToken.length,
       },
     }, { status: 401 });
   }
