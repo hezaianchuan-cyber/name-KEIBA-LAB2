@@ -23,7 +23,7 @@ def thresholds():
     except (OSError,ValueError,TypeError,KeyError):
         return {}
 
-def latest_snapshots(now):
+def latest_snapshots():
     latest={}
     for path in (DATA/"odds-snapshots").glob("*.jsonl.gz"):
         try:
@@ -33,7 +33,7 @@ def latest_snapshots(now):
                         r=json.loads(line); key=r.get("race_key")
                         captured=dt.datetime.fromisoformat(r["captured_at"])
                         post=dt.datetime.fromisoformat(r["scheduled_post_time"])
-                        if not key or post<=now or not (dt.timedelta(minutes=2)<=post-captured<=dt.timedelta(minutes=30)): continue
+                        if not key or post-captured < dt.timedelta(minutes=2) or post-captured > dt.timedelta(minutes=30): continue
                         if key not in latest or captured>latest[key][0]: latest[key]=(captured,r)
                     except (ValueError,KeyError,TypeError,json.JSONDecodeError): pass
         except OSError: pass
@@ -80,7 +80,7 @@ def make_plan(r,limits):
 
 def main():
     now=dt.datetime.now(ZoneInfo("Asia/Tokyo"));limits=thresholds()
-    plans=[p for r in latest_snapshots(now) if (p:=make_plan(r,limits))]
+    plans=[p for r in latest_snapshots() if (p:=make_plan(r,limits))]
     plans.sort(key=lambda x:(x["date"],x["venue"],int(x["raceNo"] or 0)))
     out={"schema_version":1,"generated_at":now.isoformat(),"source":"official_nar_preoff_snapshots","plans":plans}
     (DATA/"auto-ticket-plans.json").write_text(json.dumps(out,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
