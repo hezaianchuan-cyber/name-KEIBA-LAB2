@@ -1,0 +1,288 @@
+{
+  "generated_at": "2026-11-04T00:42:54.376763+00:00",
+  "feature": "G1_probability_calibration",
+  "status": "G1_improved_on_untouched_holdout",
+  "model_scope": "Existing chronological C-model scores; E model and live model code are unchanged.",
+  "evaluation_period_start": "2026-03-01",
+  "evaluation_period_end": "2026-11-03",
+  "eligible_races": 10901,
+  "eligible_dates": 248,
+  "official_archive_months": [
+    {
+      "month": "2022-11",
+      "bytes": 1232537
+    },
+    {
+      "month": "2022-12",
+      "bytes": 1243445
+    },
+    {
+      "month": "2023-01",
+      "bytes": 1046317
+    },
+    {
+      "month": "2023-02",
+      "bytes": 922882
+    },
+    {
+      "month": "2023-03",
+      "bytes": 1194980
+    },
+    {
+      "month": "2023-04",
+      "bytes": 1124605
+    },
+    {
+      "month": "2023-05",
+      "bytes": 1324489
+    },
+    {
+      "month": "2023-06",
+      "bytes": 1286027
+    },
+    {
+      "month": "2023-07",
+      "bytes": 1291848
+    },
+    {
+      "month": "2023-08",
+      "bytes": 1283029
+    },
+    {
+      "month": "2023-09",
+      "bytes": 1221968
+    },
+    {
+      "month": "2023-10",
+      "bytes": 1364759
+    },
+    {
+      "month": "2023-11",
+      "bytes": 1262423
+    },
+    {
+      "month": "2023-12",
+      "bytes": 1290058
+    },
+    {
+      "month": "2024-01",
+      "bytes": 1061092
+    },
+    {
+      "month": "2024-02",
+      "bytes": 989054
+    },
+    {
+      "month": "2024-03",
+      "bytes": 1111564
+    },
+    {
+      "month": "2024-04",
+      "bytes": 1223169
+    },
+    {
+      "month": "2024-05",
+      "bytes": 1313171
+    },
+    {
+      "month": "2024-06",
+      "bytes": 1310361
+    },
+    {
+      "month": "2024-07",
+      "bytes": 1359530
+    },
+    {
+      "month": "2024-08",
+      "bytes": 1191409
+    },
+    {
+      "month": "2024-09",
+      "bytes": 1284270
+    },
+    {
+      "month": "2024-10",
+      "bytes": 1376249
+    },
+    {
+      "month": "2024-11",
+      "bytes": 1251638
+    },
+    {
+      "month": "2024-12",
+      "bytes": 1340706
+    },
+    {
+      "month": "2025-01",
+      "bytes": 1110135
+    },
+    {
+      "month": "2025-02",
+      "bytes": 943736
+    },
+    {
+      "month": "2025-03",
+      "bytes": 1172720
+    },
+    {
+      "month": "2025-04",
+      "bytes": 1165538
+    },
+    {
+      "month": "2025-05",
+      "bytes": 1273529
+    },
+    {
+      "month": "2025-06",
+      "bytes": 1321842
+    },
+    {
+      "month": "2025-07",
+      "bytes": 1261231
+    },
+    {
+      "month": "2025-08",
+      "bytes": 1100309
+    },
+    {
+      "month": "2025-09",
+      "bytes": 1322983
+    },
+    {
+      "month": "2025-10",
+      "bytes": 1404534
+    },
+    {
+      "month": "2025-11",
+      "bytes": 1272919
+    },
+    {
+      "month": "2025-12",
+      "bytes": 1305598
+    },
+    {
+      "month": "2026-01",
+      "bytes": 1059227
+    },
+    {
+      "month": "2026-02",
+      "bytes": 941511
+    },
+    {
+      "month": "2026-03",
+      "bytes": 1262890
+    },
+    {
+      "month": "2026-04",
+      "bytes": 1235458
+    },
+    {
+      "month": "2026-05",
+      "bytes": 1360810
+    },
+    {
+      "month": "2026-06",
+      "bytes": 1321050
+    },
+    {
+      "month": "2026-07",
+      "bytes": 1357657
+    },
+    {
+      "month": "2026-08",
+      "bytes": 1211113
+    },
+    {
+      "month": "2026-09",
+      "bytes": 1359705
+    },
+    {
+      "month": "2026-10",
+      "bytes": 1420092
+    },
+    {
+      "month": "2026-11",
+      "bytes": 256873
+    }
+  ],
+  "base_training": "Chronological NAR history before each target race; same-day outcomes are committed only after all races on that date are scored.",
+  "split": "Dates sorted chronologically; first 70% for G1 temperature selection, final 30% untouched holdout.",
+  "baseline_temperature": 0.18,
+  "holdout_minimum_races": 100,
+  "metrics": "Race-level winner-mass log loss, multiclass Brier score, top-ranked confidence ECE (10 bins), and top-1 accuracy. Paired race bootstrap 95% CI for calibrated-minus-baseline deltas.",
+  "final_odds_note": "G1 probability calibration is scored against official race outcomes. Final odds are not calibration labels and are reserved for G2 odds-divergence/value evaluation; no pre-off odds are fabricated.",
+  "e_model_changed": false,
+  "profitable_claim": false,
+  "development_period": [
+    "2026-03-01",
+    "2026-08-20"
+  ],
+  "holdout_period": [
+    "2026-08-21",
+    "2026-11-03"
+  ],
+  "development_races": 7514,
+  "holdout_races": 3387,
+  "selected_temperature": 0.115,
+  "temperature_search": "0.02 to 0.50 inclusive, step 0.005; minimum development winner-mass log loss.",
+  "development_metrics": {
+    "baseline": {
+      "races": 7514,
+      "temperature": 0.18,
+      "log_loss": 1.97388,
+      "brier": 0.82068,
+      "top1_accuracy": 31.04,
+      "ece": 0.08208
+    },
+    "G1_calibrated": {
+      "races": 7514,
+      "temperature": 0.115,
+      "log_loss": 1.93297,
+      "brier": 0.80988,
+      "top1_accuracy": 31.04,
+      "ece": 0.0064
+    }
+  },
+  "holdout_metrics": {
+    "baseline": {
+      "races": 3387,
+      "temperature": 0.18,
+      "log_loss": 1.99281,
+      "brier": 0.82346,
+      "top1_accuracy": 30.76,
+      "ece": 0.08483
+    },
+    "G1_calibrated": {
+      "races": 3387,
+      "temperature": 0.115,
+      "log_loss": 1.94776,
+      "brier": 0.81098,
+      "top1_accuracy": 30.76,
+      "ece": 0.00876
+    },
+    "paired_delta_95ci": {
+      "method": "paired race-level bootstrap; calibrated minus baseline; lower is better",
+      "replicates": 2000,
+      "log_loss_delta_95ci": [
+        -0.05423,
+        -0.03572
+      ],
+      "brier_delta_95ci": [
+        -0.01594,
+        -0.00911
+      ],
+      "ece_delta_95ci": [
+        -0.08296,
+        -0.04695
+      ]
+    }
+  },
+  "holdout_changes": {
+    "log_loss_delta": -0.04505,
+    "brier_delta": -0.01248,
+    "ece_delta": -0.07607,
+    "top1_accuracy_delta_percentage_points": 0.0
+  },
+  "interpretation": "G1 passes this experiment only when the untouched holdout has at least 100 races, both log-loss and Brier 95% delta upper bounds are below zero, and ECE does not show a statistically clear deterioration. This is not evidence of profitable betting or live pre-off performance.",
+  "g1_pass": true
+}
