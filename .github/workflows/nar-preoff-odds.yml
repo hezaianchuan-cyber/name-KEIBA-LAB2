@@ -42,7 +42,7 @@ jobs:
               mv "$tmp" "$out"
               echo "$name=updated"
             else
-              rm -f "$tmp" "$out"
+              rm -f "$tmp"
               echo "$name=unavailable"
             fi
           }
