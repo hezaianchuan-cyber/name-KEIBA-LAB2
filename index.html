@@ -476,7 +476,7 @@ function refreshRaceChoices(){
   races.forEach(r=>{const o=document.createElement('option');o.value=r.id;const runners=Number(r.fieldSize)||Number(r.count)||0;o.textContent=r.race+'R '+(r.time||'')+' '+(r.name||'')+(runners?' · '+runners+'頭':'');select.append(o)});
   if(races.some(r=>r.id===old))select.value=old;
 }
-$('raceDate').addEventListener('change',()=>{fetchSupabaseLiveData().catch(e=>console.warn('日付別1分オッズ取得失敗',e)).finally(()=>refreshRaceChoices());});$('venue').addEventListener('change',()=>{refreshRaceChoices();});$('raceSelect').addEventListener('change',()=>{if($('raceSelect').value){$('summary').textContent='レースを選択しました。「選択したレースの買い目を見る」を押すと最新データで分析します。';}});
+$('raceDate').addEventListener('change',()=>{fetchSupabaseLiveData().catch(e=>console.warn('日付別1分オッズ取得失敗',e)).finally(()=>refreshRaceChoices());});$('venue').addEventListener('change',()=>{refreshRaceChoices();});$('raceSelect').addEventListener('change',()=>{if($('raceSelect').value){$('summary').textContent='選択レースを自動分析し、買い目を保存しています。';analyze();}});
 function percentile(v,arr){if(v==null||!arr.length)return 50;const clean=arr.filter(x=>x!=null).sort((a,b)=>a-b);if(!clean.length)return 50;return 100*clean.filter(x=>x<=v).length/clean.length}
 function parseMarginValue(value){const s=String(value??'').replace(/[\s\u3000]/g,'');if(!s)return null;const mixed=s.match(/^(\d+)(\d+)\/(\d+)$/);if(mixed)return Number(mixed[1])+Number(mixed[2])/Number(mixed[3]);const fraction=s.match(/^(\d+)\/(\d+)$/);return fraction?Number(fraction[1])/Number(fraction[2]):(s.match(/\d+(?:\.\d+)?/)||[])[0]!==undefined?Number((s.match(/\d+(?:\.\d+)?/)||[])[0]):null;}
 function getRecentRuns(h){
@@ -715,6 +715,8 @@ async function fetchSupabaseLiveData(dateOverride){
  minuteOddsRaceIndex=[...raceMap.values()];
  remoteLabTicketPlans=[...planMap.values()];
  refreshRaceChoices();
+ const selectedRace=$('raceSelect')?.value;
+ if(selectedRace&&typeof analyze==='function')analyze();
  if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
  const latest=rows?.[0]?.captured_at;
  const badge=$('oddsCaptureBadge'),details=$('oddsCaptureDetails');
@@ -929,7 +931,7 @@ dedupeImportedData();refreshRaceChoices();updateHistory();$('importCounts').text
 const ticketBox=document.createElement('div');
 ticketBox.className='card';
 ticketBox.style.marginTop='16px';
-ticketBox.innerHTML='<h2>買い目自動生成</h2><p class="sub">レース分析後に全券種の候補を自動表示します。参考推定であり、的中や利益を保証しません。</p><div id="ticketResult" class="sub" style="margin-top:12px">レースを分析すると買い目を自動表示します。</div>';
+ticketBox.innerHTML='<h2>買い目自動生成</h2><p class="sub">レース選択・公式データ更新・1分オッズ更新に合わせて自動分析し、買い目を保存します。参考推定であり、的中や利益を保証しません。</p><div id="ticketResult" class="sub" style="margin-top:12px">レースを分析すると買い目を自動表示します。</div>';
 $('runnerList').parentElement.after(ticketBox);
 function generateTickets(){
  const out=$('ticketResult');if(!out)return;
