@@ -1,0 +1,246 @@
+#!/usr/bin/env python3
+"""Leakage-safe G2 odds-divergence retrospective test.
+
+G2 keeps the validated G1 temperature fixed and compares its win probabilities
+with normalized official final win-odds probabilities. The pre-registered
+selection rule is model/market probability ratio >= 1.20 and model probability
+times final odds >= 1.08. At most one JPY100 win bet is made per race.
+Final odds are retrospective only; this is not a live pre-off result.
+"""
+from __future__ import annotations
+
+import datetime as dt
+import json
+import math
+import random
+from pathlib import Path
+
+import nar_backtest as nb
+
+ROOT = Path(__file__).resolve().parents[1]
+G1_REPORT = ROOT / "data" / "model-g1-calibration-backtest.json"
+OUT = ROOT / "data" / "model-g2-odds-divergence-backtest.json"
+START_DATE = dt.date(2026, 3, 1)
+MIN_ODDS_COVERAGE = 0.70
+MIN_DIVERGENCE = 1.20
+MIN_EXPECTED_VALUE = 1.08
+UNIT_STAKE = 100
+BOOTSTRAP_REPS = 2000
+
+
+def interval(values):
+    values = sorted(values)
+    if not values:
+        return None
+    return [round(values[int(0.025 * (len(values)-1))], 6),
+            round(values[int(0.975 * (len(values)-1))], 6)]
+
+
+def race_bootstrap_roi(rows):
+    if len(rows) < 30:
+        return {"method": "paired race-level bootstrap", "replicates": 0,
+                "roi_delta_95ci": None}
+    rng = random.Random(20261104 + len(rows))
+    deltas = []
+    n = len(rows)
+    for _ in range(BOOTSTRAP_REPS):
+        sample = [rows[rng.randrange(n)] for _ in range(n)]
+        stake = sum(x["stake"] for x in sample)
+        if stake:
+            deltas.append(100 * sum(x["return"] for x in sample) / stake)
+    return {"method": "race-level bootstrap ROI percentile interval",
+            "replicates": BOOTSTRAP_REPS, "roi_95ci": interval(deltas)}
+
+
+def summarize_bets(rows):
+    stake = sum(x["stake"] for x in rows)
+    returned = sum(x["return"] for x in rows)
+    hits = sum(x["hit"] for x in rows)
+    return {
+        "races_bet": len(rows), "tickets": len(rows), "hits": hits,
+        "hit_rate": round(100 * hits / len(rows), 2) if rows else None,
+        "stake_jpy": stake, "return_jpy": returned,
+        "profit_jpy": returned - stake,
+        "roi": round(100 * returned / stake, 2) if stake else None,
+        "roi_95ci": race_bootstrap_roi(rows),
+    }
+
+
+def score_records(records, odds_by_race, payouts, temperature):
+    evaluated = []
+    for record in records:
+        key_parts = str(record.get("race_key") or "").split("|")
+        if len(key_parts) != 3:
+            continue
+        key = (key_parts[0], key_parts[1], key_parts[2])
+        odds = odds_by_race.get(key, {})
+        scores = record["scores"]
+        if len(scores) < 3:
+            continue
+        odds_by_no = {str(int(k)): float(v) for k, v in odds.items()
+                      if str(k).isdigit() and float(v) > 0}
+        if not odds_by_no:
+            continue
+        # score order is the official horse-list order; the monthly archive odds
+        # are keyed by horse number, so the G1 run record must preserve horse order.
+        horse_numbers = record.get("horse_numbers") or []
+        if len(horse_numbers) != len(scores):
+            continue
+        field = [str(int(no)) for no in horse_numbers]
+        matched = [no for no in field if no in odds_by_no]
+        coverage = len(matched) / len(field) if field else 0.0
+        if coverage < MIN_ODDS_COVERAGE:
+            continue
+        model = nb.softmax_probabilities(scores, temperature)
+        raw_market = {no: 1.0 / odds_by_no[no] for no in matched}
+        market_total = sum(raw_market.values())
+        if market_total <= 0:
+            continue
+        market = {no: value / market_total for no, value in raw_market.items()}
+        model_by_no = {no: model[i] for i, no in enumerate(field)}
+        candidates = []
+        for no in matched:
+            p = model_by_no[no]
+            mp = market[no]
+            price = odds_by_no[no]
+            divergence = p / mp if mp > 0 else 0.0
+            ev = p * price
+            if divergence >= MIN_DIVERGENCE and ev >= MIN_EXPECTED_VALUE:
+                candidates.append((ev, divergence, p, price, no))
+        candidates.sort(reverse=True)
+        payout = payouts.get(key)
+        winners = set()
+        for nums, _ in (payout or {}).get("win", []):
+            if nums:
+                winners.add(str(nums[0]))
+        if not winners:
+            continue
+        best_model = max(field, key=lambda no: model_by_no[no])
+        favorite = min(matched, key=lambda no: (odds_by_no[no], int(no)))
+        model_winner_mass = sum(model_by_no[no] for no in winners if no in model_by_no)
+        market_winner_mass = sum(market.get(no, 0.0) for no in winners)
+        selected = candidates[0] if candidates else None
+        def win_row(no, label):
+            ret = nb.payout_for("win", (no,), payout) or 0
+            return {"label": label, "stake": UNIT_STAKE, "return": ret,
+                    "hit": int(no in winners)}
+        g1_top = win_row(best_model, "G1_top_pick")
+        market_top = win_row(favorite, "market_favorite")
+        g2_row = None
+        if selected:
+            ev, divergence, p, price, no = selected
+            g2_row = win_row(no, "G2_value_pick")
+            g2_row.update({"horse_no": no, "model_probability": round(p, 8),
+                           "market_probability": round(market.get(no, 0.0), 8),
+                           "final_odds": round(price, 4),
+                           "probability_ratio": round(divergence, 4),
+                           "expected_value": round(ev, 4)})
+        evaluated.append({
+            "date": record["date"], "race_key": "|".join(key),
+            "coverage": coverage, "winner_mass_g1": model_winner_mass,
+            "winner_mass_market": market_winner_mass,
+            "g1_top": g1_top, "market_top": market_top, "g2": g2_row,
+        })
+    return evaluated
+
+
+def probability_metrics(rows, key):
+    valid = [r[key] for r in rows if r.get(key) is not None]
+    if not valid:
+        return {"races": 0, "log_loss": None, "brier_winner_mass": None}
+    # Winner-mass log loss is directly comparable for dead heats. Brier is
+    # reported as a scalar squared error on winner mass for market vs model.
+    log_loss = -sum(math.log(max(1e-12, x)) for x in valid) / len(valid)
+    brier = sum((x - 1.0) ** 2 for x in valid) / len(valid)
+    return {"races": len(valid), "log_loss": round(log_loss, 6),
+            "brier_winner_mass": round(brier, 6)}
+
+
+def main():
+    if not G1_REPORT.exists():
+        raise RuntimeError("G1 report is missing; G2 cannot run without the validated G1 baseline.")
+    g1 = json.loads(G1_REPORT.read_text(encoding="utf-8"))
+    if not g1.get("g1_pass") or g1.get("status") != "G1_improved_on_untouched_holdout":
+        raise RuntimeError("G1 did not pass; refusing to promote its temperature into G2.")
+    temperature = float(g1["selected_temperature"])
+    races, horses, payouts, archive_months = nb.load_archives()
+    _, _, _, _, _, records = nb.run_backtest(races, horses, payouts)
+    records = [r for r in records if r.get("date") and
+               dt.date.fromisoformat(r["date"]) >= START_DATE]
+    # Attach horse numbers in exactly the same order as scores/winner indices.
+    race_by_key = { "|".join(k): race for k, race in races.items() }
+    aligned = []
+    for record in records:
+        race = race_by_key.get(record.get("race_key"))
+        field = horses.get(race["key"], []) if race else []
+        if len(field) != len(record.get("scores", [])):
+            continue
+        aligned.append({**record, "horse_numbers": [h["no"] for h in field]})
+    odds_by_race, odds_months = nb.load_final_odds_archives(START_DATE, nb.END)
+    evaluated = score_records(aligned, odds_by_race, payouts, temperature)
+    dates = sorted({r["date"] for r in evaluated})
+    if len(dates) < 10:
+        raise RuntimeError("Insufficient matched final-odds dates for chronological G2 evaluation.")
+    all_dates = sorted({r["date"] for r in aligned})
+    split = max(1, min(len(all_dates)-1, int(len(all_dates)*0.70)))
+    dev_end = all_dates[split-1]
+    holdout_start = all_dates[split]
+    development = [r for r in evaluated if r["date"] <= dev_end]
+    holdout = [r for r in evaluated if r["date"] >= holdout_start]
+    def flatten(rows, field):
+        return [r[field] for r in rows if r.get(field)]
+    dev_g2 = flatten(development, "g2")
+    hold_g2 = flatten(holdout, "g2")
+    dev_g1 = flatten(development, "g1_top")
+    hold_g1 = flatten(holdout, "g1_top")
+    dev_market = flatten(development, "market_top")
+    hold_market = flatten(holdout, "market_top")
+    report = {
+        "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "feature": "G2_G1_plus_final_odds_divergence",
+        "status": "evaluated" if len(holdout) >= 100 else "insufficient_holdout_sample",
+        "g1_temperature": temperature, "g1_report_status": g1.get("status"),
+        "evaluation_period": [START_DATE.isoformat(), nb.END.isoformat()],
+        "races_with_g1_scores": len(aligned),
+        "races_with_final_odds_and_outcomes": len(evaluated),
+        "development_period": [all_dates[0], dev_end],
+        "holdout_period": [holdout_start, all_dates[-1]],
+        "development_races_with_odds": len(development),
+        "holdout_races_with_odds": len(holdout),
+        "official_final_odds_months": odds_months,
+        "rule": {
+            "minimum_odds_coverage": MIN_ODDS_COVERAGE,
+            "model_to_market_probability_ratio_minimum": MIN_DIVERGENCE,
+            "model_probability_times_final_odds_minimum": MIN_EXPECTED_VALUE,
+            "selection": "At most one highest-EV qualifying horse per race; JPY100 win bet; otherwise no bet.",
+        },
+        "odds_note": "Official confirmed final win odds are used retrospectively. This does not represent odds available 2-30 minutes before post time and must not be presented as live profitability.",
+        "e_model_changed": False, "live_model_changed": False,
+        "profitable_claim": False,
+        "holdout_probability_quality": {
+            "G1_model_winner_mass": probability_metrics(holdout, "winner_mass_g1"),
+            "market_winner_mass": probability_metrics(holdout, "winner_mass_market"),
+        },
+        "development_bets": {
+            "G1_top_pick": summarize_bets(dev_g1),
+            "market_favorite": summarize_bets(dev_market),
+            "G2_value_pick": summarize_bets(dev_g2),
+        },
+        "holdout_bets": {
+            "G1_top_pick": summarize_bets(hold_g1),
+            "market_favorite": summarize_bets(hold_market),
+            "G2_value_pick": summarize_bets(hold_g2),
+        },
+        "holdout_G2_selection_rate_pct": round(100 * len(hold_g2) / len(holdout), 2) if holdout else None,
+        "g2_pass": bool(len(holdout) >= 100 and len(hold_g2) >= 100
+                        and summarize_bets(hold_g2)["roi_95ci"]["roi_95ci"]
+                        and summarize_bets(hold_g2)["roi_95ci"]["roi_95ci"][0] > 100),
+        "interpretation": "G2 is only considered ROI-confirmed if the untouched holdout has at least 100 eligible races and 100 G2 bets and the race-bootstrap 95% ROI lower bound exceeds 100%. Otherwise it remains an unconfirmed research signal.",
+    }
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps(report, ensure_ascii=False), flush=True)
+
+
+if __name__ == "__main__":
+    main()
