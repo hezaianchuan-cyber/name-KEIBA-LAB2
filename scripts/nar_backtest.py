@@ -1123,7 +1123,9 @@ def run_backtest(races, horses, payouts):
             parts_by_no[h["no"]] = parts
         winner_indices = [i for i,h in enumerate(field) if h.get("finish") == 1]
         if winner_indices and payouts.get(key) and payouts[key].get("win"):
-            calibration_records.append({"scores":[score for score,_ in scored],
+            calibration_records.append({"date":race["date"].isoformat(), "venue":race["venue"],
+                                        "race":race["race"], "race_key":"|".join(key),
+                                        "scores":[score for score,_ in scored],
                                         "winner_indices":winner_indices})
         ranked = [h for score,h in sorted(scored,key=lambda item:item[0],reverse=True)]
         t = build_fixed_tickets(ranked)
