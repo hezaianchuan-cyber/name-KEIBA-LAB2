@@ -74,12 +74,14 @@ class ShadowTicketPlanTests(unittest.TestCase):
         key = ("大井", "20261105", "1")
         race_row = ["大井", "20261105", "1", "1230"] + [""] * 23
         horse_row = ["大井", "20261105", "1", "", "", "1", "テスト馬", "", "3", "", "", "テスト父", "", "", "テスト騎手"]
+        duplicate_horse_row = ["大井", "20261105", "1", "", "", "1", "重複馬行", "", "3", "", "", "テスト父", "", "", "テスト騎手"]
         with tempfile.TemporaryDirectory() as tmp:
             data_dir = Path(tmp)
             with zipfile.ZipFile(data_dir / "latest-race.zip", "w") as archive:
-                for filename, row in (("20261105_racelist.csv", race_row), ("20261105_horselist.csv", horse_row)):
+                for filename, rows in (("20261105_racelist.csv", [race_row]), ("20261105_horselist.csv", [horse_row, duplicate_horse_row])):
                     buffer = io.StringIO()
-                    csv.writer(buffer).writerow(row)
+                    writer = csv.writer(buffer)
+                    writer.writerows(rows)
                     archive.writestr(filename, buffer.getvalue())
             with patch.object(plans.nar, "DATA", data_dir):
                 races, horses, odds = plans.nar.read_archives()
