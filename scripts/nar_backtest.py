@@ -3295,7 +3295,8 @@ def main():
             "frame_feature": "Prior top-three rate by venue, surface, 400m distance band, field-size band and frame number; 8% blend with D performance score, neutral prior for sparse/missing buckets; updates only after all races on a date are predicted.",
             "market_value_policy": "Simulate win bets only when calibrated model probability multiplied by timestamped official pre-off win odds meets a fixed threshold; thresholds are reported independently and not selected on test folds.",
             "probability_calibration": "temperature fitted on chronological prequential training predictions; out-of-sample calibration reported per walk-forward fold",
-            "ticket_policy": "Expanded fixed top-rank ticket portfolio per race; 100 JPY per ticket; not a betting recommendation",
+            "ticket_policy": "Research ticket portfolio is reported separately from the production shadow portfolio; each virtual ticket is 100 JPY and is not a betting recommendation.",
+            "shadow_ticket_policy": "Exact production shadowTickets policy: model rank 1 win; ranks 1-2 place; ranks 1-2 wide; ranks 1-3 trio; 100 JPY each, evaluated separately from actual BET decisions.",
             "ticket_counts_per_race": {"wide":3,"exacta":4,"trio":10,"trifecta":24},
             "ticket_generation": "Active research portfolio only: wide all pairs among top 3 (3); exacta first-place top 2 x second-place top 3 excluding same horse (4); trio all combinations from top 5 (10); trifecta first-place top 2 x second-place top 5 excluding first x third-place remaining top 5 excluding first and second (24). Win, place and quinella are excluded from candidate selection and ticket evaluation. Each ticket costs 100 JPY.",
             "limitations": ["No historical pre-race odds feature; NAR monthly odds are confirmed odds and are not used.",
@@ -3315,7 +3316,7 @@ def main():
         "strategy_comparison": {
             "A_baseline": "out_of_sample_validation.models.A_baseline (fixed reference weights)",
             "B_condition": "out_of_sample_validation.models.B_condition (learned base weights + prior track/going suitability)",
-            "C_performance_pace": "out_of_sample_validation.models.C_performance_pace (B + prior margin/last3f/time + race pace)",
+            "C_performance_pace": "out_of_sample_validation.models.C_performance_pace (B + prior margin/last3f/time + race pace + smoothed prior frame-context effect)",
             "D_preoff_odds": "preoff_ranking_strategy_backtest (timestamped 2-30 minute snapshots only; separately reports snapshot coverage)",
             "comparison_design": "A-C are evaluated on identical chronological holdout races with identical ticket construction and 100 JPY per ticket. B and C share the same learned base weights intentionally so their difference isolates the added feature blocks; A is the fixed baseline. D is evaluated only on races with valid genuine pre-off snapshots and is never imputed for missing snapshots.",
             "E_integrated": "out_of_sample_validation.integrated_strategy_E",
