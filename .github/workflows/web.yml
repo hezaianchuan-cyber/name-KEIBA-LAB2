@@ -14,6 +14,11 @@ on:
       - 'manifest.webmanifest'
       - '.github/workflows/web.yml'
   workflow_dispatch:
+  # Commits made with GITHUB_TOKEN do not start push workflows.
+  # Deploy after the payout publisher commits the official same-day results.
+  workflow_run:
+    workflows: ["Publish daily official NAR payouts"]
+    types: [completed]
 
 permissions:
   contents: read
