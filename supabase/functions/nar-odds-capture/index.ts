@@ -206,6 +206,33 @@ Deno.serve(async (request) => {
     }, { status: 401 });
   }
 
+  const runStartedAt = Date.now();
+  const runSource = "pg_cron";
+  async function writeRunLog(status: string, metrics: Record<string, unknown> = {}) {
+    try {
+      const response = await fetch(serviceUrl + "/rest/v1/odds_capture_runs", {
+        method: "POST",
+        headers: {
+          "apikey": serviceKey,
+          "Authorization": "Bearer " + serviceKey,
+          "Content-Type": "application/json",
+          "Prefer": "return=minimal",
+        },
+        body: JSON.stringify({
+          started_at: new Date(runStartedAt).toISOString(),
+          finished_at: new Date().toISOString(),
+          status,
+          trigger_source: runSource,
+          elapsed_ms: Date.now() - runStartedAt,
+          ...metrics,
+        }),
+      });
+      if (!response.ok) console.error("Could not write odds capture run log:", response.status, (await response.text()).slice(0, 300));
+    } catch (logError) {
+      console.error("Could not write odds capture run log:", logError);
+    }
+  }
+
   try {
     const [raceZip, oddsZip] = await Promise.all([fetchZip(RACE_URL), fetchZip(ODDS_URL)]);
     const races = new Map<string, { venue: string; date: string; race: string; post: Date }>();
@@ -305,18 +332,24 @@ Deno.serve(async (request) => {
         ticketPlansSaved++;
       }
     }
-    return Response.json({
-      ok: true,
-      checked_at: new Date(now).toISOString(),
+    const metrics = {
       race_rows: races.size,
       positive_odds_rows: positiveOddsRows,
       races_in_preoff_window: racesInWindow,
       snapshots_inserted: inserted,
       auto_ticket_plans_saved: ticketPlansSaved,
+    };
+    await writeRunLog("success", metrics);
+    return Response.json({
+      ok: true,
+      checked_at: new Date(now).toISOString(),
+      ...metrics,
+      elapsed_ms: Date.now() - runStartedAt,
       window_minutes: [WINDOW_START_MIN, WINDOW_END_MIN],
     });
   } catch (error) {
     console.error(error);
+    await writeRunLog("error", { error_message: String(error).slice(0, 1000) });
     return Response.json({ ok: false, error: String(error) }, { status: 502 });
   }
 });
