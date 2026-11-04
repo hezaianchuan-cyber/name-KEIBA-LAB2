@@ -9,7 +9,8 @@ on:
       - '.github/workflows/nar-daily-payouts.yml'
   workflow_dispatch:
   schedule:
-    - cron: "30 19 * * *"
+    - cron: "30 11 * * *" # 20:30 JST, after most NAR race meetings
+    - cron: "30 14 * * *" # 23:30 JST, retry for late official result publication
 
 permissions:
   contents: write
