@@ -30,7 +30,7 @@ def main() -> int:
         "B_adds_prior_going_suitability": bool(re.search(
             r'"B_condition".*?going_weight=0\.10', source, re.S)),
         "C_adds_performance_time_and_pace": bool(re.search(
-            r'"C_performance_pace".*?0\.10,0\.10,0\.10.*?going_weight=0\.10', source, re.S))
+            r'"C_performance_pace".*?0\.10,\s*0\.10,\s*0\.10.*?going_weight=0\.10', source, re.S))
             and '"C_performance_pace", "trained_with_pace"' in source,
         "A_C_share_holdout_and_ticket_rules": (
             "identical chronological holdout races" in source
