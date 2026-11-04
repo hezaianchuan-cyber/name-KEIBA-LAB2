@@ -1795,7 +1795,8 @@ class ProductionShadowPortfolioParityTests(unittest.TestCase):
 
     def test_shadow_ticket_set_requires_only_available_ranked_horses(self):
         self.assertEqual(nb.build_shadow_portfolio_tickets([{"no":"7"}]), [
-            {"kind":"win","numbers":["7"]}
+            {"kind":"win","numbers":["7"]},
+            {"kind":"place","numbers":["7"]}
         ])
 
 
