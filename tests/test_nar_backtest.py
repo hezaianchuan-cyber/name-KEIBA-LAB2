@@ -1777,3 +1777,23 @@ class FrameBlendMigrationTests(unittest.TestCase):
         key = nb.frame_context_key(race, horse)
         score = nb.blend_frame_score(0.73, race, horse, {key: {"runs":100,"top3":80}})
         self.assertGreater(score, 0.73)
+
+
+class ProductionShadowPortfolioParityTests(unittest.TestCase):
+    def test_shadow_ticket_set_matches_live_policy_and_deduplicates_horse_numbers(self):
+        ranked = [
+            {"no":"1"}, {"no":"1"}, {"no":"2"}, {"no":"3"}, {"no":"4"}
+        ]
+        tickets = nb.build_shadow_portfolio_tickets(ranked)
+        self.assertEqual(tickets, [
+            {"kind":"win","numbers":["1"]},
+            {"kind":"place","numbers":["1"]},
+            {"kind":"place","numbers":["2"]},
+            {"kind":"wide","numbers":["1","2"]},
+            {"kind":"trio","numbers":["1","2","3"]},
+        ])
+
+    def test_shadow_ticket_set_requires_only_available_ranked_horses(self):
+        self.assertEqual(nb.build_shadow_portfolio_tickets([{"no":"7"}]), [
+            {"kind":"win","numbers":["7"]}
+        ])
