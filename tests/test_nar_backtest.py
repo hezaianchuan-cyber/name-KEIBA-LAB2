@@ -1797,3 +1797,29 @@ class ProductionShadowPortfolioParityTests(unittest.TestCase):
         self.assertEqual(nb.build_shadow_portfolio_tickets([{"no":"7"}]), [
             {"kind":"win","numbers":["7"]}
         ])
+
+
+class TrioFormation245Tests(unittest.TestCase):
+    def test_245_formation_uses_seven_ranks_and_deduplicates_unordered_combos(self):
+        ranked = [{"no": str(i)} for i in range(1, 9)]
+        tickets = nb.build_trio_formation_2_4_5(ranked)
+        self.assertEqual(len(tickets), 19)
+        self.assertEqual(len({tuple(ticket) for ticket in tickets}), 19)
+        self.assertTrue(all(len(ticket) == 3 and len(set(ticket)) == 3 for ticket in tickets))
+        used = {no for ticket in tickets for no in ticket}
+        self.assertEqual(used, {str(i) for i in range(1, 8)})
+
+    def test_245_formation_deduplicates_duplicate_runner_rows(self):
+        ranked = [{"no": "1"}, {"no": "1"}, {"no": "2"}, {"no": "3"},
+                  {"no": "4"}, {"no": "5"}, {"no": "6"}, {"no": "7"}]
+        tickets = nb.build_trio_formation_2_4_5(ranked)
+        self.assertEqual(len(tickets), 19)
+        self.assertEqual(len({tuple(ticket) for ticket in tickets}), 19)
+
+    def test_245_formation_settles_against_unordered_trio_payout(self):
+        ranked = [{"no": str(i)} for i in range(1, 8)]
+        tickets = nb.build_trio_formation_2_4_5(ranked)
+        payout = {"trio": [(["7", "2", "5"], 12340)]}
+        self.assertIn(["2", "5", "7"], tickets)
+        self.assertEqual(nb.payout_for("trio", ["2", "5", "7"], payout), 12340)
+
