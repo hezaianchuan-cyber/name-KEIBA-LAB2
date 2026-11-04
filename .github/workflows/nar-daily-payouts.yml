@@ -53,9 +53,13 @@ jobs:
           report = json.loads(path.read_text(encoding="utf-8"))
           if not report.get("generated_at") or not isinstance(report.get("days"), list):
               raise SystemExit("Daily payout report schema is invalid; refusing to publish.")
+          daily = report.get("daily_archive") or {}
+          if daily.get("available") is not True:
+              raise SystemExit("Official daily archive could not be downloaded; refusing to publish stale or incomplete payout data. Error: " + str(daily.get("error")))
           print("Validated payout report:", report["generated_at"],
                 "days=", len(report["days"]),
-                "today_payout_races=", report.get("daily_archive", {}).get("today_payout_races"))
+                "today_payout_races=", daily.get("today_payout_races"),
+                "daily_archive_bytes=", daily.get("bytes"))
           PY
       - name: Publish report
         shell: bash
