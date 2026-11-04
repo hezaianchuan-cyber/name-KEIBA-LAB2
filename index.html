@@ -726,20 +726,29 @@ async function fetchSupabaseLiveData(dateOverride){
  if(details)details.textContent=rows?.length?'最新取得：'+new Date(latest).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})+' ／ 取得レコード '+rows.length+'件 ／ 買い目記録 '+remoteLabTicketPlans.length+'レース':'Supabaseの1分オッズデータはまだありません。';
  return rows?.length||0;
 }
+async function loadPublishedAutoTicketPlans(){
+ const response=await fetch('./data/auto-ticket-plans.json?v='+Date.now(),{cache:'no-store'});
+ if(!response.ok)throw new Error('公開済み自動買い目データ未取得（HTTP '+response.status+'）');
+ const data=await response.json();
+ if(!data||!Array.isArray(data.plans))throw new Error('自動買い目データの形式が不正です');
+ const merged=new Map();
+ for(const item of [...remoteLabTicketPlans,...data.plans.filter(p=>p&&p.raceId&&p.date).map(plan=>({predictionId:plan.raceId,plan}))]){
+  const plan=item.plan,key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date),previous=merged.get(key);
+  if(!previous||String(plan.createdAt||'')>=String(previous.plan.createdAt||''))merged.set(key,item);
+ }
+ remoteLabTicketPlans=[...merged.values()];
+ if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
+ return remoteLabTicketPlans.length;
+}
 async function loadAutoTicketPlans(){
  try{await fetchSupabaseLiveData();}
  catch(e){
   console.warn('Supabaseの1分オッズを取得できません',e);
   const status=$('importStatus');if(status)status.textContent='1分オッズ取得エラー：'+e.message+'（接続設定・DB権限・自動取得処理を確認してください）';
   const dot=$('importDot');if(dot)dot.className='dot';
-  try{
-   const response=await fetch('https://raw.githubusercontent.com/hezaianchuan-cyber/name-KEIBA-LAB2/main/data/auto-ticket-plans.json?v='+Date.now(),{cache:'no-store'});
-   if(!response.ok)throw new Error('自動買い目データ未公開（HTTP '+response.status+'）');
-   const data=await response.json();
-   remoteLabTicketPlans=(Array.isArray(data.plans)?data.plans:[]).filter(p=>p&&p.raceId&&p.date).map(plan=>({predictionId:plan.raceId,plan}));
-   if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
-  }catch(fallbackError){console.warn('自動保存買い目を取得できません',fallbackError);}
  }
+ try{await loadPublishedAutoTicketPlans();}
+ catch(e){console.warn('公開済み自動買い目を取得できません',e);}
 }
 window.addEventListener('load',loadAutoTicketPlans);
 setInterval(loadAutoTicketPlans,60*1000);
@@ -769,6 +778,7 @@ function renderLabTodaySummary(plans){
  put('labTodayProfit',(profit>0?'+':'')+profit.toLocaleString()+'円');put('labTodayPending',pendingStake.toLocaleString()+'円');
  put('labTodayStatus','購入 '+bets.length+'R ／ 確定 '+settled.length+'R ／ 未確定 '+pending.length+'R'+(settledStake?' ／ 確定分回収率 '+(returned/settledStake*100).toFixed(1)+'%':'')+'。未確定分は収支に含めていません。');
 }
+let labLedgerManualDateSelection=false;
 function renderLabVirtualLedger(){
  const select=$('labLedgerDate');if(!select)return;
  const plans=loadLabTicketPlans().map(item=>{const plan=item.plan;const p=(db.predictions||[]).find(x=>String(x.id)===String(item.predictionId||plan.raceId)&&labLedgerDateKey(x.date)===labLedgerDateKey(plan.date))||{id:plan.raceId,date:plan.date,venue:plan.venue,race:plan.raceNo,top:[],runners:[]};return {p,plan,date:labLedgerDateKey(plan.date||p.date)};}).filter(x=>x.date);
@@ -777,7 +787,8 @@ function renderLabVirtualLedger(){
  const dates=[...new Set(plans.map(x=>x.date))].sort().reverse();
  if(!dates.length){select.innerHTML='<option value="">保存履歴なし</option>';$('labLedgerStatus').textContent='買い目の保存履歴がありません。';$('labLedgerRows').textContent='買い目を保存すると、公式払戻との照合結果がここに表示されます。';return;}
  const previous=select.value;select.innerHTML=dates.map(d=>'<option value="'+d+'">'+d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8)+'</option>').join('');
- select.value=dates.includes(previous)?previous:dates[0];
+ const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).replace(/-/g,'');
+ select.value=!labLedgerManualDateSelection&&dates.includes(today)?today:(dates.includes(previous)?previous:dates[0]);
  const date=select.value,records=labLedgerRecordsForDate(plans,date);
  const settled=records.filter(x=>!x.isSkip&&x.settled),pending=records.filter(x=>!x.isSkip&&!x.settled);
  const totalStake=settled.reduce((a,x)=>a+x.stake,0),totalReturn=settled.reduce((a,x)=>a+x.returned,0),profit=totalReturn-totalStake,hitRaces=settled.filter(x=>x.hit).length;
@@ -795,7 +806,7 @@ function renderLabVirtualLedger(){
   return '<tr><td>'+esc(x.plan.venue||'')+' '+esc(x.plan.raceNo||'')+'R</td><td>'+label+'</td><td>'+details+'</td><td>'+officialDetails+'</td><td>'+hitDetails+'</td><td>'+stake+'</td><td>'+returned+'</td><td>'+(!x.settled?'—':(x.returned-x.stake>0?'+':'')+(x.returned-x.stake).toLocaleString()+'円')+'</td></tr>';
  });
  $('labLedgerRows').innerHTML=rows.length?'<div class="tablewrap"><table style="min-width:760px"><thead><tr><th>レース</th><th>判定</th><th>保存買い目</th><th>公式的中組合せ</th><th>LAB的中買い目</th><th>保存購入額</th><th>照合払戻（LAB買い目基準）</th><th>損益</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>':'この日の保存履歴はありません。';
- select.onchange=renderLabVirtualLedger;
+ select.onchange=()=>{labLedgerManualDateSelection=true;renderLabVirtualLedger();};
 }
 async function loadDailyPayouts(){
  // Official payout data is fetched only as the source for checking saved tickets.
