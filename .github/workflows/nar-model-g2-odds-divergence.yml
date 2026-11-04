@@ -1,0 +1,70 @@
+name: G2 odds divergence backtest
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/nar_backtest.py'
+      - 'scripts/nar_model_g1_calibration_backtest.py'
+      - 'scripts/nar_model_g2_odds_divergence_backtest.py'
+      - 'data/model-g1-calibration-backtest.json'
+      - '.github/workflows/nar-model-g2-odds-divergence.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: "5 20 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nar-model-g2-odds-divergence
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore official NAR archive cache
+        uses: actions/cache@v4
+        with:
+          path: .cache/nar-monthly
+          key: nar-monthly-g2-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            nar-monthly-g2-${{ runner.os }}-
+            nar-monthly-g1-${{ runner.os }}-
+            nar-monthly-v1-${{ runner.os }}-
+      - name: Run G2 odds divergence evaluation
+        env:
+          NAR_CACHE_DIR: .cache/nar-monthly
+        run: python3 scripts/nar_model_g2_odds_divergence_backtest.py
+      - name: Publish aggregate G2 report
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp data/model-g2-odds-divergence-backtest.json /tmp/model-g2-odds-divergence-backtest.json
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/model-g2-odds-divergence-backtest.json data/model-g2-odds-divergence-backtest.json
+            git add data/model-g2-odds-divergence-backtest.json
+            if git diff --cached --quiet; then
+              echo "No G2 report changes"
+              exit 0
+            fi
+            git commit -m "Publish G2 odds divergence backtest"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Could not publish G2 report after five attempts"
+          exit 1
