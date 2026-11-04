@@ -937,7 +937,41 @@ async function loadHistoricalBacktest(){
   $('historicalBacktestBody').innerHTML='まだ検証レポートはありません。<br><a href="https://github.com/hezaianchuan-cyber/name-KEIBA-LAB2/actions/workflows/nar-historical-backtest.yml" target="_blank" rel="noopener">過去約3年バックテストを実行する（GitHub Actions）</a>';
  }
 }
-window.addEventListener('load',()=>{loadHistoricalBacktest();loadDailyPayouts();});
+async function loadCompetitorBenchmark(){
+ const section=document.getElementById('history');if(!section)return;
+ const card=document.createElement('div');card.className='card';card.id='competitorBenchmark';
+ card.innerHTML='<h2>他競馬AIとの同条件比較</h2><p class="sub">福来エマ・かよちん等の公開予想を、同じレース・同じ締切前の予想として記録できた場合だけ比較します。未取得データや締切後の予想は集計しません。</p><div id="competitorBenchmarkBody" class="sub">比較データを確認しています。</div>';
+ const anchor=document.getElementById('historicalBacktest');if(anchor)anchor.after(card);else section.append(card);
+ try{
+  const [competitorResponse,planResponse,payoutResponse]=await Promise.all([
+   fetch('./data/competitor-predictions.json?v='+Date.now(),{cache:'no-store'}),
+   fetch('./data/auto-ticket-plans.json?v='+Date.now(),{cache:'no-store'}),
+   fetch('./data/daily-payouts.json?v='+Date.now(),{cache:'no-store'})
+  ]);
+  if(!competitorResponse.ok||!planResponse.ok||!payoutResponse.ok)throw new Error('必要データの公開待ち');
+  const competitor=await competitorResponse.json(),planReport=await planResponse.json(),payoutReport=await payoutResponse.json();
+  const plans=new Map((planReport.plans||[]).map(p=>[String(p.raceId||[p.venue,p.date,p.raceNo].join('|')),p]));
+  const winners=new Map();
+  for(const day of payoutReport.days||[])for(const race of day.races||[]){
+   const win=(race.payouts||{}).win||[];if(win.length&&win[0].numbers?.length)winners.set([race.venue,String(day.date).replace(/-/g,''),String(race.race)].join('|'),String(win[0].numbers[0]));
+  }
+  const entries=(competitor.predictions||[]).filter(x=>x&&x.predictor&&x.date&&x.venue&&x.race&&x.pick&&x.captured_at&&x.cutoff_at&&x.source_url&&Date.parse(x.captured_at)<=Date.parse(x.cutoff_at));
+  const groups={};for(const x of entries){const key=String(x.predictor);(groups[key]||(groups[key]=[])).push(x);}
+  const rows=[];
+  for(const [name,items] of Object.entries(groups)){
+   const matched=items.map(x=>{const date=String(x.date).replace(/-/g,'');const raceKey=[x.venue,date,String(Number(x.race))].join('|');const winner=winners.get(raceKey);const plan=plans.get(raceKey);return winner&&plan?{x,winner,plan}:null;}).filter(Boolean);
+   const hits=matched.filter(z=>String(Number(z.x.pick))===String(Number(z.winner))).length;
+   const lab=matched.filter(z=>z.plan.modelTopHorse).length;
+   const labHits=matched.filter(z=>z.plan.modelTopHorse&&String(Number(z.plan.modelTopHorse))===String(Number(z.winner))).length;
+   const market=matched.filter(z=>z.plan.marketFavoriteHorse).length;
+   const marketHits=matched.filter(z=>z.plan.marketFavoriteHorse&&String(Number(z.plan.marketFavoriteHorse))===String(Number(z.winner))).length;
+   rows.push('<tr><td>'+esc(name)+'</td><td>'+matched.length+'R</td><td>'+(matched.length?(hits/matched.length*100).toFixed(1)+'%':'—')+'</td><td>'+(lab?(labHits/lab*100).toFixed(1)+'%':'—')+'</td><td>'+(market?(marketHits/market*100).toFixed(1)+'%':'—')+'</td></tr>');
+  }
+  const body=document.getElementById('competitorBenchmarkBody');
+  body.innerHTML=rows.length?'<div class="tablewrap"><table><thead><tr><th>予想元</th><th>同条件確定R</th><th>予想1位的中率</th><th>LAB的中率</th><th>市場1番人気</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div><p class="sub">各行はその予想元の実データが存在するレースだけで集計。LAB・市場の列も同じレース集合を分母にします。回収率は券種・購入条件が一致しないため、この比較では表示しません。</p>':'<p>比較可能な他AI予想はまだ0件です。予想元・馬番・取得時刻・締切時刻・出典URLが記録されたデータが追加されるまで、成績は表示しません。</p>';
+ }catch(e){const body=document.getElementById('competitorBenchmarkBody');if(body)body.textContent='比較データの読み込み待ちです。予想履歴と公式払戻は保持されています。';}
+}
+window.addEventListener('load',()=>{loadHistoricalBacktest();loadDailyPayouts();loadCompetitorBenchmark();});
 // Keep same-day official payouts in sync while the Web app remains open.
 setInterval(()=>{if(document.visibilityState==='visible')loadDailyPayouts();},60*1000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')loadDailyPayouts();});
