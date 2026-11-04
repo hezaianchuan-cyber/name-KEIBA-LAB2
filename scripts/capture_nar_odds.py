@@ -93,79 +93,81 @@ def read_archives():
     odds_diagnostics = {"rows": 0, "positive_rows": 0, "zero_rows": 0, "races_with_positive_odds": 0}
     race_zip = DATA / "latest-race.zip"
     odds_zip = DATA / "latest-odds.zip"
-    if not race_zip.exists() or not odds_zip.exists():
-        return race_rows, horse_rows, odds_rows
-    with zipfile.ZipFile(race_zip) as archive:
-        print("Race archive members:", archive.namelist()[:30], flush=True)
-        for name in archive.namelist():
-            kind = kind_for(name)
-            if kind == "races":
-                for row in csv_rows(archive.read(name)):
-                    if len(row) < 27:
-                        continue
-                    key = race_id(row[0], row[1], row[2])
-                    if key:
-                        race_rows[key] = {
-                            "venue": key[0], "date": key[1], "race": key[2], "time": row[3],
-                            "name": row[5] if len(row) > 5 else "",
-                            "surface": row[21] if len(row) > 21 else "",
-                            "distance": nb.number(row[23]) if len(row) > 23 else None,
-                            "going": row[25] if len(row) > 25 else "",
-                            "field_size": nb.number(row[26]) if len(row) > 26 else None,
-                        }
-            elif kind == "horses":
-                for row in csv_rows(archive.read(name)):
-                    if len(row) < 15:
+    # Racecards are the source of shadow predictions and must remain usable
+    # even when the odds archive is temporarily absent or header-only.
+    if race_zip.exists():
+        with zipfile.ZipFile(race_zip) as archive:
+            print("Race archive members:", archive.namelist()[:30], flush=True)
+            for name in archive.namelist():
+                kind = kind_for(name)
+                if kind == "races":
+                    for row in csv_rows(archive.read(name)):
+                        if len(row) < 27:
+                            continue
+                        key = race_id(row[0], row[1], row[2])
+                        if key:
+                            race_rows[key] = {
+                                "venue": key[0], "date": key[1], "race": key[2], "time": row[3],
+                                "name": row[5] if len(row) > 5 else "",
+                                "surface": row[21] if len(row) > 21 else "",
+                                "distance": nb.number(row[23]) if len(row) > 23 else None,
+                                "going": row[25] if len(row) > 25 else "",
+                                "field_size": nb.number(row[26]) if len(row) > 26 else None,
+                            }
+                elif kind == "horses":
+                    for row in csv_rows(archive.read(name)):
+                        if len(row) < 15:
+                            continue
+                        key = race_id(row[0], row[1], row[2])
+                        if not key:
+                            continue
+                        no = re.sub(r"\D", "", str(row[5] or ""))
+                        horse_name = str(row[6] or "").strip()
+                        if not no or not horse_name:
+                            continue
+                        horse_rows.setdefault(key, []).append({
+                            "no": str(int(no)),
+                            "name": horse_name,
+                            "age": nb.number(row[8]) if len(row) > 8 else None,
+                            "sire": str(row[11] or "").strip() if len(row) > 11 else "",
+                            "jockey": str(row[14] or "").strip() if len(row) > 14 else "",
+                        })
+    if odds_zip.exists():
+        with zipfile.ZipFile(odds_zip) as archive:
+            print("Odds archive members:", archive.namelist()[:50], flush=True)
+            for name in archive.namelist():
+                kind = kind_for(name)
+                raw_rows = csv_rows(archive.read(name)) if not name.endswith("/") else []
+                if raw_rows:
+                    print(f"Odds member {name}: classified={kind}, rows={len(raw_rows)}, first_row_columns={len(raw_rows[0])}", flush=True)
+                    print("Odds sample rows:", [row[:10] for row in raw_rows[:4]], flush=True)
+                if kind != "odds":
+                    continue
+                for row in raw_rows:
+                    if len(row) < 10:
                         continue
                     key = race_id(row[0], row[1], row[2])
                     if not key:
                         continue
-                    no = re.sub(r"\D", "", str(row[5] or ""))
-                    horse_name = str(row[6] or "").strip()
-                    if not no or not horse_name:
+                    try:
+                        odds_value = float(str(row[7]).replace(",", "").strip())
+                    except (ValueError, TypeError):
                         continue
-                    horse_rows.setdefault(key, []).append({
-                        "no": str(int(no)),
-                        "name": horse_name,
-                        "age": nb.number(row[8]) if len(row) > 8 else None,
-                        "sire": str(row[11] or "").strip() if len(row) > 11 else "",
-                        "jockey": str(row[14] or "").strip() if len(row) > 14 else "",
-                    })
-    with zipfile.ZipFile(odds_zip) as archive:
-        print("Odds archive members:", archive.namelist()[:50], flush=True)
-        for name in archive.namelist():
-            kind = kind_for(name)
-            raw_rows = csv_rows(archive.read(name)) if not name.endswith("/") else []
-            if raw_rows:
-                print(f"Odds member {name}: classified={kind}, rows={len(raw_rows)}, first_row_columns={len(raw_rows[0])}", flush=True)
-                print("Odds sample rows:", [row[:10] for row in raw_rows[:4]], flush=True)
-            if kind != "odds":
-                continue
-            for row in raw_rows:
-                if len(row) < 10:
-                    continue
-                key = race_id(row[0], row[1], row[2])
-                if not key:
-                    continue
-                try:
-                    odds_value = float(str(row[7]).replace(",", "").strip())
-                except (ValueError, TypeError):
-                    continue
-                odds_diagnostics["rows"] += 1
-                if odds_value <= 0:
-                    odds_diagnostics["zero_rows"] += 1
-                    continue
-                odds_diagnostics["positive_rows"] += 1
-                item = {
-                    "type": str(row[3]).strip(),
-                    "n1": str(row[4]).strip(),
-                    "n2": str(row[5]).strip(),
-                    "n3": str(row[6]).strip(),
-                    "odds": odds_value,
-                    "max_odds": str(row[8]).strip(),
-                    "popularity": str(row[9]).strip(),
-                }
-                odds_rows.setdefault(key, []).append(item)
+                    odds_diagnostics["rows"] += 1
+                    if odds_value <= 0:
+                        odds_diagnostics["zero_rows"] += 1
+                        continue
+                    odds_diagnostics["positive_rows"] += 1
+                    item = {
+                        "type": str(row[3]).strip(),
+                        "n1": str(row[4]).strip(),
+                        "n2": str(row[5]).strip(),
+                        "n3": str(row[6]).strip(),
+                        "odds": odds_value,
+                        "max_odds": str(row[8]).strip(),
+                        "popularity": str(row[9]).strip(),
+                    }
+                    odds_rows.setdefault(key, []).append(item)
     odds_diagnostics["races_with_positive_odds"] = len(odds_rows)
     print("Odds diagnostics:", json.dumps(odds_diagnostics, ensure_ascii=False), flush=True)
     return race_rows, horse_rows, odds_rows
