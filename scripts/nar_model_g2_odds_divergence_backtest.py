@@ -202,7 +202,7 @@ def main():
             ci = (summary.get("roi_95ci") or {}).get("roi_95ci")
             eligible = (len(dev_trial) >= MIN_DEV_BETS
                         and MIN_SELECTION_RATE <= selection_rate <= MAX_SELECTION_RATE
-                        and ci is not None)
+                        and ci is not None and ci[0] > 100.0)
             candidates.append({
                 "min_probability_ratio": divergence,
                 "min_model_probability_times_final_odds": expected_value,
@@ -223,11 +223,12 @@ def main():
         tuning_status = "selected_on_development_only"
     else:
         chosen = None
-        selected_divergence = 2.0
-        selected_ev = 1.4
-        tuning_status = "no_eligible_development_threshold_fallback_conservative"
-    evaluated = score_records(aligned, odds_by_race, payouts, temperature,
-                              selected_divergence, selected_ev, MIN_ODDS_COVERAGE)
+        selected_divergence = None
+        selected_ev = None
+        tuning_status = "no_eligible_development_threshold_skip_all"
+    evaluated = (score_records(aligned, odds_by_race, payouts, temperature,
+                                selected_divergence, selected_ev, MIN_ODDS_COVERAGE)
+                 if chosen else [])
     development = [r for r in evaluated if r["date"] <= dev_end]
     holdout = [r for r in evaluated if r["date"] >= holdout_start]
     def flatten(rows, field):
@@ -241,7 +242,8 @@ def main():
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "feature": "G2_improved_skip_decision_development_tuned",
-        "status": "evaluated" if len(holdout) >= 100 else "insufficient_holdout_sample",
+        "status": ("evaluated" if chosen and len(holdout) >= 100 else
+                   "no_eligible_development_strategy" if not chosen else "insufficient_holdout_sample"),
         "g1_temperature": temperature, "g1_report_status": g1.get("status"),
         "evaluation_period": [START_DATE.isoformat(), nb.END.isoformat()],
         "races_with_g1_scores": len(aligned),
