@@ -803,6 +803,26 @@ async function loadDailyPayouts(){
   const response=await fetch('./data/daily-payouts.json?v='+Date.now(),{cache:'no-store'});
   if(!response.ok)throw new Error('公式払戻データはまだ公開されていません');
   dailyPayoutReport=await response.json();
+  const merged=new Map((db.payouts||[]).map(x=>[String(x.id)+'|'+normDate(x.date),x]));
+  for(const day of dailyPayoutReport.days||[]){
+   const date=normDate(day.date);
+   for(const race of day.races||[]){
+    const venue=canonicalVenue(race.venue),raceNo=String(race.race);
+    if(!venue||!date||!raceNo)continue;
+    const p=race.payouts||{},first=kind=>Array.isArray(p[kind])?p[kind][0]:null;
+    const row={id:key(venue,date,raceNo),venue,date,race:raceNo};
+    const w=first('win'),pl=first('place'),q=first('quinella'),ex=first('exacta'),wi=first('wide'),tr=first('trio'),tf=first('trifecta');
+    if(w){row.winNo=(w.numbers||[])[0];row.winPay=Number(w.pay_100)||null;}
+    if(pl){row.place1=(pl.numbers||[])[0];row.placePay1=Number(pl.pay_100)||null;}
+    if(q){row.quinella1=(q.numbers||[])[0];row.quinella2=(q.numbers||[])[1];row.quinellaPay=Number(q.pay_100)||null;}
+    if(ex){row.exacta1=(ex.numbers||[])[0];row.exacta2=(ex.numbers||[])[1];row.exactaPay=Number(ex.pay_100)||null;}
+    if(wi){row.wide1a=(wi.numbers||[])[0];row.wide1b=(wi.numbers||[])[1];row.widePay1=Number(wi.pay_100)||null;}
+    if(tr){row.trio1=(tr.numbers||[])[0];row.trio2=(tr.numbers||[])[1];row.trio3=(tr.numbers||[])[2];row.trioPay=Number(tr.pay_100)||null;}
+    if(tf){row.trifecta1=(tf.numbers||[])[0];row.trifecta2=(tf.numbers||[])[1];row.trifecta3=(tf.numbers||[])[2];row.trifectaPay=Number(tf.pay_100)||null;}
+    const mapKey=row.id+'|'+date;merged.set(mapKey,{...(merged.get(mapKey)||{}),...row});
+   }
+  }
+  db.payouts=[...merged.values()];save();updateHistory();
   renderLabVirtualLedger();
  }catch(e){
   dailyPayoutReport=null;
