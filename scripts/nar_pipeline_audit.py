@@ -52,6 +52,20 @@ def main() -> int:
             and 'if record.get("model_version") != expected_model_version:' in source
             and '"model_version": "nar-chronological-v9-D-frame-preoff"' in source
         ),
+        "frame_number_is_parsed_from_official_horse_rows": '"frame_no": rank_value(row[4])' in source
+            and '"frame_no": nb.rank_value(row[4])' in capture_source,
+        "frame_effect_uses_prior_condition_bucket_and_smoothing": (
+            "def frame_context_key(" in source
+            and "def frame_form_score(" in source
+            and "prior_strength=8.0" in source
+            and "update_frame_stats(pending_race, pending_field, frame_stats)" in source
+        ),
+        "backtest_and_live_share_D_frame_pace_scoring": (
+            "score_runner_performance(" in source
+            and "frame_form_score(race, h, frame_stats)" in source
+            and "pace_adjustments(field, history)" in source
+            and "nb.frame_form_score(race, horse, frame_stats)" in capture_source
+        ),
     }
     limitations = []
     if not checks["four_year_source_window"]:
@@ -70,6 +84,9 @@ def main() -> int:
         "D_is_timestamped_snapshot_only",
         "D_uses_C_features_before_odds_overlay",
         "D_requires_versioned_C_model_snapshots",
+        "frame_number_is_parsed_from_official_horse_rows",
+        "frame_effect_uses_prior_condition_bucket_and_smoothing",
+        "backtest_and_live_share_D_frame_pace_scoring",
     )):
         limitations.append("Canonical A-D feature ablation wiring needs further review.")
     limitations.append("D is evaluated only where valid timestamped pre-off odds snapshots exist; coverage may be insufficient.")
@@ -83,7 +100,7 @@ def main() -> int:
             "A": "fixed baseline ranking",
             "B": "learned base ranking + prior venue/distance and going suitability",
             "C": "B + prior margin, last-3F, comparable time and race-pace adjustment",
-            "D": "C feature scoring + race pace + genuine 2-30 minute timestamped odds from the v8 C-model only",
+            "D": "C feature scoring + learned prior frame-condition effect + race pace + genuine 2-30 minute timestamped odds from the v9 D-frame model only",
         },
         "limitations": limitations,
         "note": "This is a source-level audit, not a historical performance result. No ROI or hit-rate claims are made.",
