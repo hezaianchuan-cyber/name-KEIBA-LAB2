@@ -106,7 +106,7 @@ def load_supabase_snapshots(model_rows):
     for values in models_by_race.values():
         values.sort(key=lambda item: item[0])
 
-    diagnostics = {"supabase_query_rows": 0, "supabase_snapshots_joined": 0, "supabase_model_races": len(models_by_race), "supabase_race_key_matches": 0, "supabase_no_prior_model": 0, "supabase_model_too_old": 0, "supabase_empty_odds": 0, "supabase_model_dates": sorted({row.get("date") for row in model_rows if row.get("date")}), "supabase_model_key_samples": sorted(models_by_race.keys())[:8], "supabase_odds_key_samples": [], "supabase_odds_dates": []}
+    diagnostics = {"supabase_query_rows": 0, "supabase_snapshots_joined": 0, "supabase_model_races": len(models_by_race), "supabase_race_key_matches": 0, "supabase_no_prior_model": 0, "supabase_model_too_old": 0, "supabase_empty_odds": 0, "supabase_model_dates": sorted({row.get("date") for row in model_rows if row.get("date")}), "supabase_model_key_samples": sorted(models_by_race.keys())[:8], "supabase_odds_key_samples": [], "supabase_odds_dates": [], "supabase_model_venues": sorted({key.split("|")[0] for key in models_by_race}), "supabase_odds_venues": [], "supabase_common_venues": []}
     if not SUPABASE_URL or not SUPABASE_KEY:
         diagnostics["supabase_status"] = "credentials_unavailable"
         return [], diagnostics
@@ -151,6 +151,9 @@ def load_supabase_snapshots(model_rows):
                     diagnostics["supabase_odds_key_samples"].append(key)
                 if len(diagnostics["supabase_odds_dates"]) < 10 and key.split("|")[1] not in diagnostics["supabase_odds_dates"]:
                     diagnostics["supabase_odds_dates"].append(key.split("|")[1])
+                venue = key.split("|")[0]
+                if venue not in diagnostics["supabase_odds_venues"]:
+                    diagnostics["supabase_odds_venues"].append(venue)
                 model_candidates = models_by_race.get(key, [])
                 if model_candidates:
                     diagnostics["supabase_race_key_matches"] += 1
@@ -197,6 +200,7 @@ def load_supabase_snapshots(model_rows):
     except Exception as exc:
         diagnostics["supabase_status"] = "unavailable"
         diagnostics["supabase_error"] = str(exc)[:300]
+    diagnostics["supabase_common_venues"] = sorted(set(diagnostics["supabase_model_venues"]).intersection(diagnostics["supabase_odds_venues"]))
     return output, diagnostics
 
 
