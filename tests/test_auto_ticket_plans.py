@@ -39,7 +39,7 @@ class ShadowTicketPlanTests(unittest.TestCase):
             "date": "20261105", "venue": "大井", "race": "10",
             "race_key": "大井|20261105|10", "model_version": "test",
             "captured_at": "2026-11-05T12:00:00+09:00",
-            "predictions": self.predictions, "odds": [],
+            "predictions": self.predictions, "odds": [{"type": "単勝", "n1": "2", "odds": 2.1}],
             "candidate_combinations": [],
         }
         plan = plans.make_plan(race, {})
