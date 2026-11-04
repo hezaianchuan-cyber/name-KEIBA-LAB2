@@ -939,8 +939,8 @@ function generateTickets(){
  firstCandidates.forEach(first=>ticketTop.filter(second=>second!==first).forEach(second=>ticketTop.filter(third=>third!==first&&third!==second).forEach(third=>add('3連単',[first,second,third]))));
  const groups=['単勝','複勝','ワイド','馬連','馬単','3連複','3連単'];
  const typeKeys={'単勝':'win','複勝':'place','ワイド':'wide','馬連':'quinella','馬単':'exacta','3連複':'trio','3連単':'trifecta'};
- const thresholdFor=type=>Number(verifiedTicketThresholds[typeKeys[type]])||1.05;
- const decision=x=>x.ev==null?'オッズ待ち':x.ev>=thresholdFor(x.type)?'確率上位・EV基準も通過':x.ev>=0.85?'確率上位（EV控えめ）':'確率上位（EV低め）';
+ const thresholdFor=type=>{const v=Number(verifiedTicketThresholds[typeKeys[type]]);return Number.isFinite(v)&&v>0?v:null;};
+ const decision=x=>{if(x.ev==null)return 'オッズ待ち';const t=thresholdFor(x.type);if(t==null)return '検証基準未成立・購入対象外';return x.ev>=Math.max(1.05,t)?'検証済みEV基準通過':x.ev>=0.85?'EV基準未達（控えめ）':'EV基準未達（低め）';};
  const ranked=type=>candidates.filter(x=>x.type===type).sort((a,b)=>{const p=b.probability-a.probability;if(Math.abs(p)>1e-9)return p;return (b.ev??-1)-(a.ev??-1);});
  const formatPct=v=>(v*100).toFixed(2)+'%',formatOdds=v=>v==null?'未取得':v.toFixed(1)+'倍',formatEv=v=>v==null?'—':v.toFixed(3);
  const trifectaFormation={first:firstCandidates.map(h=>String(h.horseNo)),second:ticketTop.map(h=>String(h.horseNo)),third:ticketTop.map(h=>String(h.horseNo))};
@@ -964,9 +964,12 @@ function generateTickets(){
  let allocation=selectedRows.map((x,i)=>({ ...x, stake:weightTotal?Math.floor((targetRaceStake*stakeWeights[i]/weightTotal)/UNIT_STAKE)*UNIT_STAKE:0 })).filter(x=>x.stake>=UNIT_STAKE);
  let allocated=allocation.reduce((a,x)=>a+x.stake,0);
  for(let i=0;allocated+UNIT_STAKE<=targetRaceStake&&allocation.length;i=(i+1)%allocation.length){allocation[i].stake+=UNIT_STAKE;allocated+=UNIT_STAKE;if(i===allocation.length-1)break;}
+ const validatedTypeCount=Object.keys(verifiedTicketThresholds).filter(k=>Number.isFinite(Number(verifiedTicketThresholds[k]))&&Number(verifiedTicketThresholds[k])>0).length;
+ const oddsMatchedCount=candidates.filter(x=>x.ev!=null).length;
+ const skipReason=!learnedModelLoaded?'校正済みモデル未準備':oddsRows.length===0?'このレースのオッズデータ未取得':oddsMatchedCount===0?'買い目候補に対応する券種別オッズが未取得':validatedTypeCount===0?'券種別の検証済みEV基準が未成立（標本数または回収率95％信頼区間の条件未達）':'検証済みEV基準を満たす候補なし';
  const selectedHtml=selectedType&&allocation.length
    ? '<h3>このレースの自動選択：'+selectedType+'</h3><p>券種別の候補を比較し、検証済みEV基準を満たす候補の平均EVが最も高い券種を選択。購入上限2,000円の範囲で配分します。</p><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>EV</th><th>配分額</th></tr></thead><tbody>'+allocation.map(x=>'<tr><td><b>'+selectedType+' '+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+x.stake.toLocaleString()+'円</td></tr>').join('')+'</tbody></table></div><p><b>推奨購入額：'+allocated.toLocaleString()+'円／上限2,000円</b></p>'
-   : '<h3>このレースは見送り</h3><p>校正済みモデルと実オッズがそろい、券種別の基準EVを満たす候補がありません。予算を使い切るための購入は提案しません。</p>';
+   : '<h3>このレースは見送り</h3><p><b>見送り理由：</b>'+esc(skipReason)+'</p><p>校正済みモデルと実オッズがそろい、券種別の基準EVを満たす候補がある場合のみ購入を提案します。購入基準は緩和していません。</p>';
  const pct=v=>(v*100).toFixed(2)+'%',odds=v=>v==null?'未取得':v.toFixed(1)+'倍',ev=v=>v==null?'—':v.toFixed(3);
  const mainHtml='<h3>的中率優先・券種別候補</h3><div class="tablewrap"><table><thead><tr><th>券種</th><th>買い目・方式</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+main.map(x=>'<tr><td>'+x.type+'</td><td><b>'+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'<tr><td>3連単</td><td><b>フォーメーション '+trifectaFormation.first.join(',')+' → '+trifectaFormation.second.join(',')+' → '+trifectaFormation.third.join(',')+'</b>（'+trifectaList.length+'点）</td><td colspan="4">着順別候補を指定・同一馬の重複組合せは除外</td></tr></tbody></table></div>';
  const horseHtml='<h3>予想上位馬</h3><div class="tablewrap"><table><thead><tr><th>順位</th><th>馬番・馬名</th><th>評価点</th><th>'+(learnedModelLoaded?'学習モデル推定勝率':'参考スコア比率')+'</th><th>単勝オッズ</th></tr></thead><tbody>'+top.map((h,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(h.horseNo+'番 '+(h.name||''))+'</td><td>'+(Number(h.score)||0).toFixed(1)+'</td><td>'+formatPct(h.modelProb)+'</td><td>'+formatOdds(Number(h.odds)>0?Number(h.odds):null)+'</td></tr>').join('')+'</tbody></table></div>';
@@ -979,9 +982,10 @@ function generateTickets(){
      version:1,createdAt:new Date().toISOString(),date:String(race.date||$('raceDate')?.value||''),
      raceId:String(raceId),venue:String(race.venue||''),raceNo:String(race.race||''),
      decision:selectedType&&allocation.length?'BET':'SKIP',
-     skipReason:selectedType&&allocation.length?'':(!learnedModelLoaded?'校正済みモデル未準備': '検証済みEV基準を満たす買い目なし'),
+     skipReason:selectedType&&allocation.length?'':skipReason,
+     skipReasonCode:selectedType&&allocation.length?'BET':(!learnedModelLoaded?'MODEL_NOT_READY':oddsRows.length===0?'ODDS_NOT_CAPTURED':oddsMatchedCount===0?'TICKET_ODDS_NOT_MATCHED':validatedTypeCount===0?'NO_VALIDATED_TICKET_THRESHOLD':'EV_BELOW_VALIDATED_THRESHOLD'),
      totalStake:allocated||0,tickets:allocation.map(x=>({type:x.type,comb:x.comb,stake:x.stake,odds:x.odds,probability:x.probability,ev:x.ev})),
-     modelLoaded:!!learnedModelLoaded,oddsCaptured:oddsRows.length>0
+     modelLoaded:!!learnedModelLoaded,oddsCaptured:oddsRows.length>0,oddsRows:oddsRows.length,oddsMatchedCandidates:oddsMatchedCount,validatedBetTypes:validatedTypeCount
    };
    const prediction=(db.predictions||[]).find(p=>String(p.id)===String(raceId)&&!p.learned);
    if(prediction){prediction.ticketPlan=snapshot;prediction.at=snapshot.createdAt;save();scheduleCloudSync();if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();}
