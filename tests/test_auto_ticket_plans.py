@@ -1,6 +1,11 @@
+import csv
+import io
 import sys
+import tempfile
 import unittest
+import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import build_auto_ticket_plans as plans
@@ -63,6 +68,24 @@ class ShadowTicketPlanTests(unittest.TestCase):
         self.assertEqual(plan["skipReasonCode"], "ODDS_NOT_CAPTURED")
         self.assertEqual(len(plan["shadowTickets"]), 5)
         self.assertEqual(plan["totalStake"], 0)
+
+
+    def test_racecards_still_load_when_odds_archive_is_missing(self):
+        key = ("大井", "20261105", "1")
+        race_row = ["大井", "20261105", "1", "1230"] + [""] * 23
+        horse_row = ["大井", "20261105", "1", "", "", "1", "テスト馬", "", "3", "", "", "テスト父", "", "", "テスト騎手"]
+        with tempfile.TemporaryDirectory() as tmp:
+            data_dir = Path(tmp)
+            with zipfile.ZipFile(data_dir / "latest-race.zip", "w") as archive:
+                for filename, row in (("20261105_racelist.csv", race_row), ("20261105_horselist.csv", horse_row)):
+                    buffer = io.StringIO()
+                    csv.writer(buffer).writerow(row)
+                    archive.writestr(filename, buffer.getvalue())
+            with patch.object(plans.nar, "DATA", data_dir):
+                races, horses, odds = plans.nar.read_archives()
+        self.assertIn(key, races)
+        self.assertEqual(len(horses[key]), 1)
+        self.assertEqual(odds, {})
 
 
 if __name__ == "__main__":
