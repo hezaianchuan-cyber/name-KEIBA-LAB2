@@ -1726,3 +1726,27 @@ class DailyOnlineLearningRegressionTests(unittest.TestCase):
         self.assertTrue(nb.update_model(field, parts, weights))
         self.assertAlmostEqual(sum(weights.values()), 1.0, places=8)
         self.assertTrue(all(0.01 <= value <= 0.8 for value in weights.values()))
+
+
+
+class FrameGateTests(unittest.TestCase):
+    def test_frame_score_uses_only_matching_prior_condition_bucket(self):
+        race = {"venue":"大井","surface":"ダート","distance":1600,"field_size":12}
+        horse = {"frame_no":1}
+        key = nb.frame_context_key(race, horse)
+        stats = {key: {"runs": 100, "top3": 60}}
+        self.assertGreater(nb.frame_form_score(race, horse, stats), 0.5)
+        self.assertAlmostEqual(nb.frame_form_score(race, {"frame_no":None}, stats), 0.5)
+        other = {"venue":"川崎","surface":"ダート","distance":1600,"field_size":12}
+        self.assertAlmostEqual(nb.frame_form_score(other, horse, stats), 0.5)
+
+    def test_frame_history_is_saved_with_historical_training_data(self):
+        race = {"key":("大井","20261101","1"),"date":__import__("datetime").date(2026,11,1),
+                "venue":"大井","surface":"ダート","distance":1600,"field_size":3,"race":"1"}
+        horses = {race["key"]:[
+            {"no":"1","name":"馬A","frame_no":1,"finish":1},
+            {"no":"2","name":"馬B","frame_no":2,"finish":2},
+            {"no":"3","name":"馬C","frame_no":3,"finish":3},
+        ]}
+        history = nb.build_live_history({race["key"]:race}, horses)
+        self.assertTrue(history["frame_stats"])
