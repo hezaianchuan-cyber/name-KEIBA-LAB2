@@ -1661,13 +1661,13 @@ class DailyOnlineLearningRegressionTests(unittest.TestCase):
 
     def _field(self):
         return [
-            {"no": "1", "name": "馬A", "sire": "父A", "jockey": "騎手A",
+            {"no": "1", "name": "馬A", "frame_no": 1, "sire": "父A", "jockey": "騎手A",
              "age": 5, "finish": 1, "margin": "0.0", "last3f": 38.0,
              "time_seconds": 98.0},
-            {"no": "2", "name": "馬B", "sire": "父B", "jockey": "騎手B",
+            {"no": "2", "name": "馬B", "frame_no": 2, "sire": "父B", "jockey": "騎手B",
              "age": 8, "finish": 2, "margin": "0.5", "last3f": 39.0,
              "time_seconds": 99.0},
-            {"no": "3", "name": "馬C", "sire": "父C", "jockey": "騎手C",
+            {"no": "3", "name": "馬C", "frame_no": 3, "sire": "父C", "jockey": "騎手C",
              "age": 2, "finish": 3, "margin": "1.0", "last3f": 40.0,
              "time_seconds": 100.0},
         ]
@@ -1686,7 +1686,9 @@ class DailyOnlineLearningRegressionTests(unittest.TestCase):
             }
 
         observed = []
+        frame_observed = []
         original = nb.score_runner
+        original_frame_score = nb.frame_form_score
 
         def capture_weights(horse, history, sire_stats, jockey_stats, race, weights,
                             include_recent_history=True):
@@ -1694,7 +1696,13 @@ class DailyOnlineLearningRegressionTests(unittest.TestCase):
             return original(horse, history, sire_stats, jockey_stats, race, weights,
                             include_recent_history)
 
-        with mock.patch.object(nb, "score_runner", side_effect=capture_weights):
+        def capture_frame_score(race, horse, frame_stats):
+            prior_runs = sum(value["runs"] for value in frame_stats.values())
+            frame_observed.append((race["date"].isoformat(), prior_runs))
+            return original_frame_score(race, horse, frame_stats)
+
+        with mock.patch.object(nb, "score_runner", side_effect=capture_weights), \
+             mock.patch.object(nb, "frame_form_score", side_effect=capture_frame_score):
             result = nb.run_backtest(races, horses, payouts)
 
         by_day = defaultdict(list)
@@ -1709,6 +1717,11 @@ class DailyOnlineLearningRegressionTests(unittest.TestCase):
                             for w in by_day["2026-11-02"]))
         # Results from the prior date must have updated the model before the next date.
         self.assertNotEqual(by_day["2026-11-01"][0], by_day["2026-11-02"][0])
+        frame_by_day = defaultdict(list)
+        for day, prior_runs in frame_observed:
+            frame_by_day[day].append(prior_runs)
+        self.assertTrue(all(value == 0 for value in frame_by_day["2026-11-01"]))
+        self.assertTrue(all(value > 0 for value in frame_by_day["2026-11-02"]))
         self.assertGreater(result[4], 0)
 
     def test_update_model_preserves_normalized_bounded_weights(self):
