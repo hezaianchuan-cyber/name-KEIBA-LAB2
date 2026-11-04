@@ -1125,8 +1125,13 @@ async function autoAnalyzeAllTodayRaces(){
    }
   }
   updateHistory();
-  const status=$('importStatus');if(status)status.textContent='本日の全開催レース自動処理：'+races.length+'R中 '+saved+'Rを記録（BET・SKIP・データ不足を含む）。';
-  return {total:races.length,saved};
+  const plansToday=loadLabTicketPlans().filter(x=>labLedgerDateKey(x.plan?.date)===today);
+  const predictionsToday=(db.predictions||[]).filter(p=>normDate(p.date)===today);
+  const settledToday=plansToday.filter(x=>(db.payouts||[]).some(p=>String(p.id)===String(x.plan.raceId)&&normDate(p.date)===today&&p.winNo!=null&&p.winNo!=='')).length;
+  const counts='本日開催 '+races.length+'R ／ 予想記録 '+predictionsToday.length+'R ／ 買い目記録 '+plansToday.length+'R ／ 結果照合 '+settledToday+'R';
+  const countEl=$('importCounts');if(countEl)countEl.textContent=counts+'（BET・SKIP・データ不足を含む）';
+  const status=$('importStatus');if(status)status.textContent='本日の全開催レース自動処理：'+races.length+'R中 '+saved+'Rの買い目記録を確認。';
+  return {total:races.length,saved,plans:plansToday.length,predictions:predictionsToday.length,settled:settledToday};
  }catch(e){
   console.error('全レース自動予想に失敗',e);
   const status=$('importStatus');if(status)status.textContent='全レース自動予想エラー：'+(e.message||String(e));
