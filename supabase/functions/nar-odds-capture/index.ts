@@ -77,9 +77,17 @@ Deno.serve(async (request) => {
   if (!serviceUrl || !serviceKey || !expectedToken) {
     return Response.json({ ok: false, error: "Required function secrets are missing" }, { status: 500 });
   }
-  const supplied = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+  const authorizationHeader = request.headers.get("authorization") || "";
+  const supplied = authorizationHeader.replace(/^Bearer\s+/i, "");
   if (!supplied || supplied !== expectedToken) {
-    return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    return Response.json({
+      ok: false,
+      error: "Unauthorized",
+      diagnostics: {
+        authorization_header_present: authorizationHeader.length > 0,
+        token_matches: supplied.length > 0 && supplied === expectedToken,
+      },
+    }, { status: 401 });
   }
 
   try {
