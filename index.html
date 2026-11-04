@@ -89,7 +89,6 @@ a{color:inherit}
 <main>
   <nav class="tabs" aria-label="&#x30E1;&#x30A4;&#x30F3;&#x30E1;&#x30CB;&#x30E5;&#x30FC;">
     <button class="active" data-tab="home">&#x30EC;&#x30FC;&#x30B9;&#x5206;&#x6790;</button>
-    <button data-tab="import">&#x30C7;&#x30FC;&#x30BF;&#x53D6;&#x8FBC;</button>
     <button data-tab="history">&#x691C;&#x8A3C;&#x30FB;&#x6210;&#x7E3E;</button>
     <button data-tab="tickets">保存買い目</button>
     
@@ -104,8 +103,10 @@ a{color:inherit}
         <div><label>&#x30EC;&#x30FC;&#x30B9;</label><select id="raceSelect"><option value="">&#x30C7;&#x30FC;&#x30BF;&#x53D6;&#x8FBC;&#x5F8C;&#x306B;&#x9078;&#x629E;</option></select></div>
         
       </div>
-      <div class="actions"><button class="btn primary" id="analyzeBtn">&#x3053;&#x306E;&#x30EC;&#x30FC;&#x30B9;&#x3092;&#x5206;&#x6790;</button><button class="btn" id="demoBtn">&#x52D5;&#x4F5C;&#x30B5;&#x30F3;&#x30D7;&#x30EB;&#x3092;&#x8868;&#x793A;</button></div>
-      <div class="status"><i class="dot" id="dataDot"></i><span id="dataStatus">&#x30EC;&#x30FC;&#x30B9;&#x30C7;&#x30FC;&#x30BF;&#x672A;&#x53D6;&#x8FBC;&#x3002;&#x516C;&#x5F0F;ZIP&#x307E;&#x305F;&#x306F;&#x6708;&#x6B21;&#x30AA;&#x30C3;&#x30BA;CSV&#x3092;&#x8AAD;&#x307F;&#x8FBC;&#x3093;&#x3067;&#x304F;&#x3060;&#x3055;&#x3044;&#x3002;</span></div>
+      <div class="actions"><button class="btn primary" id="analyzeBtn">選択したレースの買い目を見る</button><button class="btn" id="autoFetchBtn">公式データ更新</button><button class="btn" id="refreshMinuteOddsBtn">最新1分オッズを取得</button><button class="btn" id="demoBtn">&#x52D5;&#x4F5C;&#x30B5;&#x30F3;&#x30D7;&#x30EB;&#x3092;&#x8868;&#x793A;</button></div>
+      <div class="status"><i class="dot" id="dataDot"></i><span id="dataStatus">NAR公式データと1分オッズを自動取得しています。</span></div>
+      <div class="status"><i class="dot" id="importDot"></i><span id="importStatus">自動更新状況を確認しています。</span></div>
+      <p class="sub" id="importCounts">公式レース情報・出馬表・1分オッズを読み込み中です。</p>
     </div>
     <div class="layout2">
       <div class="card"><h2>&#x4E88;&#x6E2C;&#x30E9;&#x30F3;&#x30AD;&#x30F3;&#x30B0;</h2><div id="ranking" class="sub">&#x30EC;&#x30FC;&#x30B9;&#x3092;&#x9078;&#x629E;&#x3057;&#x3066;&#x5206;&#x6790;&#x3059;&#x308B;&#x3068;&#x3001;&#x8A55;&#x4FA1;&#x9806;&#x306B;&#x8868;&#x793A;&#x3057;&#x307E;&#x3059;&#x3002;</div></div>
@@ -113,29 +114,10 @@ a{color:inherit}
     </div>
     <div class="card"><h2>&#x51FA;&#x8D70;&#x99AC;&#x30C7;&#x30FC;&#x30BF;</h2><div id="runnerList" class="sub">&#x307E;&#x3060;&#x51FA;&#x8D70;&#x99AC;&#x30C7;&#x30FC;&#x30BF;&#x304C;&#x3042;&#x308A;&#x307E;&#x305B;&#x3093;&#x3002;</div></div>
   </section>
-  <section id="import" class="panel">
-    <div class="card">
-      <h2>&#x5730;&#x65B9;&#x7AF6;&#x99AC;&#x516C;&#x5F0F;&#x30C7;&#x30FC;&#x30BF;&#x3092;&#x53D6;&#x308A;&#x8FBC;&#x3080;</h2>
-      <p class="sub">NAR&#x516C;&#x5F0F;ZIP&#x306B;&#x52A0;&#x3048;&#x3001;&#x4ECA;&#x56DE;&#x306E;&#x6708;&#x6B21;&#x30AA;&#x30C3;&#x30BA;CSV&#xFF08;202610_01_odds.csv&#xFF09;&#x306B;&#x5BFE;&#x5FDC;&#x3002;&#x30AA;&#x30C3;&#x30BA;CSV&#x3060;&#x3051;&#x3067;&#x3082;&#x958B;&#x50AC;&#x65E5;&#x30FB;&#x7AF6;&#x99AC;&#x5834;&#x30FB;&#x30EC;&#x30FC;&#x30B9;&#x3092;&#x9078;&#x3073;&#x3001;&#x4EBA;&#x6C17;&#x9806;&#x30FB;&#x5E02;&#x5834;&#x63A8;&#x5B9A;&#x78BA;&#x7387;&#x30FB;&#x5238;&#x7A2E;&#x5225;&#x30AA;&#x30C3;&#x30BA;&#x3092;&#x78BA;&#x8A8D;&#x3067;&#x304D;&#x307E;&#x3059;&#x3002;&#x5927;&#x91CF;&#x30C7;&#x30FC;&#x30BF;&#x306F;&#x30D6;&#x30E9;&#x30A6;&#x30B6;&#x5185;&#x3067;&#x89E3;&#x6790;&#x3057;&#x3001;&#x5BB9;&#x91CF;&#x5236;&#x9650;&#x306E;&#x3042;&#x308B;localStorage&#x306B;&#x306F;&#x4FDD;&#x5B58;&#x3057;&#x307E;&#x305B;&#x3093;&#x3002;</p>
-      <div class="actions"><button class="btn primary full" id="autoFetchBtn">NAR公式データを今すぐ更新</button></div><p class="sub">公式ZIPは自動取得し、直前オッズは5分ごとに発走30〜2分前の範囲で記録します。画面は公開済みデータを60秒ごとに確認します。通常は手動のCSV・ZIP取り込みは不要です。</p>
-      <div class="status"><i class="dot" id="importDot"></i><span id="importStatus">&#x672A;&#x53D6;&#x8FBC;</span></div>
-      
-    </div>
-    <div class="card">
-      <h2>&#x516C;&#x5F0F;&#x30C7;&#x30FC;&#x30BF;&#x306E;&#x53D6;&#x5F97;&#x5148;</h2>
-      <div class="source-grid">
-        <div class="source"><b>&#x5F53;&#x65E5;&#x30EC;&#x30FC;&#x30B9;&#x60C5;&#x5831;</b><span>&#x51FA;&#x99AC;&#x8868;&#x30FB;&#x30EC;&#x30FC;&#x30B9;&#x4E00;&#x89A7;&#x30FB;&#x6255;&#x623B;&#x91D1;</span><a href="https://www.keiba.go.jp/KeibaWeb/TodayRaceInfo/TodayRaceInfoTop" target="_blank" rel="noopener">&#x516C;&#x5F0F;&#x30B5;&#x30A4;&#x30C8;&#x3092;&#x958B;&#x304F; &#x2197;</a></div>
-        <div class="source"><b>&#x5F53;&#x65E5;&#x30AA;&#x30C3;&#x30BA;</b><span>&#x4E2D;&#x9593;&#x30AA;&#x30C3;&#x30BA;&#x3092;&#x542B;&#x3080;&#x5F53;&#x65E5;&#x30C7;&#x30FC;&#x30BF;</span><a href="https://www.keiba.go.jp/" target="_blank" rel="noopener">&#x516C;&#x5F0F;&#x30B5;&#x30A4;&#x30C8;&#x3092;&#x958B;&#x304F; &#x2197;</a></div>
-      </div>
-      <p class="notice" style="margin-top:12px">公式説明書では当日データは約2分ごと、月次データは毎日夜間に更新されます。KEIBA LABは当日ZIPを定期取得し、直前オッズは5分ごとに発走30〜2分前の範囲で収集します。公開データはGitHub Pagesに反映され、画面は1分ごとに最新公開分を確認します。対象時間外のオッズは直前スナップショットとして保存しません。</p>
-      <p class="sub" style="margin-top:10px">&#x51FA;&#x5178;&#xFF1A;&#x5730;&#x65B9;&#x7AF6;&#x99AC;&#x60C5;&#x5831;&#x30B5;&#x30A4;&#x30C8;&#x300C;&#x30C7;&#x30FC;&#x30BF;&#x30C0;&#x30A6;&#x30F3;&#x30ED;&#x30FC;&#x30C9;&#x6A5F;&#x80FD;&#x8AAC;&#x660E;&#x66F8;&#x300D;&#xFF08;2026&#x5E74;5&#x6708;18&#x65E5;&#x66F4;&#x65B0;&#xFF09;&#x3002;</p>
-    </div>
-    <div class="card"><h2>&#x53D6;&#x308A;&#x8FBC;&#x3093;&#x3060;&#x30C7;&#x30FC;&#x30BF;</h2><div id="importCounts" class="sub">&#x307E;&#x3060;&#x30C7;&#x30FC;&#x30BF;&#x306F;&#x3042;&#x308A;&#x307E;&#x305B;&#x3093;&#x3002;</div></div>
-  </section>
   <section id="history" class="panel">
     <div class="card" id="cloudAuthCard"><h2>予想履歴のクラウド同期</h2><p class="sub">メールアドレスでログインすると、このアカウントの予想履歴を別の端末でも共有できます。ログイン前のこの端末の予想履歴も、ログイン後にクラウドへ移行します。</p><div class="grid"><div><label for="cloudEmail">メールアドレス</label><input id="cloudEmail" type="email" autocomplete="email" placeholder="メールアドレス"></div><div><label for="cloudPassword">パスワード（8文字以上）</label><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="パスワード"></div></div><div class="actions"><button class="btn primary" id="cloudSignIn">ログイン</button><button class="btn" id="cloudSignUp">新規登録</button><button class="btn" id="cloudSignOut" disabled>ログアウト</button></div><div class="status"><i class="dot" id="cloudDot"></i><span id="cloudStatus">クラウド未接続。ログインすると予想履歴を同期します。</span></div></div>
     <div class="card"><h2>&#x4E88;&#x6E2C;&#x306E;&#x691C;&#x8A3C;</h2><p class="sub">&#x6255;&#x623B;CSV&#x3068;&#x4E88;&#x6E2C;&#x5C65;&#x6B74;&#x3092;&#x7167;&#x5408;&#x3059;&#x308B;&#x305F;&#x3081;&#x306E;&#x96C6;&#x8A08;&#x753B;&#x9762;&#x3067;&#x3059;&#x3002;&#x30C7;&#x30FC;&#x30BF;&#x3092;&#x84C4;&#x7A4D;&#x3059;&#x308B;&#x307B;&#x3069;&#x3001;&#x7AF6;&#x99AC;&#x5834;&#x30FB;&#x8DDD;&#x96E2;&#x30FB;&#x30AF;&#x30E9;&#x30B9;&#x5225;&#x306B;&#x30E2;&#x30C7;&#x30EB;&#x306E;&#x504F;&#x308A;&#x3092;&#x691C;&#x8A3C;&#x3067;&#x304D;&#x307E;&#x3059;&#x3002;</p><div class="kpis"><div class="kpi"><span>&#x4FDD;&#x5B58;&#x30EC;&#x30FC;&#x30B9;&#x6570;</span><b id="hRaces">0</b></div><div class="kpi"><span>&#x4E88;&#x6E2C;&#x8A18;&#x9332;</span><b id="hPred">0</b></div><div class="kpi"><span>&#x6255;&#x623B;&#x30C7;&#x30FC;&#x30BF;</span><b id="hPay">0</b></div></div><div class="kpis" style="margin-top:12px"><div class="kpi"><span>結果確定レース</span><b id="hSettled">0</b></div><div class="kpi"><span>予想1位の勝率</span><b id="hTop1">—</b></div><div class="kpi"><span>上位3頭内の勝馬率</span><b id="hTop3">—</b></div><div class="kpi"><span>予想1位を100円買った仮想回収率</span><b id="hRoi">—</b></div></div><p id="hEvalNote" class="sub">払戻データと予想履歴が一致したレースのみ集計します。仮想回収率は検証用で、実際の購入実績ではありません。</p></div>
-    <div class="card" id="oddsCapturePanel"><h2>発走前オッズの更新状況</h2><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>最新公開データを確認</b><span id="oddsCaptureBadge">確認中</span></div><div id="oddsCaptureDetails" class="sub" style="margin-top:8px">取得状況を読み込んでいます。</div><p class="sub">画面は1分ごとに最新公開データを確認します。取得元データの収集・公開は現在5分ごとのため、オッズ自体が毎分変わるわけではありません。</p></div><div class="card"><h2>今日の予想結果</h2><p class="sub">今日記録した予想を公式払戻データと照合します。的中率の分母は結果が確定したレースのみです。</p><div class="kpis"><div class="kpi"><span>今日の確定レース</span><b id="hTodaySettled">0</b></div><div class="kpi"><span>予想1位の的中数</span><b id="hTodayHits">0</b></div><div class="kpi"><span>今日の1位的中率</span><b id="hTodayRate">—</b></div><div class="kpi"><span>上位3頭内の勝馬率</span><b id="hTodayTop3">—</b></div></div><div id="todayPredictionRows" class="sub" style="margin-top:12px">今日の予想はまだ保存されていません。レースを分析すると自動で記録します。</div></div>
+    <div class="card" id="oddsCapturePanel"><h2>発走前オッズの更新状況</h2><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>最新公開データを確認</b><span id="oddsCaptureBadge">確認中</span></div><div id="oddsCaptureDetails" class="sub" style="margin-top:8px">取得状況を読み込んでいます。</div><p class="sub">Supabaseに保存されたNAR公式オッズを1分ごとに読み込みます。発走30〜2分前のスナップショットを予測データと照合し、自動買い目も保存します。</p></div><div class="card"><h2>今日の予想結果</h2><p class="sub">今日記録した予想を公式払戻データと照合します。的中率の分母は結果が確定したレースのみです。</p><div class="kpis"><div class="kpi"><span>今日の確定レース</span><b id="hTodaySettled">0</b></div><div class="kpi"><span>予想1位の的中数</span><b id="hTodayHits">0</b></div><div class="kpi"><span>今日の1位的中率</span><b id="hTodayRate">—</b></div><div class="kpi"><span>上位3頭内の勝馬率</span><b id="hTodayTop3">—</b></div></div><div id="todayPredictionRows" class="sub" style="margin-top:12px">今日の予想はまだ保存されていません。レースを分析すると自動で記録します。</div></div>
     <div class="card"><h2>&#x6B21;&#x306E;&#x691C;&#x8A3C;&#x3067;&#x898B;&#x308B;&#x6307;&#x6A19;</h2><div class="runner"><div class="number">01</div><div><div class="runner-name">&#x56DE;&#x53CE;&#x7387;</div><div class="runner-meta">&#x4E88;&#x6E2C;&#x78BA;&#x7387;&#x3068;&#x5B9F;&#x969B;&#x306E;&#x6255;&#x623B;&#x306E;&#x4E56;&#x96E2;</div></div><div class="score">ROI</div></div><div class="runner"><div class="number">02</div><div><div class="runner-name">&#x78BA;&#x7387;&#x6821;&#x6B63;</div><div class="runner-meta">&#x52DD;&#x7387;20%&#x3068;&#x8A55;&#x4FA1;&#x3057;&#x305F;&#x99AC;&#x304C;&#x5B9F;&#x969B;&#x306B;&#x7D04;20%&#x52DD;&#x3064;&#x304B;</div></div><div class="score">CAL</div></div><div class="runner"><div class="number">03</div><div><div class="runner-name">&#x6761;&#x4EF6;&#x5225;&#x6210;&#x7E3E;</div><div class="runner-meta">&#x7AF6;&#x99AC;&#x5834;&#x30FB;&#x8DDD;&#x96E2;&#x30FB;&#x99AC;&#x5834;&#x30FB;&#x4EBA;&#x6C17;&#x5E2F;&#x3054;&#x3068;&#x306E;&#x6210;&#x7E3E;</div></div><div class="score">SEG</div></div></div>
     <div class="notice">&#x30B5;&#x30F3;&#x30D7;&#x30EB;&#x30C7;&#x30FC;&#x30BF;&#x306F;&#x5B9F;&#x969B;&#x306E;&#x6210;&#x7E3E;&#x3067;&#x306F;&#x3042;&#x308A;&#x307E;&#x305B;&#x3093;&#x3002;&#x7684;&#x4E2D;&#x7387;&#x30FB;&#x56DE;&#x53CE;&#x7387;&#x3092;&#x8868;&#x793A;&#x3059;&#x308B;&#x5834;&#x5408;&#x306F;&#x3001;&#x5B9F;&#x30C7;&#x30FC;&#x30BF;&#x3067;&#x691C;&#x8A3C;&#x3057;&#x305F;&#x5024;&#x3060;&#x3051;&#x3092;&#x8868;&#x793A;&#x3057;&#x307E;&#x3059;&#x3002;</div>
   </section>
@@ -437,7 +419,6 @@ async function fetchPcOfficialData(showStatus=true){
     dedupeImportedData();
     const learned=applyResultLearning();
     save();refreshRaceChoices();updateHistory();
-    if($('raceSelect').value)analyze();
     $('importStatus').textContent='PC版 NAR公式データ取得完了：'+details.join(' / ')+' / 学習 '+learned+'レース';
     $('importDot').className='dot ok';$('dataDot').className='dot ok';
     $('dataStatus').textContent='PC版自動取得済み：出馬表 '+db.horses.length+'頭 / レース '+db.races.length+'件 / オッズ '+db.odds.length+'件 / 払戻 '+db.payouts.length+'件';
@@ -454,9 +435,10 @@ function autoFetchOfficialData(){
   fetchPcOfficialData(true);
 }
 $('autoFetchBtn').onclick=autoFetchOfficialData;
+$('refreshMinuteOddsBtn').onclick=async()=>{try{const n=await fetchSupabaseLiveData();$('importStatus').textContent=n+'件の1分オッズスナップショットを読み込みました。';$('importDot').className='dot '+(n?'ok':'');}catch(e){$('importStatus').textContent='1分オッズ取得失敗：'+e.message;$('importDot').className='dot';}};
 if(!window.AndroidBridge){
-  window.addEventListener('load',()=>fetchPcOfficialData(true));
-  setInterval(()=>fetchPcOfficialData(false),60*1000);
+  window.addEventListener('load',()=>fetchPcOfficialData(false));
+  setInterval(()=>fetchPcOfficialData(false),15*60*1000);
   window.addEventListener('load',()=>refreshOddsCaptureStatus());
   setInterval(refreshOddsCaptureStatus,60*1000);
 }
@@ -479,9 +461,9 @@ async function refreshOddsCaptureStatus(){
 }
 function refreshRaceChoices(){
   const date=$('raceDate').value.replaceAll('-',''),venue=$('venue').value;
-  const source=[...(db.races||[]),...(oddsRaceIndex||[])];
+  const source=[...(db.races||[]),...(oddsRaceIndex||[]),...(minuteOddsRaceIndex||[])];
   const derived=new Map();
-  for(const row of [...(db.horses||[]),...(db.odds||[])]){
+  for(const row of [...(db.horses||[]),...(db.odds||[]),...(minuteOddsRows||[])]){
     if(!row||!row.id||!row.venue||!row.date||!row.race)continue;
     if(!derived.has(row.id))derived.set(row.id,{id:row.id,venue:row.venue,date:row.date,race:row.race,time:'',name:'',count:0});
     const item=derived.get(row.id);item.count++;
@@ -505,7 +487,7 @@ function refreshRaceChoices(){
   races.forEach(r=>{const o=document.createElement('option');o.value=r.id;o.textContent=r.race+'R '+(r.time||'')+' '+(r.name||'')+(r.count?' \u00B7 '+r.count+'\u4EF6':'');select.append(o)});
   if(races.some(r=>r.id===old))select.value=old;
 }
-$('raceDate').addEventListener('change',()=>{refreshRaceChoices();});$('venue').addEventListener('change',()=>{refreshRaceChoices();});$('raceSelect').addEventListener('change',()=>{if($('raceSelect').value)analyze();});
+$('raceDate').addEventListener('change',()=>{refreshRaceChoices();});$('venue').addEventListener('change',()=>{refreshRaceChoices();});$('raceSelect').addEventListener('change',()=>{if($('raceSelect').value){$('summary').textContent='レースを選択しました。「選択したレースの買い目を見る」を押すと最新データで分析します。';}});
 function percentile(v,arr){if(v==null||!arr.length)return 50;const clean=arr.filter(x=>x!=null).sort((a,b)=>a-b);if(!clean.length)return 50;return 100*clean.filter(x=>x<=v).length/clean.length}
 function parseMarginValue(value){const s=String(value??'').replace(/[\s\u3000]/g,'');if(!s)return null;const mixed=s.match(/^(\d+)(\d+)\/(\d+)$/);if(mixed)return Number(mixed[1])+Number(mixed[2])/Number(mixed[3]);const fraction=s.match(/^(\d+)\/(\d+)$/);return fraction?Number(fraction[1])/Number(fraction[2]):(s.match(/\d+(?:\.\d+)?/)||[])[0]!==undefined?Number((s.match(/\d+(?:\.\d+)?/)||[])[0]):null;}
 function getRecentRuns(h){
@@ -596,7 +578,7 @@ function analyze(){
   $('summary').textContent='このレースの出馬表がありません。公式出馬表ZIPまたは過去成績CSVを取り込んでください。';
   $('ranking').textContent='出馬表データ待ち';$('runnerList').textContent='出馬表が未取込です。';$('kRunners').textContent='0';$('kValue').textContent='—';$('kSkip').textContent='—';return;
  }
- const odds=db.odds.filter(o=>o.id===id);
+ const odds=[...(minuteOddsRows||[]),...(db.odds||[])].filter(o=>o.id===id);
  runners=runners.map(h=>({...h,distance:race?.distance,odds:(odds.find(o=>norm(o.type).includes('単勝')&&norm(o.n1)===norm(h.horseNo))||{}).odds}));
  renderAnalysis(runners,race);
 }
@@ -704,16 +686,61 @@ function labLedgerRecordsForDate(plans,date){
 // Independent compact archive for saved ticket plans.
 const LAB_TICKET_STORAGE_KEY='keibaLabTicketPlansV1';
 let remoteLabTicketPlans=[];
+let minuteOddsRows=[];
+let minuteOddsRaceIndex=[];
+async function fetchSupabaseLiveData(dateOverride){
+ const selected=String(dateOverride||$('raceDate')?.value||localDateKey()).replace(/-/g,'');
+ const day=selected.length===8?selected:localDateKey();
+ const d=new Date(Number(day.slice(0,4)),Number(day.slice(4,6))-1,Number(day.slice(6,8)));
+ d.setDate(d.getDate()-6);
+ const from=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+ const to=day.slice(0,4)+'-'+day.slice(4,6)+'-'+day.slice(6,8);
+ const query='?select=id,race_id,race_date,venue,race_number,captured_at,odds_data&race_date=gte.'+from+'&race_date=lte.'+to+'&order=captured_at.desc&limit=2000';
+ const response=await fetch(KEIBA_SUPABASE_URL+'/rest/v1/odds_snapshots'+query,{headers:{apikey:KEIBA_SUPABASE_KEY,Authorization:'Bearer '+KEIBA_SUPABASE_KEY,Accept:'application/json'},cache:'no-store'});
+ if(!response.ok)throw new Error('1分オッズ取得 HTTP '+response.status);
+ const rows=await response.json();
+ const oddsMap=new Map(),planMap=new Map(),raceMap=new Map();
+ for(const row of rows||[]){
+  const date=String(row.race_date||'').replace(/-/g,'');
+  const id=String(row.race_id||'');
+  const race={id,venue:row.venue,date,race:String(row.race_number||''),time:'',name:'',count:0};
+  if(id&&!raceMap.has(id))raceMap.set(id,race);
+  const plan=row.odds_data?.auto_ticket_plan;
+  if(plan&&plan.raceId){
+   const key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date);
+   if(!planMap.has(key))planMap.set(key,{predictionId:plan.raceId,plan});
+  }
+  for(const item of row.odds_data?.odds||[]){
+   const key=[id,item.type,item.n1,item.n2,item.n3].map(x=>String(x??'').normalize('NFKC').replace(/\s/g,'')).join('|');
+   if(!oddsMap.has(key))oddsMap.set(key,{id,venue:row.venue,date,race:String(row.race_number||''),type:item.type,n1:item.n1,n2:item.n2,n3:item.n3,odds:Number(item.odds),maxOdds:Number(item.max_odds)||null,popularity:Number(item.popularity)||null,capturedAt:row.captured_at});
+  }
+ }
+ minuteOddsRows=[...oddsMap.values()];
+ minuteOddsRaceIndex=[...raceMap.values()];
+ remoteLabTicketPlans=[...planMap.values()];
+ refreshRaceChoices();
+ if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
+ const latest=rows?.[0]?.captured_at;
+ const badge=$('oddsCaptureBadge'),details=$('oddsCaptureDetails');
+ if(badge)badge.textContent=rows?.length?'1分取得データ接続中':'1分データ待ち';
+ if(details)details.textContent=rows?.length?'最新取得：'+new Date(latest).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})+' ／ 取得レコード '+rows.length+'件 ／ 買い目記録 '+remoteLabTicketPlans.length+'レース':'Supabaseの1分オッズデータはまだありません。';
+ return rows?.length||0;
+}
 async function loadAutoTicketPlans(){
- try{
-  const response=await fetch('https://raw.githubusercontent.com/hezaianchuan-cyber/name-KEIBA-LAB2/main/data/auto-ticket-plans.json?v='+Date.now(),{cache:'no-store'});
-  if(!response.ok)throw new Error('自動買い目データ未公開（HTTP '+response.status+'）');
-  const data=await response.json();
-  remoteLabTicketPlans=(Array.isArray(data.plans)?data.plans:[]).filter(p=>p&&p.raceId&&p.date).map(plan=>({predictionId:plan.raceId,plan}));
-  if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
- }catch(e){console.warn('自動保存買い目を取得できません',e);}
+ try{await fetchSupabaseLiveData();}
+ catch(e){
+  console.warn('Supabaseの1分オッズを取得できません',e);
+  try{
+   const response=await fetch('https://raw.githubusercontent.com/hezaianchuan-cyber/name-KEIBA-LAB2/main/data/auto-ticket-plans.json?v='+Date.now(),{cache:'no-store'});
+   if(!response.ok)throw new Error('自動買い目データ未公開（HTTP '+response.status+'）');
+   const data=await response.json();
+   remoteLabTicketPlans=(Array.isArray(data.plans)?data.plans:[]).filter(p=>p&&p.raceId&&p.date).map(plan=>({predictionId:plan.raceId,plan}));
+   if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
+  }catch(fallbackError){console.warn('自動保存買い目を取得できません',fallbackError);}
+ }
 }
 window.addEventListener('load',loadAutoTicketPlans);
+setInterval(loadAutoTicketPlans,60*1000);
 function loadLabTicketPlans(){
  try{
   const stored=JSON.parse(localStorage.getItem(LAB_TICKET_STORAGE_KEY)||'[]'),map=new Map();
@@ -946,7 +973,7 @@ function generateTickets(){
    return 0;
  };
  const normNo=x=>String(x??'').replace(/\D/g,'').replace(/^0+(?=\d)/,'');
- const oddsRows=(db.odds||[]).filter(o=>o.id===raceId&&Number(o.odds)>0);
+ const oddsRows=[...(minuteOddsRows||[]),...(db.odds||[])].filter(o=>o.id===raceId&&Number(o.odds)>0);
  const unorderedKey=a=>a.map(normNo).sort((x,y)=>Number(x)-Number(y)).join('-'),orderedKey=a=>a.map(normNo).join('-');
  const findOdds=(type,n)=>{
    const typeMatch=o=>{const label=norm(o.type);if(type==='単勝')return label.includes(norm('単勝'));if(type==='複勝')return label.includes(norm('複勝'));if(type==='ワイド')return label.includes(norm('ワイド'));if(type==='馬連')return label.includes(norm('馬連'));if(type==='馬単')return label.includes(norm('馬単'));if(type==='3連複')return label.includes(norm('3連複'))||label.includes(norm('三連複'));if(type==='3連単')return label.includes(norm('3連単'))||label.includes(norm('三連単'));return false;};
