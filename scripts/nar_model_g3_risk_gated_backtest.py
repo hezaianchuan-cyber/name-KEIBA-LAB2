@@ -78,7 +78,9 @@ def score_records(records, odds_by_race, payouts, temperature, min_divergence=MI
         key_parts = str(record.get("race_key") or "").split("|")
         if len(key_parts) != 3:
             continue
-        key = (key_parts[0], key_parts[1], key_parts[2])
+        key = nb.race_key(key_parts[0], key_parts[1], key_parts[2])
+        if not key:
+            continue
         odds = odds_by_race.get(key, {})
         scores = record["scores"]
         if len(scores) < 3:
@@ -186,6 +188,34 @@ def main():
             continue
         aligned.append({**record, "horse_numbers": [h["no"] for h in field]})
     odds_by_race, odds_months = nb.load_final_odds_archives(START_DATE, nb.END)
+    # Diagnose every join before tuning. A successful script run with zero joined
+    # odds/payout races is a data-alignment failure, not a valid zero-bet result.
+    alignment = {
+        "aligned_score_records": len(aligned),
+        "exact_odds_race_key_matches": 0,
+        "odds_horse_matches": 0,
+        "aligned_races_with_win_payout": 0,
+        "records_with_odds_and_win_payout": 0,
+        "sample_score_race_key": aligned[0].get("race_key") if aligned else None,
+        "sample_odds_race_key": "|".join(next(iter(odds_by_race))) if odds_by_race else None,
+    }
+    for record in aligned:
+        parts = str(record.get("race_key") or "").split("|")
+        if len(parts) != 3:
+            continue
+        key = nb.race_key(*parts)
+        if not key:
+            continue
+        odds = odds_by_race.get(key, {})
+        if odds:
+            alignment["exact_odds_race_key_matches"] += 1
+            horse_nos = {str(int(x)) for x in (record.get("horse_numbers") or []) if str(x).isdigit()}
+            alignment["odds_horse_matches"] += len(horse_nos.intersection({str(int(x)) for x in odds if str(x).isdigit()}))
+        payout = payouts.get(key) or {}
+        if payout.get("win"):
+            alignment["aligned_races_with_win_payout"] += 1
+        if odds and payout.get("win"):
+            alignment["records_with_odds_and_win_payout"] += 1
     all_dates = sorted({r["date"] for r in aligned})
     if len(all_dates) < 10:
         raise RuntimeError("Insufficient dates for chronological G3 evaluation.")
@@ -265,6 +295,7 @@ def main():
         "g1_temperature": temperature, "g1_report_status": g1.get("status"),
         "evaluation_period": [START_DATE.isoformat(), nb.END.isoformat()],
         "races_with_g1_scores": len(aligned),
+        "data_alignment_diagnostics": alignment,
         "races_with_final_odds_and_outcomes": len(evaluated),
         "development_period": [all_dates[0], dev_end],
         "holdout_period": [holdout_start, all_dates[-1]],
