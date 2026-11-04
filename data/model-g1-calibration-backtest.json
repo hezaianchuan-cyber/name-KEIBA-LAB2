@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-04T22:31:19.902677+00:00",
+  "generated_at": "2026-11-04T22:35:12.802469+00:00",
   "feature": "G1_probability_calibration",
   "status": "G1_improved_on_untouched_holdout",
   "model_scope": "Existing chronological C-model scores; E model and live model code are unchanged.",
@@ -223,64 +223,64 @@
   ],
   "development_races": 7514,
   "holdout_races": 3387,
-  "selected_temperature": 0.095,
+  "selected_temperature": 0.1,
   "temperature_search": "0.02 to 0.50 inclusive, step 0.005; minimum development winner-mass log loss.",
   "development_metrics": {
     "baseline": {
       "races": 7514,
       "temperature": 0.18,
-      "log_loss": 2.04596,
-      "brier": 0.83977,
-      "top1_accuracy": 29.15,
-      "ece": 0.10204
+      "log_loss": 2.03335,
+      "brier": 0.83646,
+      "top1_accuracy": 29.2,
+      "ece": 0.09346
     },
     "G1_calibrated": {
       "races": 7514,
-      "temperature": 0.095,
-      "log_loss": 1.97729,
-      "brier": 0.82075,
-      "top1_accuracy": 29.15,
-      "ece": 0.00788
+      "temperature": 0.1,
+      "log_loss": 1.97726,
+      "brier": 0.82072,
+      "top1_accuracy": 29.2,
+      "ece": 0.00445
     }
   },
   "holdout_metrics": {
     "baseline": {
       "races": 3387,
       "temperature": 0.18,
-      "log_loss": 2.06341,
-      "brier": 0.84174,
+      "log_loss": 2.05061,
+      "brier": 0.83823,
       "top1_accuracy": 29.94,
-      "ece": 0.11323
+      "ece": 0.10456
     },
     "G1_calibrated": {
       "races": 3387,
-      "temperature": 0.095,
-      "log_loss": 1.99135,
-      "brier": 0.81945,
+      "temperature": 0.1,
+      "log_loss": 1.99099,
+      "brier": 0.81917,
       "top1_accuracy": 29.94,
-      "ece": 0.02793
+      "ece": 0.01906
     },
     "paired_delta_95ci": {
       "method": "paired race-level bootstrap; calibrated minus baseline; lower is better",
       "replicates": 2000,
       "log_loss_delta_95ci": [
-        -0.08334,
-        -0.06017
+        -0.0705,
+        -0.04817
       ],
       "brier_delta_95ci": [
-        -0.02615,
-        -0.01838
+        -0.02284,
+        -0.01523
       ],
       "ece_delta_95ci": [
-        -0.09445,
-        -0.07325
+        -0.09233,
+        -0.06854
       ]
     }
   },
   "holdout_changes": {
-    "log_loss_delta": -0.07206,
-    "brier_delta": -0.02229,
-    "ece_delta": -0.0853,
+    "log_loss_delta": -0.05962,
+    "brier_delta": -0.01906,
+    "ece_delta": -0.0855,
     "top1_accuracy_delta_percentage_points": 0.0
   },
   "interpretation": "G1 passes this experiment only when the untouched holdout has at least 100 races, both log-loss and Brier 95% delta upper bounds are below zero, and ECE does not show a statistically clear deterioration. This is not evidence of profitable betting or live pre-off performance.",
