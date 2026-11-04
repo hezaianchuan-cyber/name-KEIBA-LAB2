@@ -24,6 +24,11 @@ START_DATE = dt.date(2026, 3, 1)
 MIN_ODDS_COVERAGE = 0.70
 MIN_DIVERGENCE = 1.20
 MIN_EXPECTED_VALUE = 1.08
+DIVERGENCE_GRID = (1.5, 1.75, 2.0, 2.5, 3.0)
+EXPECTED_VALUE_GRID = (1.15, 1.25, 1.4, 1.6)
+MIN_DEV_BETS = 100
+MIN_SELECTION_RATE = 0.05
+MAX_SELECTION_RATE = 0.40
 UNIT_STAKE = 100
 BOOTSTRAP_REPS = 2000
 
@@ -66,7 +71,7 @@ def summarize_bets(rows):
     }
 
 
-def score_records(records, odds_by_race, payouts, temperature):
+def score_records(records, odds_by_race, payouts, temperature, min_divergence=MIN_DIVERGENCE, min_expected_value=MIN_EXPECTED_VALUE, min_odds_coverage=MIN_ODDS_COVERAGE):
     evaluated = []
     for record in records:
         key_parts = str(record.get("race_key") or "").split("|")
@@ -89,7 +94,7 @@ def score_records(records, odds_by_race, payouts, temperature):
         field = [str(int(no)) for no in horse_numbers]
         matched = [no for no in field if no in odds_by_no]
         coverage = len(matched) / len(field) if field else 0.0
-        if coverage < MIN_ODDS_COVERAGE:
+        if coverage < min_odds_coverage:
             continue
         model = nb.softmax_probabilities(scores, temperature)
         raw_market = {no: 1.0 / odds_by_no[no] for no in matched}
@@ -105,7 +110,7 @@ def score_records(records, odds_by_race, payouts, temperature):
             price = odds_by_no[no]
             divergence = p / mp if mp > 0 else 0.0
             ev = p * price
-            if divergence >= MIN_DIVERGENCE and ev >= MIN_EXPECTED_VALUE:
+            if divergence >= min_divergence and ev >= min_expected_value:
                 candidates.append((ev, divergence, p, price, no))
         candidates.sort(reverse=True)
         payout = payouts.get(key)
@@ -177,14 +182,52 @@ def main():
             continue
         aligned.append({**record, "horse_numbers": [h["no"] for h in field]})
     odds_by_race, odds_months = nb.load_final_odds_archives(START_DATE, nb.END)
-    evaluated = score_records(aligned, odds_by_race, payouts, temperature)
-    dates = sorted({r["date"] for r in evaluated})
-    if len(dates) < 10:
-        raise RuntimeError("Insufficient matched final-odds dates for chronological G2 evaluation.")
     all_dates = sorted({r["date"] for r in aligned})
+    if len(all_dates) < 10:
+        raise RuntimeError("Insufficient dates for chronological G2 evaluation.")
     split = max(1, min(len(all_dates)-1, int(len(all_dates)*0.70)))
     dev_end = all_dates[split-1]
     holdout_start = all_dates[split]
+
+    # Tune thresholds on development data only; do not inspect the holdout.
+    candidates = []
+    for divergence in DIVERGENCE_GRID:
+        for expected_value in EXPECTED_VALUE_GRID:
+            trial = score_records(aligned, odds_by_race, payouts, temperature,
+                                  divergence, expected_value, MIN_ODDS_COVERAGE)
+            dev_trial = [r["g2"] for r in trial if r["date"] <= dev_end and r.get("g2")]
+            dev_races = sum(1 for r in trial if r["date"] <= dev_end)
+            selection_rate = len(dev_trial) / dev_races if dev_races else 0.0
+            summary = summarize_bets(dev_trial)
+            ci = (summary.get("roi_95ci") or {}).get("roi_95ci")
+            eligible = (len(dev_trial) >= MIN_DEV_BETS
+                        and MIN_SELECTION_RATE <= selection_rate <= MAX_SELECTION_RATE
+                        and ci is not None)
+            candidates.append({
+                "min_probability_ratio": divergence,
+                "min_model_probability_times_final_odds": expected_value,
+                "development_bets": len(dev_trial),
+                "development_selection_rate_pct": round(100 * selection_rate, 2),
+                "development_roi": summary["roi"],
+                "development_roi_95ci": ci,
+                "eligible": eligible,
+            })
+    eligible_candidates = [c for c in candidates if c["eligible"]]
+    if eligible_candidates:
+        chosen = max(eligible_candidates,
+                     key=lambda c: (c["development_roi_95ci"][0],
+                                    c["development_roi"] or -1,
+                                    -c["development_bets"]))
+        selected_divergence = chosen["min_probability_ratio"]
+        selected_ev = chosen["min_model_probability_times_final_odds"]
+        tuning_status = "selected_on_development_only"
+    else:
+        chosen = None
+        selected_divergence = 2.0
+        selected_ev = 1.4
+        tuning_status = "no_eligible_development_threshold_fallback_conservative"
+    evaluated = score_records(aligned, odds_by_race, payouts, temperature,
+                              selected_divergence, selected_ev, MIN_ODDS_COVERAGE)
     development = [r for r in evaluated if r["date"] <= dev_end]
     holdout = [r for r in evaluated if r["date"] >= holdout_start]
     def flatten(rows, field):
@@ -197,7 +240,7 @@ def main():
     hold_market = flatten(holdout, "market_top")
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
-        "feature": "G2_G1_plus_final_odds_divergence",
+        "feature": "G2_improved_skip_decision_development_tuned",
         "status": "evaluated" if len(holdout) >= 100 else "insufficient_holdout_sample",
         "g1_temperature": temperature, "g1_report_status": g1.get("status"),
         "evaluation_period": [START_DATE.isoformat(), nb.END.isoformat()],
@@ -210,9 +253,13 @@ def main():
         "official_final_odds_months": odds_months,
         "rule": {
             "minimum_odds_coverage": MIN_ODDS_COVERAGE,
-            "model_to_market_probability_ratio_minimum": MIN_DIVERGENCE,
-            "model_probability_times_final_odds_minimum": MIN_EXPECTED_VALUE,
+            "model_to_market_probability_ratio_minimum": selected_divergence,
+            "model_probability_times_final_odds_minimum": selected_ev,
             "selection": "At most one highest-EV qualifying horse per race; JPY100 win bet; otherwise no bet.",
+            "threshold_selection": "Development-only grid search; untouched holdout excluded from threshold selection.",
+            "tuning_status": tuning_status,
+            "development_candidate_grid": candidates,
+            "selected_candidate": chosen,
         },
         "odds_note": "Official confirmed final win odds are used retrospectively. This does not represent odds available 2-30 minutes before post time and must not be presented as live profitability.",
         "e_model_changed": False, "live_model_changed": False,
@@ -235,7 +282,7 @@ def main():
         "g2_pass": bool(len(holdout) >= 100 and len(hold_g2) >= 100
                         and summarize_bets(hold_g2)["roi_95ci"]["roi_95ci"]
                         and summarize_bets(hold_g2)["roi_95ci"]["roi_95ci"][0] > 100),
-        "interpretation": "G2 is only considered ROI-confirmed if the untouched holdout has at least 100 eligible races and 100 G2 bets and the race-bootstrap 95% ROI lower bound exceeds 100%. Otherwise it remains an unconfirmed research signal.",
+        "interpretation": "G2 is only considered ROI-confirmed if the untouched holdout has at least 100 eligible races and 100 G2 bets and the race-bootstrap 95% ROI lower bound exceeds 100%. The skip rule is tuned only on development data; the untouched holdout evaluates the selected thresholds once. A pass still requires at least 100 holdout bets and a race-bootstrap 95% ROI lower bound above 100%.",
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
