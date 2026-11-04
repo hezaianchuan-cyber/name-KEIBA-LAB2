@@ -1020,6 +1020,38 @@ def build_trio_tickets(ranked, candidate_count=5):
     return [list(combo) for combo in itertools.combinations(nos, 3)] if len(nos) >= 3 else []
 
 
+def build_trio_formation_2_4_5(ranked):
+    """2-4-5 trio formation over seven ranked horses: top2 / top4 / ranks3-7.
+
+    Trio is unordered, so duplicate permutations and repeated-horse tickets
+    are removed. The canonical horse-number order makes every ticket unique.
+    """
+    unique = []
+    seen_horses = set()
+    for horse in ranked or []:
+        raw = re.sub(r"\\D", "", str(horse.get("no") or ""))
+        if raw:
+            no = str(int(raw))
+            if no not in seen_horses:
+                unique.append(no)
+                seen_horses.add(no)
+    firsts, seconds, thirds = unique[:2], unique[:4], unique[2:7]
+    tickets, seen_tickets = [], set()
+    for first in firsts:
+        for second in seconds:
+            if second == first:
+                continue
+            for third in thirds:
+                if third in (first, second):
+                    continue
+                combo = tuple(sorted((first, second, third), key=int))
+                if combo in seen_tickets:
+                    continue
+                seen_tickets.add(combo)
+                tickets.append(list(combo))
+    return tickets
+
+
 def new_trio_diagnostics():
     return {
         "races": 0,
@@ -1030,6 +1062,9 @@ def new_trio_diagnostics():
                    "sum_return_sq": 0, "sum_stake_sq": 0, "sum_stake_return": 0}
             for pool in (4, 5, 6, 7)
         },
+        "formation_2_4_5": {"races": 0, "tickets": 0, "hits": 0, "hit_races": 0,
+                            "stake": 0, "return": 0, "sum_return_sq": 0,
+                            "sum_stake_sq": 0, "sum_stake_return": 0},
     }
 
 
@@ -1061,6 +1096,24 @@ def update_trio_diagnostics(bucket, ranked, field, payout):
         stats["sum_return_sq"] += returned * returned
         stats["sum_stake_sq"] += race_stake * race_stake
         stats["sum_stake_return"] += race_stake * returned
+
+    # Dedicated 2-4-5 formation: top2 / top4 / ranks3-7, 100 yen per
+    # unique unordered combination. This is isolated from other ticket types.
+    formation = bucket["formation_2_4_5"]
+    tickets = build_trio_formation_2_4_5(ranked)
+    if tickets:
+        race_stake = 100 * len(tickets)
+        returned = sum(payout_for("trio", ticket, payout) or 0 for ticket in tickets)
+        race_hits = sum(1 for ticket in tickets if payout_for("trio", ticket, payout))
+        formation["races"] += 1
+        formation["tickets"] += len(tickets)
+        formation["stake"] += race_stake
+        formation["return"] += returned
+        formation["hits"] += race_hits
+        formation["hit_races"] += int(race_hits > 0)
+        formation["sum_return_sq"] += returned * returned
+        formation["sum_stake_sq"] += race_stake * race_stake
+        formation["sum_stake_return"] += race_stake * returned
 
 
 def summarize_trio_diagnostics(bucket):
@@ -1097,7 +1150,30 @@ def summarize_trio_diagnostics(bucket):
             "tickets_per_race": round(stats["tickets"] / n, 2) if n else None,
         }
     output["structures"] = structures
-    output["interpretation"] = "Trio tickets are unordered combinations. hit_rate is winning tickets divided by tickets; race_hit_rate is races with at least one winning ticket divided by races. ROI confidence intervals use a race-level normal ratio approximation and are diagnostic, not a promotion guarantee. Top5 is the unchanged fixed baseline."
+    stats = bucket["formation_2_4_5"]
+    n = stats["races"]
+    roi = 100 * stats["return"] / stats["stake"] if stats["stake"] else None
+    ci_low = ci_high = None
+    if n > 1 and roi is not None:
+        ratio = roi / 100
+        sum_z_sq = (stats["sum_return_sq"] - 2 * ratio * stats["sum_stake_return"]
+                    + ratio * ratio * stats["sum_stake_sq"])
+        variance = max(0.0, sum_z_sq / (n - 1))
+        mean_stake = stats["stake"] / n
+        standard_error = 100 * (variance / n) ** 0.5 / mean_stake if mean_stake else 0
+        ci_low, ci_high = round(roi - 1.96 * standard_error, 2), round(roi + 1.96 * standard_error, 2)
+    output["formation_2_4_5"] = {
+        **stats,
+        "hit_rate": round(100 * stats["hits"] / stats["tickets"], 4) if stats["tickets"] else None,
+        "race_hit_rate": round(100 * stats["hit_races"] / n, 2) if n else None,
+        "roi": round(roi, 2) if roi is not None else None,
+        "roi_ci95_normal_low": ci_low, "roi_ci95_normal_high": ci_high,
+        "profit": stats["return"] - stats["stake"],
+        "tickets_per_race": round(stats["tickets"] / n, 2) if n else None,
+        "formation": "top2 / top4 / ranks3-7",
+        "stake_per_ticket_yen": 100,
+    }
+    output["interpretation"] = "Trio tickets are unordered combinations. hit_rate is winning tickets divided by tickets; race_hit_rate is races with at least one winning ticket divided by races. ROI confidence intervals use a race-level normal ratio approximation and are diagnostic, not a promotion guarantee. Top5 is the unchanged fixed baseline. formation_2_4_5 is top2 / top4 / ranks3-7 with duplicate unordered combinations removed."
     return output
 
 
