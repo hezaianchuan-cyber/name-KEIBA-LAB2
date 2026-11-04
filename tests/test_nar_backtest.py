@@ -1647,3 +1647,82 @@ class RaceBudgetAutoStrategyTests(unittest.TestCase):
         self.assertEqual(result["status"], "awaiting_development_validation")
         self.assertEqual(result["stake_jpy"], 0)
         self.assertEqual(result["holdout_races_with_bets"], 0)
+
+
+class DailyOnlineLearningRegressionTests(unittest.TestCase):
+    def _race(self, day, race_no):
+        return {
+            "key": ("大井", day, str(race_no)),
+            "date": __import__("datetime").date.fromisoformat(
+                f"{day[:4]}-{day[4:6]}-{day[6:8]}"),
+            "venue": "大井", "race": str(race_no), "distance": 1600,
+            "field_size": 3, "going": "良", "surface": "ダート",
+        }
+
+    def _field(self):
+        return [
+            {"no": "1", "name": "馬A", "sire": "父A", "jockey": "騎手A",
+             "age": 5, "finish": 1, "margin": "0.0", "last3f": 38.0,
+             "time_seconds": 98.0},
+            {"no": "2", "name": "馬B", "sire": "父B", "jockey": "騎手B",
+             "age": 8, "finish": 2, "margin": "0.5", "last3f": 39.0,
+             "time_seconds": 99.0},
+            {"no": "3", "name": "馬C", "sire": "父C", "jockey": "騎手C",
+             "age": 2, "finish": 3, "margin": "1.0", "last3f": 40.0,
+             "time_seconds": 100.0},
+        ]
+
+    def test_same_day_results_do_not_change_later_same_day_predictions_but_change_next_day(self):
+        races = {}
+        horses = {}
+        payouts = {}
+        for day, race_no in (("20261101", 1), ("20261101", 2), ("20261102", 1)):
+            race = self._race(day, race_no)
+            races[race["key"]] = race
+            horses[race["key"]] = self._field()
+            payouts[race["key"]] = {
+                "win": [(["1"], 250)], "place": [], "quinella": [],
+                "exacta": [], "wide": [], "trio": [], "trifecta": [],
+            }
+
+        observed = []
+        original = nb.score_runner
+
+        def capture_weights(horse, history, sire_stats, jockey_stats, race, weights,
+                            include_recent_history=True):
+            observed.append((race["date"].isoformat(), dict(weights)))
+            return original(horse, history, sire_stats, jockey_stats, race, weights,
+                            include_recent_history)
+
+        with mock.patch.object(nb, "score_runner", side_effect=capture_weights):
+            result = nb.run_backtest(races, horses, payouts)
+
+        by_day = defaultdict(list)
+        for day, weights in observed:
+            by_day[day].append(weights)
+        self.assertEqual(len(by_day["2026-11-01"]), 6)
+        self.assertEqual(len(by_day["2026-11-02"]), 3)
+        # All horses/races on one date are scored against the same pre-update weights.
+        self.assertTrue(all(w == by_day["2026-11-01"][0]
+                            for w in by_day["2026-11-01"]))
+        self.assertTrue(all(w == by_day["2026-11-02"][0]
+                            for w in by_day["2026-11-02"]))
+        # Results from the prior date must have updated the model before the next date.
+        self.assertNotEqual(by_day["2026-11-01"][0], by_day["2026-11-02"][0])
+        self.assertGreater(result[4], 0)
+
+    def test_update_model_preserves_normalized_bounded_weights(self):
+        weights = {"form": 0.55, "venue": 0.12, "distance": 0.12,
+                   "sire": 0.10, "jockey": 0.07, "age": 0.04}
+        field = self._field()
+        parts = {
+            "1": {"form": 0.9, "venue": 0.8, "distance": 0.8,
+                  "sire": 0.9, "jockey": 0.9, "age": 0.7},
+            "2": {"form": 0.4, "venue": 0.4, "distance": 0.4,
+                  "sire": 0.4, "jockey": 0.4, "age": 0.4},
+            "3": {"form": 0.2, "venue": 0.2, "distance": 0.2,
+                  "sire": 0.2, "jockey": 0.2, "age": 0.2},
+        }
+        self.assertTrue(nb.update_model(field, parts, weights))
+        self.assertAlmostEqual(sum(weights.values()), 1.0, places=8)
+        self.assertTrue(all(0.01 <= value <= 0.8 for value in weights.values()))
