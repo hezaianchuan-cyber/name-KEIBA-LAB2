@@ -1,10 +1,17 @@
 {
-  "generated_at": "2026-11-04T05:11:01.901225+00:00",
+  "generated_at": "2026-11-04T05:12:01.930511+00:00",
   "feature": "G4_real_preoff_odds_evaluation",
   "status": "insufficient_prospective_sample",
   "g1_temperature": 0.115,
-  "evaluation_period": null,
-  "development_period": null,
+  "probability_source": "raw per-horse scores saved at capture time, recalibrated with the validated G1 temperature",
+  "evaluation_period": [
+    "20261103",
+    "20261103"
+  ],
+  "development_period": [
+    "20261103",
+    "20261103"
+  ],
   "holdout_period": null,
   "data_source": "KEIBA LAB timestamped official NAR pre-off odds snapshots only; official final odds are not read.",
   "pre_registered_rule": {
@@ -22,10 +29,11 @@
     "missing_predictions": 0,
     "missing_odds": 0,
     "missing_result": 0,
-    "temperature_mismatch": 27,
-    "valid_snapshots": 0,
+    "temperature_mismatch": 0,
+    "valid_snapshots": 27,
     "snapshots_with_official_result": 27,
     "snapshots_missing_official_result": 10,
+    "recalibrated_with_g1_temperature": 27,
     "insufficient_odds_coverage": 0
   },
   "time_buckets": {
@@ -34,18 +42,18 @@
         8.0,
         15.0
       ],
-      "unique_races_with_snapshot": 0,
-      "development_races": 0,
+      "unique_races_with_snapshot": 7,
+      "development_races": 7,
       "holdout_races": 0,
       "development": {
         "model_top": {
-          "races_bet": 0,
-          "hits": 0,
-          "hit_rate_pct": null,
-          "stake_jpy": 0,
-          "return_jpy": 0,
-          "profit_jpy": 0,
-          "roi_pct": null,
+          "races_bet": 7,
+          "hits": 1,
+          "hit_rate_pct": 14.29,
+          "stake_jpy": 700,
+          "return_jpy": 1480,
+          "profit_jpy": 780,
+          "roi_pct": 211.43,
           "roi_95ci": {
             "method": "race-level bootstrap",
             "replicates": 0,
@@ -53,13 +61,13 @@
           }
         },
         "market_favorite": {
-          "races_bet": 0,
-          "hits": 0,
-          "hit_rate_pct": null,
-          "stake_jpy": 0,
-          "return_jpy": 0,
-          "profit_jpy": 0,
-          "roi_pct": null,
+          "races_bet": 7,
+          "hits": 2,
+          "hit_rate_pct": 28.57,
+          "stake_jpy": 700,
+          "return_jpy": 430,
+          "profit_jpy": -270,
+          "roi_pct": 61.43,
           "roi_95ci": {
             "method": "race-level bootstrap",
             "replicates": 0,
@@ -67,20 +75,20 @@
           }
         },
         "value_rule": {
-          "races_bet": 0,
+          "races_bet": 7,
           "hits": 0,
-          "hit_rate_pct": null,
-          "stake_jpy": 0,
+          "hit_rate_pct": 0.0,
+          "stake_jpy": 700,
           "return_jpy": 0,
-          "profit_jpy": 0,
-          "roi_pct": null,
+          "profit_jpy": -700,
+          "roi_pct": 0.0,
           "roi_95ci": {
             "method": "race-level bootstrap",
             "replicates": 0,
             "roi_95ci": null
           }
         },
-        "value_rule_skip_rate_pct": null
+        "value_rule_skip_rate_pct": 0.0
       },
       "holdout": {
         "model_top": {
@@ -133,18 +141,18 @@
         4.0,
         8.0
       ],
-      "unique_races_with_snapshot": 0,
-      "development_races": 0,
+      "unique_races_with_snapshot": 1,
+      "development_races": 1,
       "holdout_races": 0,
       "development": {
         "model_top": {
-          "races_bet": 0,
+          "races_bet": 1,
           "hits": 0,
-          "hit_rate_pct": null,
-          "stake_jpy": 0,
+          "hit_rate_pct": 0.0,
+          "stake_jpy": 100,
           "return_jpy": 0,
-          "profit_jpy": 0,
-          "roi_pct": null,
+          "profit_jpy": -100,
+          "roi_pct": 0.0,
           "roi_95ci": {
             "method": "race-level bootstrap",
             "replicates": 0,
@@ -152,13 +160,13 @@
           }
         },
         "market_favorite": {
-          "races_bet": 0,
+          "races_bet": 1,
           "hits": 0,
-          "hit_rate_pct": null,
-          "stake_jpy": 0,
+          "hit_rate_pct": 0.0,
+          "stake_jpy": 100,
           "return_jpy": 0,
-          "profit_jpy": 0,
-          "roi_pct": null,
+          "profit_jpy": -100,
+          "roi_pct": 0.0,
           "roi_95ci": {
             "method": "race-level bootstrap",
             "replicates": 0,
@@ -166,20 +174,20 @@
           }
         },
         "value_rule": {
-          "races_bet": 0,
+          "races_bet": 1,
           "hits": 0,
-          "hit_rate_pct": null,
-          "stake_jpy": 0,
+          "hit_rate_pct": 0.0,
+          "stake_jpy": 100,
           "return_jpy": 0,
-          "profit_jpy": 0,
-          "roi_pct": null,
+          "profit_jpy": -100,
+          "roi_pct": 0.0,
           "roi_95ci": {
             "method": "race-level bootstrap",
             "replicates": 0,
             "roi_95ci": null
           }
         },
-        "value_rule_skip_rate_pct": null
+        "value_rule_skip_rate_pct": 0.0
       },
       "holdout": {
         "model_top": {
@@ -232,18 +240,18 @@
         2.0,
         4.0
       ],
-      "unique_races_with_snapshot": 0,
-      "development_races": 0,
+      "unique_races_with_snapshot": 2,
+      "development_races": 2,
       "holdout_races": 0,
       "development": {
         "model_top": {
-          "races_bet": 0,
+          "races_bet": 2,
           "hits": 0,
-          "hit_rate_pct": null,
-          "stake_jpy": 0,
+          "hit_rate_pct": 0.0,
+          "stake_jpy": 200,
           "return_jpy": 0,
-          "profit_jpy": 0,
-          "roi_pct": null,
+          "profit_jpy": -200,
+          "roi_pct": 0.0,
           "roi_95ci": {
             "method": "race-level bootstrap",
             "replicates": 0,
@@ -251,13 +259,13 @@
           }
         },
         "market_favorite": {
-          "races_bet": 0,
+          "races_bet": 2,
           "hits": 0,
-          "hit_rate_pct": null,
-          "stake_jpy": 0,
+          "hit_rate_pct": 0.0,
+          "stake_jpy": 200,
           "return_jpy": 0,
-          "profit_jpy": 0,
-          "roi_pct": null,
+          "profit_jpy": -200,
+          "roi_pct": 0.0,
           "roi_95ci": {
             "method": "race-level bootstrap",
             "replicates": 0,
@@ -265,20 +273,20 @@
           }
         },
         "value_rule": {
-          "races_bet": 0,
+          "races_bet": 2,
           "hits": 0,
-          "hit_rate_pct": null,
-          "stake_jpy": 0,
+          "hit_rate_pct": 0.0,
+          "stake_jpy": 200,
           "return_jpy": 0,
-          "profit_jpy": 0,
-          "roi_pct": null,
+          "profit_jpy": -200,
+          "roi_pct": 0.0,
           "roi_95ci": {
             "method": "race-level bootstrap",
             "replicates": 0,
             "roi_95ci": null
           }
         },
-        "value_rule_skip_rate_pct": null
+        "value_rule_skip_rate_pct": 0.0
       },
       "holdout": {
         "model_top": {
@@ -328,18 +336,18 @@
     }
   },
   "closest_to_post": {
-    "unique_races": 0,
-    "development_races": 0,
+    "unique_races": 20,
+    "development_races": 20,
     "holdout_races": 0,
     "development": {
       "model_top": {
-        "races_bet": 0,
-        "hits": 0,
-        "hit_rate_pct": null,
-        "stake_jpy": 0,
-        "return_jpy": 0,
-        "profit_jpy": 0,
-        "roi_pct": null,
+        "races_bet": 20,
+        "hits": 3,
+        "hit_rate_pct": 15.0,
+        "stake_jpy": 2000,
+        "return_jpy": 1890,
+        "profit_jpy": -110,
+        "roi_pct": 94.5,
         "roi_95ci": {
           "method": "race-level bootstrap",
           "replicates": 0,
@@ -347,13 +355,13 @@
         }
       },
       "market_favorite": {
-        "races_bet": 0,
-        "hits": 0,
-        "hit_rate_pct": null,
-        "stake_jpy": 0,
-        "return_jpy": 0,
-        "profit_jpy": 0,
-        "roi_pct": null,
+        "races_bet": 20,
+        "hits": 7,
+        "hit_rate_pct": 35.0,
+        "stake_jpy": 2000,
+        "return_jpy": 1540,
+        "profit_jpy": -460,
+        "roi_pct": 77.0,
         "roi_95ci": {
           "method": "race-level bootstrap",
           "replicates": 0,
@@ -361,20 +369,20 @@
         }
       },
       "value_rule": {
-        "races_bet": 0,
-        "hits": 0,
-        "hit_rate_pct": null,
-        "stake_jpy": 0,
-        "return_jpy": 0,
-        "profit_jpy": 0,
-        "roi_pct": null,
+        "races_bet": 19,
+        "hits": 1,
+        "hit_rate_pct": 5.26,
+        "stake_jpy": 1900,
+        "return_jpy": 200,
+        "profit_jpy": -1700,
+        "roi_pct": 10.53,
         "roi_95ci": {
           "method": "race-level bootstrap",
           "replicates": 0,
           "roi_95ci": null
         }
       },
-      "skip_rate_pct": null
+      "skip_rate_pct": 5.0
     },
     "holdout": {
       "model_top": {
