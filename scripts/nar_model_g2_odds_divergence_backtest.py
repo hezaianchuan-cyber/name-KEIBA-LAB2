@@ -168,6 +168,9 @@ def main():
     if not g1.get("g1_pass") or g1.get("status") != "G1_improved_on_untouched_holdout":
         raise RuntimeError("G1 did not pass; refusing to promote its temperature into G2.")
     temperature = float(g1["selected_temperature"])
+    # NAR monthly archives for the current month may not be published yet.
+    # Restrict retrospective tests to the last fully completed calendar month.
+    nb.END = dt.date.today().replace(day=1) - dt.timedelta(days=1)
     races, horses, payouts, archive_months = nb.load_archives()
     _, _, _, _, _, records = nb.run_backtest(races, horses, payouts)
     records = [r for r in records if r.get("date") and
