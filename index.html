@@ -703,11 +703,24 @@ function labLedgerRecordsForDate(plans,date){
 }
 // Independent compact archive for saved ticket plans.
 const LAB_TICKET_STORAGE_KEY='keibaLabTicketPlansV1';
+let remoteLabTicketPlans=[];
+async function loadAutoTicketPlans(){
+ try{
+  const response=await fetch('./data/auto-ticket-plans.json?v='+Date.now(),{cache:'no-store'});
+  if(!response.ok)throw new Error('自動買い目データ未公開（HTTP '+response.status+'）');
+  const data=await response.json();
+  remoteLabTicketPlans=(Array.isArray(data.plans)?data.plans:[]).filter(p=>p&&p.raceId&&p.date).map(plan=>({predictionId:plan.raceId,plan}));
+  if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
+ }catch(e){console.warn('自動保存買い目を取得できません',e);}
+}
+window.addEventListener('load',loadAutoTicketPlans);
 function loadLabTicketPlans(){
  try{
   const stored=JSON.parse(localStorage.getItem(LAB_TICKET_STORAGE_KEY)||'[]'),map=new Map();
-  for(const item of Array.isArray(stored)?stored:[])if(item&&item.plan&&item.plan.raceId)map.set(String(item.plan.raceId)+'|'+labLedgerDateKey(item.plan.date),item);
-  for(const p of db.predictions||[])if(p&&p.ticketPlan&&p.ticketPlan.raceId){const plan=p.ticketPlan,key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date||p.date);if(!map.has(key))map.set(key,{predictionId:p.id,plan});}
+  const add=item=>{if(!item||!item.plan||!item.plan.raceId)return;const plan=item.plan,key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date);const previous=map.get(key);if(!previous||String(plan.createdAt||'')>=String(previous.plan.createdAt||''))map.set(key,item);};
+  for(const item of remoteLabTicketPlans)add(item);
+  for(const item of Array.isArray(stored)?stored:[])add(item);
+  for(const p of db.predictions||[])if(p&&p.ticketPlan&&p.ticketPlan.raceId)add({predictionId:p.id,plan:p.ticketPlan});
   return [...map.values()];
  }catch(e){console.warn('保存買い目の読込に失敗',e);return [];}
 }
