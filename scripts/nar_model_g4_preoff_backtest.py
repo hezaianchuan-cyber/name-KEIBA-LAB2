@@ -98,7 +98,7 @@ def load_outcomes():
 
 
 def load_supabase_snapshots(model_rows):
-    diagnostics = {"supabase_query_rows": 0, "supabase_snapshots_joined": 0}
+    diagnostics = {"supabase_query_rows": 0, "supabase_snapshots_joined": 0, "supabase_model_races": len(models_by_race), "supabase_race_key_matches": 0, "supabase_no_prior_model": 0, "supabase_model_too_old": 0, "supabase_empty_odds": 0}
     if not SUPABASE_URL or not SUPABASE_KEY:
         diagnostics["supabase_status"] = "credentials_unavailable"
         return [], diagnostics
@@ -147,16 +147,22 @@ def load_supabase_snapshots(model_rows):
                 captured = parse_time(item.get("captured_at"))
                 if not key or captured is None:
                     continue
-                prior = [pair for pair in models_by_race.get(key, []) if pair[0] <= captured]
+                model_candidates = models_by_race.get(key, [])
+                if model_candidates:
+                    diagnostics["supabase_race_key_matches"] += 1
+                prior = [pair for pair in model_candidates if pair[0] <= captured]
                 if not prior:
+                    diagnostics["supabase_no_prior_model"] += 1
                     continue
                 model_time, model = prior[-1]
                 age_minutes = (captured - model_time).total_seconds() / 60.0
                 if age_minutes < 0 or age_minutes > MAX_MODEL_AGE_MINUTES:
+                    diagnostics["supabase_model_too_old"] += 1
                     continue
                 odds_data = item.get("odds_data") or {}
                 odds = odds_data.get("odds") or []
                 if not odds:
+                    diagnostics["supabase_empty_odds"] += 1
                     continue
                 minutes = odds_data.get("minutes_to_post")
                 try:
