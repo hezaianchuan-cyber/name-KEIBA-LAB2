@@ -1535,6 +1535,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     history = defaultdict(list)
     sire_stats = defaultdict(lambda:{"runs":0,"top3":0})
     jockey_stats = defaultdict(lambda:{"runs":0,"top3":0})
+    frame_stats = build_frame_stats(train_races, train_horses)
     train_ordered = sorted(train_races.values(),
                            key=lambda r:(r["date"],r["venue"],int(r["race"])))
     for train_race in train_ordered:
@@ -1619,6 +1620,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                 if h.get("jockey"):
                     jockey_stats[h["jockey"]]["runs"]+=1
                     jockey_stats[h["jockey"]]["top3"]+=int(h["finish"]<=3)
+            update_frame_stats(race, field, frame_stats)
 
     for race in ordered:
         if current is not None and race["date"] != current:
@@ -1656,7 +1658,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                             0.0,0.0,0.0,include_recent_history,going_weight=0.10)[0],h) for h in field]
             elif model_name == "C_performance_pace":
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
-                            0.10,0.10,0.10,include_recent_history,going_weight=0.10)[0],h) for h in field]
+                            0.10,0.10,0.10,include_recent_history,going_weight=0.10)[0]
+                         * 0.92 + frame_form_score(race, h, frame_stats) * 0.08, h) for h in field]
             elif model_name in performance_blends:
                 margin_weight, closing_weight, time_weight = performance_blends[model_name]
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
