@@ -42,6 +42,21 @@ jobs:
         env:
           NAR_CACHE_DIR: .cache/nar-monthly
         run: python3 scripts/nar_daily_payouts.py
+      - name: Validate generated payout report
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path("data/daily-payouts.json")
+          if not path.is_file() or path.stat().st_size < 20:
+              raise SystemExit("Daily payout report is missing or empty; refusing to publish.")
+          report = json.loads(path.read_text(encoding="utf-8"))
+          if not report.get("generated_at") or not isinstance(report.get("days"), list):
+              raise SystemExit("Daily payout report schema is invalid; refusing to publish.")
+          print("Validated payout report:", report["generated_at"],
+                "days=", len(report["days"]),
+                "today_payout_races=", report.get("daily_archive", {}).get("today_payout_races"))
+          PY
       - name: Publish report
         shell: bash
         run: |
