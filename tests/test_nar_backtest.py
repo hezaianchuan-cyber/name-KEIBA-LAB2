@@ -408,7 +408,7 @@ class IndependentBetTypeBacktestTests(unittest.TestCase):
     def test_each_bet_type_has_its_own_stake_return_and_roi(self):
         record = {
             "race_key":"大井|20261103|10",
-            "model_version":"nar-chronological-v8-abcd-C-preoff",
+            "model_version":"nar-chronological-v9-D-frame-preoff",
             "date":"20261103",
             "captured_at":"2026-11-03T15:10:00+09:00",
             "scheduled_post_time":"2026-11-03T15:30:00+09:00",
@@ -895,7 +895,7 @@ class CandidateRankingResearchTests(unittest.TestCase):
         ]
         record = {
             "race_key":"大井|20261103|10","date":"20261103",
-            "model_version":"nar-chronological-v8-abcd-C-preoff",
+            "model_version":"nar-chronological-v9-D-frame-preoff",
             "captured_at":"2026-11-03T15:10:00+09:00",
             "scheduled_post_time":"2026-11-03T15:30:00+09:00",
             "minutes_to_post":20,"candidate_combinations":candidates,
@@ -926,7 +926,7 @@ class CandidateRankingResearchTests(unittest.TestCase):
         self.assertEqual(result["status"], "awaiting_C_model_preoff_snapshots")
         self.assertEqual(result["snapshot_races"], 0)
         self.assertEqual(result["legacy_snapshot_races_excluded"], 1)
-        self.assertEqual(result["required_model_version"], "nar-chronological-v8-abcd-C-preoff")
+        self.assertEqual(result["required_model_version"], "nar-chronological-v9-D-frame-preoff")
 
 
 class TrifectaDiagnosticTests(unittest.TestCase):
@@ -1562,7 +1562,7 @@ class GoingSuitabilityPredictionTests(unittest.TestCase):
 class RaceBudgetAutoStrategyTests(unittest.TestCase):
     def _snapshot(self, day, tickets):
         return {
-            "model_version": "nar-chronological-v8-abcd-C-preoff",
+            "model_version": "nar-chronological-v9-D-frame-preoff",
             "race_key": f"大井|{day.replace('-', '')}|1",
             "date": day,
             "captured_at": f"{day}T19:50:00+09:00",
