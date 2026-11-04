@@ -1584,6 +1584,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                                          "race_count":0,"sum_return_sq":0,
                                          "sum_stake_sq":0,"sum_stake_return":0}
                                   for kind in kinds},
+                     "shadow_portfolio":{"races":0,"bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0}
+                                  for kind in ("win","place","wide","trio")}},
                      "trifecta_diagnostics":new_trifecta_diagnostics(),
                      "role_trifecta_diagnostics":new_role_trifecta_diagnostics(),
                      "finish_position_diagnostics":new_finish_position_diagnostics(),
@@ -1785,6 +1787,18 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             else:
                 top_probability = None
             m=results[model_name]; m["races"]+=1
+            shadow = m["shadow_portfolio"]
+            shadow_tickets = build_shadow_portfolio_tickets(ranked)
+            if shadow_tickets:
+                shadow["races"] += 1
+                for ticket in shadow_tickets:
+                    bucket = shadow["bet_types"][ticket["kind"]]
+                    bucket["tickets"] += 1
+                    bucket["stake"] += 100
+                    returned = payout_for(ticket["kind"], ticket["numbers"], payout)
+                    if returned:
+                        bucket["hits"] += 1
+                        bucket["return"] += returned
             if ranked[0]["no"] in winners: m["winner_top1"]+=1
             if any(h["no"] in winners for h in ranked[:3]): m["winner_top3"]+=1
             for k, hit in top_k_winner_coverage(ranked, winners).items():
@@ -2877,11 +2891,27 @@ def holdout_validation(races, horses, payouts, final_odds=None):
                     "hit_rate":round(100*totals["hits"]/totals["tickets"],2) if totals["tickets"] else None,
                     **summarize_race_cluster_roi(totals),
                 }
+            shadow_races = sum(int((m.get("shadow_portfolio") or {}).get("races") or 0)
+                                for m in source_models)
+            shadow_bet_types = {}
+            for kind in ("win", "place", "wide", "trio"):
+                shadow_totals = {key: sum(int((((m.get("shadow_portfolio") or {}).get("bet_types") or {}).get(kind) or {}).get(key) or 0)
+                                          for m in source_models)
+                                 for key in ("tickets", "hits", "stake", "return")}
+                shadow_bet_types[kind] = {
+                    **shadow_totals,
+                    "hit_rate": round(100 * shadow_totals["hits"] / shadow_totals["tickets"], 2)
+                        if shadow_totals["tickets"] else None,
+                    "roi": round(100 * shadow_totals["return"] / shadow_totals["stake"], 2)
+                        if shadow_totals["stake"] else None,
+                    "profit": shadow_totals["return"] - shadow_totals["stake"],
+                }
             period_models[model_name] = {
                 "races":race_total,
                 "winner_top1_rate":round(100*winner_top1/race_total,2) if race_total else None,
                 "winner_top3_rate":round(100*winner_top3/race_total,2) if race_total else None,
                 "bet_types":bet_types,
+                "shadow_portfolio": {"races": shadow_races, "bet_types": shadow_bet_types},
             }
         return period_models
 
@@ -3384,6 +3414,7 @@ def main():
         "ticket_policy": result["method"]["ticket_generation"],
         "stake_per_ticket_jpy": 100,
         "bet_types": (recent_models.get("C_performance_pace") or {}).get("bet_types", {}),
+        "production_shadow_portfolio": (recent_models.get("C_performance_pace") or {}).get("shadow_portfolio", {}),
         "race_budget_auto_strategy": result.get("race_budget_auto_strategy_backtest", {}),
         "all_model_bet_type_comparison": {
             name: (recent_models.get(name) or {}).get("bet_types", {})
