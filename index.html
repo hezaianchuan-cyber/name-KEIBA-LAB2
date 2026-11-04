@@ -440,24 +440,18 @@ if(!window.AndroidBridge){
   window.addEventListener('load',()=>fetchPcOfficialData(false));
   setInterval(()=>fetchPcOfficialData(false),15*60*1000);
   window.addEventListener('load',()=>refreshOddsCaptureStatus());
-  setInterval(refreshOddsCaptureStatus,60*1000);
 }
 async function refreshOddsCaptureStatus(){
+ try{
+  const count=await fetchSupabaseLiveData();
   const badge=$('oddsCaptureBadge'),details=$('oddsCaptureDetails');
-  try{
-    const response=await fetch('./data/odds-capture-status.json?v='+Date.now(),{cache:'no-store'});
-    if(!response.ok)throw new Error('公開データ未取得（HTTP '+response.status+'）');
-    const s=await response.json();
-    const updated=s.updated_at?new Date(s.updated_at).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'}):'不明';
-    const captured=Number(s.captured_races||0);
-    const result=s.result||'status_unknown';
-    badge.textContent=result==='captured'?'取得成功':result==='no_eligible_preoff_races'?'対象レース待ち':result;
-    details.innerHTML='最終処理：'+esc(updated)+'<br>対象時間：発走30〜2分前<br>保存済み：'+captured+'レース ／ 当日オッズ行：'+Number(s.odds_rows||0).toLocaleString()+'行 ／ オッズ取得対象レース：'+Number(s.races_with_odds||0)+'<br>処理結果：'+esc(result)+'<br><span class="sub">画面確認は1分ごと。取得元データの収集・公開は現在5分ごとで、公開反映後に更新されます。</span>';
-    badge.style.color=result==='captured'?'var(--good)':'var(--muted)';
-  }catch(e){
-    badge.textContent='状態を取得できません';
-    details.textContent='オッズ取得状況を読み込めません：'+e.message;
-  }
+  if(badge)badge.textContent=count?'1分取得データ接続中':'1分データ待ち';
+  if(details&&!count)details.textContent='Supabaseの1分オッズデータはまだありません。';
+ }catch(e){
+  const badge=$('oddsCaptureBadge'),details=$('oddsCaptureDetails');
+  if(badge)badge.textContent='接続確認待ち';
+  if(details)details.textContent='1分オッズ接続エラー：'+e.message;
+ }
 }
 function refreshRaceChoices(){
   const date=$('raceDate').value.replaceAll('-',''),venue=$('venue').value;
