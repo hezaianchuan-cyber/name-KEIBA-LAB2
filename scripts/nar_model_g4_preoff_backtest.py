@@ -142,24 +142,28 @@ def load_snapshots():
 
 
 def build_race_evaluation(snapshot, outcome, expected_temperature):
-    prediction_by_no = {}
+    scored_by_no = {}
     for item in snapshot["predictions"]:
         no = str(item.get("horse_no") or "").strip()
         try:
-            probability = float(item.get("win_probability"))
+            score = float(item.get("score"))
         except (TypeError, ValueError):
             continue
-        if no and probability > 0 and math.isfinite(probability):
-            prediction_by_no[no] = probability
-    if len(prediction_by_no) < 3:
+        if no and math.isfinite(score):
+            scored_by_no[no] = score
+    if len(scored_by_no) < 3:
         return None, "missing_predictions"
 
-    try:
-        temperature = float(snapshot.get("model_temperature"))
-    except (TypeError, ValueError):
-        return None, "temperature_mismatch"
-    if abs(temperature - expected_temperature) > 1e-6:
-        return None, "temperature_mismatch"
+    # Re-apply the G1 temperature to the raw scores saved at capture time.
+    # This keeps the historical odds timestamp intact while using the
+    # calibrated probability scale validated by the untouched G1 holdout.
+    peak = max(scored_by_no.values())
+    weights = {
+        no: math.exp(max(-700.0, (score - peak) / max(0.005, expected_temperature)))
+        for no, score in scored_by_no.items()
+    }
+    weight_total = sum(weights.values()) or 1.0
+    prediction_by_no = {no: value / weight_total for no, value in weights.items()}
 
     win_odds = {}
     for item in snapshot["odds"]:
@@ -293,7 +297,7 @@ def main():
     snapshots, diagnostics = load_snapshots()
     diagnostics["snapshots_with_official_result"] = 0
     diagnostics["snapshots_missing_official_result"] = 0
-    diagnostics["temperature_mismatch"] = 0
+    diagnostics["recalibrated_with_g1_temperature"] = 0
     diagnostics["insufficient_odds_coverage"] = 0
 
     joined = []
@@ -308,6 +312,7 @@ def main():
             diagnostics[reason] = diagnostics.get(reason, 0) + 1
             continue
         joined.append(evaluated)
+        diagnostics["recalibrated_with_g1_temperature"] += 1
     diagnostics["valid_snapshots"] = len(joined)
 
     dates = sorted({row["date"] for row in joined})
@@ -376,6 +381,7 @@ def main():
             else "evaluated_not_profitable_or_not_confirmed"
         ),
         "g1_temperature": temperature,
+        "probability_source": "raw per-horse scores saved at capture time, recalibrated with the validated G1 temperature",
         "evaluation_period": [latest_dates[0], latest_dates[-1]] if latest_dates else None,
         "development_period": [latest_dates[0], latest_dev_end] if latest_dates and latest_dev_end else None,
         "holdout_period": [latest_holdout_start, latest_dates[-1]] if latest_holdout_start and latest_dates else None,
