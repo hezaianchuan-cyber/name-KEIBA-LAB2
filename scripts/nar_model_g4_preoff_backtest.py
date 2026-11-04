@@ -98,11 +98,6 @@ def load_outcomes():
 
 
 def load_supabase_snapshots(model_rows):
-    diagnostics = {"supabase_query_rows": 0, "supabase_snapshots_joined": 0, "supabase_model_races": len(models_by_race), "supabase_race_key_matches": 0, "supabase_no_prior_model": 0, "supabase_model_too_old": 0, "supabase_empty_odds": 0}
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        diagnostics["supabase_status"] = "credentials_unavailable"
-        return [], diagnostics
-
     models_by_race = {}
     for row in model_rows:
         captured = parse_time(row.get("captured_at"))
@@ -110,6 +105,11 @@ def load_supabase_snapshots(model_rows):
             models_by_race.setdefault(row["race_key"], []).append((captured, row))
     for values in models_by_race.values():
         values.sort(key=lambda item: item[0])
+
+    diagnostics = {"supabase_query_rows": 0, "supabase_snapshots_joined": 0, "supabase_model_races": len(models_by_race), "supabase_race_key_matches": 0, "supabase_no_prior_model": 0, "supabase_model_too_old": 0, "supabase_empty_odds": 0}
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        diagnostics["supabase_status"] = "credentials_unavailable"
+        return [], diagnostics
 
     dates = [row["date"] for row in model_rows if row.get("date")]
     start_date = min(dates) if dates else dt.datetime.now(dt.timezone.utc).date().isoformat().replace("-", "")
