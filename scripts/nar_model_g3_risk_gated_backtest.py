@@ -196,6 +196,10 @@ def main():
         "odds_horse_matches": 0,
         "aligned_races_with_win_payout": 0,
         "records_with_odds_and_win_payout": 0,
+        "records_with_three_or_more_scores": 0,
+        "records_with_matching_horse_count": 0,
+        "records_with_70pct_odds_coverage": 0,
+        "records_with_extracted_winner": 0,
         "sample_score_race_key": aligned[0].get("race_key") if aligned else None,
         "sample_odds_race_key": "|".join(next(iter(odds_by_race))) if odds_by_race else None,
     }
@@ -207,13 +211,25 @@ def main():
         if not key:
             continue
         odds = odds_by_race.get(key, {})
+        scores = record.get("scores") or []
+        if len(scores) >= 3:
+            alignment["records_with_three_or_more_scores"] += 1
+        horse_nos = [str(int(x)) for x in (record.get("horse_numbers") or []) if str(x).isdigit()]
+        if len(horse_nos) == len(scores):
+            alignment["records_with_matching_horse_count"] += 1
         if odds:
             alignment["exact_odds_race_key_matches"] += 1
-            horse_nos = {str(int(x)) for x in (record.get("horse_numbers") or []) if str(x).isdigit()}
-            alignment["odds_horse_matches"] += len(horse_nos.intersection({str(int(x)) for x in odds if str(x).isdigit()}))
+            odds_nos = {str(int(x)) for x in odds if str(x).isdigit()}
+            alignment["odds_horse_matches"] += len(set(horse_nos).intersection(odds_nos))
+            coverage = len(set(horse_nos).intersection(odds_nos)) / len(horse_nos) if horse_nos else 0.0
+            if coverage >= MIN_ODDS_COVERAGE:
+                alignment["records_with_70pct_odds_coverage"] += 1
         payout = payouts.get(key) or {}
         if payout.get("win"):
             alignment["aligned_races_with_win_payout"] += 1
+            winners = [str(nums[0]) for nums, _ in payout["win"] if nums]
+            if winners:
+                alignment["records_with_extracted_winner"] += 1
         if odds and payout.get("win"):
             alignment["records_with_odds_and_win_payout"] += 1
     all_dates = sorted({r["date"] for r in aligned})
