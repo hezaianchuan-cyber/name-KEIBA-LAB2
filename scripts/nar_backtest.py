@@ -3266,6 +3266,11 @@ def main():
             "winner_top3_rate": (recent_models.get("C_performance_pace") or {}).get("winner_top3_rate"),
             "winner_topk_rate": (recent_models.get("C_performance_pace") or {}).get("winner_topk_rate"),
         },
+        "frame_ablation": {
+            "with_frame": recent_models.get("C_performance_pace"),
+            "without_frame": recent_models.get("C_performance_pace_no_frame"),
+            "comparison_policy": "Same chronological holdout races, same learned base weights, same D performance/pace features and identical tickets. Only the prior frame-context 8% blend is removed.",
+        },
         "feature_ablations": {
             name: {
                 "races": (recent_models.get(name) or {}).get("races"),
