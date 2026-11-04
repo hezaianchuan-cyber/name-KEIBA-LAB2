@@ -6,8 +6,16 @@ const WINDOW_START_MIN = 30;
 const WINDOW_END_MIN = 2;
 
 function decodeCsv(bytes: Uint8Array): string {
-  try { return new TextDecoder("shift_jis").decode(bytes); }
-  catch { return new TextDecoder("utf-8").decode(bytes); }
+  // Official daily archives may be UTF-8 or Windows-31J/Shift_JIS.
+  // Prefer strict UTF-8 detection so UTF-8 Japanese text is not mojibaked.
+  const hasUtf8Bom = bytes.length >= 3 &&
+    bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf;
+  if (hasUtf8Bom) return new TextDecoder("utf-8").decode(bytes);
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return new TextDecoder("shift_jis").decode(bytes);
+  }
 }
 
 function csvRows(text: string): string[][] {
