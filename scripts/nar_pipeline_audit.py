@@ -48,9 +48,9 @@ def main() -> int:
             and '"time_per_km":' in source
         ),
         "D_requires_versioned_C_model_snapshots": (
-            'expected_model_version = "nar-chronological-v8-abcd-C-preoff"' in source
+            'expected_model_version = "nar-chronological-v9-D-frame-preoff"' in source
             and 'if record.get("model_version") != expected_model_version:' in source
-            and '"model_version": "nar-chronological-v8-abcd-C-preoff"' in source
+            and '"model_version": "nar-chronological-v9-D-frame-preoff"' in source
         ),
     }
     limitations = []
