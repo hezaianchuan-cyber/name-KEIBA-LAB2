@@ -57,6 +57,8 @@ def main() -> int:
         "frame_effect_uses_prior_condition_bucket_and_smoothing": (
             "def frame_context_key(" in source
             and "def frame_form_score(" in source
+            and "def blend_frame_score(" in source
+            and "weight = 0.08 if frame_stats else 0.0" in source
             and "prior_strength=8.0" in source
             and "update_frame_stats(pending_race, pending_field, frame_stats)" in source
         ),
