@@ -19,6 +19,7 @@ import nar_backtest as nb
 
 ROOT = Path(__file__).resolve().parents[1]
 G1_REPORT = ROOT / "data" / "model-g1-calibration-backtest.json"
+G2_REPORT = ROOT / "data" / "model-g2-odds-divergence-backtest.json"
 OUT = ROOT / "data" / "model-g3-risk-gated-backtest.json"
 START_DATE = dt.date(2026, 3, 1)
 MIN_ODDS_COVERAGE = 0.70
@@ -242,6 +243,20 @@ def main():
     hold_g1 = flatten(holdout, "g1_top")
     dev_market = flatten(development, "market_top")
     hold_market = flatten(holdout, "market_top")
+    g2_comparison = None
+    if G2_REPORT.exists():
+        try:
+            g2 = json.loads(G2_REPORT.read_text(encoding="utf-8"))
+            g2_holdout = (g2.get("holdout_bets") or {}).get("G2_value_pick") or {}
+            g2_comparison = {
+                "g2_report_status": g2.get("status"),
+                "g2_holdout_roi_pct": g2_holdout.get("roi"),
+                "g2_holdout_bets": g2_holdout.get("races_bet"),
+                "g2_holdout_roi_95ci": (g2_holdout.get("roi_95ci") or {}).get("roi_95ci"),
+                "note": "G2 is a prior experiment report; compare only when evaluation periods and data coverage match."
+            }
+        except (OSError, json.JSONDecodeError):
+            g2_comparison = {"note": "G2 report could not be read."}
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "feature": "G3_risk_gated_value_selection",
@@ -269,6 +284,7 @@ def main():
         "odds_note": "Official confirmed final win odds are used retrospectively. This does not represent odds available 2-30 minutes before post time and must not be presented as live profitability.",
         "e_model_changed": False, "live_model_changed": False,
         "profitable_claim": False,
+        "comparison_with_g2": g2_comparison,
         "holdout_probability_quality": {
             "G1_model_winner_mass": probability_metrics(holdout, "winner_mass_g1"),
             "market_winner_mass": probability_metrics(holdout, "winner_mass_market"),
