@@ -6,16 +6,24 @@ const WINDOW_START_MIN = 30;
 const WINDOW_END_MIN = 2;
 
 function decodeCsv(bytes: Uint8Array): string {
-  // Official daily archives may be UTF-8 or Windows-31J/Shift_JIS.
-  // Prefer strict UTF-8 detection so UTF-8 Japanese text is not mojibaked.
+  // Daily archives may be UTF-8 or Windows-31J/CP932. Strict UTF-8 alone
+  // is not enough: some CP932 byte sequences can also decode as UTF-8.
   const hasUtf8Bom = bytes.length >= 3 &&
     bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf;
-  if (hasUtf8Bom) return new TextDecoder("utf-8").decode(bytes);
-  try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-  } catch {
-    return new TextDecoder("shift_jis").decode(bytes);
+  const candidates: string[] = [];
+  if (hasUtf8Bom) candidates.push(new TextDecoder("utf-8").decode(bytes));
+  else {
+    try { candidates.push(new TextDecoder("utf-8", { fatal: true }).decode(bytes)); } catch { /* try CP932 */ }
   }
+  try { candidates.push(new TextDecoder("shift_jis").decode(bytes)); } catch { /* keep valid candidate */ }
+  if (!candidates.length) throw new Error("NAR CSV encoding could not be decoded");
+  const venues = ["帯広","門別","盛岡","水沢","浦和","船橋","大井","川崎","金沢","笠松","名古屋","園田","姫路","高知","佐賀"];
+  const score = (value: string) => venues.reduce((total, venue) => {
+    let count = 0, at = 0;
+    while ((at = value.indexOf(venue, at)) !== -1) { count++; at += venue.length; }
+    return total + count;
+  }, 0);
+  return candidates.reduce((best, value) => score(value) > score(best) ? value : best);
 }
 
 function csvRows(text: string): string[][] {
