@@ -313,7 +313,7 @@ function indexMonthlyOdds(text){const lines=String(text||'').replace(/^\uFEFF/,'
 async function importFiles(){const files=[...$('zipInput').files];if(!files.length){$('importStatus').textContent='ZIP\u307E\u305F\u306FCSV\u30D5\u30A1\u30A4\u30EB\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044';return}let total=0,summary=[],seen={horses:0,races:0,odds:0,payouts:0};$('importStatus').textContent='\u30D5\u30A1\u30A4\u30EB\u3092\u89E3\u6790\u4E2D\u2026';for(const f of files){try{if(f.name.toLowerCase().endsWith('.csv')){const text=txt(new Uint8Array(await f.arrayBuffer()));if(isMonthlyOddsCsv(text)){oddsCsvText=text;oddsCsvName=f.name;oddsRaceIndex=indexMonthlyOdds(text);total+=oddsRaceIndex.length;seen.odds++;summary.push(f.name+': '+oddsRaceIndex.length+'\u30EC\u30FC\u30B9 / \u6708\u6B21\u30AA\u30C3\u30BACSV');continue;}}
 let entries=[];if(f.name.toLowerCase().endsWith('.zip'))entries=await unzip(await f.arrayBuffer());else entries=[{name:f.name,bytes:new Uint8Array(await f.arrayBuffer())}];for(const entry of entries){const type=classify(entry.name);if(type)seen[type]++;const count=parseOfficial(entry.name,txt(entry.bytes));if(count){total+=count;summary.push(entry.name+': '+count+'\u4EF6')}}}catch(e){summary.push(f.name+': '+e.message)}}
 if(db.horses.length||db.races.length||db.odds.length||db.payouts.length){try{dedupeImportedData();applyResultLearning();save()}catch(e){summary.push('\u65E2\u5B58\u30C7\u30FC\u30BF\u306E\u4FDD\u5B58\u3092\u30B9\u30AD\u30C3\u30D7\uFF08\u30D6\u30E9\u30A6\u30B6\u5BB9\u91CF\u5236\u9650\uFF09')}}refreshRaceChoices();const dates=oddsRaceIndex.map(x=>x.date);if(dates.length){const latest=dates[0];$('raceDate').value=latest.slice(0,4)+'-'+latest.slice(4,6)+'-'+latest.slice(6,8);refreshRaceChoices();const first=oddsRaceIndex.find(x=>x.date===latest);if(first){$('venue').value=first.venue;refreshRaceChoices();$('raceSelect').value=first.id;}}
-if($('raceSelect')?.value)analyze();
+await autoAnalyzeAllTodayRaces();if($('raceSelect')?.value)analyze();
 const msg=total+'\u4EF6\u3092\u8A8D\u8B58\u3002\u51FA\u99AC\u8868 '+db.horses.length+'\uFF0F\u30EC\u30FC\u30B9\u4E00\u89A7 '+db.races.length+'\uFF0F\u516C\u5F0F\u30AA\u30C3\u30BA '+db.odds.length+'\uFF0F\u6708\u6B21CSV '+oddsRaceIndex.length+'\u30EC\u30FC\u30B9\uFF0F\u6255\u623B '+db.payouts.length+'\u3002'+summary.join(' / ');$('importStatus').textContent=msg;$('importDot').className='dot '+(total?'ok':'');$('dataStatus').textContent=oddsRaceIndex.length?'\u6708\u6B21\u30AA\u30C3\u30BACSV\u8AAD\u8FBC\u6E08\u307F\uFF1A'+oddsRaceIndex.length+'\u30EC\u30FC\u30B9\uFF08'+oddsCsvName+'\uFF09':'\u53D6\u8FBC\u6E08\u307F\uFF1A\u51FA\u99AC\u8868 '+db.horses.length+'\u982D\u5206 / \u30EC\u30FC\u30B9 '+db.races.length+'\u4EF6 / \u30AA\u30C3\u30BA '+db.odds.length+'\u4EF6';$('dataDot').className='dot '+(total?'ok':'');$('importCounts').textContent='\u6708\u6B21\u30AA\u30C3\u30BACSV '+oddsRaceIndex.length+'\u30EC\u30FC\u30B9 / \u51FA\u99AC\u8868 '+db.horses.length+'\u4EF6 / \u30EC\u30FC\u30B9 '+db.races.length+'\u4EF6 / \u516C\u5F0F\u30AA\u30C3\u30BA '+db.odds.length+'\u4EF6 / \u6255\u623B '+db.payouts.length+'\u4EF6';}
 function localDateKey(){
   const d=new Date();
@@ -391,7 +391,7 @@ window.onOfficialDataReceived=async function(payload){
     }
     dedupeImportedData();
     const learned=applyResultLearning();
-    save();refreshRaceChoices();updateHistory();
+    save();refreshRaceChoices();await autoAnalyzeAllTodayRaces();updateHistory();
     $('importStatus').textContent='公式データ更新完了：'+details.join(' / ')+' / 学習 '+learned+'レース'+(fetchWarnings?' / 一部取得失敗 '+fetchWarnings:'');
     $('importDot').className='dot ok';$('dataDot').className='dot ok';
     $('dataStatus').textContent='公式データ自動更新済み：出馬表 '+db.horses.length+'頭 / レース '+db.races.length+'件 / 払戻 '+db.payouts.length+'件';
@@ -420,7 +420,7 @@ async function fetchPcOfficialData(showStatus=true){
     if(!available)throw new Error('取得したZIPに読み込めるデータがありません。'+details.join(' / '));
     dedupeImportedData();
     const learned=applyResultLearning();
-    save();refreshRaceChoices();if($('raceSelect')?.value)analyze();updateHistory();
+    save();refreshRaceChoices();await autoAnalyzeAllTodayRaces();if($('raceSelect')?.value)analyze();updateHistory();
     $('importStatus').textContent='PC版 NAR公式データ取得完了：'+details.join(' / ')+' / 学習 '+learned+'レース';
     $('importDot').className='dot ok';$('dataDot').className='dot ok';
     $('dataStatus').textContent='PC版自動取得済み：出馬表 '+db.horses.length+'頭 / レース '+db.races.length+'件 / オッズ '+db.odds.length+'件 / 払戻 '+db.payouts.length+'件';
@@ -864,7 +864,7 @@ async function loadHistoricalBacktest(){
   $('historicalBacktestBody').innerHTML='まだ検証レポートはありません。<br><a href="https://github.com/hezaianchuan-cyber/name-KEIBA-LAB2/actions/workflows/nar-historical-backtest.yml" target="_blank" rel="noopener">過去約3年バックテストを実行する（GitHub Actions）</a>';
  }
 }
-window.addEventListener('load',loadHistoricalBacktest);
+window.addEventListener('load',()=>{loadHistoricalBacktest();loadDailyPayouts();});
 
 async function loadModelGReport(){
  const section=document.getElementById('history');
@@ -1076,6 +1076,49 @@ function generateTickets(){
  }
  out.innerHTML=horseHtml+selectedHtml+mainHtml+'<details style="margin-top:12px"><summary>券種別の候補一覧（比較用）</summary>'+allHtml+'</details><p>券種選択は、校正済みモデル・実オッズ・券種別EV基準を満たす候補がある場合のみ行います。候補確率はPlackett–Luce方式による近似です。各候補のオッズが未取得、モデル未校正、または基準未達の場合は見送り。1点100円単位、1レース合計2,000円を超えないよう配分します。実際の購入・払戻ではなく、アプリの推奨額です。候補 '+candidates.length+'点 / オッズ照合済み '+candidates.filter(x=>x.ev!=null).length+'点。</p>';
 }
+let autoDailyBatchBusy=false;
+async function autoAnalyzeAllTodayRaces(){
+ if(autoDailyBatchBusy)return {total:0,saved:0};
+ autoDailyBatchBusy=true;
+ const today=localDateKey(),dateInput=$('raceDate'),venueInput=$('venue'),raceSelect=$('raceSelect');
+ const oldDate=dateInput?.value||'',oldVenue=venueInput?.value||'',oldRace=raceSelect?.value||'';
+ try{
+  const byId=new Map();
+  for(const r of [...(db.races||[]),...(oddsRaceIndex||[]),...(minuteOddsRaceIndex||[])]){
+   if(!r?.id||normDate(r.date)!==today)continue;
+   const venue=canonicalVenue(r.venue);if(!venue)continue;
+   byId.set(String(r.id),{...(byId.get(String(r.id))||{}),...r,venue});
+  }
+  const races=[...byId.values()].sort((a,b)=>a.venue.localeCompare(b.venue,'ja')||Number(norm(a.race).replace(/R$/i,''))-Number(norm(b.race).replace(/R$/i,'')));
+  if(!races.length)return {total:0,saved:0};
+  dateInput.value=today.slice(0,4)+'-'+today.slice(4,6)+'-'+today.slice(6,8);
+  let saved=0;
+  for(const venue of [...new Set(races.map(r=>r.venue))]){
+   venueInput.value=venue;refreshRaceChoices();
+   for(const race of races.filter(r=>r.venue===venue)){
+    raceSelect.value=String(race.id);analyze();
+    const key=String(race.id)+'|'+today;
+    let exists=loadLabTicketPlans().some(x=>String(x.plan?.raceId)+'|'+labLedgerDateKey(x.plan?.date)===key);
+    if(!exists)saveInsufficientTicketPlan(race.id,'公式開催レース一覧には存在するが予想に必要な出馬表・オッズ等が不足。','AUTO_BATCH_DATA_INSUFFICIENT');
+    exists=loadLabTicketPlans().some(x=>String(x.plan?.raceId)+'|'+labLedgerDateKey(x.plan?.date)===key);
+    if(exists)saved++;
+   }
+  }
+  updateHistory();
+  const status=$('importStatus');if(status)status.textContent='本日の全開催レース自動処理：'+races.length+'R中 '+saved+'Rを記録（BET・SKIP・データ不足を含む）。';
+  return {total:races.length,saved};
+ }catch(e){
+  console.error('全レース自動予想に失敗',e);
+  const status=$('importStatus');if(status)status.textContent='全レース自動予想エラー：'+(e.message||String(e));
+  return {total:0,saved:0,error:String(e)};
+ }finally{
+  dateInput.value=oldDate||today.slice(0,4)+'-'+today.slice(4,6)+'-'+today.slice(6,8);
+  venueInput.value=oldVenue;refreshRaceChoices();
+  if(oldRace&&[...raceSelect.options].some(o=>o.value===oldRace))raceSelect.value=oldRace;
+  autoDailyBatchBusy=false;
+ }
+}
+
 function dedupeRunnerRows(rows) {
   const map = new Map();
   for (const h of rows || []) {
