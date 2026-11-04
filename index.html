@@ -643,6 +643,7 @@ function labLedgerComb(value,type){
 }
 function labLedgerRecordsForDate(plans,date){
  const day=(dailyPayoutReport?.days||[]).find(d=>labLedgerDateKey(d.date)===date),dayRaces=day?.races||[];
+ const keyByType={'単勝':'win','複勝':'place','ワイド':'wide','馬連':'quinella','馬単':'exacta','3連複':'trio','3連単':'trifecta'};
  return plans.filter(x=>x.date===date).map(({p,plan})=>{
   const venue=labLedgerVenueKey(plan.venue),raceNo=String(Number(String(plan.raceNo||'').replace(/[^0-9]/g,'')));
   const matches=dayRaces.filter(r=>labLedgerVenueKey(r.venue)===venue&&String(Number(r.race||0))===raceNo);
@@ -651,34 +652,36 @@ function labLedgerRecordsForDate(plans,date){
   const validTickets=tickets.filter(t=>t&&Number(t.stake)>0&&labLedgerComb(t.comb,t.type));
   const stake=validTickets.reduce((sum,t)=>sum+Math.max(0,Number(t.stake)||0),0);
   const shadowTickets=Array.isArray(plan.shadowTickets)?plan.shadowTickets:[];
-  if(isSkip){
-   if(plan.dataStatus==='INSUFFICIENT_DATA')return {plan,p,isSkip:true,settled:false,stake:0,returned:0,hit:false,matchedTickets:[],officialResults:[],shadowTickets:[],shadowSettled:false,shadowHit:false,shadowMatchedTickets:[],dataInsufficient:true};
-   const keyByType={'単勝':'win','複勝':'place','ワイド':'wide','馬連':'quinella','馬単':'exacta','3連複':'trio','3連単':'trifecta'};
-   const payoutEntries=race?.payouts?Object.entries(race.payouts).filter(([,items])=>Array.isArray(items)&&items.some(x=>x&&Array.isArray(x.numbers)&&Number(x.pay_100)>0)):[];
-   if(!payoutEntries.length)return {plan,p,isSkip:true,settled:false,stake:0,returned:0,hit:false,matchedTickets:[],officialResults:[],shadowTickets,shadowSettled:false,shadowHit:false,shadowMatchedTickets:[]};
-   const shadowMatchedTickets=[];
-   for(const ticket of shadowTickets){const key=keyByType[ticket.type],wanted=labLedgerComb(ticket.comb,ticket.type);if(!key||!wanted)continue;const match=(race.payouts[key]||[]).find(item=>item&&Array.isArray(item.numbers)&&labLedgerComb(item.numbers,ticket.type)===wanted&&Number(item.pay_100)>0);if(match)shadowMatchedTickets.push({type:ticket.type,comb:wanted,pay100:Number(match.pay_100)||0});}
-   const officialResults=payoutEntries.flatMap(([key,items])=>items.map(item=>({type:Object.keys(keyByType).find(type=>keyByType[type]===key)||key,comb:labLedgerComb(item.numbers,Object.keys(keyByType).find(type=>keyByType[type]===key)),pay100:Number(item.pay_100)||0})));
-   return {plan,p,isSkip:true,settled:true,stake:0,returned:0,hit:false,matchedTickets:[],officialResults,shadowTickets,shadowSettled:true,shadowHit:shadowMatchedTickets.length>0,shadowMatchedTickets};
+  const payoutEntries=race?.payouts?Object.entries(race.payouts).filter(([,items])=>Array.isArray(items)&&items.some(x=>x&&Array.isArray(x.numbers)&&Number(x.pay_100)>0)):[];
+  const officialResults=payoutEntries.flatMap(([key,items])=>items.map(item=>({type:Object.keys(keyByType).find(type=>keyByType[type]===key)||key,comb:labLedgerComb(item.numbers,Object.keys(keyByType).find(type=>keyByType[type]===key)),pay100:Number(item.pay_100)||0})));
+  const modelResultSettled=!!(race?.payouts?.win||[]).some(x=>x&&Array.isArray(x.numbers)&&Number(x.pay_100)>0);
+  const shadowMatchedTickets=[];
+  for(const ticket of shadowTickets){
+   const key=keyByType[ticket.type],wanted=labLedgerComb(ticket.comb,ticket.type);
+   if(!key||!wanted)continue;
+   const match=(race?.payouts?.[key]||[]).find(item=>item&&Array.isArray(item.numbers)&&labLedgerComb(item.numbers,ticket.type)===wanted&&Number(item.pay_100)>0);
+   if(match)shadowMatchedTickets.push({type:ticket.type,comb:wanted,pay100:Number(match.pay_100)||0});
   }
-  if(decision!=='BET'||!validTickets.length||!race||!race.payouts)return {plan,p,isSkip:false,settled:false,stake,returned:0,hit:false,matchedTickets:[],officialResults:[]};
-  const keyByType={'単勝':'win','複勝':'place','ワイド':'wide','馬連':'quinella','馬単':'exacta','3連複':'trio','3連単':'trifecta'};
-  const payoutEntries=Object.entries(race.payouts).filter(([,items])=>Array.isArray(items)&&items.some(x=>x&&Array.isArray(x.numbers)&&Number(x.pay_100)>0));
-  if(!payoutEntries.length)return {plan,p,isSkip:false,settled:false,stake,returned:0,hit:false,matchedTickets:[],officialResults:[]};
+  const shadowSettled=payoutEntries.length>0,shadowHit=shadowMatchedTickets.length>0;
+  if(isSkip){
+   if(plan.dataStatus==='INSUFFICIENT_DATA')return {plan,p,isSkip:true,settled:false,stake:0,returned:0,hit:false,matchedTickets:[],officialResults,shadowTickets:[],shadowSettled,shadowHit:false,shadowMatchedTickets:[],modelResultSettled,dataInsufficient:true};
+   return {plan,p,isSkip:true,settled:shadowSettled,stake:0,returned:0,hit:false,matchedTickets:[],officialResults,shadowTickets,shadowSettled,shadowHit,shadowMatchedTickets,modelResultSettled};
+  }
+  if(decision!=='BET'||!validTickets.length||!race||!race.payouts)return {plan,p,isSkip:false,settled:false,stake,returned:0,hit:false,matchedTickets:[],officialResults,shadowTickets,shadowSettled,shadowHit,shadowMatchedTickets,modelResultSettled};
+  if(!payoutEntries.length)return {plan,p,isSkip:false,settled:false,stake,returned:0,hit:false,matchedTickets:[],officialResults,shadowTickets,shadowSettled:false,shadowHit:false,shadowMatchedTickets:[],modelResultSettled:false};
   let returned=0;
   const matchedTicketDetails=[];
   for(const ticket of validTickets){
    const key=keyByType[ticket.type];if(!key)continue;
    const wanted=labLedgerComb(ticket.comb,ticket.type);if(!wanted)continue;
-   const matching=(race.payouts[key]||[]).filter(payout=>payout&&Array.isArray(payout.numbers)&&labLedgerComb(payout.numbers,ticket.type)===wanted&&Number(payout.pay_100)>0);
+   const matching=(race.payouts[key]||[]).filter(item=>item&&Array.isArray(item.numbers)&&labLedgerComb(item.numbers,ticket.type)===wanted&&Number(item.pay_100)>0);
    if(matching.length){
     const pay100=Math.max(0,Number(matching[0].pay_100)||0),ticketReturn=(Math.max(0,Number(ticket.stake)||0)/100)*pay100;
     returned+=ticketReturn;
     matchedTicketDetails.push({type:ticket.type,comb:wanted,stake:Number(ticket.stake)||0,pay100,returned:ticketReturn});
    }
   }
-  const officialResults=payoutEntries.flatMap(([key,items])=>items.map(item=>({type:Object.keys(keyByType).find(type=>keyByType[type]===key)||key,comb:labLedgerComb(item.numbers,keyByType[key]&&Object.keys(keyByType).find(type=>keyByType[type]===key)),pay100:Number(item.pay_100)||0})));
-  return {plan,p,isSkip:false,settled:true,stake,returned,hit:matchedTicketDetails.length>0,matchedTickets:matchedTicketDetails,officialResults};
+  return {plan,p,isSkip:false,settled:true,stake,returned,hit:matchedTicketDetails.length>0,matchedTickets:matchedTicketDetails,officialResults,shadowTickets,shadowSettled,shadowHit,shadowMatchedTickets,modelResultSettled};
  });
 }
 // Independent compact archive for saved ticket plans.
