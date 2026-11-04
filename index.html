@@ -117,7 +117,7 @@ a{color:inherit}
   <section id="history" class="panel">
     <div class="card" id="cloudAuthCard"><h2>予想履歴のクラウド同期</h2><p class="sub">メールアドレスでログインすると、このアカウントの予想履歴を別の端末でも共有できます。ログイン前のこの端末の予想履歴も、ログイン後にクラウドへ移行します。</p><div class="grid"><div><label for="cloudEmail">メールアドレス</label><input id="cloudEmail" type="email" autocomplete="email" placeholder="メールアドレス"></div><div><label for="cloudPassword">パスワード（8文字以上）</label><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="パスワード"></div></div><div class="actions"><button class="btn primary" id="cloudSignIn">ログイン</button><button class="btn" id="cloudSignUp">新規登録</button><button class="btn" id="cloudSignOut" disabled>ログアウト</button></div><div class="status"><i class="dot" id="cloudDot"></i><span id="cloudStatus">クラウド未接続。ログインすると予想履歴を同期します。</span></div></div>
     <div class="card"><h2>&#x4E88;&#x6E2C;&#x306E;&#x691C;&#x8A3C;</h2><p class="sub">&#x6255;&#x623B;CSV&#x3068;&#x4E88;&#x6E2C;&#x5C65;&#x6B74;&#x3092;&#x7167;&#x5408;&#x3059;&#x308B;&#x305F;&#x3081;&#x306E;&#x96C6;&#x8A08;&#x753B;&#x9762;&#x3067;&#x3059;&#x3002;&#x30C7;&#x30FC;&#x30BF;&#x3092;&#x84C4;&#x7A4D;&#x3059;&#x308B;&#x307B;&#x3069;&#x3001;&#x7AF6;&#x99AC;&#x5834;&#x30FB;&#x8DDD;&#x96E2;&#x30FB;&#x30AF;&#x30E9;&#x30B9;&#x5225;&#x306B;&#x30E2;&#x30C7;&#x30EB;&#x306E;&#x504F;&#x308A;&#x3092;&#x691C;&#x8A3C;&#x3067;&#x304D;&#x307E;&#x3059;&#x3002;</p><div class="kpis"><div class="kpi"><span>&#x4FDD;&#x5B58;&#x30EC;&#x30FC;&#x30B9;&#x6570;</span><b id="hRaces">0</b></div><div class="kpi"><span>&#x4E88;&#x6E2C;&#x8A18;&#x9332;</span><b id="hPred">0</b></div><div class="kpi"><span>&#x6255;&#x623B;&#x30C7;&#x30FC;&#x30BF;</span><b id="hPay">0</b></div></div><div class="kpis" style="margin-top:12px"><div class="kpi"><span>結果確定レース</span><b id="hSettled">0</b></div><div class="kpi"><span>予想1位の勝率</span><b id="hTop1">—</b></div><div class="kpi"><span>上位3頭内の勝馬率</span><b id="hTop3">—</b></div><div class="kpi"><span>予想1位を100円買った仮想回収率</span><b id="hRoi">—</b></div></div><p id="hEvalNote" class="sub">払戻データと予想履歴が一致したレースのみ集計します。仮想回収率は検証用で、実際の購入実績ではありません。</p></div>
-    <div class="card" id="oddsCapturePanel"><h2>発走前オッズの更新状況</h2><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>最新公開データを確認</b><span id="oddsCaptureBadge">確認中</span></div><div id="oddsCaptureDetails" class="sub" style="margin-top:8px">取得状況を読み込んでいます。</div><p class="sub">Supabaseに保存されたNAR公式オッズを1分ごとに読み込みます。発走30〜2分前のスナップショットを予測データと照合し、自動買い目も保存します。</p></div><div class="card"><h2>今日の予想結果</h2><p class="sub">今日記録した予想を公式払戻データと照合します。的中率の分母は結果が確定したレースのみです。</p><div class="kpis"><div class="kpi"><span>今日の確定レース</span><b id="hTodaySettled">0</b></div><div class="kpi"><span>予想1位の的中数</span><b id="hTodayHits">0</b></div><div class="kpi"><span>今日の1位的中率</span><b id="hTodayRate">—</b></div><div class="kpi"><span>上位3頭内の勝馬率</span><b id="hTodayTop3">—</b></div></div><div id="todayPredictionRows" class="sub" style="margin-top:12px">今日の予想はまだ保存されていません。レースを分析すると自動で記録します。</div></div>
+    <div class="card" id="oddsCapturePanel"><h2>発走前オッズの更新状況</h2><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>最新公開データを確認</b><span id="oddsCaptureBadge">確認中</span></div><div id="oddsCaptureDetails" class="sub" style="margin-top:8px">取得状況を読み込んでいます。</div><p class="sub">発走30〜2分前のNAR公式オッズを1分ごとに取得します。下の実行履歴で、処理の成功・失敗と保存件数を確認できます。</p><div id="oddsRunHistory" class="sub" style="margin-top:10px">1分取得処理の実行履歴を確認しています。</div></div><div class="card"><h2>今日の予想結果</h2><p class="sub">今日記録した予想を公式払戻データと照合します。的中率の分母は結果が確定したレースのみです。</p><div class="kpis"><div class="kpi"><span>今日の確定レース</span><b id="hTodaySettled">0</b></div><div class="kpi"><span>予想1位の的中数</span><b id="hTodayHits">0</b></div><div class="kpi"><span>今日の1位的中率</span><b id="hTodayRate">—</b></div><div class="kpi"><span>上位3頭内の勝馬率</span><b id="hTodayTop3">—</b></div></div><div id="todayPredictionRows" class="sub" style="margin-top:12px">今日の予想はまだ保存されていません。レースを分析すると自動で記録します。</div></div>
     <div class="card"><h2>&#x6B21;&#x306E;&#x691C;&#x8A3C;&#x3067;&#x898B;&#x308B;&#x6307;&#x6A19;</h2><div class="runner"><div class="number">01</div><div><div class="runner-name">&#x56DE;&#x53CE;&#x7387;</div><div class="runner-meta">&#x4E88;&#x6E2C;&#x78BA;&#x7387;&#x3068;&#x5B9F;&#x969B;&#x306E;&#x6255;&#x623B;&#x306E;&#x4E56;&#x96E2;</div></div><div class="score">ROI</div></div><div class="runner"><div class="number">02</div><div><div class="runner-name">&#x78BA;&#x7387;&#x6821;&#x6B63;</div><div class="runner-meta">&#x52DD;&#x7387;20%&#x3068;&#x8A55;&#x4FA1;&#x3057;&#x305F;&#x99AC;&#x304C;&#x5B9F;&#x969B;&#x306B;&#x7D04;20%&#x52DD;&#x3064;&#x304B;</div></div><div class="score">CAL</div></div><div class="runner"><div class="number">03</div><div><div class="runner-name">&#x6761;&#x4EF6;&#x5225;&#x6210;&#x7E3E;</div><div class="runner-meta">&#x7AF6;&#x99AC;&#x5834;&#x30FB;&#x8DDD;&#x96E2;&#x30FB;&#x99AC;&#x5834;&#x30FB;&#x4EBA;&#x6C17;&#x5E2F;&#x3054;&#x3068;&#x306E;&#x6210;&#x7E3E;</div></div><div class="score">SEG</div></div></div>
     <div class="notice">&#x30B5;&#x30F3;&#x30D7;&#x30EB;&#x30C7;&#x30FC;&#x30BF;&#x306F;&#x5B9F;&#x969B;&#x306E;&#x6210;&#x7E3E;&#x3067;&#x306F;&#x3042;&#x308A;&#x307E;&#x305B;&#x3093;&#x3002;&#x7684;&#x4E2D;&#x7387;&#x30FB;&#x56DE;&#x53CE;&#x7387;&#x3092;&#x8868;&#x793A;&#x3059;&#x308B;&#x5834;&#x5408;&#x306F;&#x3001;&#x5B9F;&#x30C7;&#x30FC;&#x30BF;&#x3067;&#x691C;&#x8A3C;&#x3057;&#x305F;&#x5024;&#x3060;&#x3051;&#x3092;&#x8868;&#x793A;&#x3057;&#x307E;&#x3059;&#x3002;</div>
   </section>
@@ -729,6 +729,35 @@ async function fetchSupabaseLiveData(dateOverride){
  if(details)details.textContent=rows?.length?'最新取得：'+new Date(latest).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})+' ／ 取得レコード '+rows.length+'件 ／ 買い目記録 '+remoteLabTicketPlans.length+'レース':'Supabaseの1分オッズデータはまだありません。';
  return rows?.length||0;
 }
+async function fetchOddsCaptureRuns(){
+ const el=$('oddsRunHistory');if(!el)return;
+ try{
+  const response=await fetch(KEIBA_SUPABASE_URL+'/rest/v1/odds_capture_runs?select=started_at,finished_at,status,elapsed_ms,race_rows,positive_odds_rows,races_in_preoff_window,snapshots_inserted,auto_ticket_plans_saved,error_message&order=finished_at.desc&limit=12',{
+   headers:{apikey:KEIBA_SUPABASE_KEY,Authorization:'Bearer '+KEIBA_SUPABASE_KEY,Accept:'application/json'},cache:'no-store'
+  });
+  if(!response.ok)throw new Error('実行履歴DB HTTP '+response.status+'（履歴テーブルの適用待ちの可能性があります）');
+  const rows=await response.json();
+  if(!rows.length){el.textContent='実行履歴はまだありません。Supabaseのテーブル適用後、次の1分周期から記録されます。';return;}
+  const latest=rows[0],when=new Date(latest.finished_at);
+  const age=Math.max(0,Math.floor((Date.now()-when.getTime())/60000));
+  const status=latest.status==='success'?'正常終了':'エラー';
+  const lines=[
+   '最終実行：'+when.toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})+'（'+age+'分前）',
+   '直近の状態：'+status+' ／ 処理時間 '+(Number(latest.elapsed_ms)||0)+'ms',
+   'レース情報 '+(Number(latest.race_rows)||0)+'件 ／ 正常オッズ行 '+(Number(latest.positive_odds_rows)||0)+'件',
+   '発走前対象 '+(Number(latest.races_in_preoff_window)||0)+'レース ／ Supabase保存 '+(Number(latest.snapshots_inserted)||0)+'件',
+   '自動買い目付与 '+(Number(latest.auto_ticket_plans_saved)||0)+'件'
+  ];
+  if(latest.error_message)lines.push('エラー内容：'+latest.error_message);
+  const errors=rows.filter(x=>x.status==='error').length;
+  lines.push('直近'+rows.length+'回の実行中、エラー '+errors+'回');
+  el.textContent=lines.join(' ／ ');
+  const badge=$('oddsCaptureBadge');
+  if(badge)badge.textContent=latest.status==='success'?(age<=2?'1分処理 稼働確認':'最終実行 '+age+'分前'):'取得処理エラー';
+ }catch(e){
+  el.textContent='実行履歴を取得できません：'+(e.message||String(e));
+ }
+}
 async function loadPublishedAutoTicketPlans(){
  const response=await fetch('./data/auto-ticket-plans.json?v='+Date.now(),{cache:'no-store'});
  if(!response.ok)throw new Error('公開済み自動買い目データ未取得（HTTP '+response.status+'）');
@@ -752,6 +781,7 @@ async function loadAutoTicketPlans(){
  }
  try{await loadPublishedAutoTicketPlans();}
  catch(e){console.warn('公開済み自動買い目を取得できません',e);}
+ await fetchOddsCaptureRuns();
 }
 window.addEventListener('load',loadAutoTicketPlans);
 setInterval(loadAutoTicketPlans,60*1000);
