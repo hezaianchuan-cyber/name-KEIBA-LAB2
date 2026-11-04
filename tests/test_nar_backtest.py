@@ -1750,3 +1750,17 @@ class FrameGateTests(unittest.TestCase):
         ]}
         history = nb.build_live_history({race["key"]:race}, horses)
         self.assertTrue(history["frame_stats"])
+
+
+class FrameBlendMigrationTests(unittest.TestCase):
+    def test_empty_frame_history_does_not_change_legacy_score(self):
+        race = {"venue":"大井","surface":"ダート","distance":1600,"field_size":12}
+        horse = {"frame_no":1}
+        self.assertAlmostEqual(nb.blend_frame_score(0.73, race, horse, {}), 0.73)
+
+    def test_frame_history_applies_only_after_prior_data_exists(self):
+        race = {"venue":"大井","surface":"ダート","distance":1600,"field_size":12}
+        horse = {"frame_no":1}
+        key = nb.frame_context_key(race, horse)
+        score = nb.blend_frame_score(0.73, race, horse, {key: {"runs":100,"top3":80}})
+        self.assertGreater(score, 0.73)
