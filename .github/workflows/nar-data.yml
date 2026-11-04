@@ -1,106 +1,94 @@
-name: Fetch NAR official data for PC
+name: Fetch NAR official data archives
 
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - "data/odds-snapshots/**"
-      - "data/odds-capture-status.json"
   workflow_dispatch:
   schedule:
     - cron: "*/15 * * * *"
-  workflow_run:
-    workflows: ["Capture NAR pre-off odds every five minutes"]
-    types: [completed]
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
+# This workflow only refreshes and commits source data.
+# GitHub Pages is deployed exclusively by web.yml.
 concurrency:
-  group: pages
+  group: nar-official-data-sync
   cancel-in-progress: false
 
 jobs:
-  fetch-and-deploy:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+  fetch:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     steps:
-      - name: Checkout website
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download latest official NAR ZIP files
+      - name: Download official NAR archives
         shell: bash
         run: |
-          set +e
-          mkdir -p data
+          set -euo pipefail
+          mkdir -p data /tmp/keiba-lab-data
           BASE="https://www.keiba.go.jp/KeibaWeb/DataDownload"
-          PAGES="https://hezaianchuan-cyber.github.io/name-KEIBA-LAB2/data"
           fetch_zip() {
             name="$1"
             endpoint="$2"
-            tmp="data/${name}.zip.tmp"
-            out="data/${name}.zip"
+            tmp="/tmp/keiba-lab-data/${name}.zip"
+            out="/tmp/keiba-lab-data/${name}.zip"
             if curl -fLsS --retry 2 --retry-delay 3 --max-time 90 "$BASE/$endpoint" -o "$tmp" && unzip -t "$tmp" >/dev/null 2>&1; then
-              mv "$tmp" "$out"
               echo "$name=updated"
+            elif [ -s "data/${name}.zip" ] && unzip -t "data/${name}.zip" >/dev/null 2>&1; then
+              cp "data/${name}.zip" "$out"
+              echo "$name=kept_previous"
             else
-              rm -f "$tmp"
-              if curl -fLsS --max-time 45 "$PAGES/${name}.zip" -o "$out" && unzip -t "$out" >/dev/null 2>&1; then
-                echo "$name=kept_previous"
-              else
-                rm -f "$out"
-                echo "$name=unavailable"
-              fi
+              rm -f "$out"
+              echo "$name=unavailable"
             fi
           }
           fetch_zip latest-race "RaceDataDownload?type=daily"
           fetch_zip latest-odds "OddsDataDownload?type=daily"
-          echo "=== ZIP entry diagnostics ==="
-          for archive in data/*.zip; do
-            [ -f "$archive" ] || continue
-            echo "--- $archive ---"
-            unzip -Z1 "$archive" | head -40
-          done
-          python - <<'PY'
-          import zipfile, glob, re, unicodedata
-          for path in glob.glob("data/*.zip"):
-              print("INSPECT", path)
-              try:
-                  with zipfile.ZipFile(path) as z:
-                      for name in z.namelist():
-                          base=name.replace("\\\\","/").split("/")[-1]
-                          n=unicodedata.normalize("NFKC",base).lower()
-                          kind=("horses" if re.search(r"horselist|horse.?list|出馬表",n) else "races" if re.search(r"racelist|race.?list|レース一覧",n) else "odds" if re.search(r"odds|オッズ",n) else "payouts" if re.search(r"payback|payout|払戻",n) else "-")
-                          if base and not name.endswith("/"):
-                              print("ENTRY", repr(name), "CLASS", kind, "SIZE", z.getinfo(name).file_size)
-              except Exception as e:
-                  print("ZIP_ERROR", repr(e))
-          PY
-          python - <<'PY'
+
+          python3 - <<'PY'
           import json, os, datetime
-          names = ["latest-race", "latest-odds"]
+          root = "/tmp/keiba-lab-data"
           state = {}
-          for name in names:
-              path = f"data/{name}.zip"
-              state[name] = {"available": os.path.isfile(path), "bytes": os.path.getsize(path) if os.path.isfile(path) else 0}
+          for name in ("latest-race", "latest-odds"):
+              path = f"{root}/{name}.zip"
+              state[name] = {
+                  "available": os.path.isfile(path),
+                  "bytes": os.path.getsize(path) if os.path.isfile(path) else 0,
+              }
           state["updatedAtUtc"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
-          with open("data/status.json", "w", encoding="utf-8") as f:
+          with open(f"{root}/status.json", "w", encoding="utf-8") as f:
               json.dump(state, f, ensure_ascii=False)
           print(json.dumps(state, ensure_ascii=False))
           PY
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
-      - name: Upload website and latest data
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-
-      - name: Deploy website and data
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Commit refreshed archives for the Pages deployer
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p data
+            for file in latest-race.zip latest-odds.zip status.json; do
+              if [ -f "/tmp/keiba-lab-data/$file" ]; then
+                cp "/tmp/keiba-lab-data/$file" "data/$file"
+              fi
+            done
+            git add -f data/latest-race.zip data/latest-odds.zip
+            git add data/status.json
+            if git diff --cached --quiet; then
+              echo "No official archive or status changes."
+              exit 0
+            fi
+            git commit -m "Refresh official NAR data archives"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Concurrent repository update; retrying (attempt $attempt)"
+            sleep 2
+          done
+          echo "Could not publish refreshed archives after five attempts."
+          exit 1
