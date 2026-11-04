@@ -671,17 +671,25 @@ function labLedgerRecordsForDate(plans,date){
   const tickets=Array.isArray(plan.tickets)?plan.tickets:[];
   const validTickets=tickets.filter(t=>t&&Number(t.stake)>0&&labLedgerComb(t.comb,t.type));
   const stake=validTickets.reduce((sum,t)=>sum+Math.max(0,Number(t.stake)||0),0);
-  if(isSkip)return {plan,p,isSkip:true,settled:true,stake:0,returned:0,hit:false};
-  if(decision!=='BET'||!validTickets.length||!race||!race.payouts)return {plan,p,isSkip:false,settled:false,stake,returned:0,hit:false};
+  if(isSkip)return {plan,p,isSkip:true,settled:true,stake:0,returned:0,hit:false,matchedTickets:[],officialResults:[]};
+  if(decision!=='BET'||!validTickets.length||!race||!race.payouts)return {plan,p,isSkip:false,settled:false,stake,returned:0,hit:false,matchedTickets:[],officialResults:[]};
   const keyByType={'単勝':'win','複勝':'place','ワイド':'wide','馬連':'quinella','馬単':'exacta','3連複':'trio','3連単':'trifecta'};
-  let returned=0,matchedTickets=0;
+  const payoutEntries=Object.entries(race.payouts).filter(([,items])=>Array.isArray(items)&&items.some(x=>x&&Array.isArray(x.numbers)&&Number(x.pay_100)>0));
+  if(!payoutEntries.length)return {plan,p,isSkip:false,settled:false,stake,returned:0,hit:false,matchedTickets:[],officialResults:[]};
+  let returned=0;
+  const matchedTicketDetails=[];
   for(const ticket of validTickets){
    const key=keyByType[ticket.type];if(!key)continue;
    const wanted=labLedgerComb(ticket.comb,ticket.type);if(!wanted)continue;
-   const matching=(race.payouts[key]||[]).filter(payout=>payout&&labLedgerComb(payout.numbers||[],ticket.type)===wanted&&Number(payout.pay_100)>0);
-   if(matching.length){matchedTickets++;returned+=(Math.max(0,Number(ticket.stake)||0)/100)*Math.max(0,Number(matching[0].pay_100)||0);}
+   const matching=(race.payouts[key]||[]).filter(payout=>payout&&Array.isArray(payout.numbers)&&labLedgerComb(payout.numbers,ticket.type)===wanted&&Number(payout.pay_100)>0);
+   if(matching.length){
+    const pay100=Math.max(0,Number(matching[0].pay_100)||0),ticketReturn=(Math.max(0,Number(ticket.stake)||0)/100)*pay100;
+    returned+=ticketReturn;
+    matchedTicketDetails.push({type:ticket.type,comb:wanted,stake:Number(ticket.stake)||0,pay100,returned:ticketReturn});
+   }
   }
-  return {plan,p,isSkip:false,settled:true,stake,returned,hit:matchedTickets>0};
+  const officialResults=payoutEntries.flatMap(([key,items])=>items.map(item=>({type:Object.keys(keyByType).find(type=>keyByType[type]===key)||key,comb:labLedgerComb(item.numbers,keyByType[key]&&Object.keys(keyByType).find(type=>keyByType[type]===key)),pay100:Number(item.pay_100)||0})));
+  return {plan,p,isSkip:false,settled:true,stake,returned,hit:matchedTicketDetails.length>0,matchedTickets:matchedTicketDetails,officialResults};
  });
 }
 function renderLabTodaySummary(plans){
@@ -716,10 +724,12 @@ function renderLabVirtualLedger(){
  const rows=records.map(x=>{
   const label=x.isSkip?'見送り':!x.settled?'未確定':x.hit?'的中':'不的中';
   const details=x.isSkip?'購入なし':(x.plan.tickets||[]).map(t=>t.type+' '+t.comb+' '+Number(t.stake||0).toLocaleString()+'円').join('<br>');
+  const hitDetails=x.isSkip?'—':!x.settled?'結果待ち':x.hit?x.matchedTickets.map(t=>t.type+' '+t.comb+'（'+t.returned.toLocaleString()+'円）').join('<br>'):'該当買い目なし';
+  const officialDetails=x.isSkip?'—':!x.settled?'結果待ち':x.officialResults.map(r=>r.type+' '+r.comb).join('<br>')||'払戻組合せなし';
   const returned=x.isSkip?'—':!x.settled?'未確定':x.returned.toLocaleString()+'円',stake=x.isSkip?'0円':x.stake.toLocaleString()+'円';
-  return '<tr><td>'+esc(x.plan.venue||'')+' '+esc(x.plan.raceNo||'')+'R</td><td>'+label+'</td><td>'+details+'</td><td>'+stake+'</td><td>'+returned+'</td><td>'+(!x.settled?'—':(x.returned-x.stake>0?'+':'')+(x.returned-x.stake).toLocaleString()+'円')+'</td></tr>';
+  return '<tr><td>'+esc(x.plan.venue||'')+' '+esc(x.plan.raceNo||'')+'R</td><td>'+label+'</td><td>'+details+'</td><td>'+officialDetails+'</td><td>'+hitDetails+'</td><td>'+stake+'</td><td>'+returned+'</td><td>'+(!x.settled?'—':(x.returned-x.stake>0?'+':'')+(x.returned-x.stake).toLocaleString()+'円')+'</td></tr>';
  });
- $('labLedgerRows').innerHTML=rows.length?'<div class="tablewrap"><table style="min-width:760px"><thead><tr><th>レース</th><th>判定</th><th>保存買い目</th><th>購入想定額</th><th>仮想払戻</th><th>損益</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>':'この日の保存履歴はありません。';
+ $('labLedgerRows').innerHTML=rows.length?'<div class="tablewrap"><table style="min-width:760px"><thead><tr><th>レース</th><th>判定</th><th>保存買い目</th><th>公式的中組合せ</th><th>LAB的中買い目</th><th>購入想定額</th><th>仮想払戻</th><th>損益</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>':'この日の保存履歴はありません。';
  select.onchange=renderLabVirtualLedger;
 }
 async function loadDailyPayouts(){
