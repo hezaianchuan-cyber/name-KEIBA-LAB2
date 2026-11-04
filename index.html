@@ -721,6 +721,8 @@ async function loadAutoTicketPlans(){
  try{await fetchSupabaseLiveData();}
  catch(e){
   console.warn('Supabaseの1分オッズを取得できません',e);
+  const status=$('importStatus');if(status)status.textContent='1分オッズ取得エラー：'+e.message+'（接続設定・DB権限・自動取得処理を確認してください）';
+  const dot=$('importDot');if(dot)dot.className='dot';
   try{
    const response=await fetch('https://raw.githubusercontent.com/hezaianchuan-cyber/name-KEIBA-LAB2/main/data/auto-ticket-plans.json?v='+Date.now(),{cache:'no-store'});
    if(!response.ok)throw new Error('自動買い目データ未公開（HTTP '+response.status+'）');
