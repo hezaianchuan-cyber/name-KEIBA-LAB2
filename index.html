@@ -797,6 +797,13 @@ function renderLabVirtualLedger(){
  $('labLedgerRaces').textContent=records.length+'R';$('labLedgerBetSkip').textContent=records.filter(x=>!x.isSkip).length+'／'+records.filter(x=>x.isSkip).length;
  $('labLedgerHitRate').textContent=settled.length?(hitRaces/settled.length*100).toFixed(1)+'%':'—';$('labLedgerPending').textContent=pending.length+'R';
  $('labLedgerStatus').textContent='公式払戻照合：確定 '+settled.length+'R ／ 未確定 '+pending.length+'R（保存買い目との完全一致のみ的中）';
+ const comparable=records.filter(x=>x.shadowSettled&&x.plan.modelTopHorse&&x.plan.marketFavoriteHorse);
+ const winnerOf=x=>(x.officialResults||[]).find(r=>r.type==='単勝')?.comb||'';
+ const modelTopHits=comparable.filter(x=>winnerOf(x)===String(x.plan.modelTopHorse)).length;
+ const marketHits=comparable.filter(x=>winnerOf(x)===String(x.plan.marketFavoriteHorse)).length;
+ const top3Comparable=records.filter(x=>x.shadowSettled&&Array.isArray(x.plan.modelTop3)&&x.plan.modelTop3.length);
+ const top3Hits=top3Comparable.filter(x=>x.plan.modelTop3.map(String).includes(winnerOf(x))).length;
+ $('labLedgerStatus').textContent+=' ／ モデル1位 '+(comparable.length?(modelTopHits+'/'+comparable.length+'R・'+(modelTopHits/comparable.length*100).toFixed(1)+'%'):'比較待ち')+' ／ 市場1番人気 '+(comparable.length?(marketHits+'/'+comparable.length+'R・'+(marketHits/comparable.length*100).toFixed(1)+'%'):'比較待ち')+' ／ モデル上位3頭 '+(top3Comparable.length?(top3Hits+'/'+top3Comparable.length+'R・'+(top3Hits/top3Comparable.length*100).toFixed(1)+'%'):'比較待ち')+'（市場比較は締切前オッズ取得レースのみ）';
  const rows=records.map(x=>{
   const label=x.isSkip?(!x.shadowSettled?'見送り・検証待ち':x.shadowHit?'見送り・仮想的中':'見送り・仮想不的中'):!x.settled?'未確定':x.hit?'的中':'不的中';
   const details=x.isSkip?'【検証用】'+(x.shadowTickets||[]).map(t=>t.type+' '+t.comb+'（仮想100円）').join('<br>'):'【購入候補】'+(x.plan.tickets||[]).map(t=>t.type+' '+t.comb+' '+Number(t.stake||0).toLocaleString()+'円').join('<br>');
