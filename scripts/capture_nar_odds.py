@@ -230,8 +230,8 @@ def predict_horses(race, horses, odds_rows, model_context):
         going_weight=0.10,
     ) for horse in horses]
     frame_scores = [nb.frame_form_score(race, horse, frame_stats) for horse in horses]
-    scored = [item[0] * 0.92 + frame_score * 0.08
-              for item, frame_score in zip(scored_parts, frame_scores)]
+    scored = [nb.blend_frame_score(item[0], race, horse, frame_stats)
+              for item, horse in zip(scored_parts, horses)]
     feature_parts = [item[1] for item in scored_parts]
     pace_profiles, pace_leaders, pace_delta = nb.pace_adjustments(horses, history)
     scored = [score + pace_delta.get(horse["no"], 0.0)
