@@ -1500,6 +1500,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     # accidentally reduce the B contribution to 0.64.
     ablation_features = ("form", "venue", "distance", "sire", "jockey", "age")
     models = {"A_baseline":baseline, "B_condition":learned, "C_performance_pace":learned,
+              "C_performance_pace_no_frame":learned,
               "baseline":baseline, "trained":learned, "trained_no_recent_history":learned,
               "trained_race_relative":learned,
               "trained_with_pace":learned, "trained_with_performance":learned, "trained_with_time":learned,
@@ -1656,10 +1657,16 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             elif model_name in ("B_condition", "trained_with_conditions", "trained_with_conditions_and_pace"):
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
                             0.0,0.0,0.0,include_recent_history,going_weight=0.10)[0],h) for h in field]
-            elif model_name == "C_performance_pace":
-                scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
-                            0.10,0.10,0.10,include_recent_history,going_weight=0.10)[0]
-                         * 0.92 + frame_form_score(race, h, frame_stats) * 0.08, h) for h in field]
+            elif model_name in ("C_performance_pace", "C_performance_pace_no_frame"):
+                scored=[]
+                for h in field:
+                    performance_score = score_runner_performance(
+                        h, history, sire_stats, jockey_stats, race, weights,
+                        0.10, 0.10, 0.10, include_recent_history, going_weight=0.10)[0]
+                    if model_name == "C_performance_pace":
+                        performance_score = (performance_score * 0.92
+                                              + frame_form_score(race, h, frame_stats) * 0.08)
+                    scored.append((performance_score, h))
             elif model_name in performance_blends:
                 margin_weight, closing_weight, time_weight = performance_blends[model_name]
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
@@ -1667,7 +1674,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             else:
                 scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights,
                             include_recent_history=include_recent_history)[0],h) for h in field]
-            if model_name in ("C_performance_pace", "trained_with_pace", "trained_performance_with_pace", "trained_with_conditions_and_pace") or model_name.startswith("ablate_"):
+            if model_name in ("C_performance_pace", "C_performance_pace_no_frame", "trained_with_pace", "trained_performance_with_pace", "trained_with_conditions_and_pace") or model_name.startswith("ablate_"):
                 _, _, pace_delta = pace_adjustments(field, history)
                 scored = [(score + pace_delta.get(h["no"], 0.0), h) for score, h in scored]
             if model_name == "trained":
