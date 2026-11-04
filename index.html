@@ -91,6 +91,7 @@ a{color:inherit}
     <button class="active" data-tab="home">&#x30EC;&#x30FC;&#x30B9;&#x5206;&#x6790;</button>
     <button data-tab="import">&#x30C7;&#x30FC;&#x30BF;&#x53D6;&#x8FBC;</button>
     <button data-tab="history">&#x691C;&#x8A3C;&#x30FB;&#x6210;&#x7E3E;</button>
+    <button data-tab="tickets">保存買い目</button>
     <button data-tab="payouts">日別払戻</button>
     <button data-tab="settings">&#x30E2;&#x30C7;&#x30EB;&#x8A2D;&#x5B9A;</button>
   </nav>
@@ -138,6 +139,21 @@ a{color:inherit}
     <div class="card"><h2>&#x6B21;&#x306E;&#x691C;&#x8A3C;&#x3067;&#x898B;&#x308B;&#x6307;&#x6A19;</h2><div class="runner"><div class="number">01</div><div><div class="runner-name">&#x56DE;&#x53CE;&#x7387;</div><div class="runner-meta">&#x4E88;&#x6E2C;&#x78BA;&#x7387;&#x3068;&#x5B9F;&#x969B;&#x306E;&#x6255;&#x623B;&#x306E;&#x4E56;&#x96E2;</div></div><div class="score">ROI</div></div><div class="runner"><div class="number">02</div><div><div class="runner-name">&#x78BA;&#x7387;&#x6821;&#x6B63;</div><div class="runner-meta">&#x52DD;&#x7387;20%&#x3068;&#x8A55;&#x4FA1;&#x3057;&#x305F;&#x99AC;&#x304C;&#x5B9F;&#x969B;&#x306B;&#x7D04;20%&#x52DD;&#x3064;&#x304B;</div></div><div class="score">CAL</div></div><div class="runner"><div class="number">03</div><div><div class="runner-name">&#x6761;&#x4EF6;&#x5225;&#x6210;&#x7E3E;</div><div class="runner-meta">&#x7AF6;&#x99AC;&#x5834;&#x30FB;&#x8DDD;&#x96E2;&#x30FB;&#x99AC;&#x5834;&#x30FB;&#x4EBA;&#x6C17;&#x5E2F;&#x3054;&#x3068;&#x306E;&#x6210;&#x7E3E;</div></div><div class="score">SEG</div></div></div>
     <div class="notice">&#x30B5;&#x30F3;&#x30D7;&#x30EB;&#x30C7;&#x30FC;&#x30BF;&#x306F;&#x5B9F;&#x969B;&#x306E;&#x6210;&#x7E3E;&#x3067;&#x306F;&#x3042;&#x308A;&#x307E;&#x305B;&#x3093;&#x3002;&#x7684;&#x4E2D;&#x7387;&#x30FB;&#x56DE;&#x53CE;&#x7387;&#x3092;&#x8868;&#x793A;&#x3059;&#x308B;&#x5834;&#x5408;&#x306F;&#x3001;&#x5B9F;&#x30C7;&#x30FC;&#x30BF;&#x3067;&#x691C;&#x8A3C;&#x3057;&#x305F;&#x5024;&#x3060;&#x3051;&#x3092;&#x8868;&#x793A;&#x3057;&#x307E;&#x3059;&#x3002;</div>
   </section>
+  <section id="tickets" class="panel">
+    <div class="card"><h2>保存買い目</h2><p class="sub">レース分析で生成した買い目を、分析時点の内容で保存します。ここで保存内容と公式払戻の照合結果を確認できます。</p></div>
+    <div class="card" id="labVirtualLedger">
+      <h2>LAB仮想収支</h2>
+      <p class="sub">保存時点の買い目を固定し、NAR公式の確定払戻と照合します。外れは払戻0円、見送りは購入額0円。払戻未掲載レースは未確定として集計から除外します。</p>
+      <div class="grid"><div><label for="labLedgerDate">対象日</label><select id="labLedgerDate"><option value="">保存履歴を確認中…</option></select></div><div><label>照合状況</label><div id="labLedgerStatus" class="sub" style="padding:11px 0">確認中…</div></div></div>
+      <div class="kpis" style="margin-top:12px">
+        <div class="kpi"><span>確定購入額</span><b id="labLedgerStake">—</b></div><div class="kpi"><span>仮想払戻</span><b id="labLedgerReturn">—</b></div><div class="kpi"><span>仮想損益</span><b id="labLedgerProfit">—</b></div><div class="kpi"><span>回収率</span><b id="labLedgerRoi">—</b></div>
+      </div>
+      <div class="kpis" style="margin-top:8px">
+        <div class="kpi"><span>予想レース</span><b id="labLedgerRaces">—</b></div><div class="kpi"><span>購入／見送り</span><b id="labLedgerBetSkip">—</b></div><div class="kpi"><span>的中率（確定購入R）</span><b id="labLedgerHitRate">—</b></div><div class="kpi"><span>未確定購入R</span><b id="labLedgerPending">—</b></div>
+      </div>
+      <div id="labLedgerRows" class="sub" style="margin-top:14px">保存済みの買い目を読み込んでいます。</div>
+    </div>
+  </section>
   <section id="payouts" class="panel">
     <div class="card" id="labTodaySummary">
       <h2>今日のLAB収支</h2>
@@ -163,18 +179,7 @@ a{color:inherit}
       <div id="dailyPayoutRows" class="sub" style="margin-top:14px">公式払戻データを読み込んでいます。</div>
       <p class="sub" style="margin-top:12px">※単勝・複勝・ワイド・馬連・馬単・3連複・3連単の公式払戻を表示します。同着などで複数の払戻がある場合も掲載します。</p>
     </div>
-    <div class="card" id="labVirtualLedger">
-      <h2>LAB仮想収支</h2>
-      <p class="sub">保存時点の買い目を固定し、NAR公式の確定払戻と照合します。外れは払戻0円、見送りは購入額0円。払戻未掲載レースは未確定として集計から除外します。</p>
-      <div class="grid"><div><label for="labLedgerDate">対象日</label><select id="labLedgerDate"><option value="">保存履歴を確認中…</option></select></div><div><label>照合状況</label><div id="labLedgerStatus" class="sub" style="padding:11px 0">確認中…</div></div></div>
-      <div class="kpis" style="margin-top:12px">
-        <div class="kpi"><span>確定購入額</span><b id="labLedgerStake">—</b></div><div class="kpi"><span>仮想払戻</span><b id="labLedgerReturn">—</b></div><div class="kpi"><span>仮想損益</span><b id="labLedgerProfit">—</b></div><div class="kpi"><span>回収率</span><b id="labLedgerRoi">—</b></div>
-      </div>
-      <div class="kpis" style="margin-top:8px">
-        <div class="kpi"><span>予想レース</span><b id="labLedgerRaces">—</b></div><div class="kpi"><span>購入／見送り</span><b id="labLedgerBetSkip">—</b></div><div class="kpi"><span>的中率（確定購入R）</span><b id="labLedgerHitRate">—</b></div><div class="kpi"><span>未確定購入R</span><b id="labLedgerPending">—</b></div>
-      </div>
-      <div id="labLedgerRows" class="sub" style="margin-top:14px">保存済みの買い目を読み込んでいます。</div>
-    </div>
+
   </section>
   <section id="settings" class="panel">
     <div class="card"><h2>&#x4E88;&#x6E2C;&#x30E2;&#x30C7;&#x30EB;&#x306E;&#x914D;&#x70B9;</h2><p class="sub">&#x307E;&#x305A;&#x306F;&#x516C;&#x5F0F;&#x51FA;&#x99AC;&#x8868;&#x3067;&#x53D6;&#x5F97;&#x3067;&#x304D;&#x308B;&#x9805;&#x76EE;&#x3092;&#x4E2D;&#x5FC3;&#x306B;&#x30B9;&#x30B3;&#x30A2;&#x5316;&#x3002;&#x904E;&#x53BB;&#x6210;&#x7E3E;CSV&#x304C;&#x63C3;&#x3063;&#x305F;&#x6BB5;&#x968E;&#x3067;&#x3001;&#x8DDD;&#x96E2;&#x30FB;&#x7AF6;&#x99AC;&#x5834;&#x9069;&#x6027;&#x3084;&#x4E0A;&#x304C;&#x308A;&#x6027;&#x80FD;&#x306E;&#x6BD4;&#x91CD;&#x3092;&#x5B9F;&#x6E2C;&#x3067;&#x6700;&#x9069;&#x5316;&#x3057;&#x307E;&#x3059;&#x3002;</p><div id="weights"></div><div class="actions"><button class="btn primary" id="saveWeights">&#x914D;&#x70B9;&#x3092;&#x4FDD;&#x5B58;</button><button class="btn" id="resetWeights">&#x521D;&#x671F;&#x5024;&#x306B;&#x623B;&#x3059;</button></div></div>
@@ -632,7 +637,7 @@ function updateHistory(){
 }
 $('analyzeBtn').onclick=analyze;$('demoBtn').onclick=demo;
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='keiba-lab-local-data.json';a.click();URL.revokeObjectURL(a.href)};
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));if(b.dataset.tab==='settings')renderWeights();if(b.dataset.tab==='history')updateHistory();if(b.dataset.tab==='payouts')loadDailyPayouts()});
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));if(b.dataset.tab==='settings')renderWeights();if(b.dataset.tab==='history')updateHistory();if(b.dataset.tab==='payouts')loadDailyPayouts();if(b.dataset.tab==='tickets')renderLabVirtualLedger()});
 if('serviceWorker' in navigator && location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
 
 let dailyPayoutReport=null;
