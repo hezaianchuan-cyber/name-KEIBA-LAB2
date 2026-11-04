@@ -27,5 +27,5 @@ jobs:
         run: |
           test -n "$SUPABASE_ACCESS_TOKEN" || { echo "Missing SUPABASE_ACCESS_TOKEN repository secret"; exit 1; }
           test -n "$NAR_CAPTURE_TOKEN" || { echo "Missing NAR_CAPTURE_TOKEN repository secret"; exit 1; }
-          supabase secrets set NAR_CAPTURE_TOKEN="$NAR_CAPTURE_TOKEN" --project-ref mwiinzmnoludksnfnjaa
+          supabase secrets set NAR_CAPTURE_TOKEN="$NAR_CAPTURE_TOKEN" --project-ref mwiinzmnoludksnfnjaa --yes
           supabase functions deploy nar-odds-capture --project-ref mwiinzmnoludksnfnjaa
