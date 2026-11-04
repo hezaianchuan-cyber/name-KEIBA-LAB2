@@ -802,7 +802,9 @@ async function loadDailyPayouts(){
  try{
   const response=await fetch('./data/daily-payouts.json?v='+Date.now(),{cache:'no-store'});
   if(!response.ok)throw new Error('公式払戻データはまだ公開されていません');
-  dailyPayoutReport=await response.json();
+  const report=await response.json();
+  if(!report||!report.generated_at||!Array.isArray(report.days))throw new Error('公式払戻データの形式が不正です');
+  dailyPayoutReport=report;
   const merged=new Map((db.payouts||[]).map(x=>[String(x.id)+'|'+normDate(x.date),x]));
   for(const day of dailyPayoutReport.days||[]){
    const date=normDate(day.date);
@@ -885,6 +887,9 @@ async function loadHistoricalBacktest(){
  }
 }
 window.addEventListener('load',()=>{loadHistoricalBacktest();loadDailyPayouts();});
+// Keep same-day official payouts in sync while the Web app remains open.
+setInterval(()=>{if(document.visibilityState==='visible')loadDailyPayouts();},60*1000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')loadDailyPayouts();});
 
 async function loadModelGReport(){
  const section=document.getElementById('history');
