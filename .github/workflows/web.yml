@@ -17,7 +17,7 @@ on:
   # Commits made with GITHUB_TOKEN do not start push workflows.
   # Deploy after the payout publisher commits the official same-day results.
   workflow_run:
-    workflows: ["Publish daily official NAR payouts"]
+    workflows: ["Publish daily official NAR payouts", "Capture NAR pre-off odds every five minutes"]
     types: [completed]
     branches: [main]
 
