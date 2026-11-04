@@ -649,7 +649,16 @@ function labLedgerRecordsForDate(plans,date){
   const tickets=Array.isArray(plan.tickets)?plan.tickets:[];
   const validTickets=tickets.filter(t=>t&&Number(t.stake)>0&&labLedgerComb(t.comb,t.type));
   const stake=validTickets.reduce((sum,t)=>sum+Math.max(0,Number(t.stake)||0),0);
-  if(isSkip)return {plan,p,isSkip:true,settled:true,stake:0,returned:0,hit:false,matchedTickets:[],officialResults:[]};
+  const shadowTickets=Array.isArray(plan.shadowTickets)?plan.shadowTickets:[];
+  if(isSkip){
+   const keyByType={'単勝':'win','複勝':'place','ワイド':'wide','馬連':'quinella','馬単':'exacta','3連複':'trio','3連単':'trifecta'};
+   const payoutEntries=race?.payouts?Object.entries(race.payouts).filter(([,items])=>Array.isArray(items)&&items.some(x=>x&&Array.isArray(x.numbers)&&Number(x.pay_100)>0)):[];
+   if(!payoutEntries.length)return {plan,p,isSkip:true,settled:false,stake:0,returned:0,hit:false,matchedTickets:[],officialResults:[],shadowTickets,shadowSettled:false,shadowHit:false,shadowMatchedTickets:[]};
+   const shadowMatchedTickets=[];
+   for(const ticket of shadowTickets){const key=keyByType[ticket.type],wanted=labLedgerComb(ticket.comb,ticket.type);if(!key||!wanted)continue;const match=(race.payouts[key]||[]).find(item=>item&&Array.isArray(item.numbers)&&labLedgerComb(item.numbers,ticket.type)===wanted&&Number(item.pay_100)>0);if(match)shadowMatchedTickets.push({type:ticket.type,comb:wanted,pay100:Number(match.pay_100)||0});}
+   const officialResults=payoutEntries.flatMap(([key,items])=>items.map(item=>({type:Object.keys(keyByType).find(type=>keyByType[type]===key)||key,comb:labLedgerComb(item.numbers,Object.keys(keyByType).find(type=>keyByType[type]===key)),pay100:Number(item.pay_100)||0})));
+   return {plan,p,isSkip:true,settled:true,stake:0,returned:0,hit:false,matchedTickets:[],officialResults,shadowTickets,shadowSettled:true,shadowHit:shadowMatchedTickets.length>0,shadowMatchedTickets};
+  }
   if(decision!=='BET'||!validTickets.length||!race||!race.payouts)return {plan,p,isSkip:false,settled:false,stake,returned:0,hit:false,matchedTickets:[],officialResults:[]};
   const keyByType={'単勝':'win','複勝':'place','ワイド':'wide','馬連':'quinella','馬単':'exacta','3連複':'trio','3連単':'trifecta'};
   const payoutEntries=Object.entries(race.payouts).filter(([,items])=>Array.isArray(items)&&items.some(x=>x&&Array.isArray(x.numbers)&&Number(x.pay_100)>0));
@@ -774,11 +783,11 @@ function renderLabVirtualLedger(){
  $('labLedgerHitRate').textContent=settled.length?(hitRaces/settled.length*100).toFixed(1)+'%':'—';$('labLedgerPending').textContent=pending.length+'R';
  $('labLedgerStatus').textContent='公式払戻照合：確定 '+settled.length+'R ／ 未確定 '+pending.length+'R（保存買い目との完全一致のみ的中）';
  const rows=records.map(x=>{
-  const label=x.isSkip?'見送り':!x.settled?'未確定':x.hit?'的中':'不的中';
-  const details=x.isSkip?'購入なし':(x.plan.tickets||[]).map(t=>t.type+' '+t.comb+' '+Number(t.stake||0).toLocaleString()+'円').join('<br>');
-  const hitDetails=x.isSkip?'—':!x.settled?'結果待ち':x.hit?x.matchedTickets.map(t=>t.type+' '+t.comb+'（'+t.returned.toLocaleString()+'円）').join('<br>'):'該当買い目なし';
-  const officialDetails=x.isSkip?'—':!x.settled?'結果待ち':x.officialResults.map(r=>r.type+' '+r.comb).join('<br>')||'払戻組合せなし';
-  const returned=x.isSkip?'—':!x.settled?'未確定':x.returned.toLocaleString()+'円',stake=x.isSkip?'0円':x.stake.toLocaleString()+'円';
+  const label=x.isSkip?(!x.shadowSettled?'見送り・検証待ち':x.shadowHit?'見送り・仮想的中':'見送り・仮想不的中'):!x.settled?'未確定':x.hit?'的中':'不的中';
+  const details=x.isSkip?'【検証用】'+(x.shadowTickets||[]).map(t=>t.type+' '+t.comb+'（仮想100円）').join('<br>'):'【購入候補】'+(x.plan.tickets||[]).map(t=>t.type+' '+t.comb+' '+Number(t.stake||0).toLocaleString()+'円').join('<br>');
+  const hitDetails=x.isSkip?(!x.shadowSettled?'結果待ち':x.shadowHit?x.shadowMatchedTickets.map(t=>t.type+' '+t.comb+'（払戻 '+t.pay100.toLocaleString()+'円/100円）').join('<br>'):'検証用買い目に的中なし'):!x.settled?'結果待ち':x.hit?x.matchedTickets.map(t=>t.type+' '+t.comb+'（'+t.returned.toLocaleString()+'円）').join('<br>'):'該当買い目なし';
+  const officialDetails=!x.settled&&!x.shadowSettled?'結果待ち':x.officialResults.map(r=>r.type+' '+r.comb).join('<br>')||'払戻組合せなし';
+  const returned=x.isSkip?'購入なし（仮想検証）':!x.settled?'未確定':x.returned.toLocaleString()+'円',stake=x.isSkip?'0円':x.stake.toLocaleString()+'円';
   return '<tr><td>'+esc(x.plan.venue||'')+' '+esc(x.plan.raceNo||'')+'R</td><td>'+label+'</td><td>'+details+'</td><td>'+officialDetails+'</td><td>'+hitDetails+'</td><td>'+stake+'</td><td>'+returned+'</td><td>'+(!x.settled?'—':(x.returned-x.stake>0?'+':'')+(x.returned-x.stake).toLocaleString()+'円')+'</td></tr>';
  });
  $('labLedgerRows').innerHTML=rows.length?'<div class="tablewrap"><table style="min-width:760px"><thead><tr><th>レース</th><th>判定</th><th>保存買い目</th><th>公式的中組合せ</th><th>LAB的中買い目</th><th>保存購入額</th><th>照合払戻（LAB買い目基準）</th><th>損益</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>':'この日の保存履歴はありません。';
@@ -1030,6 +1039,7 @@ function generateTickets(){
      skipReason:selectedType&&allocation.length?'':skipReason,
      skipReasonCode:selectedType&&allocation.length?'BET':(!learnedModelLoaded?'MODEL_NOT_READY':oddsRows.length===0?'ODDS_NOT_CAPTURED':oddsMatchedCount===0?'TICKET_ODDS_NOT_MATCHED':validatedTypeCount===0?'NO_VALIDATED_TICKET_THRESHOLD':'EV_BELOW_VALIDATED_THRESHOLD'),
      totalStake:allocated||0,tickets:allocation.map(x=>({type:x.type,comb:x.comb,stake:x.stake,odds:x.odds,probability:x.probability,ev:x.ev})),
+     shadowTickets:(selectedType&&allocation.length?allocation:groups.flatMap(type=>ranked(type).slice(0,Math.min(3,type==='3連単'?6:3)))).map(x=>({type:x.type,comb:x.comb,odds:x.odds,probability:x.probability,ev:x.ev,virtualStake:100})),
      modelLoaded:!!learnedModelLoaded,oddsCaptured:oddsRows.length>0,oddsRows:oddsRows.length,oddsMatchedCandidates:oddsMatchedCount,validatedBetTypes:validatedTypeCount
    };
    let prediction=(db.predictions||[]).find(p=>String(p.id)===String(raceId)&&normDate(p.date)===normDate(snapshot.date)&&!p.learned);
