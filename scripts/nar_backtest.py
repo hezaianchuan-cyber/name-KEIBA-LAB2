@@ -1594,12 +1594,12 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             elif model_name.startswith("ablate_"):
                 excluded = model_name.removeprefix("ablate_")
                 reduced_weights = ablated_model_weights(weights, excluded)
-                scored = []
-                for h in field:
-                    _, parts = score_runner(h, history, sire_stats, jockey_stats, race,
-                                             weights, include_recent_history=include_recent_history)
-                    score = sum(reduced_weights[k] * parts[k] for k in reduced_weights)
-                    scored.append((score, h))
+                scored = [
+                    (score_runner_performance(
+                        h, history, sire_stats, jockey_stats, race, reduced_weights,
+                        0.10, 0.10, 0.10, include_recent_history, going_weight=0.10)[0], h)
+                    for h in field
+                ]
             elif model_name in ("B_condition", "trained_with_conditions", "trained_with_conditions_and_pace"):
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
                             0.0,0.0,0.0,include_recent_history,going_weight=0.10)[0],h) for h in field]
@@ -1613,7 +1613,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             else:
                 scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights,
                             include_recent_history=include_recent_history)[0],h) for h in field]
-            if model_name in ("C_performance_pace", "trained_with_pace", "trained_performance_with_pace", "trained_with_conditions_and_pace"):
+            if model_name in ("C_performance_pace", "trained_with_pace", "trained_performance_with_pace", "trained_with_conditions_and_pace") or model_name.startswith("ablate_"):
                 _, _, pace_delta = pace_adjustments(field, history)
                 scored = [(score + pace_delta.get(h["no"], 0.0), h) for score, h in scored]
             if model_name == "trained":
