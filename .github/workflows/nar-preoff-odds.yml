@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/capture_nar_odds.py'
+      - 'scripts/build_auto_ticket_plans.py'
       - 'scripts/nar_model_g.py'
       - 'tests/test_nar_model_g.py'
       - '.github/workflows/nar-preoff-odds.yml'
@@ -52,7 +53,10 @@ jobs:
       - name: Capture timestamped pre-off snapshots
         run: python3 scripts/capture_nar_odds.py
 
-      - name: Commit new snapshots with race-safe retry
+      - name: Build automatic ticket plans from captured snapshots
+        run: python3 scripts/build_auto_ticket_plans.py
+
+      - name: Commit new snapshots and automatic plans with race-safe retry
         shell: bash
         run: |
           set -e
@@ -64,7 +68,8 @@ jobs:
             # Recompute against the latest archive so concurrent captures
             # cannot append duplicate race snapshots or conflict gzip files.
             python3 scripts/capture_nar_odds.py
-            git add data/odds-snapshots data/odds-capture-status.json
+            python3 scripts/build_auto_ticket_plans.py
+            git add data/odds-snapshots data/odds-capture-status.json data/auto-ticket-plans.json
             if git diff --cached --quiet; then
               echo "No new snapshot or status changes."
               exit 0
