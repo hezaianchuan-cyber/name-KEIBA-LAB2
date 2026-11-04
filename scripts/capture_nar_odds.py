@@ -127,6 +127,7 @@ def read_archives():
                             continue
                         horse_rows.setdefault(key, []).append({
                             "no": str(int(no)),
+                            "frame_no": nb.rank_value(row[4]) if len(row) > 4 else None,
                             "name": horse_name,
                             "age": nb.number(row[8]) if len(row) > 8 else None,
                             "sire": str(row[11] or "").strip() if len(row) > 11 else "",
@@ -199,16 +200,28 @@ def load_model_context():
     history = defaultdict(list, history_data.get("horse_history") or {})
     sire_stats = defaultdict(lambda: {"runs": 0, "top3": 0}, history_data.get("sire_stats") or {})
     jockey_stats = defaultdict(lambda: {"runs": 0, "top3": 0}, history_data.get("jockey_stats") or {})
+    frame_stats = {}
+    for raw_key, value in (history_data.get("frame_stats") or {}).items():
+        parts = str(raw_key).split("|")
+        if len(parts) == 5:
+            venue, surface, distance_band, field_band, frame_no = parts
+            try:
+                key = (venue, surface, int(distance_band) if distance_band != "unknown" else "unknown",
+                       int(field_band) if field_band != "unknown" else "unknown", int(frame_no))
+                frame_stats[key] = value
+            except ValueError:
+                continue
     weights = model.get("weights") or {}
     if not all(key in weights for key in ("form", "venue", "distance", "sire", "jockey", "age")):
         return None
-    return model, history, sire_stats, jockey_stats, weights
+    return model, history, sire_stats, jockey_stats, weights, frame_stats
 
 
 def predict_horses(race, horses, odds_rows, model_context):
     if not model_context or len(horses) < 3:
         return []
-    model, history, sire_stats, jockey_stats, weights = model_context
+    model, history, sire_stats, jockey_stats, weights = model_context[:5]
+    frame_stats = model_context[5] if len(model_context) > 5 else {}
     # D starts from the full C feature set: prior going suitability,
     # margin/closing-speed/comparable-time form, and race-pace adjustment.
     scored_parts = [nb.score_runner_performance(
@@ -216,7 +229,8 @@ def predict_horses(race, horses, odds_rows, model_context):
         margin_weight=0.10, closing_weight=0.10, time_weight=0.10,
         going_weight=0.10,
     ) for horse in horses]
-    scored = [item[0] for item in scored_parts]
+    scored = [item[0] * 0.92 + nb.frame_form_score(race, horse, frame_stats) * 0.08
+              for item, horse in zip(scored_parts, horses)]
     feature_parts = [item[1] for item in scored_parts]
     pace_profiles, pace_leaders, pace_delta = nb.pace_adjustments(horses, history)
     scored = [score + pace_delta.get(horse["no"], 0.0)
