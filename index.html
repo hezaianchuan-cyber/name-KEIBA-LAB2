@@ -139,6 +139,16 @@ a{color:inherit}
     <div class="notice">&#x30B5;&#x30F3;&#x30D7;&#x30EB;&#x30C7;&#x30FC;&#x30BF;&#x306F;&#x5B9F;&#x969B;&#x306E;&#x6210;&#x7E3E;&#x3067;&#x306F;&#x3042;&#x308A;&#x307E;&#x305B;&#x3093;&#x3002;&#x7684;&#x4E2D;&#x7387;&#x30FB;&#x56DE;&#x53CE;&#x7387;&#x3092;&#x8868;&#x793A;&#x3059;&#x308B;&#x5834;&#x5408;&#x306F;&#x3001;&#x5B9F;&#x30C7;&#x30FC;&#x30BF;&#x3067;&#x691C;&#x8A3C;&#x3057;&#x305F;&#x5024;&#x3060;&#x3051;&#x3092;&#x8868;&#x793A;&#x3057;&#x307E;&#x3059;&#x3002;</div>
   </section>
   <section id="payouts" class="panel">
+    <div class="card" id="labTodaySummary">
+      <h2>今日のLAB収支</h2>
+      <p class="sub">今日保存した買い目を公式確定払戻と照合した仮想収支です。未確定レースは合計から除外します。</p>
+      <div class="kpis" style="margin-top:12px">
+        <div class="kpi"><span>確定購入額</span><b id="labTodayStake">—</b></div>
+        <div class="kpi"><span>確定払戻</span><b id="labTodayReturn">—</b></div>
+        <div class="kpi"><span>今日の損益</span><b id="labTodayProfit">—</b></div>
+        <div class="kpi"><span>照合状況</span><b id="labTodayStatus">確認中</b></div>
+      </div>
+    </div>
     <div class="card">
       <h2>日別・公式払戻一覧</h2>
       <p class="sub">NAR公式の確定払戻を日付ごとに表示します。直近120日分を毎日自動更新します。各金額は100円あたりの払戻金です。実際の購入額や個人の収支ではありません。</p>
@@ -652,15 +662,9 @@ function labLedgerComb(value,type){
  const nums=parts.map(x=>String(Number(x)));
  return ['複勝','ワイド','馬連','3連複'].includes(type)?nums.sort((a,b)=>Number(a)-Number(b)).join('-'):nums.join('-');
 }
-function renderLabVirtualLedger(){
- const select=$('labLedgerDate');if(!select)return;
- const plans=(db.predictions||[]).filter(p=>p&&p.ticketPlan).map(p=>({p,plan:p.ticketPlan,date:labLedgerDateKey(p.ticketPlan.date||p.date)})).filter(x=>x.date);
- const dates=[...new Set(plans.map(x=>x.date))].sort().reverse();
- if(!dates.length){select.innerHTML='<option value="">保存履歴なし</option>';$('labLedgerStatus').textContent='買い目の保存履歴がありません。';$('labLedgerRows').textContent='買い目を保存すると、公式払戻との照合結果がここに表示されます。';return;}
- const previous=select.value;select.innerHTML=dates.map(d=>'<option value="'+d+'">'+d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8)+'</option>').join('');
- select.value=dates.includes(previous)?previous:dates[0];
- const date=select.value,day=(dailyPayoutReport?.days||[]).find(d=>labLedgerDateKey(d.date)===date),dayRaces=day?.races||[];
- const records=plans.filter(x=>x.date===date).map(({p,plan})=>{
+function labLedgerRecordsForDate(plans,date){
+ const day=(dailyPayoutReport?.days||[]).find(d=>labLedgerDateKey(d.date)===date),dayRaces=day?.races||[];
+ return plans.filter(x=>x.date===date).map(({p,plan})=>{
   const venue=labLedgerVenueKey(plan.venue),raceNo=String(Number(String(plan.raceNo||'').replace(/[^0-9]/g,'')));
   const matches=dayRaces.filter(r=>labLedgerVenueKey(r.venue)===venue&&String(Number(r.race||0))===raceNo);
   const race=matches.length===1?matches[0]:null,decision=String(plan.decision||'').toUpperCase(),isSkip=decision==='SKIP';
@@ -668,8 +672,7 @@ function renderLabVirtualLedger(){
   const validTickets=tickets.filter(t=>t&&Number(t.stake)>0&&labLedgerComb(t.comb,t.type));
   const stake=validTickets.reduce((sum,t)=>sum+Math.max(0,Number(t.stake)||0),0);
   if(isSkip)return {plan,p,isSkip:true,settled:true,stake:0,returned:0,hit:false};
-  if(decision!=='BET'||!validTickets.length||!race||!race.payouts)
-   return {plan,p,isSkip:false,settled:false,stake,returned:0,hit:false};
+  if(decision!=='BET'||!validTickets.length||!race||!race.payouts)return {plan,p,isSkip:false,settled:false,stake,returned:0,hit:false};
   const keyByType={'単勝':'win','複勝':'place','ワイド':'wide','馬連':'quinella','馬単':'exacta','3連複':'trio','3連単':'trifecta'};
   let returned=0,matchedTickets=0;
   for(const ticket of validTickets){
@@ -680,6 +683,29 @@ function renderLabVirtualLedger(){
   }
   return {plan,p,isSkip:false,settled:true,stake,returned,hit:matchedTickets>0};
  });
+}
+function renderLabTodaySummary(plans){
+ const today=labLedgerDateKey(new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Tokyo'}));
+ const todays=plans.filter(x=>x.date===today);
+ const stakeEl=$('labTodayStake'),returnEl=$('labTodayReturn'),profitEl=$('labTodayProfit'),statusEl=$('labTodayStatus');
+ if(!stakeEl||!returnEl||!profitEl||!statusEl)return;
+ if(!todays.length){stakeEl.textContent='0円';returnEl.textContent='0円';profitEl.textContent='—';statusEl.textContent='保存買い目なし';return;}
+ const records=labLedgerRecordsForDate(plans,today),settled=records.filter(x=>!x.isSkip&&x.settled),pending=records.filter(x=>!x.isSkip&&!x.settled);
+ if(!settled.length&&pending.length){stakeEl.textContent='—';returnEl.textContent='—';profitEl.textContent='—';statusEl.textContent='未確定 '+pending.length+'R';return;}
+ const stake=settled.reduce((a,x)=>a+x.stake,0),returned=settled.reduce((a,x)=>a+x.returned,0),profit=returned-stake;
+ stakeEl.textContent=stake.toLocaleString()+'円';returnEl.textContent=returned.toLocaleString()+'円';
+ profitEl.textContent=(profit>0?'+':'')+profit.toLocaleString()+'円';
+ statusEl.textContent=pending.length?'確定 '+settled.length+'R／未確定 '+pending.length+'R':'確定 '+settled.length+'R';
+}
+function renderLabVirtualLedger(){
+ const select=$('labLedgerDate');if(!select)return;
+ const plans=(db.predictions||[]).filter(p=>p&&p.ticketPlan).map(p=>({p,plan:p.ticketPlan,date:labLedgerDateKey(p.ticketPlan.date||p.date)})).filter(x=>x.date);
+ renderLabTodaySummary(plans);
+ const dates=[...new Set(plans.map(x=>x.date))].sort().reverse();
+ if(!dates.length){select.innerHTML='<option value="">保存履歴なし</option>';$('labLedgerStatus').textContent='買い目の保存履歴がありません。';$('labLedgerRows').textContent='買い目を保存すると、公式払戻との照合結果がここに表示されます。';return;}
+ const previous=select.value;select.innerHTML=dates.map(d=>'<option value="'+d+'">'+d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8)+'</option>').join('');
+ select.value=dates.includes(previous)?previous:dates[0];
+ const date=select.value,records=labLedgerRecordsForDate(plans,date);
  const settled=records.filter(x=>!x.isSkip&&x.settled),pending=records.filter(x=>!x.isSkip&&!x.settled);
  const totalStake=settled.reduce((a,x)=>a+x.stake,0),totalReturn=settled.reduce((a,x)=>a+x.returned,0),profit=totalReturn-totalStake,hitRaces=settled.filter(x=>x.hit).length;
  $('labLedgerStake').textContent=totalStake.toLocaleString()+'円';$('labLedgerReturn').textContent=totalReturn.toLocaleString()+'円';
