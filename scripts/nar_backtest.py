@@ -1078,10 +1078,42 @@ def summarize_trio_diagnostics(bucket):
     return output
 
 
+def frame_context_key(race, horse):
+    distance = number(race.get("distance"))
+    field_size = number(race.get("field_size"))
+    frame_no = number(horse.get("frame_no"))
+    if frame_no is None:
+        return None
+    distance_band = int(distance // 400) if distance is not None else "unknown"
+    field_band = int(field_size // 4) if field_size is not None else "unknown"
+    return (norm(race.get("venue")), norm(race.get("surface")), distance_band, field_band, int(frame_no))
+
+
+def frame_form_score(race, horse, frame_stats):
+    key = frame_context_key(race, horse)
+    if key is None:
+        return 0.5
+    stats = frame_stats.get(key) or {"runs": 0, "top3": 0}
+    return smoothed_rate(stats.get("top3", 0), stats.get("runs", 0),
+                         prior_rate=0.5, prior_strength=8.0)
+
+
+def update_frame_stats(race, field, frame_stats):
+    for horse in field:
+        if not horse.get("finish") or horse.get("frame_no") is None:
+            continue
+        key = frame_context_key(race, horse)
+        if key is None:
+            continue
+        frame_stats[key]["runs"] += 1
+        frame_stats[key]["top3"] += int(horse["finish"] <= 3)
+
+
 def run_backtest(races, horses, payouts):
     history = defaultdict(list)
     sire_stats = defaultdict(lambda: {"runs":0,"top3":0})
     jockey_stats = defaultdict(lambda: {"runs":0,"top3":0})
+    frame_stats = defaultdict(lambda: {"runs": 0, "top3": 0})
     metrics = {k: {"races":0,"tickets":0,"hits":0,"stake":0,"return":0} for k in ("win","place","wide","quinella","exacta","trio","trifecta")}
     examples = []
     calibration_records = []
@@ -1107,6 +1139,7 @@ def run_backtest(races, horses, payouts):
                         "time_seconds": runner.get("time_seconds"),
                         "time_per_km": (runner.get("time_seconds") * 1000 / pending_race["distance"]
                                         if runner.get("time_seconds") and pending_race.get("distance") else None),
+                        "frame_no": runner.get("frame_no"),
                         **corner_history_for_runner(runner, pending_race)
                     })
                     if runner.get("sire"):
@@ -1115,6 +1148,7 @@ def run_backtest(races, horses, payouts):
                     if runner.get("jockey"):
                         jockey_stats[runner["jockey"]]["runs"] += 1
                         jockey_stats[runner["jockey"]]["top3"] += int(runner["finish"] <= 3)
+            update_frame_stats(pending_race, pending_field, frame_stats)
 
     for race in ordered:
         if current_date is not None and race["date"] != current_date:
@@ -1128,9 +1162,17 @@ def run_backtest(races, horses, payouts):
         scored = []
         parts_by_no = {}
         for h in field:
-            score, parts = score_runner(h,history,sire_stats,jockey_stats,race,model_weights)
+            base_score, parts = score_runner_performance(
+                h, history, sire_stats, jockey_stats, race, model_weights,
+                margin_weight=0.10, closing_weight=0.10, time_weight=0.10,
+                going_weight=0.10,
+            )
+            frame_score = frame_form_score(race, h, frame_stats)
+            score = base_score * 0.92 + frame_score * 0.08
             scored.append((score,h))
             parts_by_no[h["no"]] = parts
+        _, _, pace_delta = pace_adjustments(field, history)
+        scored = [(score + pace_delta.get(h["no"], 0.0), h) for score, h in scored]
         winner_indices = [i for i,h in enumerate(field) if h.get("finish") == 1]
         if winner_indices and payouts.get(key) and payouts[key].get("win"):
             calibration_records.append({"date":race["date"].isoformat(), "venue":race["venue"],
@@ -1170,6 +1212,14 @@ def run_backtest(races, horses, payouts):
                          "profit": m["return"]-m["stake"]}
     return summary, examples, len(ordered), model_weights, learning_updates, calibration_records
 
+def build_frame_stats(races, horses):
+    stats = defaultdict(lambda: {"runs": 0, "top3": 0})
+    ordered = sorted(races.values(), key=lambda r:(r["date"],r["venue"],int(r["race"])))
+    for race in ordered:
+        update_frame_stats(race, horses.get(race["key"], []), stats)
+    return stats
+
+
 def build_live_history(races, horses):
     horse_history = defaultdict(list)
     sire_stats = defaultdict(lambda: {"runs": 0, "top3": 0})
@@ -1204,6 +1254,7 @@ def build_live_history(races, horses):
         "horse_history": {name: runs[-5:] for name, runs in horse_history.items()},
         "sire_stats": dict(sire_stats),
         "jockey_stats": dict(jockey_stats),
+        "frame_stats": {"|".join(map(str, key)): value for key, value in build_frame_stats(races, horses).items()},
         "note": "Snapshot through period end; only use for target dates after training_period.end. Historical corner-position features are included where available."
     }
 
