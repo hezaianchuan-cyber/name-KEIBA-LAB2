@@ -92,7 +92,7 @@ a{color:inherit}
     <button data-tab="import">&#x30C7;&#x30FC;&#x30BF;&#x53D6;&#x8FBC;</button>
     <button data-tab="history">&#x691C;&#x8A3C;&#x30FB;&#x6210;&#x7E3E;</button>
     <button data-tab="tickets">保存買い目</button>
-    <button data-tab="payouts">日別払戻</button>
+    
     <button data-tab="settings">&#x30E2;&#x30C7;&#x30EB;&#x8A2D;&#x5B9A;</button>
   </nav>
   <section id="home" class="panel active">
@@ -153,33 +153,6 @@ a{color:inherit}
       </div>
       <div id="labLedgerRows" class="sub" style="margin-top:14px">保存済みの買い目を読み込んでいます。</div>
     </div>
-  </section>
-  <section id="payouts" class="panel">
-    <div class="card" id="labTodaySummary">
-      <h2>今日のLAB収支</h2>
-      <p class="sub">今日保存した買い目を公式確定払戻と照合した仮想収支です。未確定レースは合計から除外します。</p>
-      <div class="kpis" style="margin-top:12px">
-        <div class="kpi"><span>確定購入額</span><b id="labTodayStake">—</b></div>
-        <div class="kpi"><span>確定払戻</span><b id="labTodayReturn">—</b></div>
-        <div class="kpi"><span>今日の損益</span><b id="labTodayProfit">—</b></div>
-        <div class="kpi"><span>照合状況</span><b id="labTodayStatus">確認中</b></div>
-      </div>
-    </div>
-    <div class="card">
-      <h2>日別・公式払戻一覧</h2>
-      <p class="sub">NAR公式の確定払戻を日付ごとに表示します。直近120日分を毎日自動更新します。各金額は100円あたりの払戻金です。実際の購入額や個人の収支ではありません。</p>
-      <div class="grid">
-        <div><label for="dailyPayoutDate">開催日</label><select id="dailyPayoutDate"><option value="">払戻データを読み込み中…</option></select></div>
-        <div><label>データ更新</label><div id="dailyPayoutUpdated" class="sub" style="padding:11px 0">確認中…</div></div>
-      </div>
-      <div class="kpis" style="margin-top:12px">
-        <div class="kpi"><span>確定払戻レース</span><b id="dailyPayoutRaces">—</b></div>
-        <div class="kpi"><span>払戻掲載件数</span><b id="dailyPayoutEntries">—</b></div>
-      </div>
-      <div id="dailyPayoutRows" class="sub" style="margin-top:14px">公式払戻データを読み込んでいます。</div>
-      <p class="sub" style="margin-top:12px">※単勝・複勝・ワイド・馬連・馬単・3連複・3連単の公式払戻を表示します。同着などで複数の払戻がある場合も掲載します。</p>
-    </div>
-
   </section>
   <section id="settings" class="panel">
     <div class="card"><h2>&#x4E88;&#x6E2C;&#x30E2;&#x30C7;&#x30EB;&#x306E;&#x914D;&#x70B9;</h2><p class="sub">&#x307E;&#x305A;&#x306F;&#x516C;&#x5F0F;&#x51FA;&#x99AC;&#x8868;&#x3067;&#x53D6;&#x5F97;&#x3067;&#x304D;&#x308B;&#x9805;&#x76EE;&#x3092;&#x4E2D;&#x5FC3;&#x306B;&#x30B9;&#x30B3;&#x30A2;&#x5316;&#x3002;&#x904E;&#x53BB;&#x6210;&#x7E3E;CSV&#x304C;&#x63C3;&#x3063;&#x305F;&#x6BB5;&#x968E;&#x3067;&#x3001;&#x8DDD;&#x96E2;&#x30FB;&#x7AF6;&#x99AC;&#x5834;&#x9069;&#x6027;&#x3084;&#x4E0A;&#x304C;&#x308A;&#x6027;&#x80FD;&#x306E;&#x6BD4;&#x91CD;&#x3092;&#x5B9F;&#x6E2C;&#x3067;&#x6700;&#x9069;&#x5316;&#x3057;&#x307E;&#x3059;&#x3002;</p><div id="weights"></div><div class="actions"><button class="btn primary" id="saveWeights">&#x914D;&#x70B9;&#x3092;&#x4FDD;&#x5B58;</button><button class="btn" id="resetWeights">&#x521D;&#x671F;&#x5024;&#x306B;&#x623B;&#x3059;</button></div></div>
@@ -637,7 +610,7 @@ function updateHistory(){
 }
 $('analyzeBtn').onclick=analyze;$('demoBtn').onclick=demo;
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='keiba-lab-local-data.json';a.click();URL.revokeObjectURL(a.href)};
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));if(b.dataset.tab==='settings')renderWeights();if(b.dataset.tab==='history')updateHistory();if(b.dataset.tab==='payouts')loadDailyPayouts();if(b.dataset.tab==='tickets')renderLabVirtualLedger()});
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));if(b.dataset.tab==='settings')renderWeights();if(b.dataset.tab==='history')updateHistory();if(b.dataset.tab==='tickets'){loadDailyPayouts();renderLabVirtualLedger()}});
 if('serviceWorker' in navigator && location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
 
 let dailyPayoutReport=null;
@@ -701,19 +674,6 @@ function labLedgerRecordsForDate(plans,date){
   return {plan,p,isSkip:false,settled:true,stake,returned,hit:matchedTicketDetails.length>0,matchedTickets:matchedTicketDetails,officialResults};
  });
 }
-function renderLabTodaySummary(plans){
- const today=labLedgerDateKey(new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Tokyo'}));
- const todays=plans.filter(x=>x.date===today);
- const stakeEl=$('labTodayStake'),returnEl=$('labTodayReturn'),profitEl=$('labTodayProfit'),statusEl=$('labTodayStatus');
- if(!stakeEl||!returnEl||!profitEl||!statusEl)return;
- if(!todays.length){stakeEl.textContent='0円';returnEl.textContent='0円';profitEl.textContent='—';statusEl.textContent='保存買い目なし';return;}
- const records=labLedgerRecordsForDate(plans,today),settled=records.filter(x=>!x.isSkip&&x.settled),pending=records.filter(x=>!x.isSkip&&!x.settled);
- if(!settled.length&&pending.length){stakeEl.textContent='—';returnEl.textContent='—';profitEl.textContent='—';statusEl.textContent='未確定 '+pending.length+'R';return;}
- const stake=settled.reduce((a,x)=>a+x.stake,0),returned=settled.reduce((a,x)=>a+x.returned,0),profit=returned-stake;
- stakeEl.textContent=stake.toLocaleString()+'円';returnEl.textContent=returned.toLocaleString()+'円';
- profitEl.textContent=(profit>0?'+':'')+profit.toLocaleString()+'円';
- statusEl.textContent=pending.length?'確定 '+settled.length+'R／未確定 '+pending.length+'R':'確定 '+settled.length+'R';
-}
 // Independent compact archive for saved ticket plans.
 const LAB_TICKET_STORAGE_KEY='keibaLabTicketPlansV1';
 function loadLabTicketPlans(){
@@ -733,7 +693,7 @@ function persistLabTicketPlan(prediction,plan){
 function renderLabVirtualLedger(){
  const select=$('labLedgerDate');if(!select)return;
  const plans=loadLabTicketPlans().map(item=>{const plan=item.plan;const p=(db.predictions||[]).find(x=>String(x.id)===String(item.predictionId||plan.raceId)&&labLedgerDateKey(x.date)===labLedgerDateKey(plan.date))||{id:plan.raceId,date:plan.date,venue:plan.venue,race:plan.raceNo,top:[],runners:[]};return {p,plan,date:labLedgerDateKey(plan.date||p.date)};}).filter(x=>x.date);
- renderLabTodaySummary(plans);
+
  const dates=[...new Set(plans.map(x=>x.date))].sort().reverse();
  if(!dates.length){select.innerHTML='<option value="">保存履歴なし</option>';$('labLedgerStatus').textContent='買い目の保存履歴がありません。';$('labLedgerRows').textContent='買い目を保存すると、公式払戻との照合結果がここに表示されます。';return;}
  const previous=select.value;select.innerHTML=dates.map(d=>'<option value="'+d+'">'+d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8)+'</option>').join('');
@@ -758,38 +718,20 @@ function renderLabVirtualLedger(){
  select.onchange=renderLabVirtualLedger;
 }
 async function loadDailyPayouts(){
- const status=$('dailyPayoutUpdated');
- if(!status)return;
- if(!dailyPayoutReport){
-  $('dailyPayoutRows').textContent='NAR公式払戻データを読み込んでいます…';
-  try{
-   const response=await fetch('./data/daily-payouts.json?v='+Date.now(),{cache:'no-store'});
-   if(!response.ok)throw new Error('まだ初回データが公開されていません');
-   dailyPayoutReport=await response.json();
-  }catch(e){
-   status.textContent='データ準備中';
-   $('dailyPayoutRows').innerHTML='公式払戻データの初回取得・公開を待っています。<br><a href="https://github.com/hezaianchuan-cyber/name-KEIBA-LAB2/actions/workflows/nar-daily-payouts.yml" target="_blank" rel="noopener">払戻データ取得状況を確認</a>';
-   return;
-  }
- }
- status.textContent=dailyPayoutReport.generated_at?new Date(dailyPayoutReport.generated_at).toLocaleString('ja-JP'):'—';
- const select=$('dailyPayoutDate');
- const days=dailyPayoutReport.days||[];
- if(!days.length){
-  select.innerHTML='<option value="">確定払戻なし</option>';
-  renderDailyPayoutDay('');
+ // Official payout data is fetched only as the source for checking saved tickets.
+ try{
+  const response=await fetch('./data/daily-payouts.json?v='+Date.now(),{cache:'no-store'});
+  if(!response.ok)throw new Error('公式払戻データはまだ公開されていません');
+  dailyPayoutReport=await response.json();
   renderLabVirtualLedger();
-  return;
+ }catch(e){
+  dailyPayoutReport=null;
+  const status=$('labLedgerStatus');
+  if(status)status.textContent='公式結果を取得できず未照合です。後で再確認してください。';
+  const rows=$('labLedgerRows');
+  if(rows)rows.textContent='払戻データの取得待ちです。保存買い目は保持されています。';
  }
- const previous=select.value;
- const today=labLedgerDateKey(new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Tokyo'}));
- select.innerHTML=days.map(day=>'<option value="'+esc(day.date)+'">'+esc(day.date)+'（'+Number(day.race_count||0)+'R）</option>').join('');
- select.value=days.some(day=>day.date===today)?today:(days.some(day=>day.date===previous)?previous:days[0].date);
- renderDailyPayoutDay(select.value);
- renderLabVirtualLedger();
- select.onchange=()=>{renderDailyPayoutDay(select.value);renderLabVirtualLedger();};
 }
-window.addEventListener('load',loadDailyPayouts);
 
 async function loadHistoricalBacktest(){
  const section=document.getElementById('history');
