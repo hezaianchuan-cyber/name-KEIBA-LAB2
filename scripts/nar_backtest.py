@@ -275,7 +275,7 @@ def load_archives():
                         name = norm(row[6])
                         if not horse_no or not name: continue
                         horses[key].append({
-                            "no": horse_no, "name": name, "age": number(row[8]),
+                            "no": horse_no, "name": name, "frame_no": rank_value(row[4]) if len(row) > 4 else None, "age": number(row[8]),
                             "sire": norm(row[11]), "jockey": norm(row[14]),
                             "carried": number(row[16]), "finish": rank_value(row[31]),
                             "time_seconds": parse_race_time(row[32]) if len(row) > 32 else None,
@@ -2916,6 +2916,38 @@ def holdout_validation(races, horses, payouts, final_odds=None):
                 "scope": "Aggregated untouched walk-forward validation folds; development folds are not counted toward the validation sample."
             }}
 
+def frame_effect_audit(races, horses):
+    """Measure historical frame-number outcome rates; diagnostic only, not a scoring feature."""
+    buckets = defaultdict(lambda: {"starts": 0, "wins": 0, "top3": 0})
+    venue_buckets = defaultdict(lambda: {"starts": 0, "wins": 0, "top3": 0})
+    for key, race in races.items():
+        venue = norm(race.get("venue"))
+        for runner in horses.get(key, []):
+            frame = rank_value(runner.get("frame_no"))
+            finish = rank_value(runner.get("finish"))
+            if frame is None or finish is None:
+                continue
+            for bucket in (buckets[frame], venue_buckets[(venue, frame)]):
+                bucket["starts"] += 1
+                bucket["wins"] += int(finish == 1)
+                bucket["top3"] += int(finish <= 3)
+    def summarize(source):
+        result = {}
+        for key, bucket in source.items():
+            starts = bucket["starts"]
+            result[str(key)] = {
+                **bucket,
+                "win_rate_pct": round(100 * bucket["wins"] / starts, 2) if starts else None,
+                "top3_rate_pct": round(100 * bucket["top3"] / starts, 2) if starts else None,
+            }
+        return result
+    return {
+        "overall_by_frame_number": summarize(buckets),
+        "venue_by_frame_number": summarize(venue_buckets),
+        "method": "Official frame number versus finish position; descriptive only. No frame effect is added to live model scores unless a separate chronological holdout proves improvement.",
+    }
+
+
 def data_quality_audit(races, horses, payouts):
     """Report source coverage before interpreting model metrics."""
     race_rows = list(races.values())
@@ -2938,6 +2970,8 @@ def data_quality_audit(races, horses, payouts):
         "runner_jockey_coverage_pct": pct(sum(1 for h in runner_rows if present(h.get("jockey"))), total_runners),
         "runner_sire_coverage_pct": pct(sum(1 for h in runner_rows if present(h.get("sire"))), total_runners),
         "finish_coverage_pct": pct(sum(1 for h in runner_rows if present(h.get("finish"))), total_runners),
+        "frame_no_coverage_pct": pct(sum(1 for h in runner_rows if present(h.get("frame_no"))), total_runners),
+        "frame_effect": frame_effect_audit(races, horses),
         "last3f_coverage_pct": pct(sum(1 for h in runner_rows if present(h.get("last3f"))), total_runners),
         "policy": "Coverage diagnostics only; missing values are not imputed as observed facts and this report does not imply predictive value."
     }
