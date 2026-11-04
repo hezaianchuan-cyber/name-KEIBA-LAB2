@@ -652,6 +652,7 @@ function labLedgerRecordsForDate(plans,date){
   const stake=validTickets.reduce((sum,t)=>sum+Math.max(0,Number(t.stake)||0),0);
   const shadowTickets=Array.isArray(plan.shadowTickets)?plan.shadowTickets:[];
   if(isSkip){
+   if(plan.dataStatus==='INSUFFICIENT_DATA')return {plan,p,isSkip:true,settled:false,stake:0,returned:0,hit:false,matchedTickets:[],officialResults:[],shadowTickets:[],shadowSettled:false,shadowHit:false,shadowMatchedTickets:[],dataInsufficient:true};
    const keyByType={'単勝':'win','複勝':'place','ワイド':'wide','馬連':'quinella','馬単':'exacta','3連複':'trio','3連単':'trifecta'};
    const payoutEntries=race?.payouts?Object.entries(race.payouts).filter(([,items])=>Array.isArray(items)&&items.some(x=>x&&Array.isArray(x.numbers)&&Number(x.pay_100)>0)):[];
    if(!payoutEntries.length)return {plan,p,isSkip:true,settled:false,stake:0,returned:0,hit:false,matchedTickets:[],officialResults:[],shadowTickets,shadowSettled:false,shadowHit:false,shadowMatchedTickets:[]};
@@ -940,6 +941,9 @@ function saveInsufficientTicketPlan(raceId,reason,code){
  const date=String(race.date||$('raceDate')?.value||'');
  const snapshot={version:2,createdAt:new Date().toISOString(),date,raceId:String(raceId),venue:String(race.venue||$('venue')?.value||''),raceNo:String(race.race||''),decision:'SKIP',skipReason:reason,skipReasonCode:code,totalStake:0,tickets:[],shadowTickets:[],runnerDraws:[],modelLoaded:!!learnedModelLoaded,oddsCaptured:false,oddsRows:0,oddsMatchedCandidates:0,validatedBetTypes:0,dataStatus:'INSUFFICIENT_DATA'};
  const prediction={id:String(raceId),date:normDate(date),at:snapshot.createdAt,top:[],runners:[],learned:false,ticketPlan:snapshot,venue:snapshot.venue,race:snapshot.raceNo};
+ if(!Array.isArray(db.predictions))db.predictions=[];
+ const existing=db.predictions.find(p=>String(p.id)===String(raceId)&&normDate(p.date)===normDate(date)&&!p.learned);
+ if(existing)Object.assign(existing,prediction);else db.predictions.push(prediction);
  const saved=persistLabTicketPlan(prediction,snapshot);save();scheduleCloudSync();
  if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
  return saved;
