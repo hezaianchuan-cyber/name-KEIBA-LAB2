@@ -3365,6 +3365,14 @@ def main():
         "validation": validation,
         "feature_schema": ["form", "venue", "distance", "sire", "jockey", "age"],
         "condition_feature_schema": ["going", "surface", "going_quality"],
+        "frame_feature_schema": {
+            "fields": ["venue", "surface", "distance_band_400m", "field_size_band_4", "frame_no"],
+            "score_weight": 0.08,
+            "prior_rate": 0.50,
+            "prior_strength": 8.0,
+            "history_source": "official historical horse rows",
+            "update_policy": "Only earlier dates are used for each prediction; all races on a date are scored before that date's results update frame statistics."
+        },
         "experimental_condition_variants": {
             "C1_going_match": {"going_weight": 0.10, "minimum_prior_starts": 1,
                                "smoothing_prior_strength": 4, "promotion_requires_holdout_gain": True},
@@ -3385,7 +3393,7 @@ def main():
         "weights": validated_weights,
         "temperature": production_temperature,
         "calibration": production_calibration,
-        "prediction_policy": "Scores use only races strictly earlier than the target race date; current-race finish/popularity/payout are excluded. All races on a date are predicted before any results from that date update the model."
+        "prediction_policy": "Scores use only races strictly earlier than the target race date; current-race finish/popularity/payout are excluded. All races on a date are predicted before any results from that date update the model and frame statistics."
     }
     (OUT.parent / "live-model.json").write_text(json.dumps(live_model,ensure_ascii=False,indent=2),encoding="utf-8")
     live_history = build_live_history(races, horses)
