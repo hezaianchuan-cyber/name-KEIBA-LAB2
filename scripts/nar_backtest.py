@@ -1098,6 +1098,12 @@ def frame_form_score(race, horse, frame_stats):
                          prior_rate=0.5, prior_strength=8.0)
 
 
+def blend_frame_score(base_score, race, horse, frame_stats):
+    # Do not alter live scores during the one-time migration before frame history exists.
+    weight = 0.08 if frame_stats else 0.0
+    return base_score * (1.0 - weight) + frame_form_score(race, horse, frame_stats) * weight
+
+
 def update_frame_stats(race, field, frame_stats):
     for horse in field:
         if not horse.get("finish") or horse.get("frame_no") is None:
@@ -1167,8 +1173,7 @@ def run_backtest(races, horses, payouts):
                 margin_weight=0.10, closing_weight=0.10, time_weight=0.10,
                 going_weight=0.10,
             )
-            frame_score = frame_form_score(race, h, frame_stats)
-            score = base_score * 0.92 + frame_score * 0.08
+            score = blend_frame_score(base_score, race, h, frame_stats)
             scored.append((score,h))
             parts_by_no[h["no"]] = parts
         _, _, pace_delta = pace_adjustments(field, history)
@@ -1664,8 +1669,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                         h, history, sire_stats, jockey_stats, race, weights,
                         0.10, 0.10, 0.10, include_recent_history, going_weight=0.10)[0]
                     if model_name == "C_performance_pace":
-                        performance_score = (performance_score * 0.92
-                                              + frame_form_score(race, h, frame_stats) * 0.08)
+                        performance_score = blend_frame_score(
+                            performance_score, race, h, frame_stats)
                     scored.append((performance_score, h))
             elif model_name in performance_blends:
                 margin_weight, closing_weight, time_weight = performance_blends[model_name]
