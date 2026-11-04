@@ -65,6 +65,26 @@ jobs:
           for attempt in 1 2 3 4 5; do
             git fetch origin main
             git reset --hard origin/main
+            # A rejected push followed by reset removes uncommitted ZIPs. Re-download
+            # both official archives on every retry before parsing or staging them.
+            BASE="https://www.keiba.go.jp/KeibaWeb/DataDownload"
+            fetch_zip() {
+              name="$1"
+              endpoint="$2"
+              tmp="data/${name}.zip.tmp"
+              out="data/${name}.zip"
+              if curl -fLsS --retry 1 --retry-delay 2 --max-time 45 "$BASE/$endpoint" -o "$tmp" && unzip -t "$tmp" >/dev/null 2>&1; then
+                mv "$tmp" "$out"
+                echo "$name=updated"
+              else
+                rm -f "$tmp"
+                echo "$name=unavailable"
+                return 1
+              fi
+            }
+            mkdir -p data
+            fetch_zip latest-race "RaceDataDownload?type=daily"
+            fetch_zip latest-odds "OddsDataDownload?type=daily"
             # Recompute against the latest archive so concurrent captures
             # cannot append duplicate race snapshots or conflict gzip files.
             python3 scripts/capture_nar_odds.py
