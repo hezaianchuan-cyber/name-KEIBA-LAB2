@@ -654,6 +654,29 @@ def build_trifecta_tickets(ranked, first_count=2, candidate_count=5):
     return build_trifecta_formation(ranked, first_count, candidate_count, candidate_count)
 
 
+def build_shadow_portfolio_tickets(ranked):
+    """Mirror build_auto_ticket_plans.shadow_tickets exactly; virtual stakes only."""
+    unique = []
+    seen = set()
+    for horse in ranked or []:
+        raw = re.sub(r"\D", "", str(horse.get("no") or ""))
+        if raw:
+            no = str(int(raw))
+            if no not in seen:
+                unique.append(no)
+                seen.add(no)
+    if not unique:
+        return []
+    tickets = [{"kind": "win", "numbers": [unique[0]]}]
+    for no in unique[:2]:
+        tickets.append({"kind": "place", "numbers": [no]})
+    if len(unique) >= 2:
+        tickets.append({"kind": "wide", "numbers": sorted(unique[:2], key=int)})
+    if len(unique) >= 3:
+        tickets.append({"kind": "trio", "numbers": sorted(unique[:3], key=int)})
+    return tickets
+
+
 def build_fixed_tickets(ranked):
     """Build the fixed research portfolio; trifecta remains top-2 x top-5 (24 tickets)."""
     nos = [str(h["no"]) for h in ranked[:5]]
@@ -1125,6 +1148,9 @@ def run_backtest(races, horses, payouts):
     calibration_records = []
     model_weights = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
     learning_updates = 0
+    shadow_metrics = {kind: {"races": 0, "tickets": 0, "hits": 0, "stake": 0, "return": 0}
+                      for kind in ("win", "place", "wide", "trio")}
+    shadow_races = 0
     ordered = sorted((r for r in races.values()), key=lambda r:(r["date"],r["venue"],int(r["race"])))
     daily_pending = []
     current_date = None
@@ -1185,10 +1211,23 @@ def run_backtest(races, horses, payouts):
                                         "scores":[score for score,_ in scored],
                                         "winner_indices":winner_indices})
         ranked = [h for score,h in sorted(scored,key=lambda item:item[0],reverse=True)]
+        shadow_tickets = build_shadow_portfolio_tickets(ranked)
         t = build_fixed_tickets(ranked)
         if not t: continue
         payout = payouts.get(key)
         if payout and payout.get("win"):
+            if shadow_tickets:
+                shadow_races += 1
+                for ticket in shadow_tickets:
+                    kind = ticket["kind"]
+                    bucket = shadow_metrics[kind]
+                    bucket["races"] += 1
+                    bucket["tickets"] += 1
+                    bucket["stake"] += 100
+                    returned = payout_for(kind, ticket["numbers"], payout)
+                    if returned:
+                        bucket["hits"] += 1
+                        bucket["return"] += returned
             for kind, tickets in t.items():
                 m = metrics[kind]
                 m["races"] += 1
@@ -1215,6 +1254,18 @@ def run_backtest(races, horses, payouts):
         summary[kind] = {**m, "hit_rate": round(100*m["hits"]/m["tickets"],2) if m["tickets"] else None,
                          "roi": round(100*m["return"]/m["stake"],2) if m["stake"] else None,
                          "profit": m["return"]-m["stake"]}
+    shadow_total = {
+        "races": shadow_races,
+        "bet_types": {
+            kind: {**bucket,
+                   "hit_rate": round(100 * bucket["hits"] / bucket["tickets"], 2) if bucket["tickets"] else None,
+                   "roi": round(100 * bucket["return"] / bucket["stake"], 2) if bucket["stake"] else None,
+                   "profit": bucket["return"] - bucket["stake"]}
+            for kind, bucket in shadow_metrics.items()
+        },
+        "policy": "Mirrors production shadowTickets: model rank 1 win; ranks 1-2 place; ranks 1-2 wide; ranks 1-3 trio; 100 JPY each; no odds-based real-bet selection.",
+    }
+    summary["shadow_portfolio"] = shadow_total
     return summary, examples, len(ordered), model_weights, learning_updates, calibration_records
 
 def build_frame_stats(races, horses):
