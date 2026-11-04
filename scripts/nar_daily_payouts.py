@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import datetime as dt
+import io
 import json
+import urllib.request
+import zipfile
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -19,12 +22,67 @@ KINDS = {
 }
 
 
+
+def load_today_payouts(today):
+    """Read the rapidly refreshed official daily race archive for today's results."""
+    url = "https://www.keiba.go.jp/KeibaWeb/DataDownload/RaceDataDownload?type=daily"
+    request = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (compatible; KEIBA-LAB-payouts/1.0)",
+            "Referer": "https://www.keiba.go.jp/",
+        },
+    )
+    last_error = None
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                blob = response.read()
+            if not blob.startswith(b"PK"):
+                raise RuntimeError("official daily race response is not a ZIP archive")
+            today_key = today.strftime("%Y%m%d")
+            payouts = {}
+            with zipfile.ZipFile(io.BytesIO(blob)) as archive:
+                for info in archive.infolist():
+                    if info.is_dir() or nb.classify(info.filename) != "payouts":
+                        continue
+                    for row in nb.rows_from_bytes(archive.read(info)):
+                        if len(row) <= 52:
+                            continue
+                        key = nb.race_key(row[0], row[1], row[2])
+                        if not key or key[1] != today_key:
+                            continue
+                        nb.merge_payout_row(payouts, key, row)
+            return payouts, len(blob), None
+        except Exception as exc:
+            last_error = str(exc)
+            if attempt < 2:
+                import time
+                time.sleep(2 * (attempt + 1))
+    return {}, 0, last_error
+
+
 def main():
     today = dt.datetime.now(JST).date()
     start = today - dt.timedelta(days=120)
     # Reuse the same official monthly archive parser as the backtest.
     nb.START, nb.END = start, today
     races, _horses, payouts, downloaded = nb.load_archives()
+
+    # Monthly archives are refreshed only around 02:00 JST and can therefore
+    # lag behind today's races. The official daily archive updates about every
+    # two minutes and is the authoritative source for same-day payouts.
+    today_payouts, daily_archive_bytes, daily_archive_error = load_today_payouts(today)
+    for key, payout in today_payouts.items():
+        target = payouts.setdefault(key, {
+            "win": [], "place": [], "quinella": [], "exacta": [],
+            "wide": [], "trio": [], "trifecta": [], "source_rows": 0,
+        })
+        for kind in KINDS:
+            for item in payout.get(kind, []):
+                if item not in target[kind]:
+                    target[kind].append(item)
+        target["source_rows"] = target.get("source_rows", 0) + payout.get("source_rows", 0)
 
     days = {}
     for key, payout in payouts.items():
@@ -64,6 +122,12 @@ def main():
         "period": {"start": start.isoformat(), "end": today.isoformat()},
         "days": [days[k] for k in sorted(days, reverse=True)],
         "downloaded_months": downloaded,
+        "daily_archive": {
+            "available": daily_archive_bytes > 0,
+            "bytes": daily_archive_bytes,
+            "today_payout_races": len(today_payouts),
+            "error": daily_archive_error,
+        },
         "note": "All amounts are official payout amounts per 100 yen. They are race-result data, not the user's actual purchase history or personal profit/loss.",
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -73,6 +137,8 @@ def main():
         "races": sum(day["race_count"] for day in output["days"]),
         "payout_entries": sum(day["payout_entry_count"] for day in output["days"]),
         "output_bytes": OUT.stat().st_size,
+        "today_payout_races": len(today_payouts),
+        "daily_archive_error": daily_archive_error,
     }, ensure_ascii=False), flush=True)
 
 
