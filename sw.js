@@ -1,4 +1,4 @@
-const CACHE_NAME = "keiba-lab-web-v19";
+const CACHE_NAME = "keiba-lab-web-v20";
 const CORE = ["./", "./index.html", "./manifest.webmanifest"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
