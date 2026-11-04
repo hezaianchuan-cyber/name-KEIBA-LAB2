@@ -92,6 +92,17 @@ class RaceTimeFeatureTests(unittest.TestCase):
         self.assertGreater(parts["time_form"], 0.5)
 
 
+class FeatureAblationWeightTests(unittest.TestCase):
+    def test_ablation_removes_only_requested_feature_and_renormalizes(self):
+        weights = {"form": 0.55, "venue": 0.12, "distance": 0.12,
+                   "sire": 0.10, "jockey": 0.07, "age": 0.04}
+        reduced = nb.ablated_model_weights(weights, "age")
+        self.assertNotIn("age", reduced)
+        self.assertAlmostEqual(sum(reduced.values()), 1.0)
+        self.assertAlmostEqual(reduced["form"], 0.55 / 0.96)
+        self.assertAlmostEqual(reduced["venue"], 0.12 / 0.96)
+
+
 class RecentHistoryAblationTests(unittest.TestCase):
     def test_recent_history_is_an_explicit_optional_prediction_input(self):
         h={"name":"馬A","sire":"父A","jockey":"騎手A","age":5}
