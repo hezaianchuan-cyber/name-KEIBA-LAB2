@@ -1,0 +1,313 @@
+{
+  "generated_at": "2026-11-04T14:27:34.131865+00:00",
+  "holdout_period": {
+    "start": "2025-11-04",
+    "end": "2026-11-03"
+  },
+  "train_end": "2025-11-03",
+  "eligible_races": 15411,
+  "baseline_model": {
+    "name": "C_performance_pace",
+    "winner_top1_rate": 30.17,
+    "winner_top3_rate": 61.09,
+    "winner_topk_rate": {
+      "5": 78.85,
+      "6": 84.93,
+      "7": 89.97
+    }
+  },
+  "feature_ablations": {
+    "ablate_form": {
+      "races": 15411,
+      "winner_top1_rate": 29.23,
+      "winner_top3_rate": 60.52,
+      "winner_topk_rate": {
+        "5": 78.77,
+        "6": 84.76,
+        "7": 89.74
+      },
+      "win_roi": null
+    },
+    "ablate_venue": {
+      "races": 15411,
+      "winner_top1_rate": 30.0,
+      "winner_top3_rate": 61.01,
+      "winner_topk_rate": {
+        "5": 78.83,
+        "6": 84.97,
+        "7": 89.9
+      },
+      "win_roi": null
+    },
+    "ablate_distance": {
+      "races": 15411,
+      "winner_top1_rate": 30.02,
+      "winner_top3_rate": 61.14,
+      "winner_topk_rate": {
+        "5": 78.94,
+        "6": 85.29,
+        "7": 90.12
+      },
+      "win_roi": null
+    },
+    "ablate_sire": {
+      "races": 15411,
+      "winner_top1_rate": 30.24,
+      "winner_top3_rate": 61.29,
+      "winner_topk_rate": {
+        "5": 78.79,
+        "6": 85.0,
+        "7": 90.05
+      },
+      "win_roi": null
+    },
+    "ablate_jockey": {
+      "races": 15411,
+      "winner_top1_rate": 29.22,
+      "winner_top3_rate": 59.65,
+      "winner_topk_rate": {
+        "5": 77.66,
+        "6": 84.08,
+        "7": 89.44
+      },
+      "win_roi": null
+    },
+    "ablate_age": {
+      "races": 15411,
+      "winner_top1_rate": 30.23,
+      "winner_top3_rate": 61.18,
+      "winner_topk_rate": {
+        "5": 78.9,
+        "6": 84.98,
+        "7": 90.06
+      },
+      "win_roi": null
+    }
+  },
+  "market_comparison": {
+    "C_model_top_pick": {
+      "races": 10901,
+      "top1_hits": 3215,
+      "hits": 3215,
+      "tickets": 10901,
+      "stake": 1090100,
+      "return": 781160.0,
+      "race_count": 10901,
+      "sum_return_sq": 376000800.0,
+      "sum_stake_sq": 109010000,
+      "sum_stake_return": 78116000.0,
+      "top1_rate": 29.49,
+      "hit_rate": 29.49,
+      "roi": 71.66,
+      "roi_ci95_method": "race_cluster_normal_approximation",
+      "roi_ci95_normal_low": 68.44,
+      "roi_ci95_normal_high": 74.88,
+      "minimum_sample_met": true,
+      "pass_conditions": {
+        "roi_above_100": false,
+        "races_at_least_100": true,
+        "tickets_at_least_300": true,
+        "roi_ci95_lower_above_100": false
+      },
+      "candidate_pass": false,
+      "profit": -308940.0
+    },
+    "final_odds_favorite": {
+      "races": 10901,
+      "top1_hits": 4842,
+      "hits": 4842,
+      "tickets": 10901,
+      "stake": 1090100,
+      "return": 872460.0,
+      "race_count": 10901,
+      "sum_return_sq": 175956200.0,
+      "sum_stake_sq": 109010000,
+      "sum_stake_return": 87246000.0,
+      "top1_rate": 44.42,
+      "hit_rate": 44.42,
+      "roi": 80.03,
+      "roi_ci95_method": "race_cluster_normal_approximation",
+      "roi_ci95_normal_low": 78.18,
+      "roi_ci95_normal_high": 81.89,
+      "minimum_sample_met": true,
+      "pass_conditions": {
+        "roi_above_100": false,
+        "races_at_least_100": true,
+        "tickets_at_least_300": true,
+        "roi_ci95_lower_above_100": false
+      },
+      "candidate_pass": false,
+      "profit": -217640.0
+    },
+    "ablate_form": {
+      "races": 10901,
+      "top1_hits": 3124,
+      "hits": 3124,
+      "tickets": 10901,
+      "stake": 1090100,
+      "return": 798820.0,
+      "race_count": 10901,
+      "sum_return_sq": 596431200.0,
+      "sum_stake_sq": 109010000,
+      "sum_stake_return": 79882000.0,
+      "top1_rate": 28.66,
+      "hit_rate": 28.66,
+      "roi": 73.28,
+      "roi_ci95_method": "race_cluster_normal_approximation",
+      "roi_ci95_normal_low": 69.11,
+      "roi_ci95_normal_high": 77.45,
+      "minimum_sample_met": true,
+      "pass_conditions": {
+        "roi_above_100": false,
+        "races_at_least_100": true,
+        "tickets_at_least_300": true,
+        "roi_ci95_lower_above_100": false
+      },
+      "candidate_pass": false,
+      "profit": -291280.0
+    },
+    "ablate_venue": {
+      "races": 10901,
+      "top1_hits": 3204,
+      "hits": 3204,
+      "tickets": 10901,
+      "stake": 1090100,
+      "return": 788390.0,
+      "race_count": 10901,
+      "sum_return_sq": 370725900.0,
+      "sum_stake_sq": 109010000,
+      "sum_stake_return": 78839000.0,
+      "top1_rate": 29.39,
+      "hit_rate": 29.39,
+      "roi": 72.32,
+      "roi_ci95_method": "race_cluster_normal_approximation",
+      "roi_ci95_normal_low": 69.14,
+      "roi_ci95_normal_high": 75.51,
+      "minimum_sample_met": true,
+      "pass_conditions": {
+        "roi_above_100": false,
+        "races_at_least_100": true,
+        "tickets_at_least_300": true,
+        "roi_ci95_lower_above_100": false
+      },
+      "candidate_pass": false,
+      "profit": -301710.0
+    },
+    "ablate_distance": {
+      "races": 10901,
+      "top1_hits": 3197,
+      "hits": 3197,
+      "tickets": 10901,
+      "stake": 1090100,
+      "return": 777420.0,
+      "race_count": 10901,
+      "sum_return_sq": 348583800.0,
+      "sum_stake_sq": 109010000,
+      "sum_stake_return": 77742000.0,
+      "top1_rate": 29.33,
+      "hit_rate": 29.33,
+      "roi": 71.32,
+      "roi_ci95_method": "race_cluster_normal_approximation",
+      "roi_ci95_normal_low": 68.24,
+      "roi_ci95_normal_high": 74.39,
+      "minimum_sample_met": true,
+      "pass_conditions": {
+        "roi_above_100": false,
+        "races_at_least_100": true,
+        "tickets_at_least_300": true,
+        "roi_ci95_lower_above_100": false
+      },
+      "candidate_pass": false,
+      "profit": -312680.0
+    },
+    "ablate_sire": {
+      "races": 10901,
+      "top1_hits": 3226,
+      "hits": 3226,
+      "tickets": 10901,
+      "stake": 1090100,
+      "return": 773050.0,
+      "race_count": 10901,
+      "sum_return_sq": 350409300.0,
+      "sum_stake_sq": 109010000,
+      "sum_stake_return": 77305000.0,
+      "top1_rate": 29.59,
+      "hit_rate": 29.59,
+      "roi": 70.92,
+      "roi_ci95_method": "race_cluster_normal_approximation",
+      "roi_ci95_normal_low": 67.82,
+      "roi_ci95_normal_high": 74.01,
+      "minimum_sample_met": true,
+      "pass_conditions": {
+        "roi_above_100": false,
+        "races_at_least_100": true,
+        "tickets_at_least_300": true,
+        "roi_ci95_lower_above_100": false
+      },
+      "candidate_pass": false,
+      "profit": -317050.0
+    },
+    "ablate_jockey": {
+      "races": 10901,
+      "top1_hits": 3117,
+      "hits": 3117,
+      "tickets": 10901,
+      "stake": 1090100,
+      "return": 783030.0,
+      "race_count": 10901,
+      "sum_return_sq": 416707900.0,
+      "sum_stake_sq": 109010000,
+      "sum_stake_return": 78303000.0,
+      "top1_rate": 28.59,
+      "hit_rate": 28.59,
+      "roi": 71.83,
+      "roi_ci95_method": "race_cluster_normal_approximation",
+      "roi_ci95_normal_low": 68.42,
+      "roi_ci95_normal_high": 75.24,
+      "minimum_sample_met": true,
+      "pass_conditions": {
+        "roi_above_100": false,
+        "races_at_least_100": true,
+        "tickets_at_least_300": true,
+        "roi_ci95_lower_above_100": false
+      },
+      "candidate_pass": false,
+      "profit": -307070.0
+    },
+    "ablate_age": {
+      "races": 10901,
+      "top1_hits": 3221,
+      "hits": 3221,
+      "tickets": 10901,
+      "stake": 1090100,
+      "return": 785570.0,
+      "race_count": 10901,
+      "sum_return_sq": 391172900.0,
+      "sum_stake_sq": 109010000,
+      "sum_stake_return": 78557000.0,
+      "top1_rate": 29.55,
+      "hit_rate": 29.55,
+      "roi": 72.06,
+      "roi_ci95_method": "race_cluster_normal_approximation",
+      "roi_ci95_normal_low": 68.78,
+      "roi_ci95_normal_high": 75.35,
+      "minimum_sample_met": true,
+      "pass_conditions": {
+        "roi_above_100": false,
+        "races_at_least_100": true,
+        "tickets_at_least_300": true,
+        "roi_ci95_lower_above_100": false
+      },
+      "candidate_pass": false,
+      "profit": -304530.0
+    }
+  },
+  "method": {
+    "type": "one_feature_at_a_time_ablation",
+    "weight_policy": "Uses the learned B-model weights, removes one feature, then renormalizes remaining weights to sum to 1. The ablated models are not independently refitted.",
+    "market_data": "Official final confirmed odds are retrospective only and were not available before the race. This is a market benchmark, not a live pre-off comparison.",
+    "selection": "All model and market picks are compared on the same holdout races with available official final odds.",
+    "production_impact": "Diagnostic only. No live model weights, predictions, or G4 preregistered value thresholds are changed.",
+    "interpretation": "Compare winner_top1_rate first. A feature whose removal improves the top-1 rate is a candidate for deeper review, not automatic deletion. Check sample size and uncertainty before any change."
+  }
+}

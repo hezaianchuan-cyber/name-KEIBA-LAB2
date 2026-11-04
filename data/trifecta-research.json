@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-04T11:15:37.825569+00:00",
+  "generated_at": "2026-11-04T14:27:34.131865+00:00",
   "period": {
     "start": "2022-11-04",
     "end": "2026-11-03"
@@ -64001,17 +64001,17 @@
       },
       "trio": {
         "tickets": 305354,
-        "hits": 10925,
+        "hits": 10752,
         "stake": 30535400,
-        "return": 17149020,
+        "return": 18068600,
         "race_count": 30536,
-        "sum_return_sq": 95576307400.0,
+        "sum_return_sq": 113291992000.0,
         "sum_stake_sq": 30535160000.0,
-        "sum_stake_return": 17148792000.0,
-        "roi": 56.16,
+        "sum_stake_return": 18068372000.0,
+        "roi": 59.17,
         "roi_ci95_method": "race_cluster_normal_approximation",
-        "roi_ci95_normal_low": 54.28,
-        "roi_ci95_normal_high": 58.04,
+        "roi_ci95_normal_low": 57.12,
+        "roi_ci95_normal_high": 61.23,
         "minimum_sample_met": true,
         "pass_conditions": {
           "roi_above_100": false,
@@ -64020,19 +64020,19 @@
           "roi_ci95_lower_above_100": false
         },
         "candidate_pass": false,
-        "profit": -13386380.0,
-        "hit_rate": 3.58,
+        "profit": -12466800.0,
+        "hit_rate": 3.52,
         "validation_folds": [
           {
             "fold": 2,
-            "model": "baseline",
-            "roi": 56.44,
+            "model": "ablate_form",
+            "roi": 59.24,
             "tickets": 151244
           },
           {
             "fold": 3,
-            "model": "baseline",
-            "roi": 55.89,
+            "model": "ablate_form",
+            "roi": 59.1,
             "tickets": 154110
           }
         ]
@@ -65761,29 +65761,31 @@
             "roi_delta_vs_baseline": 7.39
           },
           "trio": {
-            "model": "baseline",
-            "development_roi": 57.6,
+            "model": "ablate_form",
+            "development_roi": 60.89,
             "development_tickets": 153970,
             "baseline_roi": 57.6,
             "development_roi_history": [
-              57.6
+              60.89
             ],
-            "edge_history": [],
+            "edge_history": [
+              3.29
+            ],
             "required_min_tickets": 300,
             "required_min_roi_gain": 2.5,
             "validation_fold": 2,
-            "validation_roi": 56.44,
+            "validation_roi": 59.24,
             "validation_tickets": 151244,
-            "validation_hits": 5387,
+            "validation_hits": 5310,
             "validation_stake": 15124400,
-            "validation_return": 8536060.0,
+            "validation_return": 8960190.0,
             "validation_race_count": 15125,
-            "validation_sum_return_sq": 48277154800.0,
+            "validation_sum_return_sq": 55702281300.0,
             "validation_sum_stake_sq": 15124160000,
-            "validation_sum_stake_return": 8535832000.0,
-            "validation_profit": -6588340.0,
+            "validation_sum_stake_return": 8959962000.0,
+            "validation_profit": -6164210.0,
             "baseline_validation_roi": 56.44,
-            "roi_delta_vs_baseline": 0.0
+            "roi_delta_vs_baseline": 2.8
           },
           "trifecta": {
             "model": "baseline",
@@ -65954,29 +65956,33 @@
             "roi_delta_vs_baseline": 7.63
           },
           "trio": {
-            "model": "baseline",
-            "development_roi": 56.44,
+            "model": "ablate_form",
+            "development_roi": 59.24,
             "development_tickets": 151244,
             "baseline_roi": 56.44,
             "development_roi_history": [
-              56.44
+              60.89,
+              59.24
             ],
-            "edge_history": [],
+            "edge_history": [
+              3.29,
+              2.8
+            ],
             "required_min_tickets": 300,
             "required_min_roi_gain": 2.5,
             "validation_fold": 3,
-            "validation_roi": 55.89,
+            "validation_roi": 59.1,
             "validation_tickets": 154110,
-            "validation_hits": 5538,
+            "validation_hits": 5442,
             "validation_stake": 15411000,
-            "validation_return": 8612960.0,
+            "validation_return": 9108410.0,
             "validation_race_count": 15411,
-            "validation_sum_return_sq": 47299152600.0,
+            "validation_sum_return_sq": 57589710700.0,
             "validation_sum_stake_sq": 15411000000,
-            "validation_sum_stake_return": 8612960000.0,
-            "validation_profit": -6798040.0,
+            "validation_sum_stake_return": 9108410000.0,
+            "validation_profit": -6302590.0,
             "baseline_validation_roi": 55.89,
-            "roi_delta_vs_baseline": 0.0
+            "roi_delta_vs_baseline": 3.21
           },
           "trifecta": {
             "model": "baseline",
