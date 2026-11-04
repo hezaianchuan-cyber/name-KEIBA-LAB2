@@ -90,5 +90,31 @@ class ShadowTicketPlanTests(unittest.TestCase):
         self.assertEqual(odds, {})
 
 
+
+class CompetitorBenchmarkDataTests(unittest.TestCase):
+    def test_competitor_predictions_require_sourced_records_and_start_empty(self):
+        import json
+        path = Path(__file__).resolve().parents[1] / "data" / "competitor-predictions.json"
+        report = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(report["schema_version"], 1)
+        self.assertIn("Only sourced competitor predictions", report["policy"])
+        self.assertEqual(report["predictions"], [])
+
+    def test_competitor_comparison_schema_has_cutoff_and_source_fields(self):
+        required = {"predictor", "date", "venue", "race", "pick",
+                    "captured_at", "cutoff_at", "source_url"}
+        example = {
+            "predictor": "福来エマ", "date": "2026-11-05", "venue": "大井",
+            "race": 10, "pick": 4, "captured_at": "2026-11-05T19:00:00+09:00",
+            "cutoff_at": "2026-11-05T19:25:00+09:00",
+            "source_url": "https://example.invalid/source"
+        }
+        self.assertTrue(required.issubset(example))
+        self.assertLessEqual(
+            __import__("datetime").datetime.fromisoformat(example["captured_at"]),
+            __import__("datetime").datetime.fromisoformat(example["cutoff_at"])
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
