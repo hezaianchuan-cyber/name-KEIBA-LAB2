@@ -11,7 +11,10 @@ import datetime as dt
 import gzip
 import json
 import math
+import os
 import random
+import urllib.parse
+import urllib.request
 import unicodedata
 from pathlib import Path
 
@@ -20,6 +23,9 @@ SNAPSHOT_DIR = ROOT / "data" / "odds-snapshots"
 PAYOUTS_FILE = ROOT / "data" / "daily-payouts.json"
 G1_FILE = ROOT / "data" / "model-g1-calibration-backtest.json"
 OUT = ROOT / "data" / "model-g4-preoff-backtest.json"
+SUPABASE_URL = os.environ.get("KEIBA_SUPABASE_URL", "https://mwiinzmnoludksnfnjaa.supabase.co").rstrip("/")
+SUPABASE_KEY = os.environ.get("KEIBA_SUPABASE_KEY", "sb_publishable_uCeqBv6QPzHo6lHPBzkYiQ_i_dcuc_2")
+MAX_MODEL_AGE_MINUTES = 15.0
 
 MINUTES_MIN = 2.0
 MINUTES_MAX = 30.0
@@ -91,6 +97,99 @@ def load_outcomes():
     return outcomes
 
 
+def load_supabase_snapshots(model_rows):
+    diagnostics = {"supabase_query_rows": 0, "supabase_snapshots_joined": 0}
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        diagnostics["supabase_status"] = "credentials_unavailable"
+        return [], diagnostics
+
+    models_by_race = {}
+    for row in model_rows:
+        captured = parse_time(row.get("captured_at"))
+        if captured is not None:
+            models_by_race.setdefault(row["race_key"], []).append((captured, row))
+    for values in models_by_race.values():
+        values.sort(key=lambda item: item[0])
+
+    dates = [row["date"] for row in model_rows if row.get("date")]
+    start_date = min(dates) if dates else dt.datetime.now(dt.timezone.utc).date().isoformat().replace("-", "")
+    if len(start_date) == 8:
+        start_date = start_date[:4] + "-" + start_date[4:6] + "-" + start_date[6:8]
+
+    output = []
+    offset = 0
+    page_size = 1000
+    try:
+        while True:
+            query = urllib.parse.urlencode({
+                "select": "race_id,race_date,captured_at,odds_data",
+                "race_date": "gte." + start_date,
+                "order": "captured_at.asc",
+                "limit": str(page_size),
+                "offset": str(offset),
+            })
+            request = urllib.request.Request(
+                SUPABASE_URL + "/rest/v1/odds_snapshots?" + query,
+                headers={
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": "Bearer " + SUPABASE_KEY,
+                    "Accept": "application/json",
+                    "User-Agent": "KEIBA-LAB-G4/1.0",
+                },
+            )
+            with urllib.request.urlopen(request, timeout=30) as response:
+                page = json.loads(response.read().decode("utf-8"))
+            if not isinstance(page, list):
+                raise RuntimeError("Supabase odds_snapshots response was not a JSON array")
+            diagnostics["supabase_query_rows"] += len(page)
+            for item in page:
+                key = race_key(item.get("race_id"))
+                captured = parse_time(item.get("captured_at"))
+                if not key or captured is None:
+                    continue
+                prior = [pair for pair in models_by_race.get(key, []) if pair[0] <= captured]
+                if not prior:
+                    continue
+                model_time, model = prior[-1]
+                age_minutes = (captured - model_time).total_seconds() / 60.0
+                if age_minutes < 0 or age_minutes > MAX_MODEL_AGE_MINUTES:
+                    continue
+                odds_data = item.get("odds_data") or {}
+                odds = odds_data.get("odds") or []
+                if not odds:
+                    continue
+                minutes = odds_data.get("minutes_to_post")
+                try:
+                    minutes = float(minutes)
+                except (TypeError, ValueError):
+                    post = parse_time(odds_data.get("scheduled_post_time"))
+                    minutes = ((post - captured).total_seconds() / 60.0) if post else None
+                if minutes is None:
+                    continue
+                output.append({
+                    "race_key": key,
+                    "date": key.split("|")[1],
+                    "venue": key.split("|")[0],
+                    "captured_at": captured.isoformat(),
+                    "scheduled_post_time": odds_data.get("scheduled_post_time"),
+                    "minutes_to_post": minutes,
+                    "model_temperature": model.get("model_temperature"),
+                    "predictions": model.get("predictions") or [],
+                    "odds": odds,
+                    "capture_source": "supabase_one_minute",
+                    "prediction_age_minutes": round(age_minutes, 3),
+                })
+                diagnostics["supabase_snapshots_joined"] += 1
+            if len(page) < page_size:
+                break
+            offset += page_size
+        diagnostics["supabase_status"] = "loaded"
+    except Exception as exc:
+        diagnostics["supabase_status"] = "unavailable"
+        diagnostics["supabase_error"] = str(exc)[:300]
+    return output, diagnostics
+
+
 def load_snapshots():
     rows = []
     diagnostics = {
@@ -137,7 +236,14 @@ def load_snapshots():
                     "model_temperature": record.get("model_temperature"),
                     "predictions": predictions,
                     "odds": odds,
+                    "capture_source": "github_five_minute",
+                    "prediction_age_minutes": 0.0,
                 })
+    supabase_rows, supabase_diagnostics = load_supabase_snapshots(rows)
+    rows.extend(supabase_rows)
+    diagnostics.update(supabase_diagnostics)
+    diagnostics["snapshots_from_github_five_minute"] = sum(1 for row in rows if row.get("capture_source") == "github_five_minute")
+    diagnostics["snapshots_from_supabase_one_minute"] = len(supabase_rows)
     return rows, diagnostics
 
 
@@ -385,7 +491,7 @@ def main():
         "evaluation_period": [latest_dates[0], latest_dates[-1]] if latest_dates else None,
         "development_period": [latest_dates[0], latest_dev_end] if latest_dates and latest_dev_end else None,
         "holdout_period": [latest_holdout_start, latest_dates[-1]] if latest_holdout_start and latest_dates else None,
-        "data_source": "KEIBA LAB timestamped official NAR pre-off odds snapshots only; official final odds are not read.",
+        "data_source": "KEIBA LAB timestamped official NAR pre-off odds snapshots from five-minute GitHub capture and one-minute Supabase capture; official final odds are not read.",
         "pre_registered_rule": {
             "minimum_odds_coverage": MIN_ODDS_COVERAGE,
             "minimum_model_to_market_probability_ratio": MIN_PROBABILITY_RATIO,
@@ -415,7 +521,7 @@ def main():
         "g4_pass": g4_pass,
         "live_model_changed": False,
         "profitable_claim": g4_pass,
-        "interpretation": "G4 uses only captured pre-off odds. Results remain exploratory until at least 100 unique holdout races and 100 qualifying value bets are available and the race-level bootstrap 95% ROI lower bound exceeds 100%. The 1-minute collector improves time-bucket coverage; it does not backfill earlier odds.",
+        "interpretation": "G4 joins one-minute Supabase odds to the most recent prior model-score snapshot (maximum age 15 minutes) and also retains five-minute combined snapshots. It uses only captured pre-off odds. Results remain exploratory until at least 100 unique holdout races and 100 qualifying value bets are available and the race-level bootstrap 95% ROI lower bound exceeds 100%. The 1-minute collector improves time-bucket coverage; it does not backfill earlier odds.",
     }
     OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False), flush=True)
