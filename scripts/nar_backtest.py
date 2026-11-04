@@ -514,6 +514,16 @@ def race_relative_scores(parts_by_no, model_weights):
         for no, values in relative.items()
     }
 
+def ablated_model_weights(model_weights, excluded_feature):
+    """Drop one feature and renormalize the remaining fixed weights for diagnostics."""
+    remaining = {key: value for key, value in model_weights.items()
+                 if key != excluded_feature}
+    total = sum(remaining.values())
+    if not remaining or total <= 0:
+        raise ValueError(f"Cannot ablate feature {excluded_feature!r}")
+    return {key: value / total for key, value in remaining.items()}
+
+
 def update_model(field, parts_by_no, model_weights):
     valid = [h for h in field if h.get("finish") and h["no"] in parts_by_no]
     if len(valid) < 3: return False
@@ -1437,6 +1447,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     # Keep the learned B weights normalized to 1.0. The performance scorer
     # applies the 0.80/0.10/0.10 blend itself; pre-scaling these weights would
     # accidentally reduce the B contribution to 0.64.
+    ablation_features = ("form", "venue", "distance", "sire", "jockey", "age")
     models = {"A_baseline":baseline, "B_condition":learned, "C_performance_pace":learned,
               "baseline":baseline, "trained":learned, "trained_no_recent_history":learned,
               "trained_race_relative":learned,
@@ -1445,6 +1456,10 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
               "trained_with_conditions_and_pace":learned,
               "trained_margin_only":learned, "trained_closing_only":learned,
               "trained_performance_light":learned, "trained_performance_with_time":learned}
+    # One-feature-at-a-time ablations use the learned B weights with only the
+    # named feature removed and the remaining weights renormalized. This is a
+    # diagnostic sensitivity test, not a separately refitted candidate model.
+    models.update({f"ablate_{feature}": learned for feature in ablation_features})
     performance_blends = {
         "trained_with_performance": (0.10, 0.10, 0.00),
         "trained_performance_with_pace": (0.10, 0.10, 0.00),
@@ -1498,7 +1513,9 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     confidence_filter_stats = new_confidence_filter_stats()
     # E: pre-registered integrated challenger. The confidence gate and role blend
     # are fixed before holdout evaluation; no test-fold threshold tuning is allowed.
-    final_market_stats = {name: {"races":0,"top1_hits":0,"hits":0,"tickets":0,"stake":0,"return":0,"race_count":0,"sum_return_sq":0,"sum_stake_sq":0,"sum_stake_return":0} for name in ("C_model_top_pick","final_odds_favorite")}
+    market_comparison_names = ("C_model_top_pick", "final_odds_favorite",
+                               *(f"ablate_{feature}" for feature in ablation_features))
+    final_market_stats = {name: {"races":0,"top1_hits":0,"hits":0,"tickets":0,"stake":0,"return":0,"race_count":0,"sum_return_sq":0,"sum_stake_sq":0,"sum_stake_return":0} for name in market_comparison_names}
     integrated_stats = {
         "confidence_threshold": 0.30,
         "role_blend": 0.10,
@@ -1574,6 +1591,15 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                 }
                 relative_scores = race_relative_scores(relative_parts, weights)
                 scored = [(relative_scores[h["no"]], h) for h in field]
+            elif model_name.startswith("ablate_"):
+                excluded = model_name.removeprefix("ablate_")
+                reduced_weights = ablated_model_weights(weights, excluded)
+                scored = []
+                for h in field:
+                    _, parts = score_runner(h, history, sire_stats, jockey_stats, race,
+                                             weights, include_recent_history=include_recent_history)
+                    score = sum(reduced_weights[k] * parts[k] for k in reduced_weights)
+                    scored.append((score, h))
             elif model_name in ("B_condition", "trained_with_conditions", "trained_with_conditions_and_pace"):
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
                             0.0,0.0,0.0,include_recent_history,going_weight=0.10)[0],h) for h in field]
@@ -1596,29 +1622,44 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                     test_calibration_records.append({"scores":[score for score,_ in scored],
                                                      "winner_indices":winner_indices})
             ranked=[h for _,h in sorted(scored,key=lambda x:x[0],reverse=True)]
-            if model_name == "C_performance_pace" and final_odds:
+            if (model_name == "C_performance_pace" or model_name.startswith("ablate_")) and final_odds:
                 odds_for_race = final_odds.get(key, {})
                 field_numbers = {str(h["no"]) for h in field}
                 available_market = [(float(odds), str(no)) for no, odds in odds_for_race.items()
                                     if str(no) in field_numbers]
                 if available_market:
                     favorite_no = min(available_market, key=lambda item: (item[0], int(item[1])))[1]
-                    c_pick_no = str(ranked[0]["no"])
-                    for label, selected_no in (("C_model_top_pick", c_pick_no),
-                                               ("final_odds_favorite", favorite_no)):
-                        market_bucket = final_market_stats[label]
+                    selected_label = ("C_model_top_pick" if model_name == "C_performance_pace"
+                                      else model_name)
+                    selected_no = str(ranked[0]["no"])
+                    selected_bucket = final_market_stats[selected_label]
+                    selected_bucket["races"] += 1
+                    selected_bucket["tickets"] += 1
+                    selected_bucket["stake"] += 100
+                    selected_bucket["race_count"] += 1
+                    is_hit = selected_no in winners
+                    selected_bucket["top1_hits"] += int(is_hit)
+                    selected_bucket["hits"] += int(is_hit)
+                    returned = payout_for("win", (selected_no,), payout) or 0
+                    selected_bucket["return"] += returned
+                    selected_bucket["sum_return_sq"] += returned * returned
+                    selected_bucket["sum_stake_sq"] += 10000
+                    selected_bucket["sum_stake_return"] += 100 * returned
+                    # Count the market favorite once, on the shared C-model race set.
+                    if model_name == "C_performance_pace":
+                        market_bucket = final_market_stats["final_odds_favorite"]
                         market_bucket["races"] += 1
                         market_bucket["tickets"] += 1
                         market_bucket["stake"] += 100
                         market_bucket["race_count"] += 1
-                        is_hit = selected_no in winners
-                        market_bucket["top1_hits"] += int(is_hit)
-                        market_bucket["hits"] += int(is_hit)
-                        returned = payout_for("win", (selected_no,), payout) or 0
-                        market_bucket["return"] += returned
-                        market_bucket["sum_return_sq"] += returned * returned
+                        market_hit = favorite_no in winners
+                        market_bucket["top1_hits"] += int(market_hit)
+                        market_bucket["hits"] += int(market_hit)
+                        market_return = payout_for("win", (favorite_no,), payout) or 0
+                        market_bucket["return"] += market_return
+                        market_bucket["sum_return_sq"] += market_return * market_return
                         market_bucket["sum_stake_sq"] += 10000
-                        market_bucket["sum_stake_return"] += 100 * returned
+                        market_bucket["sum_stake_return"] += 100 * market_return
 
             if len(ranked)<3: continue
             if model_name == "trained":
@@ -3116,6 +3157,40 @@ def main():
     recent_fold = recent_validation.get("fold") or {}
     recent_models = recent_fold.get("models") or {}
     canonical_models = ("A_baseline", "B_condition", "C_performance_pace")
+    ablation_names = [f"ablate_{feature}" for feature in ("form", "venue", "distance", "sire", "jockey", "age")]
+    ablation_report = {
+        "generated_at": result["generated_at"],
+        "holdout_period": recent_validation.get("period"),
+        "train_end": recent_validation.get("train_end"),
+        "eligible_races": (recent_models.get("C_performance_pace") or {}).get("races"),
+        "baseline_model": {
+            "name": "C_performance_pace",
+            "winner_top1_rate": (recent_models.get("C_performance_pace") or {}).get("winner_top1_rate"),
+            "winner_top3_rate": (recent_models.get("C_performance_pace") or {}).get("winner_top3_rate"),
+            "winner_topk_rate": (recent_models.get("C_performance_pace") or {}).get("winner_topk_rate"),
+        },
+        "feature_ablations": {
+            name: {
+                "races": (recent_models.get(name) or {}).get("races"),
+                "winner_top1_rate": (recent_models.get(name) or {}).get("winner_top1_rate"),
+                "winner_top3_rate": (recent_models.get(name) or {}).get("winner_top3_rate"),
+                "winner_topk_rate": (recent_models.get(name) or {}).get("winner_topk_rate"),
+                "win_roi": (recent_models.get(name) or {}).get("win_roi"),
+            } for name in ablation_names
+        },
+        "market_comparison": recent_fold.get("final_odds_market_comparison", {}),
+        "method": {
+            "type": "one_feature_at_a_time_ablation",
+            "weight_policy": "Uses the learned B-model weights, removes one feature, then renormalizes remaining weights to sum to 1. The ablated models are not independently refitted.",
+            "market_data": "Official final confirmed odds are retrospective only and were not available before the race. This is a market benchmark, not a live pre-off comparison.",
+            "selection": "All model and market picks are compared on the same holdout races with available official final odds.",
+            "production_impact": "Diagnostic only. No live model weights, predictions, or G4 preregistered value thresholds are changed.",
+            "interpretation": "Compare winner_top1_rate first. A feature whose removal improves the top-1 rate is a candidate for deeper review, not automatic deletion. Check sample size and uncertainty before any change.",
+        },
+    }
+    (OUT.parent / "backtest-5-feature-ablation.json").write_text(
+        json.dumps(ablation_report, ensure_ascii=False, indent=2), encoding="utf-8")
+
     model_report = {
         "generated_at": result["generated_at"],
         "period": result["period"],
