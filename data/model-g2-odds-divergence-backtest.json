@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-04T01:05:28.711972+00:00",
-  "feature": "G2_G1_plus_final_odds_divergence",
+  "generated_at": "2026-11-04T01:21:58.755638+00:00",
+  "feature": "G2_improved_skip_decision_development_tuned",
   "status": "evaluated",
   "g1_temperature": 0.115,
   "g1_report_status": "G1_improved_on_untouched_holdout",
@@ -69,9 +69,254 @@
   ],
   "rule": {
     "minimum_odds_coverage": 0.7,
-    "model_to_market_probability_ratio_minimum": 1.2,
-    "model_probability_times_final_odds_minimum": 1.08,
-    "selection": "At most one highest-EV qualifying horse per race; JPY100 win bet; otherwise no bet."
+    "model_to_market_probability_ratio_minimum": 2.0,
+    "model_probability_times_final_odds_minimum": 1.4,
+    "selection": "At most one highest-EV qualifying horse per race; JPY100 win bet; otherwise no bet.",
+    "threshold_selection": "Development-only grid search; untouched holdout excluded from threshold selection.",
+    "tuning_status": "no_eligible_development_threshold_fallback_conservative",
+    "development_candidate_grid": [
+      {
+        "min_probability_ratio": 1.5,
+        "min_model_probability_times_final_odds": 1.15,
+        "development_bets": 7466,
+        "development_selection_rate_pct": 99.37,
+        "development_roi": 49.71,
+        "development_roi_95ci": [
+          36.265738,
+          64.474953
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 1.5,
+        "min_model_probability_times_final_odds": 1.25,
+        "development_bets": 7454,
+        "development_selection_rate_pct": 99.21,
+        "development_roi": 49.59,
+        "development_roi_95ci": [
+          35.97934,
+          63.583311
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 1.5,
+        "min_model_probability_times_final_odds": 1.4,
+        "development_bets": 7408,
+        "development_selection_rate_pct": 98.6,
+        "development_roi": 49.6,
+        "development_roi_95ci": [
+          36.318844,
+          64.443844
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 1.5,
+        "min_model_probability_times_final_odds": 1.6,
+        "development_bets": 7307,
+        "development_selection_rate_pct": 97.26,
+        "development_roi": 49.69,
+        "development_roi_95ci": [
+          36.649788,
+          64.959628
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 1.75,
+        "min_model_probability_times_final_odds": 1.15,
+        "development_bets": 7415,
+        "development_selection_rate_pct": 98.7,
+        "development_roi": 49.6,
+        "development_roi_95ci": [
+          35.900202,
+          64.88739
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 1.75,
+        "min_model_probability_times_final_odds": 1.25,
+        "development_bets": 7415,
+        "development_selection_rate_pct": 98.7,
+        "development_roi": 49.6,
+        "development_roi_95ci": [
+          35.900202,
+          64.88739
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 1.75,
+        "min_model_probability_times_final_odds": 1.4,
+        "development_bets": 7408,
+        "development_selection_rate_pct": 98.6,
+        "development_roi": 49.6,
+        "development_roi_95ci": [
+          36.318844,
+          64.443844
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 1.75,
+        "min_model_probability_times_final_odds": 1.6,
+        "development_bets": 7307,
+        "development_selection_rate_pct": 97.26,
+        "development_roi": 49.69,
+        "development_roi_95ci": [
+          36.649788,
+          64.959628
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 2.0,
+        "min_model_probability_times_final_odds": 1.15,
+        "development_bets": 7327,
+        "development_selection_rate_pct": 97.52,
+        "development_roi": 49.55,
+        "development_roi_95ci": [
+          35.46199,
+          64.592603
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 2.0,
+        "min_model_probability_times_final_odds": 1.25,
+        "development_bets": 7327,
+        "development_selection_rate_pct": 97.52,
+        "development_roi": 49.55,
+        "development_roi_95ci": [
+          35.46199,
+          64.592603
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 2.0,
+        "min_model_probability_times_final_odds": 1.4,
+        "development_bets": 7327,
+        "development_selection_rate_pct": 97.52,
+        "development_roi": 49.55,
+        "development_roi_95ci": [
+          35.46199,
+          64.592603
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 2.0,
+        "min_model_probability_times_final_odds": 1.6,
+        "development_bets": 7307,
+        "development_selection_rate_pct": 97.26,
+        "development_roi": 49.69,
+        "development_roi_95ci": [
+          36.649788,
+          64.959628
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 2.5,
+        "min_model_probability_times_final_odds": 1.15,
+        "development_bets": 7036,
+        "development_selection_rate_pct": 93.65,
+        "development_roi": 47.76,
+        "development_roi_95ci": [
+          33.226265,
+          63.912735
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 2.5,
+        "min_model_probability_times_final_odds": 1.25,
+        "development_bets": 7036,
+        "development_selection_rate_pct": 93.65,
+        "development_roi": 47.76,
+        "development_roi_95ci": [
+          33.226265,
+          63.912735
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 2.5,
+        "min_model_probability_times_final_odds": 1.4,
+        "development_bets": 7036,
+        "development_selection_rate_pct": 93.65,
+        "development_roi": 47.76,
+        "development_roi_95ci": [
+          33.226265,
+          63.912735
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 2.5,
+        "min_model_probability_times_final_odds": 1.6,
+        "development_bets": 7036,
+        "development_selection_rate_pct": 93.65,
+        "development_roi": 47.76,
+        "development_roi_95ci": [
+          33.226265,
+          63.912735
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 3.0,
+        "min_model_probability_times_final_odds": 1.15,
+        "development_bets": 6581,
+        "development_selection_rate_pct": 87.59,
+        "development_roi": 43.13,
+        "development_roi_95ci": [
+          29.592767,
+          59.132351
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 3.0,
+        "min_model_probability_times_final_odds": 1.25,
+        "development_bets": 6581,
+        "development_selection_rate_pct": 87.59,
+        "development_roi": 43.13,
+        "development_roi_95ci": [
+          29.592767,
+          59.132351
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 3.0,
+        "min_model_probability_times_final_odds": 1.4,
+        "development_bets": 6581,
+        "development_selection_rate_pct": 87.59,
+        "development_roi": 43.13,
+        "development_roi_95ci": [
+          29.592767,
+          59.132351
+        ],
+        "eligible": false
+      },
+      {
+        "min_probability_ratio": 3.0,
+        "min_model_probability_times_final_odds": 1.6,
+        "development_bets": 6581,
+        "development_selection_rate_pct": 87.59,
+        "development_roi": 43.13,
+        "development_roi_95ci": [
+          29.592767,
+          59.132351
+        ],
+        "eligible": false
+      }
+    ],
+    "selected_candidate": null
   },
   "odds_note": "Official confirmed final win odds are used retrospectively. This does not represent odds available 2-30 minutes before post time and must not be presented as live profitability.",
   "e_model_changed": false,
@@ -127,20 +372,20 @@
       }
     },
     "G2_value_pick": {
-      "races_bet": 7493,
-      "tickets": 7493,
-      "hits": 108,
-      "hit_rate": 1.44,
-      "stake_jpy": 749300,
-      "return_jpy": 372100.0,
-      "profit_jpy": -377200.0,
-      "roi": 49.66,
+      "races_bet": 7327,
+      "tickets": 7327,
+      "hits": 94,
+      "hit_rate": 1.28,
+      "stake_jpy": 732700,
+      "return_jpy": 363070.0,
+      "profit_jpy": -369630.0,
+      "roi": 49.55,
       "roi_95ci": {
         "method": "race-level bootstrap ROI percentile interval",
         "replicates": 2000,
         "roi_95ci": [
-          36.527426,
-          64.441479
+          35.46199,
+          64.592603
         ]
       }
     }
@@ -183,25 +428,25 @@
       }
     },
     "G2_value_pick": {
-      "races_bet": 3382,
-      "tickets": 3382,
-      "hits": 35,
-      "hit_rate": 1.03,
-      "stake_jpy": 338200,
-      "return_jpy": 117350.0,
-      "profit_jpy": -220850.0,
-      "roi": 34.7,
+      "races_bet": 3333,
+      "tickets": 3333,
+      "hits": 33,
+      "hit_rate": 0.99,
+      "stake_jpy": 333300,
+      "return_jpy": 115620.0,
+      "profit_jpy": -217680.0,
+      "roi": 34.69,
       "roi_95ci": {
         "method": "race-level bootstrap ROI percentile interval",
         "replicates": 2000,
         "roi_95ci": [
-          20.280899,
-          51.99586
+          19.873987,
+          52.136214
         ]
       }
     }
   },
-  "holdout_G2_selection_rate_pct": 99.85,
+  "holdout_G2_selection_rate_pct": 98.41,
   "g2_pass": false,
-  "interpretation": "G2 is only considered ROI-confirmed if the untouched holdout has at least 100 eligible races and 100 G2 bets and the race-bootstrap 95% ROI lower bound exceeds 100%. Otherwise it remains an unconfirmed research signal."
+  "interpretation": "G2 is only considered ROI-confirmed if the untouched holdout has at least 100 eligible races and 100 G2 bets and the race-bootstrap 95% ROI lower bound exceeds 100%. The skip rule is tuned only on development data; the untouched holdout evaluates the selected thresholds once. A pass still requires at least 100 holdout bets and a race-bootstrap 95% ROI lower bound above 100%."
 }
