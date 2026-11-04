@@ -160,7 +160,7 @@ def merge_payout_row(payouts, key, row):
     payout["source_rows"] += 1
 
     def add_pay(target, values, amount):
-        numbers = [re.sub(r"\\D", "", str(value or "")) for value in values]
+        numbers = [re.sub(r"\D", "", str(value or "")) for value in values]
         pay = number(amount)
         if all(numbers) and pay is not None and pay > 0:
             item = (numbers, pay)
