@@ -474,7 +474,7 @@ def score_runner(h, history, sire_stats, jockey_stats, race, model_weights, incl
     age_score = 72 if age is not None and 4 <= age <= 6 else 58 if age in (3,7) else 45
     parts = {"form":form/100,"venue":venue_score/100,"distance":distance_score/100,
              "sire":sire_score/100,"jockey":jockey_score/100,"age":age_score/100}
-    score = sum(model_weights[k]*v for k,v in parts.items())
+    score = sum(model_weights.get(k, 0.0)*v for k,v in parts.items())
     return score, parts
 
 
