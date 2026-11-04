@@ -1819,7 +1819,7 @@ class TrioFormation245Tests(unittest.TestCase):
     def test_245_formation_settles_against_unordered_trio_payout(self):
         ranked = [{"no": str(i)} for i in range(1, 8)]
         tickets = nb.build_trio_formation_2_4_5(ranked)
-        payout = {"trio": [(["7", "2", "5"], 12340)]}
-        self.assertIn(["2", "5", "7"], tickets)
-        self.assertEqual(nb.payout_for("trio", ["2", "5", "7"], payout), 12340)
+        payout = {"trio": [(["7", "2", "4"], 12340)]}
+        self.assertIn(["2", "4", "7"], tickets)
+        self.assertEqual(nb.payout_for("trio", ["2", "4", "7"], payout), 12340)
 
