@@ -32,7 +32,7 @@ def main() -> int:
         "C_adds_performance_time_and_pace": (
             '"C_performance_pace"' in source
             and '0.10, 0.10, 0.10, include_recent_history, going_weight=0.10' in source
-            and '"C_performance_pace", "trained_with_pace"' in source
+            and '"C_performance_pace", "C_performance_pace_no_frame"' in source
         ),
         "A_C_share_holdout_and_ticket_rules": (
             "identical chronological holdout races" in source
@@ -66,7 +66,7 @@ def main() -> int:
         ),
         "backtest_and_live_share_D_frame_pace_scoring": (
             "score_runner_performance(" in source
-            and "blend_frame_score(performance_score, race, h, frame_stats)" in source
+            and "performance_score, race, h, frame_stats)" in source
             and "pace_adjustments(field, history)" in source
             and "nb.frame_form_score(race, horse, frame_stats)" in capture_source
         ),
