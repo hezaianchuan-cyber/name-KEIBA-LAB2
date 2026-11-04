@@ -706,7 +706,7 @@ const LAB_TICKET_STORAGE_KEY='keibaLabTicketPlansV1';
 let remoteLabTicketPlans=[];
 async function loadAutoTicketPlans(){
  try{
-  const response=await fetch('./data/auto-ticket-plans.json?v='+Date.now(),{cache:'no-store'});
+  const response=await fetch('https://raw.githubusercontent.com/hezaianchuan-cyber/name-KEIBA-LAB2/main/data/auto-ticket-plans.json?v='+Date.now(),{cache:'no-store'});
   if(!response.ok)throw new Error('自動買い目データ未公開（HTTP '+response.status+'）');
   const data=await response.json();
   remoteLabTicketPlans=(Array.isArray(data.plans)?data.plans:[]).filter(p=>p&&p.raceId&&p.date).map(plan=>({predictionId:plan.raceId,plan}));
