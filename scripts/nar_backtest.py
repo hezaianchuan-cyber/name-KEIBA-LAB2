@@ -3195,6 +3195,8 @@ def main():
         "method": {
             "prediction_order": "date-batched chronological; every race on a date is predicted before any result from that date updates history or model weights",
             "odds_feature": False,
+            "production_parity": "Primary chronological backtest uses the same D performance, going, pace, temperature and learned frame-context scoring blocks as live predictions; odds are overlaid only from genuine timestamped pre-off snapshots.",
+            "frame_feature": "Prior top-three rate by venue, surface, 400m distance band, field-size band and frame number; 8% blend with D performance score, neutral prior for sparse/missing buckets; updates only after all races on a date are predicted.",
             "market_value_policy": "Simulate win bets only when calibrated model probability multiplied by timestamped official pre-off win odds meets a fixed threshold; thresholds are reported independently and not selected on test folds.",
             "probability_calibration": "temperature fitted on chronological prequential training predictions; out-of-sample calibration reported per walk-forward fold",
             "ticket_policy": "Expanded fixed top-rank ticket portfolio per race; 100 JPY per ticket; not a betting recommendation",
