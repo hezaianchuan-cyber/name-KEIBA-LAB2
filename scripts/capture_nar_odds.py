@@ -229,8 +229,9 @@ def predict_horses(race, horses, odds_rows, model_context):
         margin_weight=0.10, closing_weight=0.10, time_weight=0.10,
         going_weight=0.10,
     ) for horse in horses]
-    scored = [item[0] * 0.92 + nb.frame_form_score(race, horse, frame_stats) * 0.08
-              for item, horse in zip(scored_parts, horses)]
+    frame_scores = [nb.frame_form_score(race, horse, frame_stats) for horse in horses]
+    scored = [item[0] * 0.92 + frame_score * 0.08
+              for item, frame_score in zip(scored_parts, frame_scores)]
     feature_parts = [item[1] for item in scored_parts]
     pace_profiles, pace_leaders, pace_delta = nb.pace_adjustments(horses, history)
     scored = [score + pace_delta.get(horse["no"], 0.0)
@@ -250,6 +251,8 @@ def predict_horses(race, horses, odds_rows, model_context):
         ev = probability * float(odds_value) if odds_value and float(odds_value) > 0 else None
         predictions.append({
             "horse_no": horse["no"],
+            "frame_no": horse.get("frame_no"),
+            "frame_form": round(frame_scores[index], 6),
             "name": horse["name"],
             "score": round(score, 6),
             "win_probability": round(probability, 8),
