@@ -439,7 +439,6 @@ $('refreshMinuteOddsBtn').onclick=async()=>{try{const n=await fetchSupabaseLiveD
 if(!window.AndroidBridge){
   window.addEventListener('load',()=>fetchPcOfficialData(false));
   setInterval(()=>fetchPcOfficialData(false),15*60*1000);
-  window.addEventListener('load',()=>refreshOddsCaptureStatus());
 }
 async function refreshOddsCaptureStatus(){
  try{
