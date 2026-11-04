@@ -70,6 +70,8 @@ jobs:
             python3 scripts/capture_nar_odds.py
             python3 scripts/build_auto_ticket_plans.py
             git add data/odds-snapshots data/odds-capture-status.json data/auto-ticket-plans.json
+            # Publish the official ZIP archives consumed by the web race/runner importer.
+            git add -f data/latest-race.zip data/latest-odds.zip
             if git diff --cached --quiet; then
               echo "No new snapshot or status changes."
               exit 0
