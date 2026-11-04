@@ -729,7 +729,7 @@ function renderLabVirtualLedger(){
   const returned=x.isSkip?'—':!x.settled?'未確定':x.returned.toLocaleString()+'円',stake=x.isSkip?'0円':x.stake.toLocaleString()+'円';
   return '<tr><td>'+esc(x.plan.venue||'')+' '+esc(x.plan.raceNo||'')+'R</td><td>'+label+'</td><td>'+details+'</td><td>'+officialDetails+'</td><td>'+hitDetails+'</td><td>'+stake+'</td><td>'+returned+'</td><td>'+(!x.settled?'—':(x.returned-x.stake>0?'+':'')+(x.returned-x.stake).toLocaleString()+'円')+'</td></tr>';
  });
- $('labLedgerRows').innerHTML=rows.length?'<div class="tablewrap"><table style="min-width:760px"><thead><tr><th>レース</th><th>判定</th><th>保存買い目</th><th>公式的中組合せ</th><th>LAB的中買い目</th><th>購入想定額</th><th>仮想払戻</th><th>損益</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>':'この日の保存履歴はありません。';
+ $('labLedgerRows').innerHTML=rows.length?'<div class="tablewrap"><table style="min-width:760px"><thead><tr><th>レース</th><th>判定</th><th>保存買い目</th><th>公式的中組合せ</th><th>LAB的中買い目</th><th>保存購入額</th><th>照合払戻（LAB買い目基準）</th><th>損益</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>':'この日の保存履歴はありません。';
  select.onchange=renderLabVirtualLedger;
 }
 async function loadDailyPayouts(){
