@@ -65,14 +65,23 @@ def load_today_payouts(today):
 def main():
     today = dt.datetime.now(JST).date()
     start = today - dt.timedelta(days=120)
-    # Reuse the same official monthly archive parser as the backtest.
-    nb.START, nb.END = start, today
-    races, _horses, payouts, downloaded = nb.load_archives()
-
-    # Monthly archives are refreshed only around 02:00 JST and can therefore
-    # lag behind today's races. The official daily archive updates about every
-    # two minutes and is the authoritative source for same-day payouts.
+    # The official daily archive is the primary source for today's results.
+    # Fetch it first so a delayed or unavailable monthly archive cannot prevent
+    # same-day payouts from being published.
     today_payouts, daily_archive_bytes, daily_archive_error = load_today_payouts(today)
+
+    # Monthly archives are useful for the rolling history, but may lag or be
+    # temporarily unavailable. Treat them as best-effort and never discard a
+    # successfully downloaded official daily archive because of that.
+    nb.START, nb.END = start, today
+    races, _horses, payouts, downloaded = {}, {}, {}, []
+    monthly_archive_error = None
+    try:
+        races, _horses, payouts, downloaded = nb.load_archives()
+    except Exception as exc:
+        monthly_archive_error = str(exc)
+        print("Monthly archive unavailable; continuing with official daily payouts only: "
+              + monthly_archive_error, flush=True)
     for key, payout in today_payouts.items():
         target = payouts.setdefault(key, {
             "win": [], "place": [], "quinella": [], "exacta": [],
@@ -128,6 +137,11 @@ def main():
             "today_payout_races": len(today_payouts),
             "error": daily_archive_error,
         },
+        "monthly_archive": {
+            "available": monthly_archive_error is None,
+            "downloaded_months": len(downloaded),
+            "error": monthly_archive_error,
+        },
         "note": "All amounts are official payout amounts per 100 yen. They are race-result data, not the user's actual purchase history or personal profit/loss.",
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -139,6 +153,7 @@ def main():
         "output_bytes": OUT.stat().st_size,
         "today_payout_races": len(today_payouts),
         "daily_archive_error": daily_archive_error,
+        "monthly_archive_error": monthly_archive_error,
     }, ensure_ascii=False), flush=True)
 
 
