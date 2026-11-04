@@ -141,6 +141,7 @@ a{color:inherit}
   </section>
   <section id="tickets" class="panel">
     <div class="card"><h2>保存買い目</h2><p class="sub">レース分析で生成した買い目を、分析時点の内容で保存します。ここで保存内容と公式払戻の照合結果を確認できます。</p></div>
+    <div class="card" id="labTodaySummary"><h2>今日のLAB収支</h2><p class="sub" id="labTodayDate">今日の保存買い目を集計しています。</p><div class="kpis"><div class="kpi"><span>今日の購入額</span><b id="labTodayStake">—</b></div><div class="kpi"><span>確定払戻</span><b id="labTodayReturn">—</b></div><div class="kpi"><span>確定収支</span><b id="labTodayProfit">—</b></div><div class="kpi"><span>未確定購入額</span><b id="labTodayPending">—</b></div></div><p class="sub" id="labTodayStatus" style="margin-top:10px">今日の買い目と公式結果を照合します。</p></div>
     <div class="card" id="labVirtualLedger">
       <h2>LAB仮想収支</h2>
       <p class="sub">保存時点の買い目を固定し、NAR公式の確定払戻と照合します。外れは払戻0円、見送りは購入額0円。払戻未掲載レースは未確定として集計から除外します。</p>
@@ -690,10 +691,21 @@ function persistLabTicketPlan(prediction,plan){
  try{localStorage.setItem(LAB_TICKET_STORAGE_KEY,JSON.stringify(records));const verify=JSON.parse(localStorage.getItem(LAB_TICKET_STORAGE_KEY)||'[]');return verify.some(x=>x&&x.plan&&String(x.plan.raceId)+'|'+labLedgerDateKey(x.plan.date)===key);}
  catch(e){console.error('買い目の独立保存に失敗',e);return false;}
 }
+function renderLabTodaySummary(plans){
+ const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).replace(/-/g,'');
+ const records=labLedgerRecordsForDate(plans,today),bets=records.filter(x=>!x.isSkip),settled=bets.filter(x=>x.settled),pending=bets.filter(x=>!x.settled);
+ const stake=bets.reduce((sum,x)=>sum+x.stake,0),settledStake=settled.reduce((sum,x)=>sum+x.stake,0),returned=settled.reduce((sum,x)=>sum+x.returned,0),profit=returned-settledStake,pendingStake=pending.reduce((sum,x)=>sum+x.stake,0);
+ const put=(id,value)=>{const el=$(id);if(el)el.textContent=value;};
+ put('labTodayDate',today.slice(0,4)+'-'+today.slice(4,6)+'-'+today.slice(6,8)+'（日本時間）');
+ put('labTodayStake',stake.toLocaleString()+'円');put('labTodayReturn',returned.toLocaleString()+'円');
+ put('labTodayProfit',(profit>0?'+':'')+profit.toLocaleString()+'円');put('labTodayPending',pendingStake.toLocaleString()+'円');
+ put('labTodayStatus','購入 '+bets.length+'R ／ 確定 '+settled.length+'R ／ 未確定 '+pending.length+'R'+(settledStake?' ／ 確定分回収率 '+(returned/settledStake*100).toFixed(1)+'%':'')+'。未確定分は収支に含めていません。');
+}
 function renderLabVirtualLedger(){
  const select=$('labLedgerDate');if(!select)return;
  const plans=loadLabTicketPlans().map(item=>{const plan=item.plan;const p=(db.predictions||[]).find(x=>String(x.id)===String(item.predictionId||plan.raceId)&&labLedgerDateKey(x.date)===labLedgerDateKey(plan.date))||{id:plan.raceId,date:plan.date,venue:plan.venue,race:plan.raceNo,top:[],runners:[]};return {p,plan,date:labLedgerDateKey(plan.date||p.date)};}).filter(x=>x.date);
 
+ renderLabTodaySummary(plans);
  const dates=[...new Set(plans.map(x=>x.date))].sort().reverse();
  if(!dates.length){select.innerHTML='<option value="">保存履歴なし</option>';$('labLedgerStatus').textContent='買い目の保存履歴がありません。';$('labLedgerRows').textContent='買い目を保存すると、公式払戻との照合結果がここに表示されます。';return;}
  const previous=select.value;select.innerHTML=dates.map(d=>'<option value="'+d+'">'+d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8)+'</option>').join('');
