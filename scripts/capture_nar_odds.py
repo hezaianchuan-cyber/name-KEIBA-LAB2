@@ -529,7 +529,7 @@ def main():
     if not candidates:
         write_capture_status(
             now, races, horses_by_race, odds,
-            result="no_eligible_preoff_races",
+            result="odds_not_published" if not odds else "no_eligible_preoff_races",
             races_in_window=window_races,
             window_races_with_field=window_with_field,
             window_races_with_positive_odds=window_with_positive_odds,
