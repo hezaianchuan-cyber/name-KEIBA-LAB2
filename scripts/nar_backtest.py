@@ -2149,7 +2149,7 @@ def preoff_ticket_type_backtest(payouts):
     """Evaluate each bet type on timestamped pre-off odds from the current model only."""
     records = []
     legacy_snapshot_races_excluded = 0
-    expected_model_version = "nar-chronological-v8-abcd-C-preoff"
+    expected_model_version = "nar-chronological-v9-D-frame-preoff"
     for record in load_odds_snapshots().values():
         if record.get("model_version") != expected_model_version:
             legacy_snapshot_races_excluded += 1
@@ -2330,7 +2330,7 @@ def race_budget_auto_strategy_backtest(payouts, type_validation):
     of snapshot dates. Only genuine 2-30 minute pre-off snapshots from the
     current C-preoff model version are eligible.
     """
-    required_version = "nar-chronological-v8-abcd-C-preoff"
+    required_version = "nar-chronological-v9-D-frame-preoff"
     kinds = ("win", "place", "wide", "quinella", "exacta", "trio", "trifecta")
     selected_thresholds = {}
     type_validation = (type_validation or {}).get("bet_types", {})
@@ -3039,7 +3039,7 @@ def preoff_ranking_strategy_backtest(payouts):
     strategies = ("expected_value", "probability", "odds")
     records = []
     legacy_snapshot_races_excluded = 0
-    expected_model_version = "nar-chronological-v8-abcd-C-preoff"
+    expected_model_version = "nar-chronological-v9-D-frame-preoff"
     for record in load_odds_snapshots().values():
         if record.get("model_version") != expected_model_version:
             legacy_snapshot_races_excluded += 1
@@ -3358,7 +3358,7 @@ def main():
 
     validated_weights = learned_weights
     live_model = {
-        "model_version": "nar-chronological-v8-abcd-C-preoff",
+        "model_version": "nar-chronological-v9-D-frame-preoff",
         "generated_at": result["generated_at"],
         "training_period": result["period"],
         "updates": learning_updates,
