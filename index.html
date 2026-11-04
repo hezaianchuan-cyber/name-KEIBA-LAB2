@@ -477,8 +477,34 @@ async function refreshOddsCaptureStatus(){
     details.textContent='オッズ取得状況を読み込めません：'+e.message;
   }
 }
-function refreshRaceChoices(){const date=$('raceDate').value.replaceAll('-',''),venue=$('venue').value;const known=[...new Set([...oddsRaceIndex.map(r=>r.venue),...db.races.map(r=>r.venue)])].sort((a,b)=>a.localeCompare(b,'ja'));const vs=$('venue');const current=venue;const opts=['<option value="">\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044</option>',...known.map(v=>'<option>'+esc(v)+'</option>')].join('');if(known.length){vs.innerHTML=opts;if(known.includes(current))vs.value=current;}
-const map=new Map();for(const r of [...db.races,...oddsRaceIndex])if((!date||norm(r.date)===date)&&(!venue||r.venue===venue))map.set(r.id,r);const races=[...map.values()].sort((a,b)=>Number(a.race)-Number(b.race));const select=$('raceSelect');const old=select.value;select.innerHTML='<option value="">\u30EC\u30FC\u30B9\u3092\u9078\u629E</option>';races.forEach(r=>{const o=document.createElement('option');o.value=r.id;o.textContent=r.race+'R '+(r.time||'')+' '+(r.name||'')+(r.count?' \u00B7 '+r.count+'\u4EF6':'');select.append(o)});if(races.some(r=>r.id===old))select.value=old;}
+function refreshRaceChoices(){
+  const date=$('raceDate').value.replaceAll('-',''),venue=$('venue').value;
+  const source=[...(db.races||[]),...(oddsRaceIndex||[])];
+  const derived=new Map();
+  for(const row of [...(db.horses||[]),...(db.odds||[])]){
+    if(!row||!row.id||!row.venue||!row.date||!row.race)continue;
+    if(!derived.has(row.id))derived.set(row.id,{id:row.id,venue:row.venue,date:row.date,race:row.race,time:'',name:'',count:0});
+    const item=derived.get(row.id);item.count++;
+  }
+  const all=[...source,...derived.values()];
+  const known=[...new Set(all.map(r=>String(r.venue||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja'));
+  const vs=$('venue'),current=venue;
+  const opts=['<option value="">\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044</option>',...known.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>')].join('');
+  if(known.length){vs.innerHTML=opts;if(known.includes(current))vs.value=current;else if(current)vs.value='';}
+  const map=new Map();
+  for(const r of all){
+    if(!r||!r.id||!r.race)continue;
+    if((!date||normDate(r.date)===date)&&(!$('venue').value||norm(r.venue)===norm($('venue').value))){
+      const prior=map.get(r.id)||{};
+      map.set(r.id,{...prior,...r});
+    }
+  }
+  const races=[...map.values()].sort((a,b)=>Number(norm(a.race).replace(/R$/i,''))-Number(norm(b.race).replace(/R$/i,'')));
+  const select=$('raceSelect'),old=select.value;
+  select.innerHTML='<option value="">'+(races.length?'\u30EC\u30FC\u30B9\u3092\u9078\u629E':'\u8A72\u5F53\u6761\u4EF6\u306E\u30EC\u30FC\u30B9\u30C7\u30FC\u30BF\u306A\u3057')+'</option>';
+  races.forEach(r=>{const o=document.createElement('option');o.value=r.id;o.textContent=r.race+'R '+(r.time||'')+' '+(r.name||'')+(r.count?' \u00B7 '+r.count+'\u4EF6':'');select.append(o)});
+  if(races.some(r=>r.id===old))select.value=old;
+}
 $('raceDate').addEventListener('change',()=>{refreshRaceChoices();});$('venue').addEventListener('change',()=>{refreshRaceChoices();});$('raceSelect').addEventListener('change',()=>{if($('raceSelect').value)analyze();});
 function percentile(v,arr){if(v==null||!arr.length)return 50;const clean=arr.filter(x=>x!=null).sort((a,b)=>a-b);if(!clean.length)return 50;return 100*clean.filter(x=>x<=v).length/clean.length}
 function parseMarginValue(value){const s=String(value??'').replace(/[\s\u3000]/g,'');if(!s)return null;const mixed=s.match(/^(\d+)(\d+)\/(\d+)$/);if(mixed)return Number(mixed[1])+Number(mixed[2])/Number(mixed[3]);const fraction=s.match(/^(\d+)\/(\d+)$/);return fraction?Number(fraction[1])/Number(fraction[2]):(s.match(/\d+(?:\.\d+)?/)||[])[0]!==undefined?Number((s.match(/\d+(?:\.\d+)?/)||[])[0]):null;}
