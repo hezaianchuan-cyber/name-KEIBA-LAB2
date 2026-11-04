@@ -1,0 +1,59 @@
+name: G4 real pre-off odds backtest
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/nar_model_g4_preoff_backtest.py'
+      - '.github/workflows/nar-model-g4-preoff.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: "0 21 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nar-model-g4-preoff
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile G4 evaluator
+        run: python3 -m py_compile scripts/nar_model_g4_preoff_backtest.py
+      - name: Run G4 with captured pre-off odds only
+        run: python3 scripts/nar_model_g4_preoff_backtest.py
+      - name: Publish G4 report
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp data/model-g4-preoff-backtest.json /tmp/model-g4-preoff-backtest.json
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/model-g4-preoff-backtest.json data/model-g4-preoff-backtest.json
+            git add data/model-g4-preoff-backtest.json
+            if git diff --cached --quiet; then
+              echo "G4 report is already current."
+              exit 0
+            fi
+            git commit -m "Publish G4 real pre-off odds backtest"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Concurrent update; retrying against latest main (attempt $attempt)"
+            sleep 2
+          done
+          echo "Could not publish G4 report after five attempts."
+          exit 1
