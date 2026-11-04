@@ -106,7 +106,7 @@ def load_supabase_snapshots(model_rows):
     for values in models_by_race.values():
         values.sort(key=lambda item: item[0])
 
-    diagnostics = {"supabase_query_rows": 0, "supabase_snapshots_joined": 0, "supabase_model_races": len(models_by_race), "supabase_race_key_matches": 0, "supabase_no_prior_model": 0, "supabase_model_too_old": 0, "supabase_empty_odds": 0}
+    diagnostics = {"supabase_query_rows": 0, "supabase_snapshots_joined": 0, "supabase_model_races": len(models_by_race), "supabase_race_key_matches": 0, "supabase_no_prior_model": 0, "supabase_model_too_old": 0, "supabase_empty_odds": 0, "supabase_model_dates": sorted({row.get("date") for row in model_rows if row.get("date")}), "supabase_model_key_samples": sorted(models_by_race.keys())[:8], "supabase_odds_key_samples": [], "supabase_odds_dates": []}
     if not SUPABASE_URL or not SUPABASE_KEY:
         diagnostics["supabase_status"] = "credentials_unavailable"
         return [], diagnostics
@@ -147,6 +147,10 @@ def load_supabase_snapshots(model_rows):
                 captured = parse_time(item.get("captured_at"))
                 if not key or captured is None:
                     continue
+                if len(diagnostics["supabase_odds_key_samples"]) < 8 and key not in diagnostics["supabase_odds_key_samples"]:
+                    diagnostics["supabase_odds_key_samples"].append(key)
+                if len(diagnostics["supabase_odds_dates"]) < 10 and key.split("|")[1] not in diagnostics["supabase_odds_dates"]:
+                    diagnostics["supabase_odds_dates"].append(key.split("|")[1])
                 model_candidates = models_by_race.get(key, [])
                 if model_candidates:
                     diagnostics["supabase_race_key_matches"] += 1
