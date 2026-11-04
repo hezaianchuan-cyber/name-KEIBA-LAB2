@@ -168,6 +168,22 @@ def read_archives():
                         "popularity": str(row[9]).strip(),
                     }
                     odds_rows.setdefault(key, []).append(item)
+    duplicate_horse_rows = 0
+    for key, rows in list(horse_rows.items()):
+        unique_by_number = {}
+        for horse in rows:
+            horse_number = horse.get("no")
+            if not horse_number:
+                continue
+            if horse_number in unique_by_number:
+                duplicate_horse_rows += 1
+                continue
+            unique_by_number[horse_number] = horse
+        horse_rows[key] = list(unique_by_number.values())
+    print("Horse-row deduplication:", json.dumps({
+        "duplicate_rows_removed": duplicate_horse_rows,
+        "races_with_horses": len(horse_rows),
+    }, ensure_ascii=False), flush=True)
     odds_diagnostics["races_with_positive_odds"] = len(odds_rows)
     print("Odds diagnostics:", json.dumps(odds_diagnostics, ensure_ascii=False), flush=True)
     return race_rows, horse_rows, odds_rows
