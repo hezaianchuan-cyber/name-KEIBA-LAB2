@@ -32,12 +32,24 @@ STOP_BEFORE_POST_MINUTES = 2
 
 
 def decode(raw: bytes) -> str:
-    for encoding in ("utf-8-sig", "cp932", "shift_jis"):
+    # Some official ZIP members are CP932 while others are UTF-8. A byte
+    # sequence can occasionally decode as UTF-8 without being valid Japanese,
+    # so prefer the candidate that contains the most known NAR venue names.
+    candidates = []
+    for encoding in ("utf-8-sig", "cp932"):
         try:
-            return raw.decode(encoding)
+            candidates.append(raw.decode(encoding))
         except UnicodeDecodeError:
             continue
-    return raw.decode("utf-8", errors="replace")
+    if not candidates:
+        return raw.decode("cp932", errors="replace")
+    venues = (
+        "帯広", "門別", "盛岡", "水沢", "浦和", "船橋", "大井", "川崎",
+        "金沢", "笠松", "名古屋", "園田", "姫路", "高知", "佐賀",
+    )
+    def score(text: str) -> int:
+        return sum(text.count(venue) for venue in venues)
+    return max(candidates, key=score)
 
 
 def csv_rows(raw: bytes):
