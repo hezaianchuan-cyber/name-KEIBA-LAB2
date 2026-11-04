@@ -714,9 +714,25 @@ function renderLabTodaySummary(plans){
  profitEl.textContent=(profit>0?'+':'')+profit.toLocaleString()+'円';
  statusEl.textContent=pending.length?'確定 '+settled.length+'R／未確定 '+pending.length+'R':'確定 '+settled.length+'R';
 }
+// Independent compact archive for saved ticket plans.
+const LAB_TICKET_STORAGE_KEY='keibaLabTicketPlansV1';
+function loadLabTicketPlans(){
+ try{
+  const stored=JSON.parse(localStorage.getItem(LAB_TICKET_STORAGE_KEY)||'[]'),map=new Map();
+  for(const item of Array.isArray(stored)?stored:[])if(item&&item.plan&&item.plan.raceId)map.set(String(item.plan.raceId)+'|'+labLedgerDateKey(item.plan.date),item);
+  for(const p of db.predictions||[])if(p&&p.ticketPlan&&p.ticketPlan.raceId){const plan=p.ticketPlan,key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date||p.date);if(!map.has(key))map.set(key,{predictionId:p.id,plan});}
+  return [...map.values()];
+ }catch(e){console.warn('保存買い目の読込に失敗',e);return [];}
+}
+function persistLabTicketPlan(prediction,plan){
+ const key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date),records=loadLabTicketPlans().filter(x=>String(x.plan.raceId)+'|'+labLedgerDateKey(x.plan.date)!==key);
+ records.push({predictionId:prediction?.id||plan.raceId,plan});
+ try{localStorage.setItem(LAB_TICKET_STORAGE_KEY,JSON.stringify(records));const verify=JSON.parse(localStorage.getItem(LAB_TICKET_STORAGE_KEY)||'[]');return verify.some(x=>x&&x.plan&&String(x.plan.raceId)+'|'+labLedgerDateKey(x.plan.date)===key);}
+ catch(e){console.error('買い目の独立保存に失敗',e);return false;}
+}
 function renderLabVirtualLedger(){
  const select=$('labLedgerDate');if(!select)return;
- const plans=(db.predictions||[]).filter(p=>p&&p.ticketPlan).map(p=>({p,plan:p.ticketPlan,date:labLedgerDateKey(p.ticketPlan.date||p.date)})).filter(x=>x.date);
+ const plans=loadLabTicketPlans().map(item=>{const plan=item.plan;const p=(db.predictions||[]).find(x=>String(x.id)===String(item.predictionId||plan.raceId)&&labLedgerDateKey(x.date)===labLedgerDateKey(plan.date))||{id:plan.raceId,date:plan.date,venue:plan.venue,race:plan.raceNo,top:[],runners:[]};return {p,plan,date:labLedgerDateKey(plan.date||p.date)};}).filter(x=>x.date);
  renderLabTodaySummary(plans);
  const dates=[...new Set(plans.map(x=>x.date))].sort().reverse();
  if(!dates.length){select.innerHTML='<option value="">保存履歴なし</option>';$('labLedgerStatus').textContent='買い目の保存履歴がありません。';$('labLedgerRows').textContent='買い目を保存すると、公式払戻との照合結果がここに表示されます。';return;}
@@ -1015,7 +1031,10 @@ function generateTickets(){
      db.predictions.push(prediction);
    }
    prediction.ticketPlan=snapshot;prediction.at=snapshot.createdAt;prediction.venue=snapshot.venue;prediction.race=snapshot.raceNo;
+   const ticketSaved=persistLabTicketPlan(prediction,snapshot);
    save();scheduleCloudSync();if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
+   if(!ticketSaved)out.insertAdjacentHTML('afterbegin','<p class="notice">買い目の保存に失敗しました。ブラウザの保存容量を確認してください。</p>');
+   else out.insertAdjacentHTML('afterbegin','<p class="notice">保存確認済み：'+esc(snapshot.date)+' '+esc(snapshot.venue)+' '+esc(snapshot.raceNo)+'R／'+(snapshot.decision==='BET'?snapshot.tickets.length+'点・'+snapshot.totalStake.toLocaleString()+'円':'見送り')+'。保存買い目タブから再確認できます。</p>');
  }
  out.innerHTML=horseHtml+selectedHtml+mainHtml+'<details style="margin-top:12px"><summary>券種別の候補一覧（比較用）</summary>'+allHtml+'</details><p>券種選択は、校正済みモデル・実オッズ・券種別EV基準を満たす候補がある場合のみ行います。候補確率はPlackett–Luce方式による近似です。各候補のオッズが未取得、モデル未校正、または基準未達の場合は見送り。1点100円単位、1レース合計2,000円を超えないよう配分します。実際の購入・払戻ではなく、アプリの推奨額です。候補 '+candidates.length+'点 / オッズ照合済み '+candidates.filter(x=>x.ev!=null).length+'点。</p>';
 }
