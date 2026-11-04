@@ -1029,7 +1029,7 @@ def build_trio_formation_2_4_5(ranked):
     unique = []
     seen_horses = set()
     for horse in ranked or []:
-        raw = re.sub(r"\\D", "", str(horse.get("no") or ""))
+        raw = re.sub(r"\D", "", str(horse.get("no") or ""))
         if raw:
             no = str(int(raw))
             if no not in seen_horses:
