@@ -480,7 +480,7 @@ function refreshRaceChoices(){
   races.forEach(r=>{const o=document.createElement('option');o.value=r.id;o.textContent=r.race+'R '+(r.time||'')+' '+(r.name||'')+(r.count?' \u00B7 '+r.count+'\u4EF6':'');select.append(o)});
   if(races.some(r=>r.id===old))select.value=old;
 }
-$('raceDate').addEventListener('change',()=>{refreshRaceChoices();});$('venue').addEventListener('change',()=>{refreshRaceChoices();});$('raceSelect').addEventListener('change',()=>{if($('raceSelect').value){$('summary').textContent='レースを選択しました。「選択したレースの買い目を見る」を押すと最新データで分析します。';}});
+$('raceDate').addEventListener('change',()=>{fetchSupabaseLiveData().catch(e=>console.warn('日付別1分オッズ取得失敗',e)).finally(()=>refreshRaceChoices());});$('venue').addEventListener('change',()=>{refreshRaceChoices();});$('raceSelect').addEventListener('change',()=>{if($('raceSelect').value){$('summary').textContent='レースを選択しました。「選択したレースの買い目を見る」を押すと最新データで分析します。';}});
 function percentile(v,arr){if(v==null||!arr.length)return 50;const clean=arr.filter(x=>x!=null).sort((a,b)=>a-b);if(!clean.length)return 50;return 100*clean.filter(x=>x<=v).length/clean.length}
 function parseMarginValue(value){const s=String(value??'').replace(/[\s\u3000]/g,'');if(!s)return null;const mixed=s.match(/^(\d+)(\d+)\/(\d+)$/);if(mixed)return Number(mixed[1])+Number(mixed[2])/Number(mixed[3]);const fraction=s.match(/^(\d+)\/(\d+)$/);return fraction?Number(fraction[1])/Number(fraction[2]):(s.match(/\d+(?:\.\d+)?/)||[])[0]!==undefined?Number((s.match(/\d+(?:\.\d+)?/)||[])[0]):null;}
 function getRecentRuns(h){
@@ -543,7 +543,7 @@ function scoreRunner(h,all){
 function analyze(){
  sampleMode=false;
  const id=$('raceSelect').value;
- const race=db.races.find(r=>r.id===id)||oddsRaceIndex.find(r=>r.id===id);
+ const race=db.races.find(r=>r.id===id)||oddsRaceIndex.find(r=>r.id===id)||minuteOddsRaceIndex.find(r=>r.id===id);
  let runners=db.horses.filter(h=>h.id===id).map(h=>({...h,going:h.going??race?.going,surface:h.surface??race?.surface}));
  if(!runners.length&&oddsCsvText){
   const date=race?.date||'',venue=race?.venue||'',raceNo=race?.race||'';
