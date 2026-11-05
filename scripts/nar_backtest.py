@@ -240,7 +240,7 @@ def load_final_odds_archives(start=None, end=None):
                     date = dt.datetime.strptime(key[1], "%Y%m%d").date()
                     if date < start or date > end:
                         continue
-                    horse_no = re.sub(r"\\D", "", str(row[4] or ""))
+                    horse_no = re.sub(r"\D", "", str(row[4] or ""))
                     odds = number(row[7])
                     if not horse_no or odds is None or odds <= 0:
                         continue
