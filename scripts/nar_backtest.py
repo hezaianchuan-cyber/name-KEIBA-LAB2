@@ -728,16 +728,45 @@ def summarize_market_rank_diagnostics(report):
 
 
 def select_feature_weight_candidate(candidate_rows, baseline_top3_rate, baseline_trio_roi,
-                                    roi_tolerance_pp=1.0):
-    """Only select a challenger that improves top-3 coverage without materially harming trio ROI."""
+                                    roi_tolerance_pp=1.0, baseline_development_folds=None):
+    """Select only a challenger with pooled gains and repeatable fold-level guardrails."""
     eligible = []
+    baseline_by_fold = {
+        str(row.get("fold")): row for row in (baseline_development_folds or [])
+        if row.get("fold") is not None
+    }
     for name, row in candidate_rows.items():
         top3 = row.get("development_winner_top3_rate")
         roi = row.get("development_trio_roi")
         if top3 is None or roi is None or baseline_top3_rate is None or baseline_trio_roi is None:
             continue
-        if top3 > baseline_top3_rate and roi >= baseline_trio_roi - roi_tolerance_pp:
-            eligible.append(name)
+        if top3 <= baseline_top3_rate or roi < baseline_trio_roi - roi_tolerance_pp:
+            continue
+        candidate_by_fold = {
+            str(item.get("fold")): item for item in (row.get("development_folds") or [])
+            if item.get("fold") is not None
+        }
+        # When fold detail is supplied, every development fold must independently
+        # improve top-3 coverage and remain within the ROI tolerance.
+        if baseline_by_fold:
+            if set(candidate_by_fold) != set(baseline_by_fold):
+                continue
+            stable = True
+            for fold_name, baseline in baseline_by_fold.items():
+                candidate = candidate_by_fold[fold_name]
+                candidate_top3 = candidate.get("winner_top3_rate")
+                baseline_fold_top3 = baseline.get("winner_top3_rate")
+                candidate_roi = candidate.get("trio_roi")
+                baseline_fold_roi = baseline.get("trio_roi")
+                if (candidate_top3 is None or baseline_fold_top3 is None
+                        or candidate_roi is None or baseline_fold_roi is None
+                        or candidate_top3 <= baseline_fold_top3
+                        or candidate_roi < baseline_fold_roi - roi_tolerance_pp):
+                    stable = False
+                    break
+            if not stable:
+                continue
+        eligible.append(name)
     if not eligible:
         return None
     return max(eligible, key=lambda name: (
@@ -3882,6 +3911,17 @@ def main():
     baseline_dev_top3_rate = round(100 * baseline_dev_top3 / baseline_dev_races, 2) if baseline_dev_races else None
     baseline_dev_top1_rate = round(100 * baseline_dev_top1 / baseline_dev_races, 2) if baseline_dev_races else None
     baseline_dev_trio_roi = round(100 * baseline_dev_trio_return / baseline_dev_trio_stake, 2) if baseline_dev_trio_stake else None
+    baseline_dev_fold_rows = []
+    for fold in prior_feature_folds:
+        metrics = ((fold.get("models") or {}).get("C_performance_pace") or {})
+        trio = ((metrics.get("bet_types") or {}).get("trio") or {})
+        baseline_dev_fold_rows.append({
+            "fold": fold.get("period_label"),
+            "races": metrics.get("races"),
+            "winner_top1_rate": metrics.get("winner_top1_rate"),
+            "winner_top3_rate": metrics.get("winner_top3_rate"),
+            "trio_roi": trio.get("roi"),
+        })
     feature_weight_rows = {}
     for name, (feature, multiplier) in FEATURE_WEIGHT_VARIANTS.items():
         fold_rows = []
@@ -3912,7 +3952,8 @@ def main():
             "holdout": recent_models.get(name),
         }
     selected_weight_name = select_feature_weight_candidate(
-        feature_weight_rows, baseline_dev_top3_rate, baseline_dev_trio_roi, roi_tolerance_pp=1.0
+        feature_weight_rows, baseline_dev_top3_rate, baseline_dev_trio_roi,
+        roi_tolerance_pp=1.0, baseline_development_folds=baseline_dev_fold_rows
     ) if feature_weight_rows and prior_feature_folds else None
     selected_weight = feature_weight_rows.get(selected_weight_name) if selected_weight_name else None
     baseline_c = recent_models.get("C_performance_pace") or {}
@@ -3922,9 +3963,10 @@ def main():
     feature_weight_experiment = {
         "candidate_variants": feature_weight_rows,
         "baseline_development": {"races": baseline_dev_races, "winner_top1_rate": baseline_dev_top1_rate,
-                                 "winner_top3_rate": baseline_dev_top3_rate, "trio_roi": baseline_dev_trio_roi},
+                                 "winner_top3_rate": baseline_dev_top3_rate, "trio_roi": baseline_dev_trio_roi,
+                                 "folds": baseline_dev_fold_rows},
         "selected_on_prior_folds": selected_weight_name,
-        "selection_rule": "A candidate is eligible only when pooled development winner-top3 rate exceeds C and development trio ROI is no more than 1.0 percentage point below C. Among eligible candidates, rank by top3, then top1, then trio ROI. The latest one-year holdout is untouched.",
+        "selection_rule": "A candidate must beat C on pooled top-3 coverage and stay within 1.0 ROI percentage point, and must independently beat C top-3 coverage while staying within the same ROI tolerance in every prior development fold. Among eligible candidates, rank by pooled top3, then top1, then trio ROI. The latest one-year holdout is untouched.",
         "development_roi_tolerance_pp": 1.0,
         "holdout_comparison": {
             "baseline_C": {
