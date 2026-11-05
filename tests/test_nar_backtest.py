@@ -1816,7 +1816,7 @@ class TrioFormation245AllocationTests(unittest.TestCase):
         self.assertEqual(sum(weighted), sum(equal))
         self.assertGreater(max(weighted), 1)
         top_combo_index = self.tickets.index(["1", "2", "3"])
-        bottom_combo_index = self.tickets.index(["5", "6", "7"])
+        bottom_combo_index = self.tickets.index(["2", "4", "7"])
         self.assertGreater(weighted[top_combo_index], weighted[bottom_combo_index])
 
     def test_allocation_diagnostics_compare_same_race_budget(self):
