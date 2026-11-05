@@ -24,6 +24,11 @@ jobs:
           python-version: "3.12"
       - name: Compile backtest
         run: python -m py_compile scripts/*.py
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check NAR odds Edge Function
+        run: deno check supabase/functions/nar-odds-capture/index.ts
       - name: Check embedded app JavaScript syntax
         run: |
           python - <<'PY'
