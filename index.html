@@ -962,7 +962,8 @@ function loadLabTicketPlans(){
    if(previous?.plan){
     for(const field of ['modelTopHorse','modelTop3','marketFavoriteHorse','marketTop3','marketOddsCapturedAt','marketComparisonAvailable','runnerDraws']){
      const current=nextPlan[field],prior=previous.plan[field];
-     const empty=current==null||(Array.isArray(current)&&current.length===0);
+     const empty=current==null||current===''||(Array.isArray(current)&&current.length===0)
+      ||(field==='marketComparisonAvailable'&&current===false&&prior===true);
      if(empty&&prior!=null&&(!Array.isArray(prior)||prior.length>0))nextPlan[field]=prior;
     }
    }
