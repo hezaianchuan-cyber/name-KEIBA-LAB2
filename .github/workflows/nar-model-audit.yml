@@ -7,6 +7,7 @@ on:
       - 'scripts/nar_backtest.py'
       - 'scripts/capture_nar_odds.py'
       - 'scripts/nar_pipeline_audit.py'
+      - 'tests/test_prediction_lock.py'
       - '.github/workflows/nar-model-audit.yml'
   workflow_dispatch:
 
@@ -30,6 +31,8 @@ jobs:
           python-version: '3.11'
       - name: Compile backtest and audit code
         run: python3 -m py_compile scripts/nar_backtest.py scripts/capture_nar_odds.py scripts/nar_pipeline_audit.py
+      - name: Verify immutable pre-off prediction locks
+        run: python3 -m unittest discover -s tests -p 'test_prediction_lock.py'
       - name: Run model and data leakage audit
         run: python3 scripts/nar_pipeline_audit.py
       - name: Upload audit report
