@@ -8,10 +8,9 @@ on:
       - 'scripts/nar_model_g1_calibration_backtest.py'
       - 'scripts/nar_model_g3_risk_gated_backtest.py'
       - 'data/model-g1-calibration-backtest.json'
-      - '.github/workflows/nar-model-g3-risk-gated.yml'
   workflow_dispatch:
   schedule:
-    - cron: "20 20 * * *"
+    - cron: "20 20 * * 0"
 
 permissions:
   contents: write
