@@ -946,7 +946,12 @@ async function loadPublishedAutoTicketPlans(){
    if(Array.isArray(previous.plan.shadowTickets)&&previous.plan.shadowTickets.length)enriched.shadowTickets=previous.plan.shadowTickets;
   }
   const nextItem={...item,plan:enriched};
-  if(!previous||String(plan.modifiedAt||plan.createdAt||'')>=String(previous.plan.modifiedAt||previous.plan.createdAt||''))merged.set(key,nextItem);
+  if(previous&&!previous.plan.trioRanking&&plan.trioRanking){
+   merged.set(key,{...previous,plan:{...previous.plan,trioRanking:plan.trioRanking,
+    shadowTickets:Array.isArray(plan.shadowTickets)&&plan.shadowTickets.length?plan.shadowTickets:previous.plan.shadowTickets}});
+  }
+  const current=merged.get(key)||previous;
+  if(!current||String(plan.modifiedAt||plan.createdAt||'')>=String(current.plan.modifiedAt||current.plan.createdAt||''))merged.set(key,nextItem);
  }
  remoteLabTicketPlans=[...merged.values()];
  if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
