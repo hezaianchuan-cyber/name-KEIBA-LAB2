@@ -1731,6 +1731,8 @@ def run_backtest(races, horses, payouts):
                       for kind in ("win", "place", "wide", "trio")}
     shadow_races = 0
     ordered = sorted((r for r in races.values()), key=lambda r:(r["date"],r["venue"],int(r["race"])))
+    progress_every = max(1, len(ordered) // 10)
+    print(f"CHRONOLOGICAL_PROGRESS start races={len(ordered)} dates={len({r['date'] for r in ordered})}", flush=True)
     daily_pending = []
     current_date = None
 
@@ -1761,7 +1763,9 @@ def run_backtest(races, horses, payouts):
                         jockey_stats[runner["jockey"]]["top3"] += int(runner["finish"] <= 3)
             update_frame_stats(pending_race, pending_field, frame_stats)
 
-    for race in ordered:
+    for race_index, race in enumerate(ordered, 1):
+        if race_index == 1 or race_index % progress_every == 0 or race_index == len(ordered):
+            print(f"CHRONOLOGICAL_PROGRESS {race_index}/{len(ordered)} ({100*race_index/max(1,len(ordered)):.0f}%) date={race['date']}", flush=True)
         if current_date is not None and race["date"] != current_date:
             commit_day(daily_pending)
             daily_pending = []
@@ -2195,7 +2199,11 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     frame_stats = build_frame_stats(train_races, train_horses)
     train_ordered = sorted(train_races.values(),
                            key=lambda r:(r["date"],r["venue"],int(r["race"])))
-    for train_race in train_ordered:
+    train_progress_every = max(1, len(train_ordered) // 10)
+    print(f"HOLDOUT_PROGRESS training start races={len(train_ordered)} dates={len(train_dates)}", flush=True)
+    for train_index, train_race in enumerate(train_ordered, 1):
+        if train_index == 1 or train_index % train_progress_every == 0 or train_index == len(train_ordered):
+            print(f"HOLDOUT_PROGRESS training {train_index}/{len(train_ordered)} ({100*train_index/max(1,len(train_ordered)):.0f}%) date={train_race['date']}", flush=True)
         train_field = train_horses.get(train_race["key"], [])
         train_performance = field_performance_features(train_field)
         for h in train_field:
@@ -2217,6 +2225,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                 jockey_stats[h["jockey"]]["top3"] += int(h["finish"] <= 3)
 
     ordered = sorted(test_races.values(), key=lambda r:(r["date"],r["venue"],int(r["race"])))
+    test_progress_every = max(1, len(ordered) // 10)
+    print(f"HOLDOUT_PROGRESS evaluation start races={len(ordered)} dates={len(test_dates)} models={len(models)}", flush=True)
     pending=[]; current=None
     test_calibration_records=[]
     confidence_filter_stats = new_confidence_filter_stats()
@@ -2281,7 +2291,9 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                     jockey_stats[h["jockey"]]["top3"]+=int(h["finish"]<=3)
             update_frame_stats(race, field, frame_stats)
 
-    for race in ordered:
+    for race_index, race in enumerate(ordered, 1):
+        if race_index == 1 or race_index % test_progress_every == 0 or race_index == len(ordered):
+            print(f"HOLDOUT_PROGRESS evaluation {race_index}/{len(ordered)} ({100*race_index/max(1,len(ordered)):.0f}%) date={race['date']}", flush=True)
         if current is not None and race["date"] != current:
             commit(pending); pending=[]
         current=race["date"]
@@ -3480,12 +3492,14 @@ def holdout_validation(races, horses, payouts, final_odds=None):
     ]
     folds=[]
     fold_runtime_seconds = {}
+    print(f"HOLDOUT_PROGRESS folds={len(fold_specs)} available_dates={len(dates)}", flush=True)
     for index,(label,test_start,test_end) in enumerate(fold_specs,1):
         train_dates=[d for d in dates if d < test_start]
         test_dates=[d for d in dates if test_start <= d < test_end]
         if not train_dates or not test_dates:
             continue
         fold_started = time.perf_counter()
+        print(f"HOLDOUT_PROGRESS fold_start={label} train_dates={len(train_dates)} test_dates={len(test_dates)}", flush=True)
         fold_result = evaluate_holdout_fold(
             races,horses,payouts,train_dates,test_dates,final_odds)
         fold_elapsed = round(time.perf_counter() - fold_started, 3)
