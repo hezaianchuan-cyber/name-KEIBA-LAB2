@@ -1895,3 +1895,17 @@ class OddsDivergenceAlignmentTests(unittest.TestCase):
         self.assertEqual(rows[0]["race_key"], "|".join(key))
         self.assertIsNotNone(rows[0]["g2"])
         self.assertEqual(rows[0]["g1_top"]["return"], 200)
+
+    def test_g3_uses_canonical_race_key_for_odds_and_payout_join(self):
+        key = nb.race_key(" 大井 ", "20260301", "01")
+        record = {"race_key": "大井|20260301|01", "date": "2026-03-01",
+                  "scores": [3.0, 2.0, 1.0], "horse_numbers": ["1", "2", "3"]}
+        odds = {key: {"1": 2.0, "2": 4.0, "3": 8.0}}
+        payouts = {key: {"win": [(["1"], 200)]}}
+        rows = g3.score_records([record], odds, payouts, 0.18,
+                                min_divergence=0.0, min_expected_value=0.0,
+                                min_odds_coverage=0.7)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["race_key"], "|".join(key))
+        self.assertIsNotNone(rows[0]["g3"])
+        self.assertEqual(rows[0]["g1_top"]["return"], 200)
