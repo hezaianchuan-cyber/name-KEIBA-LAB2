@@ -1800,6 +1800,37 @@ class ProductionShadowPortfolioParityTests(unittest.TestCase):
         ])
 
 
+class TrioFormation245AllocationTests(unittest.TestCase):
+    def setUp(self):
+        self.ranked = [{"no": str(i)} for i in range(1, 8)]
+        self.tickets = nb.build_trio_formation_2_4_5(self.ranked)
+
+    def test_equal_allocation_keeps_one_unit_per_ticket(self):
+        units = nb.allocate_formation_units(self.tickets, self.ranked, "equal")
+        self.assertEqual(units, [1] * 19)
+        self.assertEqual(sum(units), len(self.tickets))
+
+    def test_rank_weighted_allocation_preserves_race_budget_and_favors_top_ranks(self):
+        equal = nb.allocate_formation_units(self.tickets, self.ranked, "equal")
+        weighted = nb.allocate_formation_units(self.tickets, self.ranked, "rank_weighted_mild")
+        self.assertEqual(sum(weighted), sum(equal))
+        self.assertGreater(max(weighted), 1)
+        top_combo_index = self.tickets.index(["1", "2", "3"])
+        bottom_combo_index = self.tickets.index(["5", "6", "7"])
+        self.assertGreater(weighted[top_combo_index], weighted[bottom_combo_index])
+
+    def test_allocation_diagnostics_compare_same_race_budget(self):
+        payout = {"trio": [(["1", "2", "3"], 5000)]}
+        stats = nb.new_trio_diagnostics()
+        field = [{"no": str(i), "finish": i} for i in range(1, 8)]
+        nb.update_trio_diagnostics(stats, self.ranked, field, payout)
+        result = nb.summarize_trio_diagnostics(stats)["formation_2_4_5"]["allocation_policies"]
+        stakes = {policy: values["stake"] for policy, values in result.items()}
+        self.assertEqual(len(set(stakes.values())), 1)
+        self.assertEqual(stakes["equal"], 1900)
+        self.assertGreater(result["rank_weighted_mild"]["return"], 0)
+
+
 class TrioFormation245Tests(unittest.TestCase):
     def test_245_formation_uses_seven_ranks_and_deduplicates_unordered_combos(self):
         ranked = [{"no": str(i)} for i in range(1, 9)]
