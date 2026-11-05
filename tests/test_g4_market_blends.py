@@ -81,6 +81,8 @@ class PreoffMarketBlendComparisonTests(unittest.TestCase):
         self.assertEqual(report["favorite_changed_races"], 1)
         self.assertEqual(report["winner_odds_shortened_pct"], 100.0)
         self.assertEqual(report["winner_horses_compared"], 1)
+        self.assertEqual(report["nonwinner_horses_compared"], 1)
+        self.assertEqual(report["nonwinner_odds_shortened_pct"], 0.0)
 
     def test_market_edge_conditions_separate_agreement_from_disagreement(self):
         def row(model_hit, market_hit, agree, model_market_rank, market_model_rank):
