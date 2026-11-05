@@ -702,45 +702,75 @@ const LAB_TICKET_STORAGE_KEY='keibaLabTicketPlansV1';
 let remoteLabTicketPlans=[];
 let minuteOddsRows=[];
 let minuteOddsRaceIndex=[];
+let minuteOddsFetchPromise=null;
 async function fetchSupabaseLiveData(dateOverride){
- const selected=String(dateOverride||$('raceDate')?.value||localDateKey()).replace(/-/g,'');
- const day=selected.length===8?selected:localDateKey();
- const d=new Date(Number(day.slice(0,4)),Number(day.slice(4,6))-1,Number(day.slice(6,8)));
- d.setDate(d.getDate()-6);
- const from=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
- const to=day.slice(0,4)+'-'+day.slice(4,6)+'-'+day.slice(6,8);
- const query='?select=id,race_id,race_date,venue,race_number,captured_at,odds_data&race_date=gte.'+from+'&race_date=lte.'+to+'&order=captured_at.desc&limit=2000';
- const response=await fetch(KEIBA_SUPABASE_URL+'/rest/v1/odds_snapshots'+query,{headers:{apikey:KEIBA_SUPABASE_KEY,Authorization:'Bearer '+KEIBA_SUPABASE_KEY,Accept:'application/json'},cache:'no-store'});
- if(!response.ok)throw new Error('1分オッズ取得 HTTP '+response.status);
- const rows=await response.json();
- const oddsMap=new Map(),planMap=new Map(),raceMap=new Map();
- for(const row of rows||[]){
-  const date=String(row.race_date||'').replace(/-/g,'');
-  const id=String(row.race_id||'');
-  const race={id,venue:row.venue,date,race:String(row.race_number||''),time:'',name:'',count:0};
-  if(id&&!raceMap.has(id))raceMap.set(id,race);
-  const plan=row.odds_data?.auto_ticket_plan;
-  if(plan&&plan.raceId){
-   const key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date);
-   if(!planMap.has(key))planMap.set(key,{predictionId:plan.raceId,plan});
+ if(minuteOddsFetchPromise)return minuteOddsFetchPromise;
+ minuteOddsFetchPromise=(async()=>{
+  const selected=String(dateOverride||$('raceDate')?.value||localDateKey()).replace(/-/g,'');
+  const day=selected.length===8?selected:localDateKey();
+  const d=new Date(Number(day.slice(0,4)),Number(day.slice(4,6))-1,Number(day.slice(6,8)));
+  d.setDate(d.getDate()-6);
+  const from=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+  const to=day.slice(0,4)+'-'+day.slice(4,6)+'-'+day.slice(6,8);
+  const cutoff=new Date().toISOString();
+  const pageSize=150,maxRows=2000,rows=[];
+  for(let offset=0;offset<maxRows;offset+=pageSize){
+   const query='?select=id,race_id,race_date,venue,race_number,captured_at,odds_data'
+    +'&race_date=gte.'+from+'&race_date=lte.'+to
+    +'&captured_at=lte.'+encodeURIComponent(cutoff)
+    +'&order=captured_at.desc,id.desc&limit='+pageSize+'&offset='+offset;
+   let response=null,lastError=null;
+   for(let attempt=0;attempt<3;attempt++){
+    try{
+     response=await fetch(KEIBA_SUPABASE_URL+'/rest/v1/odds_snapshots'+query,{
+      headers:{apikey:KEIBA_SUPABASE_KEY,Authorization:'Bearer '+KEIBA_SUPABASE_KEY,Accept:'application/json'},
+      cache:'no-store'
+     });
+     if(response.ok)break;
+     lastError=new Error('1分オッズ取得 HTTP '+response.status);
+     if(response.status<500||attempt===2)throw lastError;
+    }catch(error){
+     lastError=error;
+     if(attempt===2)throw error;
+    }
+    await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)));
+   }
+   if(!response?.ok)throw lastError||new Error('1分オッズ取得に失敗しました');
+   const page=await response.json();
+   rows.push(...(Array.isArray(page)?page:[]));
+   if(!Array.isArray(page)||page.length<pageSize)break;
   }
-  for(const item of row.odds_data?.odds||[]){
-   const key=[id,item.type,item.n1,item.n2,item.n3].map(x=>String(x??'').normalize('NFKC').replace(/\s/g,'')).join('|');
-   if(!oddsMap.has(key))oddsMap.set(key,{id,venue:row.venue,date,race:String(row.race_number||''),type:item.type,n1:item.n1,n2:item.n2,n3:item.n3,odds:Number(item.odds),maxOdds:Number(item.max_odds)||null,popularity:Number(item.popularity)||null,capturedAt:row.captured_at});
+  const oddsMap=new Map(),planMap=new Map(),raceMap=new Map();
+  for(const row of rows){
+   const date=String(row.race_date||'').replace(/-/g,'');
+   const id=String(row.race_id||'');
+   const race={id,venue:row.venue,date,race:String(row.race_number||''),time:'',name:'',count:0};
+   if(id&&!raceMap.has(id))raceMap.set(id,race);
+   const plan=row.odds_data?.auto_ticket_plan;
+   if(plan&&plan.raceId){
+    const key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date);
+    if(!planMap.has(key))planMap.set(key,{predictionId:plan.raceId,plan});
+   }
+   for(const item of row.odds_data?.odds||[]){
+    const key=[id,item.type,item.n1,item.n2,item.n3].map(x=>String(x??'').normalize('NFKC').replace(/\s/g,'')).join('|');
+    if(!oddsMap.has(key))oddsMap.set(key,{id,venue:row.venue,date,race:String(row.race_number||''),type:item.type,n1:item.n1,n2:item.n2,n3:item.n3,odds:Number(item.odds),maxOdds:Number(item.max_odds)||null,popularity:Number(item.popularity)||null,capturedAt:row.captured_at});
+   }
   }
- }
- minuteOddsRows=[...oddsMap.values()];
- minuteOddsRaceIndex=[...raceMap.values()];
- remoteLabTicketPlans=[...planMap.values()];
- refreshRaceChoices();
- const selectedRace=$('raceSelect')?.value;
- if(selectedRace&&typeof analyze==='function')analyze();
- if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
- const latest=rows?.[0]?.captured_at;
- const badge=$('oddsCaptureBadge'),details=$('oddsCaptureDetails');
- if(badge)badge.textContent=rows?.length?'1分取得データ接続中':'1分データ待ち';
- if(details)details.textContent=rows?.length?'最新取得：'+new Date(latest).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})+' ／ 取得レコード '+rows.length+'件 ／ 買い目記録 '+remoteLabTicketPlans.length+'レース':'Supabaseの1分オッズデータはまだありません。';
- return rows?.length||0;
+  minuteOddsRows=[...oddsMap.values()];
+  minuteOddsRaceIndex=[...raceMap.values()];
+  remoteLabTicketPlans=[...planMap.values()];
+  refreshRaceChoices();
+  const selectedRace=$('raceSelect')?.value;
+  if(selectedRace&&typeof analyze==='function')analyze();
+  if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
+  const latest=rows?.[0]?.captured_at;
+  const badge=$('oddsCaptureBadge'),details=$('oddsCaptureDetails');
+  if(badge)badge.textContent=rows.length?'1分取得データ接続中':'1分データ待ち';
+  if(details)details.textContent=rows.length?'最新取得：'+new Date(latest).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})+' ／ 取得レコード '+rows.length+'件'+(rows.length>=maxRows?'（表示上限 '+maxRows+'件）':'')+' ／ 買い目記録 '+remoteLabTicketPlans.length+'レース':'Supabaseの1分オッズデータはまだありません。';
+  return rows.length;
+ })();
+ try{return await minuteOddsFetchPromise;}
+ finally{minuteOddsFetchPromise=null;}
 }
 async function fetchOddsCaptureRuns(){
  const el=$('oddsRunHistory');if(!el)return;
