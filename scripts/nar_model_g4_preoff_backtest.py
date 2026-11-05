@@ -410,6 +410,11 @@ def build_race_evaluation(snapshot, outcome, expected_temperature):
         "blend_market_weight": blend_market_weight,
         "blend_candidates": blend_candidates,
         "runner_diagnostics": runner_diagnostics,
+        "model_market_top_agree": int(model_top == market_top),
+        "model_top_market_rank": market_rank[model_top],
+        "market_favorite_model_rank": model_rank[market_top],
+        "model_top3_hit": int(bool(set(model_order[:3]).intersection(winners))),
+        "market_top3_hit": int(bool(set(market_order[:3]).intersection(winners))),
         "value_ticket": value_ticket,
     }, None
 
@@ -504,6 +509,39 @@ def summarize_rank_disagreement(rows):
             ) if items else None,
         }
     return result
+
+
+def summarize_market_edge_conditions(rows):
+    """Find race contexts where the model narrows or widens the market gap."""
+    def metric(items):
+        blend = {}
+        for key in ("0.25", "0.50", "0.75"):
+            tickets = [
+                row.get("blend_candidates", {}).get(key, {}).get("top")
+                for row in items
+                if row.get("blend_candidates", {}).get(key, {}).get("top")
+            ]
+            blend[key] = summarize(tickets)
+        return {
+            "races": len(items),
+            "model_top1_hit_rate_pct": summarize([row["model_top"] for row in items])["hit_rate_pct"],
+            "market_favorite_hit_rate_pct": summarize([row["market_top"] for row in items])["hit_rate_pct"],
+            "model_top3_coverage_pct": round(100 * sum(row.get("model_top3_hit", 0) for row in items) / len(items), 2) if items else None,
+            "market_top3_coverage_pct": round(100 * sum(row.get("market_top3_hit", 0) for row in items) / len(items), 2) if items else None,
+            "blend_top1": blend,
+        }
+
+    groups = {
+        "model_agrees_with_market_favorite": [row for row in rows if row.get("model_market_top_agree") == 1],
+        "model_disagrees_with_market_favorite": [row for row in rows if row.get("model_market_top_agree") == 0],
+        "model_top_is_market_rank_1_to_3": [row for row in rows if 1 <= row.get("model_top_market_rank", 0) <= 3],
+        "model_top_is_market_rank_4_to_6": [row for row in rows if 4 <= row.get("model_top_market_rank", 0) <= 6],
+        "model_top_is_market_rank_7_plus": [row for row in rows if row.get("model_top_market_rank", 0) >= 7],
+        "market_favorite_is_model_rank_1_to_3": [row for row in rows if 1 <= row.get("market_favorite_model_rank", 0) <= 3],
+        "market_favorite_is_model_rank_4_to_6": [row for row in rows if 4 <= row.get("market_favorite_model_rank", 0) <= 6],
+        "market_favorite_is_model_rank_7_plus": [row for row in rows if row.get("market_favorite_model_rank", 0) >= 7],
+    }
+    return {name: metric(items) for name, items in groups.items()}
 
 
 def summarize_bucket_movement(joined):
@@ -712,6 +750,10 @@ def main():
         "market_rank_disagreement": {
             "development": summarize_rank_disagreement(latest_dev),
             "holdout": summarize_rank_disagreement(latest_hold),
+        },
+        "market_edge_conditions": {
+            "development": summarize_market_edge_conditions(latest_dev),
+            "holdout": summarize_market_edge_conditions(latest_hold),
         },
         "time_bucket_market_movement": summarize_bucket_movement(joined),
         "closest_to_post": {
