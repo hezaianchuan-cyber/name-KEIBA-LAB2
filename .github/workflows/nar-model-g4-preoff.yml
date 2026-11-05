@@ -33,6 +33,25 @@ jobs:
         run: python3 -m py_compile scripts/nar_model_g4_preoff_backtest.py
       - name: Run G4 with captured pre-off odds only
         run: python3 scripts/nar_model_g4_preoff_backtest.py
+      - name: Build daily performance review from refreshed G4 results
+        run: python3 scripts/nar_daily_review.py
+      - name: Validate daily review
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("data/daily-review.json").read_text(encoding="utf-8"))
+          required = ("generated_at", "as_of_date_jst", "daily_official_results",
+                      "prospective_preoff_evaluation_G4", "weight_research", "warnings")
+          missing = [key for key in required if key not in report]
+          if missing:
+              raise SystemExit("Daily review schema missing: " + ", ".join(missing))
+          g4 = report["prospective_preoff_evaluation_G4"]
+          if g4.get("generated_at") != report["prospective_preoff_evaluation_G4"].get("generated_at"):
+              raise SystemExit("Daily review G4 timestamp is invalid")
+          print("Validated refreshed daily review:", report["status"], report["as_of_date_jst"],
+                "G4=", g4.get("generated_at"))
+          PY
       - name: Publish G4 report
         shell: bash
         run: |
@@ -40,16 +59,18 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           cp data/model-g4-preoff-backtest.json /tmp/model-g4-preoff-backtest.json
+          cp data/daily-review.json /tmp/daily-review.json
           for attempt in 1 2 3 4 5; do
             git fetch origin main
             git reset --hard origin/main
             cp /tmp/model-g4-preoff-backtest.json data/model-g4-preoff-backtest.json
-            git add data/model-g4-preoff-backtest.json
+            cp /tmp/daily-review.json data/daily-review.json
+            git add data/model-g4-preoff-backtest.json data/daily-review.json
             if git diff --cached --quiet; then
               echo "G4 report is already current."
               exit 0
             fi
-            git commit -m "Publish G4 real pre-off odds backtest"
+            git commit -m "Publish G4 backtest and refreshed daily review"
             if git push origin HEAD:main; then
               exit 0
             fi
