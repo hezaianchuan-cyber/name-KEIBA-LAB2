@@ -185,10 +185,22 @@ def load_final_odds_archives(start=None, end=None):
     end = end or END
     output = defaultdict(dict)
     months = list(month_iter(start, end))
+    cache_dir = Path(os.environ.get("NAR_ODDS_CACHE_DIR", ROOT / ".cache" / "nar-odds-monthly"))
+    current = dt.date.today()
+
     def download_odds_month(y, m):
         url = "https://www.keiba.go.jp/KeibaWeb/DataDownload/OddsDataDownload?" + urllib.parse.urlencode({
             "type": "monthly", "k_year": y, "k_month": m, "k_day": 1
         })
+        cacheable = (y, m) < (current.year, current.month)
+        cache_path = cache_dir / f"odds-{y}-{m:02d}.zip"
+        if cacheable and cache_path.is_file():
+            try:
+                cached = cache_path.read_bytes()
+                if cached.startswith(b"PK"):
+                    return (y, m), cached, "hit"
+            except OSError:
+                pass
         req = urllib.request.Request(url, headers={"User-Agent": UA, "Referer": "https://www.keiba.go.jp/"})
         last = None
         for attempt in range(3):
@@ -197,15 +209,21 @@ def load_final_odds_archives(start=None, end=None):
                     blob = res.read()
                 if not blob.startswith(b"PK"):
                     raise RuntimeError(f"{y}-{m:02d}: odds response is not a ZIP archive")
-                return (y, m), blob
+                if cacheable:
+                    cache_dir.mkdir(parents=True, exist_ok=True)
+                    temp_path = cache_path.with_suffix(cache_path.suffix + ".tmp")
+                    temp_path.write_bytes(blob)
+                    os.replace(temp_path, cache_path)
+                return (y, m), blob, "miss" if cacheable else "current_month_refresh"
             except Exception as exc:
                 last = exc
                 time.sleep(2 * (attempt + 1))
         raise RuntimeError(f"{y}-{m:02d}: odds download failed: {last}")
+
     downloaded = []
     with ThreadPoolExecutor(max_workers=3) as pool:
         archives = list(pool.map(lambda ym: download_odds_month(*ym), months))
-    for (year, month), blob in archives:
+    for (year, month), blob, cache_status in archives:
         rows_seen = 0
         with zipfile.ZipFile(io.BytesIO(blob)) as zf:
             for info in zf.infolist():
@@ -222,14 +240,14 @@ def load_final_odds_archives(start=None, end=None):
                     date = dt.datetime.strptime(key[1], "%Y%m%d").date()
                     if date < start or date > end:
                         continue
-                    horse_no = re.sub(r"\D", "", str(row[4] or ""))
+                    horse_no = re.sub(r"\\D", "", str(row[4] or ""))
                     odds = number(row[7])
                     if not horse_no or odds is None or odds <= 0:
                         continue
                     output[key][str(int(horse_no))] = odds
                     rows_seen += 1
         downloaded.append({"month": f"{year}-{month:02d}", "bytes": len(blob),
-                           "win_odds_rows": rows_seen})
+                           "win_odds_rows": rows_seen, "odds_cache": cache_status})
     return output, downloaded
 
 
