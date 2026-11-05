@@ -3869,10 +3869,16 @@ def main():
                             for fold in prior_feature_folds)
     baseline_dev_top3 = sum(int(((fold.get("models") or {}).get("C_performance_pace") or {}).get("winner_top3") or 0)
                             for fold in prior_feature_folds)
-    baseline_dev_trio_stake = sum(int((((((fold.get("models") or {}).get("C_performance_pace") or {}).get("bet_types") or {}).get("trio") or {}).get("stake") or 0)
-                                  for fold in prior_feature_folds)
-    baseline_dev_trio_return = sum(int((((((fold.get("models") or {}).get("C_performance_pace") or {}).get("bet_types") or {}).get("trio") or {}).get("return") or 0)
-                                   for fold in prior_feature_folds)
+    def pooled_trio_amount(model_name, field_name):
+        total = 0
+        for fold in prior_feature_folds:
+            metrics = ((fold.get("models") or {}).get(model_name) or {})
+            trio = ((metrics.get("bet_types") or {}).get("trio") or {})
+            total += int(trio.get(field_name) or 0)
+        return total
+
+    baseline_dev_trio_stake = pooled_trio_amount("C_performance_pace", "stake")
+    baseline_dev_trio_return = pooled_trio_amount("C_performance_pace", "return")
     baseline_dev_top3_rate = round(100 * baseline_dev_top3 / baseline_dev_races, 2) if baseline_dev_races else None
     baseline_dev_top1_rate = round(100 * baseline_dev_top1 / baseline_dev_races, 2) if baseline_dev_races else None
     baseline_dev_trio_roi = round(100 * baseline_dev_trio_return / baseline_dev_trio_stake, 2) if baseline_dev_trio_stake else None
@@ -3894,10 +3900,8 @@ def main():
                         for fold in prior_feature_folds)
         top3_hits = sum(int(((fold.get("models") or {}).get(name) or {}).get("winner_top3") or 0)
                         for fold in prior_feature_folds)
-        trio_stake = sum(int((((((fold.get("models") or {}).get(name) or {}).get("bet_types") or {}).get("trio") or {}).get("stake") or 0)
-                          for fold in prior_feature_folds)
-        trio_return = sum(int((((((fold.get("models") or {}).get(name) or {}).get("bet_types") or {}).get("trio") or {}).get("return") or 0)
-                           for fold in prior_feature_folds)
+        trio_stake = pooled_trio_amount(name, "stake")
+        trio_return = pooled_trio_amount(name, "return")
         feature_weight_rows[name] = {
             "feature": feature, "multiplier": multiplier,
             "development_folds": fold_rows,
