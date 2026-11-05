@@ -35,6 +35,18 @@ class TrioNarrowingPilotTests(unittest.TestCase):
             self.assertEqual(sum(units), 19)
             self.assertTrue(all(unit >= 1 for unit in units))
 
+    def test_rank_divergence_sign_and_bands(self):
+        result = pilot.rank_divergence(
+            ["1", "2", "3", "4", "5", "6", "7"],
+            ["3", "2", "1", "4", "5", "6", "7"],
+        )
+        self.assertEqual(result["overlap_top7"], 7)
+        self.assertEqual(result["rank_gaps"]["1"], 2)
+        self.assertEqual(result["rank_gaps"]["3"], -2)
+        self.assertEqual(pilot.divergence_band(7), "agreement_6_7")
+        self.assertEqual(pilot.divergence_band(4), "moderate_4_5")
+        self.assertEqual(pilot.divergence_band(2), "high_divergence_0_3")
+
     def test_market_rank_uses_explicit_popularity(self):
         odds = [
             {"type": "単勝", "n1": "3", "odds": 2.0, "popularity": "2"},
