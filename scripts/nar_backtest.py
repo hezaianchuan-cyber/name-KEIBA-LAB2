@@ -2473,7 +2473,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                 relative_parts = {
                     h["no"]: score_runner(h,history,sire_stats,jockey_stats,race,weights,
                                           include_recent_history=include_recent_history,
-                                          parts_cache=race_feature_cache, performance_cache=race_performance_cache)[1]
+                                          parts_cache=race_feature_cache)[1]
                     for h in field
                 }
                 relative_scores = race_relative_scores(relative_parts, weights)
@@ -2512,7 +2512,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             else:
                 scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights,
                             include_recent_history=include_recent_history,
-                            parts_cache=race_feature_cache, performance_cache=race_performance_cache)[0],h) for h in field]
+                            parts_cache=race_feature_cache)[0],h) for h in field]
             if model_name in ("C_performance_pace", "C_performance_pace_no_frame", "trained_with_pace", "trained_performance_with_pace", "trained_with_conditions_and_pace") or model_name.startswith("ablate_") or model_name in FEATURE_WEIGHT_NAMES:
                 scored = [(score + race_pace_delta.get(h["no"], 0.0), h) for score, h in scored]
             if model_name == "trained":
