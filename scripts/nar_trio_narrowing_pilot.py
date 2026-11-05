@@ -352,3 +352,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# Pilot revision: trigger a fresh Actions run after workflow registration.
