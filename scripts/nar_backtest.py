@@ -1041,14 +1041,9 @@ def build_fixed_tickets(ranked):
 
 
 
-def role_specific_ranking(scored, history, target_finish, blend):
-    """Rank a finishing role from strictly prior results and role-relevant race shape.
-
-    First-place candidates get a modest early-position signal; second-place
-    candidates get a balanced in-running-position signal; third-place candidates
-    get late-position/closing-speed signals. Missing signals are neutral.
-    """
-    ranked = []
+def role_specific_features(scored, history, target_finish):
+    """Compute blend-independent role form once per horse and finish position."""
+    features = []
     for base_score, horse in scored:
         past = history.get(horse["name"], [])[-5:]
         values, weights = [], []
@@ -1067,10 +1062,6 @@ def role_specific_ranking(scored, history, target_finish, blend):
                 positions = [1.0 - value for value in (first_pos, last_pos) if value is not None]
                 role_signal = sum(positions) / len(positions) if positions else 0.5
             else:
-                # Third-place candidates often differ from winners: retain a
-                # late-position signal, but also reward runners that made up
-                # ground from the first to last corner. Normalize the gain
-                # signal to [0, 1] and renormalize weights when data is missing.
                 gain = (0.5 + 0.5 * (first_pos - last_pos)
                         if first_pos is not None and last_pos is not None else None)
                 signals = [
@@ -1092,9 +1083,21 @@ def role_specific_ranking(scored, history, target_finish, blend):
             role_form = reliability * role_form + (1.0 - reliability) * 0.5
         else:
             role_form = 0.5
-        adjusted = (1.0 - blend) * base_score + blend * role_form
-        ranked.append((adjusted, horse))
+        features.append((base_score, role_form, horse))
+    return features
+
+
+def rank_role_specific_features(features, blend):
+    """Apply a blend to precomputed role features and sort without rereading history."""
+    ranked = [((1.0 - blend) * base_score + blend * role_form, horse)
+              for base_score, role_form, horse in features]
     return [horse for _, horse in sorted(ranked, key=lambda item:item[0], reverse=True)]
+
+
+def role_specific_ranking(scored, history, target_finish, blend):
+    """Compatibility wrapper for callers that need a single role ranking."""
+    return rank_role_specific_features(
+        role_specific_features(scored, history, target_finish), blend)
 
 
 def build_role_trifecta_formation(role_rankings, first_count, second_count, third_count):
@@ -1182,16 +1185,22 @@ def new_role_trifecta_diagnostics():
     }
 
 
-def update_role_trifecta_diagnostics(bucket, scored, history, payout, role_rankings_cache=None):
+def update_role_trifecta_diagnostics(bucket, scored, history, payout,
+                                       role_rankings_cache=None, role_features_cache=None):
     for blend_key, formations in bucket.items():
         blend = float(blend_key)
         if role_rankings_cache is not None and blend_key in role_rankings_cache:
             role_rankings = role_rankings_cache[blend_key]
         else:
-            role_rankings = {
-                role: role_specific_ranking(scored, history, role, blend)
-                for role in (1,2,3)
-            }
+            role_rankings = {}
+            for role in (1, 2, 3):
+                if role_features_cache is not None and role in role_features_cache:
+                    role_features = role_features_cache[role]
+                else:
+                    role_features = role_specific_features(scored, history, role)
+                    if role_features_cache is not None:
+                        role_features_cache[role] = role_features
+                role_rankings[role] = rank_role_specific_features(role_features, blend)
             if role_rankings_cache is not None:
                 role_rankings_cache[blend_key] = role_rankings
         for formation, stats in formations.items():
@@ -2404,9 +2413,11 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             # Walk-forward selection may choose baseline or any trained variant;
             # restricting this to "trained" leaves the selected model's report empty.
             role_rankings_cache = {}
+            role_features_cache = {}
             update_role_trifecta_diagnostics(
                 m["role_trifecta_diagnostics"], scored, history, payout,
-                role_rankings_cache=role_rankings_cache)
+                role_rankings_cache=role_rankings_cache,
+                role_features_cache=role_features_cache)
             role_rankings_for_positions = role_rankings_cache["0.10"]
             update_finish_position_diagnostics(
                 m["finish_position_diagnostics"], ranked, role_rankings_for_positions, field)
@@ -2439,10 +2450,14 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                 # the same wide/exacta/trio ticket definitions as the baseline.
                 if top_probability + 1e-12 >= integrated_stats["confidence_threshold"]:
                     role_blend = integrated_stats["role_blend"]
-                    role_rankings = {
-                        target: role_specific_ranking(scored, history, target, role_blend)
-                        for target in (1, 2, 3)
-                    }
+                    role_rankings = (
+                        role_rankings_cache[f"{role_blend:.2f}"]
+                        if f"{role_blend:.2f}" in role_rankings_cache else {
+                            target: rank_role_specific_features(
+                                role_features_cache[target], role_blend)
+                            for target in (1, 2, 3)
+                        }
+                    )
                     e_tickets = dict(ticket_map)
                     e_tickets["trifecta"] = build_role_trifecta_formation(
                         role_rankings, *integrated_stats["trifecta_formation"])
