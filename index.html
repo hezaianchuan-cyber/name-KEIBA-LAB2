@@ -1342,6 +1342,7 @@ function generateTickets(){
  const horseHtml='<h3>予想上位馬</h3><div class="tablewrap"><table><thead><tr><th>順位</th><th>馬番・馬名</th><th>評価点</th><th>'+(learnedModelLoaded?'学習モデル推定勝率':'参考スコア比率')+'</th><th>単勝オッズ</th></tr></thead><tbody>'+top.map((h,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(h.horseNo+'番 '+(h.name||''))+'</td><td>'+(Number(h.score)||0).toFixed(1)+'</td><td>'+formatPct(h.modelProb)+'</td><td>'+formatOdds(Number(h.odds)>0?Number(h.odds):null)+'</td></tr>').join('')+'</tbody></table></div>';
  const allHtml='<h3>3連複候補一覧（'+main.length+'点）</h3><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+main.map(x=>'<tr><td><b>'+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';
  // Freeze the exact recommendation at prediction time. Never recalculate this snapshot after odds/results change.
+ let manualEditorPlan=null;
  if(raceId){
    const race=[...(db.races||[]),...(oddsRaceIndex||[]),...(minuteOddsRaceIndex||[])].find(r=>String(r.id)===String(raceId))||{};
    const previousPlan=loadLabTicketPlans().find(x=>String(x.plan?.raceId)===String(raceId)&&labLedgerDateKey(x.plan?.date)===labLedgerDateKey(race.date||$('raceDate')?.value))?.plan;
@@ -1356,7 +1357,8 @@ function generateTickets(){
      runnerDraws:field.map(h=>({horseNo:String(h.horseNo),frameNo:Number(h.frameNo??h.frame)||null,score:Number(h.score)||0,winProbability:Number(h.modelProb)||0})),
      dataStatus:'COMPLETE',
      modelLoaded:!!learnedModelLoaded,oddsCaptured:oddsRows.length>0,oddsRows:oddsRows.length,oddsMatchedCandidates:oddsMatchedCount,validatedBetTypes:validatedTypeCount
-   };
+   }
+   manualEditorPlan=snapshot;;
    let prediction=(db.predictions||[]).find(p=>String(p.id)===String(raceId)&&normDate(p.date)===normDate(snapshot.date)&&!p.learned);
    if(!prediction){
      const raceRunners=field.map(h=>({no:String(h.horseNo),prob:Number(h.modelProb)||0,parts:h.parts||{}}));
@@ -1371,7 +1373,7 @@ function generateTickets(){
    else out.insertAdjacentHTML('afterbegin','<p class="notice">保存確認済み：'+esc(snapshot.date)+' '+esc(snapshot.venue)+' '+esc(snapshot.raceNo)+'R／'+(snapshot.decision==='BET'?snapshot.tickets.length+'点・'+snapshot.totalStake.toLocaleString()+'円':'見送り')+'。保存買い目タブから再確認できます。</p>');
  }
  out.innerHTML='<details style="margin:0 0 10px"><summary>予想上位馬・評価を見る（'+top.length+'頭）</summary>'+horseHtml+'</details>'+horseExplanationHtml+selectedHtml+'<details style="margin-top:10px"><summary>3連複候補一覧・オッズ・EVを見る（'+main.length+'点）</summary>'+mainHtml+'</details>'+roiContextHtml+'<p class="sub" style="margin-top:8px">LABの自動買い目は3連複のみ。候補確率は近似値です。オッズ未取得・モデル未校正・検証基準未達の場合は見送り。候補 '+candidates.length+'点／オッズ照合済み '+candidates.filter(x=>x.ev!=null).length+'点。</p>';
- renderManualTicketEditor(snapshot,field);
+ renderManualTicketEditor(manualEditorPlan,field);
 }
 let autoDailyBatchBusy=false;
 async function autoAnalyzeAllTodayRaces(){
