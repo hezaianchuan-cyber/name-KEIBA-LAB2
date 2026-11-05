@@ -1469,12 +1469,12 @@ def update_trio_diagnostics(bucket, ranked, field, payout):
             narrowed["hits"] += funded_hits
             narrowed["hit_races"] += int(funded_hits > 0)
             narrowed["stake"] += 1900 if selected else 0
-            narrowed["return"] += sum(100 * unit * pay for unit, pay in zip(units, selected_returns))
+            narrowed["return"] += sum(unit * pay for unit, pay in zip(units, selected_returns))
         for policy in FORMATION_ALLOCATION_STRENGTHS:
             allocation = bucket["formation_2_4_5_allocations"][policy]
             units = allocate_formation_units(tickets, ranked, policy)
             funded_wins = sum(1 for unit, pay in zip(units, ticket_returns) if unit > 0 and pay > 0)
-            allocated_return = sum(100 * unit * pay for unit, pay in zip(units, ticket_returns))
+            allocated_return = sum(unit * pay for unit, pay in zip(units, ticket_returns))
             allocation["races"] += 1
             allocation["tickets"] += len(tickets)
             allocation["funded_tickets"] += sum(1 for unit in units if unit > 0)
