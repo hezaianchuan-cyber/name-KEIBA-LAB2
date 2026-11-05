@@ -58,3 +58,17 @@ class TrioNarrowingPilotTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+    def test_model_version_counts_are_reported_separately(self):
+        rows = [
+            {"model_version": "nar-v7"},
+            {"model_version": "nar-v8"},
+            {"model_version": "nar-v8"},
+            {"model_version": "nar-v9"},
+            {},
+        ]
+        self.assertEqual(
+            pilot.count_model_versions(rows),
+            {"nar-v7": 1, "nar-v8": 2, "nar-v9": 1, "unknown": 1},
+        )
