@@ -169,8 +169,9 @@ def allocate_budget_units(ticket_count, total_units=BUDGET_UNITS):
     return [base + (1 if i < remainder else 0) for i in range(ticket_count)]
 
 
-def evaluate_tickets(races, selector, ticket_count):
+def evaluate_tickets(races, selector, ticket_count, candidate_strategy=None):
     hit_races = 0
+    candidate_coverage_hits = 0
     stake = 0
     returned = 0
     total_tickets = 0
@@ -181,6 +182,11 @@ def evaluate_tickets(races, selector, ticket_count):
         payouts = race["payouts"]
         hit = any(tuple(combo) in payouts for combo in tickets)
         hit_races += int(hit)
+        if candidate_strategy:
+            candidate_horses = set(race["candidate_horses"][candidate_strategy])
+            candidate_coverage_hits += int(any(
+                set(combo).issubset(candidate_horses) for combo in payouts
+            ))
         units = allocate_budget_units(len(tickets))
         stake += BUDGET_UNITS * UNIT_JPY
         total_tickets += len(tickets)
@@ -193,6 +199,8 @@ def evaluate_tickets(races, selector, ticket_count):
         "races": n,
         "hit_races": hit_races,
         "race_hit_rate_pct": round(100 * hit_races / n, 2) if n else None,
+        "candidate_top3_coverage_hits": candidate_coverage_hits,
+        "candidate_top3_coverage_pct": round(100 * candidate_coverage_hits / n, 2) if n and candidate_strategy else None,
         "tickets_per_race": ticket_count,
         "tickets_total": total_tickets,
         "stake_jpy": stake,
@@ -221,12 +229,17 @@ def build_race_strategies(snapshot, payouts, temperature):
         strategies[f"blend_{weight:.2f}"] = rank_trio_combinations(
             blend_probabilities(model, market, weight)
         )
+    candidate_horses = {
+        name: sorted({no for item in ranked for no in item["combo"]}, key=int)
+        for name, ranked in strategies.items()
+    }
     return {
         "race_key": snapshot["race_key"],
         "date": snapshot["race_key"].split("|")[1],
         "model_version": snapshot.get("model_version") or "unknown",
         "payouts": payouts,
         "strategies": strategies,
+        "candidate_horses": candidate_horses,
     }
 
 
@@ -261,6 +274,7 @@ def main():
                 races,
                 lambda race, strategy=name: select_top_tickets(race["strategies"][strategy], 100),
                 count,
+                candidate_strategy=name,
             )
             for count in TICKET_COUNTS
         }
@@ -276,6 +290,7 @@ def main():
                         subset,
                         lambda race, strategy=name: select_top_tickets(race["strategies"][strategy], 100),
                         count,
+                        candidate_strategy=name,
                     )
                     for count in TICKET_COUNTS
                 }
@@ -291,6 +306,7 @@ def main():
             "candidate_pool": "top seven horses by each strategy's blended win probability",
             "candidate_combinations_scored": "all 35 unordered triples from the seven-horse pool",
             "combo_score": "sum of six Plackett-Luce ordered top-three probabilities",
+            "candidate_coverage": "whether all three official top-three horses are contained in the strategy's top-seven candidate pool",
             "model_probability": "saved raw model scores recalibrated with validated G1 temperature",
             "market_probability": "normalized inverse captured pre-off win odds on the same runner intersection",
             "market_weights": list(MARKET_WEIGHTS),
