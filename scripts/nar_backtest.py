@@ -459,10 +459,14 @@ def field_performance_features(field):
 def score_runner_performance(h, history, sire_stats, jockey_stats, race, model_weights,
                              margin_weight=0.10, closing_weight=0.10,
                              time_weight=0.0, include_recent_history=True,
-                             going_weight=0.0):
-    """B score blended with strictly prior margin/closing-speed form."""
+                             going_weight=0.0, parts_cache=None):
+    """B score blended with strictly prior margin/closing-speed form.
+
+    parts_cache is scoped to one race. Feature values depend on prior history,
+    not on the candidate weight vector, so challengers can reuse them safely.
+    """
     base_score, parts = score_runner(h, history, sire_stats, jockey_stats, race,
-                                     model_weights, include_recent_history)
+                                     model_weights, include_recent_history, parts_cache)
     past = history.get(h["name"], [])[-5:] if include_recent_history else []
     def recent_average(key):
         values = [number(row.get(key)) for row in past]
@@ -520,34 +524,43 @@ def score_runner_d(h, history, sire_stats, jockey_stats, race, model_weights,
                                     include_recent_history=include_recent_history)
 
 
-def score_runner(h, history, sire_stats, jockey_stats, race, model_weights, include_recent_history=True):
-    past = history.get(h["name"], [])[-5:] if include_recent_history else []
-    if past:
-        quality_rows = [rank_quality(x.get("finish"), x.get("field_size")) for x in past]
-        quality_rows = [q for q in quality_rows if q is not None]
-        recency_weights = list(range(1, len(quality_rows)+1))
-        weighted_form = (sum(q*w for q,w in zip(quality_rows,recency_weights))/sum(recency_weights)) if quality_rows else 45
-        recent = past[-3:]
-        top3 = sum(1 for x in recent if x.get("finish") and x["finish"] <= 3) / len(recent)
-        form = 0.75*weighted_form + 0.25*top3*100 if quality_rows else 45
-    else:
-        form = 45
-    venue_runs = [x for x in past if x.get("venue") == race["venue"] and x.get("finish")]
-    venue_quality = [rank_quality(x.get("finish"), x.get("field_size")) for x in venue_runs]
-    venue_quality = [q for q in venue_quality if q is not None]
-    venue_score = sum(venue_quality)/len(venue_quality) if venue_quality else 48
-    distance_runs = [x for x in past if race.get("distance") and x.get("distance") and abs(x["distance"]-race["distance"]) <= 200 and x.get("finish")]
-    distance_quality = [rank_quality(x.get("finish"), x.get("field_size")) for x in distance_runs]
-    distance_quality = [q for q in distance_quality if q is not None]
-    distance_score = sum(distance_quality)/len(distance_quality) if distance_quality else 48
-    sire = sire_stats[h["sire"]] if h["sire"] else {"runs": 0, "top3": 0}
-    sire_score = 100 * smoothed_rate(sire["top3"], sire["runs"])
-    j = jockey_stats[h["jockey"]] if h["jockey"] else {"runs": 0, "top3": 0}
-    jockey_score = 100 * smoothed_rate(j["top3"], j["runs"])
-    age = h.get("age")
-    age_score = 72 if age is not None and 4 <= age <= 6 else 58 if age in (3,7) else 45
-    parts = {"form":form/100,"venue":venue_score/100,"distance":distance_score/100,
-             "sire":sire_score/100,"jockey":jockey_score/100,"age":age_score/100}
+def score_runner(h, history, sire_stats, jockey_stats, race, model_weights,
+                include_recent_history=True, parts_cache=None):
+    # One cache is created per race and shared by every model candidate. The
+    # feature vector is independent of model_weights; only the final dot product
+    # changes between C and its challengers.
+    cache_key = (str(h.get("no", "")), bool(include_recent_history))
+    parts = parts_cache.get(cache_key) if parts_cache is not None else None
+    if parts is None:
+        past = history.get(h["name"], [])[-5:] if include_recent_history else []
+        if past:
+            quality_rows = [rank_quality(x.get("finish"), x.get("field_size")) for x in past]
+            quality_rows = [q for q in quality_rows if q is not None]
+            recency_weights = list(range(1, len(quality_rows)+1))
+            weighted_form = (sum(q*w for q,w in zip(quality_rows,recency_weights))/sum(recency_weights)) if quality_rows else 45
+            recent = past[-3:]
+            top3 = sum(1 for x in recent if x.get("finish") and x["finish"] <= 3) / len(recent)
+            form = 0.75*weighted_form + 0.25*top3*100 if quality_rows else 45
+        else:
+            form = 45
+        venue_runs = [x for x in past if x.get("venue") == race["venue"] and x.get("finish")]
+        venue_quality = [rank_quality(x.get("finish"), x.get("field_size")) for x in venue_runs]
+        venue_quality = [q for q in venue_quality if q is not None]
+        venue_score = sum(venue_quality)/len(venue_quality) if venue_quality else 48
+        distance_runs = [x for x in past if race.get("distance") and x.get("distance") and abs(x["distance"]-race["distance"]) <= 200 and x.get("finish")]
+        distance_quality = [rank_quality(x.get("finish"), x.get("field_size")) for x in distance_runs]
+        distance_quality = [q for q in distance_quality if q is not None]
+        distance_score = sum(distance_quality)/len(distance_quality) if distance_quality else 48
+        sire = sire_stats[h["sire"]] if h["sire"] else {"runs": 0, "top3": 0}
+        sire_score = 100 * smoothed_rate(sire["top3"], sire["runs"])
+        j = jockey_stats[h["jockey"]] if h["jockey"] else {"runs": 0, "top3": 0}
+        jockey_score = 100 * smoothed_rate(j["top3"], j["runs"])
+        age = h.get("age")
+        age_score = 72 if age is not None and 4 <= age <= 6 else 58 if age in (3,7) else 45
+        parts = {"form":form/100,"venue":venue_score/100,"distance":distance_score/100,
+                 "sire":sire_score/100,"jockey":jockey_score/100,"age":age_score/100}
+        if parts_cache is not None:
+            parts_cache[cache_key] = parts
     score = sum(model_weights.get(k, 0.0)*v for k,v in parts.items())
     return score, parts
 
@@ -2226,12 +2239,14 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
         if not payout or not payout.get("win"): continue
         winners={numbers[0] for numbers, _ in payout.get("win", [])}
         if not winners: continue
+        race_feature_cache = {}
         for model_name,weights in models.items():
             include_recent_history = model_name != "trained_no_recent_history"
             if model_name == "trained_race_relative":
                 relative_parts = {
                     h["no"]: score_runner(h,history,sire_stats,jockey_stats,race,weights,
-                                          include_recent_history=include_recent_history)[1]
+                                          include_recent_history=include_recent_history,
+                                          parts_cache=race_feature_cache)[1]
                     for h in field
                 }
                 relative_scores = race_relative_scores(relative_parts, weights)
@@ -2242,18 +2257,21 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                 scored = [
                     (score_runner_performance(
                         h, history, sire_stats, jockey_stats, race, reduced_weights,
-                        0.10, 0.10, 0.10, include_recent_history, going_weight=0.10)[0], h)
+                        0.10, 0.10, 0.10, include_recent_history, going_weight=0.10,
+                        parts_cache=race_feature_cache)[0], h)
                     for h in field
                 ]
             elif model_name in ("B_condition", "trained_with_conditions", "trained_with_conditions_and_pace"):
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
-                            0.0,0.0,0.0,include_recent_history,going_weight=0.10)[0],h) for h in field]
+                            0.0,0.0,0.0,include_recent_history,going_weight=0.10,
+                            parts_cache=race_feature_cache)[0],h) for h in field]
             elif model_name in ("C_performance_pace", "C_performance_pace_no_frame") or model_name in FEATURE_WEIGHT_NAMES:
                 scored=[]
                 for h in field:
                     performance_score = score_runner_performance(
                         h, history, sire_stats, jockey_stats, race, weights,
-                        0.10, 0.10, 0.10, include_recent_history, going_weight=0.10)[0]
+                        0.10, 0.10, 0.10, include_recent_history, going_weight=0.10,
+                        parts_cache=race_feature_cache)[0]
                     if model_name == "C_performance_pace" or model_name in FEATURE_WEIGHT_NAMES:
                         performance_score = blend_frame_score(
                             performance_score, race, h, frame_stats)
@@ -2261,10 +2279,12 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             elif model_name in performance_blends:
                 margin_weight, closing_weight, time_weight = performance_blends[model_name]
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
-                            margin_weight,closing_weight,time_weight,include_recent_history)[0],h) for h in field]
+                            margin_weight,closing_weight,time_weight,include_recent_history,
+                            parts_cache=race_feature_cache)[0],h) for h in field]
             else:
                 scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights,
-                            include_recent_history=include_recent_history)[0],h) for h in field]
+                            include_recent_history=include_recent_history,
+                            parts_cache=race_feature_cache)[0],h) for h in field]
             if model_name in ("C_performance_pace", "C_performance_pace_no_frame", "trained_with_pace", "trained_performance_with_pace", "trained_with_conditions_and_pace") or model_name.startswith("ablate_") or model_name in FEATURE_WEIGHT_NAMES:
                 _, _, pace_delta = pace_adjustments(field, history)
                 scored = [(score + pace_delta.get(h["no"], 0.0), h) for score, h in scored]
