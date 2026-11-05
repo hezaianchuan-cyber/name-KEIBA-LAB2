@@ -252,9 +252,14 @@ def main():
             if coverage >= MIN_ODDS_COVERAGE:
                 alignment["records_with_70pct_odds_coverage"] += 1
                 data_ready_dates.append(record["date"])
-    evaluated = (score_records(aligned, odds_by_race, payouts, temperature,
-                                selected_divergence, selected_ev, MIN_ODDS_COVERAGE)
-                 if chosen else [])
+    # Always retain aligned G1/market benchmark rows, even when no G2/G3
+    # threshold qualifies. Infinite thresholds suppress value selections only.
+    evaluated = score_records(
+        aligned, odds_by_race, payouts, temperature,
+        selected_divergence if chosen else math.inf,
+        selected_ev if chosen else math.inf,
+        MIN_ODDS_COVERAGE,
+    )
     development = [r for r in evaluated if r["date"] <= dev_end]
     holdout = [r for r in evaluated if r["date"] >= holdout_start]
     def flatten(rows, field):
@@ -276,7 +281,8 @@ def main():
         "data_alignment_diagnostics": alignment,
         "races_with_final_odds_and_outcomes": alignment["records_with_odds_and_win_payout"],
         "races_with_70pct_odds_coverage_and_outcomes": alignment["records_with_70pct_odds_coverage"],
-        "races_evaluated_after_selected_strategy": len(evaluated),
+        "races_with_benchmark_metrics": len(evaluated),
+        "races_with_selected_value_ticket": sum(1 for r in evaluated if r.get("g2")),
         "development_period": [all_dates[0], dev_end],
         "holdout_period": [holdout_start, all_dates[-1]],
         "development_races_with_odds": sum(1 for d in data_ready_dates if d <= dev_end),
