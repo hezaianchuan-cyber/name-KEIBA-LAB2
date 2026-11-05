@@ -86,6 +86,27 @@ async function fetchZip(url: string): Promise<Record<string, Uint8Array>> {
 }
 
 
+const REPO_RAW = "https://raw.githubusercontent.com/hezaianchuan-cyber/name-KEIBA-LAB2/main";
+const BET_TYPES: Record<string, string> = { win:"単勝", place:"複勝", wide:"ワイド", quinella:"馬連", exacta:"馬単", trio:"3連複", trifecta:"3連単" };
+const REQUIRED: Record<string, number> = { win:1, place:1, wide:2, quinella:2, exacta:2, trio:3, trifecta:3 };
+const UNORDERED = new Set(["place","wide","quinella","trio"]);
+const digitsOnly = (v: unknown) => String(v ?? "").replace(/\D/g,"");
+const horseNo = (v: unknown) => { const d=digitsOnly(v); return d ? String(Number(d)) : ""; };
+function betKind(label: unknown): string | null {
+  const v=String(label ?? "").normalize("NFKC").replace(/\s/g,"");
+  if(v.includes("単勝"))return "win"; if(v.includes("複勝"))return "place";
+  if(v.includes("ワイド"))return "wide"; if(v.includes("馬連"))return "quinella";
+  if(v.includes("馬単"))return "exacta"; if(v.includes("3連複")||v.includes("三連複"))return "trio";
+  if(v.includes("3連単")||v.includes("三連単"))return "trifecta"; return null;
+}
+function combinationKey(kind:string, nums:string[]):string {
+  const values=nums.map(horseNo); return (UNORDERED.has(kind)?values.sort((a,b)=>Number(a)-Number(b)):values).join("-");
+}
+async function fetchJson(url:string):Promise<any>{
+  const r=await fetch(url,{headers:{"Cache-Control":"no-cache"},signal:AbortSignal.timeout(20000)});
+  if(!r.ok)throw new Error("HTTP "+r.status+" for "+url); return await r.json();
+}
+
 async function loadModelSnapshot(raceId:string,raceDate:string,capturedAt:string,serviceUrl:string,serviceKey:string):Promise<any|null>{
   const cutoffMs=new Date(capturedAt).getTime()-15*60*1000;
   if(!Number.isFinite(cutoffMs))return null;
