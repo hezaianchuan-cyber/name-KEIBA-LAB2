@@ -55,6 +55,7 @@ jobs:
         run: python3 scripts/capture_nar_odds.py
 
       - name: Archive locked model snapshots to Supabase
+        continue-on-error: true
         env:
           SUPABASE_URL: https://mwiinzmnoludksnfnjaa.supabase.co
           NAR_CAPTURE_TOKEN: ${{ secrets.NAR_CAPTURE_TOKEN }}
@@ -101,7 +102,7 @@ jobs:
             # Recompute against the latest main tree using the same source
             # archives so concurrent captures cannot duplicate snapshots.
             python3 scripts/capture_nar_odds.py
-            python3 scripts/publish_model_snapshots.py
+            python3 scripts/publish_model_snapshots.py || echo "Supabase model snapshot publish failed; GitHub gzip archive remains available as fallback."
             python3 scripts/build_auto_ticket_plans.py
             git add data/odds-snapshots data/odds-capture-status.json data/auto-ticket-plans.json
             # Publish the official ZIP archives consumed by the web race/runner importer.
