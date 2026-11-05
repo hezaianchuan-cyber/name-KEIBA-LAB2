@@ -77,7 +77,9 @@ def score_records(records, odds_by_race, payouts, temperature, min_divergence=MI
         key_parts = str(record.get("race_key") or "").split("|")
         if len(key_parts) != 3:
             continue
-        key = (key_parts[0], key_parts[1], key_parts[2])
+        key = nb.race_key(*key_parts)
+        if not key:
+            continue
         odds = odds_by_race.get(key, {})
         scores = record["scores"]
         if len(scores) < 3:
@@ -229,6 +231,27 @@ def main():
         selected_divergence = None
         selected_ev = None
         tuning_status = "no_eligible_development_threshold_skip_all"
+    data_ready_dates = []
+    alignment = {"aligned_score_records": len(aligned), "exact_odds_race_key_matches": 0,
+                 "aligned_races_with_win_payout": 0, "records_with_odds_and_win_payout": 0,
+                 "records_with_70pct_odds_coverage": 0}
+    for record in aligned:
+        parts = str(record.get("race_key") or "").split("|")
+        if len(parts) != 3: continue
+        key = nb.race_key(*parts)
+        if not key: continue
+        odds = odds_by_race.get(key, {})
+        payout = payouts.get(key) or {}
+        if odds: alignment["exact_odds_race_key_matches"] += 1
+        if payout.get("win"): alignment["aligned_races_with_win_payout"] += 1
+        if odds and payout.get("win"):
+            alignment["records_with_odds_and_win_payout"] += 1
+            nums = [str(int(x)) for x in (record.get("horse_numbers") or []) if str(x).isdigit()]
+            odds_nums = {str(int(x)) for x in odds if str(x).isdigit()}
+            coverage = len(set(nums) & odds_nums) / len(nums) if nums else 0.0
+            if coverage >= MIN_ODDS_COVERAGE:
+                alignment["records_with_70pct_odds_coverage"] += 1
+                data_ready_dates.append(record["date"])
     evaluated = (score_records(aligned, odds_by_race, payouts, temperature,
                                 selected_divergence, selected_ev, MIN_ODDS_COVERAGE)
                  if chosen else [])
@@ -250,11 +273,14 @@ def main():
         "g1_temperature": temperature, "g1_report_status": g1.get("status"),
         "evaluation_period": [START_DATE.isoformat(), nb.END.isoformat()],
         "races_with_g1_scores": len(aligned),
-        "races_with_final_odds_and_outcomes": len(evaluated),
+        "data_alignment_diagnostics": alignment,
+        "races_with_final_odds_and_outcomes": alignment["records_with_odds_and_win_payout"],
+        "races_with_70pct_odds_coverage_and_outcomes": alignment["records_with_70pct_odds_coverage"],
+        "races_evaluated_after_selected_strategy": len(evaluated),
         "development_period": [all_dates[0], dev_end],
         "holdout_period": [holdout_start, all_dates[-1]],
-        "development_races_with_odds": len(development),
-        "holdout_races_with_odds": len(holdout),
+        "development_races_with_odds": sum(1 for d in data_ready_dates if d <= dev_end),
+        "holdout_races_with_odds": sum(1 for d in data_ready_dates if d >= holdout_start),
         "official_final_odds_months": odds_months,
         "rule": {
             "minimum_odds_coverage": MIN_ODDS_COVERAGE,
