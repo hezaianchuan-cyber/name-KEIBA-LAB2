@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/nar_model_g4_preoff_backtest.py'
+      - 'tests/test_g4_market_blends.py'
       - 'data/daily-payouts.json'
       - '.github/workflows/nar-model-g4-preoff.yml'
   workflow_dispatch:
@@ -31,6 +32,8 @@ jobs:
           python-version: "3.12"
       - name: Compile G4 evaluator
         run: python3 -m py_compile scripts/nar_model_g4_preoff_backtest.py
+      - name: Test pre-off market blend diagnostics
+        run: python3 -m unittest discover -s tests -p 'test_g4_market_blends.py' -v
       - name: Run G4 with captured pre-off odds only
         run: python3 scripts/nar_model_g4_preoff_backtest.py
       - name: Build daily performance review from refreshed G4 results
