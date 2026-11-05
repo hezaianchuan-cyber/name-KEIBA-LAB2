@@ -669,18 +669,29 @@ function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function renderWeights(){const labels={form:'\u8FD1\u8D70\u6210\u7E3E',venue:'\u7AF6\u99AC\u5834\u9069\u6027',distance:'\u8DDD\u96E2\u9069\u6027',jockey:'\u9A0E\u624B',weight:'\u8CA0\u62C5\u91CD\u91CF',gate:'\u67A0\u9806',age:'\u5E74\u9F62',odds:'\u30AA\u30C3\u30BA\u8A55\u4FA1',pedigree:'\u8840\u7D71\u9069\u6027'};$('weights').innerHTML=Object.entries(weights).map(([k,v])=>`<div style="display:grid;grid-template-columns:100px 1fr 38px;gap:8px;align-items:center;margin:10px 0"><label style="margin:0">${labels[k]}</label><input type="range" min="0" max="40" value="${v}" data-weight="${k}" style="padding:0"><b style="font-size:12px;text-align:right">${v}</b></div>`).join('');$('weights').querySelectorAll('input').forEach(el=>el.addEventListener('input',()=>{weights[el.dataset.weight]=+el.value;el.nextElementSibling.textContent=el.value}));}
 $('saveWeights').onclick=()=>{localStorage.setItem('keibaLabLocalWeights',JSON.stringify(weights));alert('\u914D\u70B9\u3092\u4FDD\u5B58\u3057\u307E\u3057\u305F')};$('resetWeights').onclick=()=>{weights={...defaultWeights};renderWeights()};
 function updateHistory(){
+  const rankedFor=p=>{
+    const draws=p.ticketPlan?.runnerDraws;
+    if(Array.isArray(draws)&&draws.length){
+      return draws.slice(0,3).map(h=>{
+        const no=String(h.horseNo??h.no??'');
+        const prior=(p.top||[]).find(x=>norm(x.no)===norm(no));
+        return {no,name:h.name||prior?.name||('馬番'+no),prob:Number(h.winProbability??prior?.prob)||0};
+      });
+    }
+    return p.top?.length?p.top:p.runners.slice().sort((a,b)=>(Number(b.prob)||0)-(Number(a.prob)||0)).slice(0,3);
+  };
   $('hRaces').textContent=db.races.length;$('hPred').textContent=db.predictions.length;$('hPay').textContent=db.payouts.length;
   const settled=settledPredictions();const n=settled.length;
-  const top1=settled.filter(({p,result})=>norm(p.top?.[0]?.no??p.runners.slice().sort((a,b)=>(Number(b.prob)||0)-(Number(a.prob)||0))[0]?.no)===norm(result.winNo)).length;
-  const top3=settled.filter(({p,result})=>(p.top||p.runners.slice().sort((a,b)=>(Number(b.prob)||0)-(Number(a.prob)||0)).slice(0,3)).some(h=>norm(h.no)===norm(result.winNo))).length;
-  const stake=n*100;const returned=settled.reduce((sum,{p,result})=>{const first=p.top?.[0]||p.runners.slice().sort((a,b)=>(Number(b.prob)||0)-(Number(a.prob)||0))[0];return sum+(norm(first?.no)===norm(result.winNo)?(Number(result.winPay)||0):0)},0);
+  const top1=settled.filter(({p,result})=>norm(rankedFor(p)[0]?.no)===norm(result.winNo)).length;
+  const top3=settled.filter(({p,result})=>rankedFor(p).some(h=>norm(h.no)===norm(result.winNo))).length;
+  const stake=n*100;const returned=settled.reduce((sum,{p,result})=>{const first=rankedFor(p)[0]||{};return sum+(norm(first?.no)===norm(result.winNo)?(Number(result.winPay)||0):0)},0);
   $('hSettled').textContent=n;$('hTop1').textContent=n?(100*top1/n).toFixed(1)+'%':'—';$('hTop3').textContent=n?(100*top3/n).toFixed(1)+'%':'—';$('hRoi').textContent=n?(100*returned/stake).toFixed(1)+'%':'—';
   $('hEvalNote').textContent=n+'レースを照合済み。仮想投資額 '+stake.toLocaleString()+'円／仮想払戻 '+returned.toLocaleString()+'円。実際の購入・収支ではありません。学習は未学習の結果が20レース以上まとまった場合のみ実行します。';
   const today=localDateKey();
   const todays=(db.predictions||[]).filter(p=>normDate(p.date)===today).sort((a,b)=>String(a.at||'').localeCompare(String(b.at||'')));
   const todaySettled=todays.map(p=>({p,result:(db.payouts||[]).find(r=>String(r.id)===String(p.id)&&normDate(r.date)===normDate(p.date)&&norm(r.venue)===norm(p.venue||r.venue)&&norm(r.race)===norm(p.race||r.race)&&r.winNo!=null&&r.winNo!=='')})).filter(x=>x.result&&Array.isArray(x.p.runners)&&x.p.runners.length);
-  const todayHits=todaySettled.filter(({p,result})=>norm((p.top?.[0]||p.runners.slice().sort((a,b)=>(Number(b.prob)||0)-(Number(a.prob)||0))[0])?.no)===norm(result.winNo)).length;
-  const todayTop3=todaySettled.filter(({p,result})=>(p.top?.length?p.top:p.runners.slice().sort((a,b)=>(Number(b.prob)||0)-(Number(a.prob)||0)).slice(0,3)).some(h=>norm(h.no)===norm(result.winNo))).length;
+  const todayHits=todaySettled.filter(({p,result})=>norm(rankedFor(p)[0]?.no)===norm(result.winNo)).length;
+  const todayTop3=todaySettled.filter(({p,result})=>rankedFor(p).some(h=>norm(h.no)===norm(result.winNo))).length;
   $('hTodaySettled').textContent=todaySettled.length;
   $('hTodayHits').textContent=todayHits;
   $('hTodayRate').textContent=todaySettled.length?(100*todayHits/todaySettled.length).toFixed(1)+'%':'—';
@@ -689,7 +700,7 @@ function updateHistory(){
   const rows=todays.map(p=>{
     const race=(db.races||[]).find(r=>r.id===p.id)||{};
     const result=(db.payouts||[]).find(r=>String(r.id)===String(p.id)&&normDate(r.date)===normDate(p.date)&&norm(r.venue)===norm(p.venue||r.venue)&&norm(r.race)===norm(p.race||r.race)&&r.winNo!=null&&r.winNo!=='');
-    const ranked=(p.top&&p.top.length?p.top:p.runners.slice().sort((a,b)=>(Number(b.prob)||0)-(Number(a.prob)||0)).slice(0,3));
+    const ranked=rankedFor(p);
     const first=ranked[0]||{};
     const hit=result?(norm(first.no)===norm(result.winNo))?'1位的中':'1位不的中':'結果待ち';
     const top3Hit=result?ranked.some(h=>norm(h.no)===norm(result.winNo))?'上位3頭内':'上位3頭外':'—';
