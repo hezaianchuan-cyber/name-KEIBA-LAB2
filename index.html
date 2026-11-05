@@ -833,6 +833,28 @@ async function fetchSupabaseLiveData(dateOverride){
     if(!oddsMap.has(key))oddsMap.set(key,snapshot);
    }
   }
+  // Fetch one compact latest plan per race separately from the large minute-odds payload.
+  // This avoids losing older race plans when the six-day odds history exceeds its page cap.
+  try{
+   const planQuery='?select=race_id,race_date,venue,race_number,captured_at,auto_ticket_plan'
+    +'&race_date=gte.'+from+'&race_date=lte.'+to
+    +'&order=race_date.asc,captured_at.desc&limit=2000';
+   const planResponse=await fetch(KEIBA_SUPABASE_URL+'/rest/v1/latest_nar_odds_ticket_plans'+planQuery,{
+    headers:{apikey:KEIBA_SUPABASE_KEY,Authorization:'Bearer '+KEIBA_SUPABASE_KEY,Accept:'application/json'},
+    cache:'no-store'
+   });
+   if(!planResponse.ok)throw new Error('最新レース買い目取得 HTTP '+planResponse.status);
+   const planRows=await planResponse.json();
+   for(const row of Array.isArray(planRows)?planRows:[]){
+    const plan=row.auto_ticket_plan;
+    if(!plan||!plan.raceId)continue;
+    const key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date);
+    const previous=planMap.get(key);
+    const planTime=new Date(plan.createdAt||row.captured_at||0).getTime();
+    const previousTime=previous?new Date(previous.plan?.createdAt||0).getTime():-Infinity;
+    if(!previous||planTime>=previousTime)planMap.set(key,{predictionId:plan.raceId,plan});
+   }
+  }catch(error){console.warn('最新レース買い目ビューを取得できません。既存のオッズ履歴から復元します。',error);}
   minuteOddsRows=[...oddsMap.values()];
   minuteOddsHistoryRows=historyRows;
   minuteOddsRaceIndex=[...raceMap.values()];
