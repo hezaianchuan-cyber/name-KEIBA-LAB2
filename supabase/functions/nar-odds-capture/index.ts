@@ -127,6 +127,7 @@ async function loadValidatedThresholds():Promise<Record<string,number>>{
     const report=await fetchJson(REPO_RAW+"/data/backtest-summary.json");
     const types=report?.preoff_ticket_type_backtest?.bet_types||{},out:Record<string,number>={};
     for(const [kind,value] of Object.entries<any>(types)){
+      if(kind!=="trio")continue;
       const threshold=Number(value?.selected_threshold);
       if(Number.isFinite(threshold)&&threshold>0&&value?.selected_holdout?.candidate_pass===true)out[kind]=threshold;
     }
@@ -151,7 +152,7 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>):Pro
   }
   const candidates:any[]=[];
   for(const item of model.candidate_combinations||[]){
-    const kind=String(item.bet_type||"");if(!(kind in REQUIRED)||!(kind in thresholds))continue;
+    const kind=String(item.bet_type||"");if(kind!=="trio"||!(kind in REQUIRED)||!(kind in thresholds))continue;
     const nums=(item.numbers||[]).map(horseNo);
     if(nums.length!==REQUIRED[kind]||new Set(nums).size!==nums.length||nums.some((n:string)=>!topNumbers.has(n)))continue;
     if((kind==="exacta"||kind==="trifecta")&&!firstNumbers.has(nums[0]))continue;
@@ -161,6 +162,7 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>):Pro
   }
   const eligible:any[]=[];
   for(const [kind,threshold] of Object.entries(thresholds)){
+    if(kind!=="trio")continue;
     const rows=candidates.filter(x=>x.kind===kind&&x.ev>=Math.max(1.05,threshold))
       .sort((a,b)=>(b.probability-a.probability)||(b.ev-a.ev)).slice(0,20);
     if(rows.length)eligible.push({kind,rows,avg:rows.slice(0,5).reduce((s,x)=>s+x.ev,0)/Math.min(5,rows.length),best:rows[0]});
