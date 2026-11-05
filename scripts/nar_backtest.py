@@ -600,21 +600,49 @@ def ablated_model_weights(model_weights, excluded_feature):
 
 def update_model(field, parts_by_no, model_weights):
     valid = [h for h in field if h.get("finish") and h["no"] in parts_by_no]
-    if len(valid) < 3: return False
-    scores = [sum(model_weights[k]*parts_by_no[h["no"]][k] for k in model_weights) for h in valid]
+    if len(valid) < 3:
+        return False
+
+    # Use the exact pre-race score that produced the ranking when available.
+    # The older fallback remains for callers/tests with legacy feature-only data.
+    has_prediction_scores = all(
+        number(parts_by_no[h["no"]].get("__prediction_score")) is not None
+        for h in valid
+    )
+    if has_prediction_scores:
+        scores = [number(parts_by_no[h["no"]]["__prediction_score"]) for h in valid]
+    else:
+        scores = [
+            sum(model_weights[k] * parts_by_no[h["no"]][k] for k in model_weights)
+            for h in valid
+        ]
+
     peak = max(scores)
-    expv = [math.exp((x-peak)*8) for x in scores]
+    expv = [math.exp((x - peak) * 8) for x in scores]
     denom = sum(expv) or 1
-    probs = [x/denom for x in expv]
-    winners = {i for i,h in enumerate(valid) if h["finish"] == 1}
-    if not winners: return False
+    probs = [x / denom for x in expv]
+    winners = {i for i, h in enumerate(valid) if h["finish"] == 1}
+    if not winners:
+        return False
+
     target = 1.0 / len(winners)
     lr = 0.025
     for k in model_weights:
-        grad = sum(((target if i in winners else 0.0)-probs[i])*parts_by_no[h["no"]][k] for i,h in enumerate(valid))
-        model_weights[k] = max(0.01, min(0.8, model_weights[k] + lr*grad))
+        grad = 0.0
+        for i, horse in enumerate(valid):
+            features = parts_by_no[horse["no"]]
+            # Performance, frame and pace overlays affect the prediction score,
+            # but only the base model weights are trainable here. Scale their
+            # gradient by the base-score share of the actual prediction.
+            scale = number(features.get("__model_gradient_scale"))
+            if scale is None:
+                scale = 1.0
+            grad += ((target if i in winners else 0.0) - probs[i]) * features[k] * scale
+        model_weights[k] = max(0.01, min(0.8, model_weights[k] + lr * grad))
+
     total = sum(model_weights.values()) or 1
-    for k in model_weights: model_weights[k] /= total
+    for k in model_weights:
+        model_weights[k] /= total
     return True
 
 def softmax_probabilities(scores, temperature):
@@ -1434,6 +1462,16 @@ def run_backtest(races, horses, payouts):
             parts_by_no[h["no"]] = parts
         _, _, pace_delta = pace_adjustments(field, history)
         scored = [(score + pace_delta.get(h["no"], 0.0), h) for score, h in scored]
+        frame_gradient_scale = 0.92 if frame_stats else 1.0
+        for predicted_score, horse in scored:
+            feature_parts = parts_by_no[horse["no"]]
+            base_share = number(
+                (feature_parts.get("performance_weights") or {}).get("base")
+            )
+            if base_share is None:
+                base_share = 1.0
+            feature_parts["__prediction_score"] = predicted_score
+            feature_parts["__model_gradient_scale"] = base_share * frame_gradient_scale
         winner_indices = [i for i,h in enumerate(field) if h.get("finish") == 1]
         if winner_indices and payouts.get(key) and payouts[key].get("win"):
             calibration_records.append({"date":race["date"].isoformat(), "venue":race["venue"],
