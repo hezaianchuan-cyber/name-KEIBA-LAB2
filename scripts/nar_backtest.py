@@ -1099,9 +1099,20 @@ def calibration_metrics(records, temperature):
         if bucket["count"]:
             ece += bucket["count"]/count * abs(
                 bucket["confidence"]/bucket["count"] - bucket["accuracy"]/bucket["count"])
+    confidence_buckets = []
+    for index, bucket in enumerate(bins):
+        bucket_count = bucket["count"]
+        confidence_buckets.append({
+            "range": f"{index * 10}-{(index + 1) * 10}%",
+            "races": bucket_count,
+            "mean_confidence_pct": round(100 * bucket["confidence"] / bucket_count, 2) if bucket_count else None,
+            "hit_rate_pct": round(100 * bucket["accuracy"] / bucket_count, 2) if bucket_count else None,
+            "calibration_gap_pp": round(100 * (bucket["accuracy"] - bucket["confidence"]) / bucket_count, 2) if bucket_count else None,
+        })
     return {"races": count, "temperature": round(float(temperature), 4),
             "log_loss": round(log_loss/count, 5), "brier": round(brier/count, 5),
-            "top1_accuracy": round(100*top1/count, 2), "ece": round(ece, 5)}
+            "top1_accuracy": round(100*top1/count, 2), "ece": round(ece, 5),
+            "confidence_buckets": confidence_buckets}
 
 
 def split_nums(s):
