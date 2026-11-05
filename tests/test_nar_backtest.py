@@ -13,6 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import nar_backtest as nb
 import nar_model_g2_odds_divergence_backtest as g2
+import nar_model_g3_risk_gated_backtest as g3
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import capture_nar_odds as capture
 
