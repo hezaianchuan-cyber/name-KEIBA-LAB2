@@ -37,6 +37,26 @@ jobs:
         run: python3 -m unittest discover -s tests -p 'test_g4_market_blends.py' -v
       - name: Run G4 with captured pre-off odds only
         run: python3 scripts/nar_model_g4_preoff_backtest.py
+      - name: Validate market comparison diagnostics
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("data/model-g4-preoff-backtest.json").read_text(encoding="utf-8"))
+          holdout = (report.get("closest_to_post") or {}).get("holdout") or {}
+          blend = holdout.get("blend_candidate_comparison") or {}
+          expected = {"0.00", "0.25", "0.50", "0.75", "1.00"}
+          if set(blend) != expected:
+              raise SystemExit("Missing one or more predeclared market blend candidates")
+          for key in expected:
+              if blend[key].get("races") != report["closest_to_post"].get("holdout_races"):
+                  raise SystemExit("Blend candidates are not compared on identical holdout races")
+          required = ("market_rank_disagreement", "market_edge_conditions", "time_bucket_market_movement")
+          missing = [key for key in required if key not in report]
+          if missing:
+              raise SystemExit("Missing market diagnostics: " + ", ".join(missing))
+          print("Validated 5 market blends and rank/odds movement diagnostics")
+          PY
       - name: Build daily performance review from refreshed G4 results
         run: python3 scripts/nar_daily_review.py
       - name: Validate daily review
