@@ -791,7 +791,7 @@ async function fetchSupabaseLiveData(dateOverride){
    const query='?select=id,race_id,race_date,venue,race_number,captured_at,odds_data'
     +'&race_date=gte.'+from+'&race_date=lte.'+to
     +'&captured_at=lte.'+encodeURIComponent(cutoff)
-    +'&order=race_date.desc,captured_at.desc,id.desc&limit='+pageSize+'&offset='+offset;
+    +'&order=race_date.asc,captured_at.desc,id.desc&limit='+pageSize+'&offset='+offset;
    let response=null,lastError=null;
    for(let attempt=0;attempt<3;attempt++){
     try{
@@ -840,7 +840,7 @@ async function fetchSupabaseLiveData(dateOverride){
   if(selectedRace&&typeof analyze==='function')analyze();
   renderOddsTrend();
   if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
-  const latest=rows?.[0]?.captured_at;
+  const latest=rows.reduce((value,row)=>!value||String(row.captured_at||'')>String(value)?row.captured_at:value,null);
   const badge=$('oddsCaptureBadge'),details=$('oddsCaptureDetails');
   if(badge)badge.textContent=rows.length?'1分取得データ接続中':'1分データ待ち';
   if(details)details.textContent=rows.length?'最新取得：'+new Date(latest).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})+' ／ 取得レコード '+rows.length+'件'+(rows.length>=maxRows?'（表示上限 '+maxRows+'件）':'')+' ／ 買い目記録 '+remoteLabTicketPlans.length+'レース':'Supabaseの1分オッズデータはまだありません。';
