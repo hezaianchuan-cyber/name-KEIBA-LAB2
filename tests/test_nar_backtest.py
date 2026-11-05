@@ -2008,6 +2008,24 @@ class FeatureWeightChallengerTests(unittest.TestCase):
                                baseline["form"] / baseline["venue"])
         self.assertEqual(baseline["jockey"], 0.07)
 
+    def test_combined_D_candidates_apply_all_multipliers_before_normalizing(self):
+        baseline = {"form": 0.55, "venue": 0.12, "distance": 0.12,
+                    "sire": 0.10, "jockey": 0.07, "age": 0.04}
+        adjusted = nb.combined_scaled_model_weights(
+            baseline, nb.FEATURE_WEIGHT_COMBINATIONS["D1_jockey_venue"])
+        self.assertAlmostEqual(sum(adjusted.values()), 1.0)
+        self.assertGreater(adjusted["jockey"] / adjusted["form"],
+                           baseline["jockey"] / baseline["form"])
+        self.assertLess(adjusted["venue"] / adjusted["form"],
+                        baseline["venue"] / baseline["form"])
+        self.assertEqual(baseline["venue"], 0.12)
+        self.assertEqual(
+            set(nb.FEATURE_WEIGHT_COMBINATIONS),
+            {"D1_jockey_venue", "D2_jockey_distance",
+             "D3_venue_distance", "D4_jockey_venue_distance"},
+        )
+        self.assertTrue(set(nb.FEATURE_WEIGHT_COMBINATIONS).issubset(nb.FEATURE_WEIGHT_NAMES))
+
 
 class TrioNarrow12Tests(unittest.TestCase):
     def test_twelve_ticket_subset_is_unique_and_keeps_1900_yen_budget(self):
