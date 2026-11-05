@@ -6,10 +6,9 @@ on:
     paths:
       - 'scripts/nar_backtest.py'
       - 'scripts/nar_model_g1_calibration_backtest.py'
-      - '.github/workflows/nar-model-g1-calibration.yml'
   workflow_dispatch:
   schedule:
-    - cron: "45 19 * * *"
+    - cron: "45 19 * * 0"
 
 permissions:
   contents: write
