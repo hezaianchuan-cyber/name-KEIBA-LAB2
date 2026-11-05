@@ -2157,3 +2157,47 @@ class FinalOddsArchiveCacheTests(unittest.TestCase):
             self.assertEqual(first[nb.race_key("大井", month_start.strftime("%Y%m%d"), "1")]["1"], 2.5)
             self.assertEqual(first_meta[0]["odds_cache"], "miss")
             self.assertEqual(second_meta[0]["odds_cache"], "hit")
+
+
+class RoleFeatureReuseTests(unittest.TestCase):
+    def test_role_features_are_computed_once_across_all_blends(self):
+        scored = [
+            (0.82, {"no":"1","name":"逃げ馬"}),
+            (0.74, {"no":"2","name":"差し馬"}),
+            (0.68, {"no":"3","name":"追込馬"}),
+        ]
+        history = {
+            "逃げ馬":[
+                {"finish":1,"field_size":10,"first_corner_pct":0.05,
+                 "last_corner_pct":0.10,"last3f_rank_score":0.55},
+                {"finish":2,"field_size":10,"first_corner_pct":0.10,
+                 "last_corner_pct":0.20,"last3f_rank_score":0.60},
+            ],
+            "差し馬":[
+                {"finish":3,"field_size":10,"first_corner_pct":0.65,
+                 "last_corner_pct":0.25,"last3f_rank_score":0.90},
+            ],
+            "追込馬":[
+                {"finish":5,"field_size":10,"first_corner_pct":0.85,
+                 "last_corner_pct":0.35,"last3f_rank_score":0.95},
+            ],
+        }
+        payout = {"trifecta":[]}
+        ranking_cache, feature_cache = {}, {}
+        bucket = nb.new_role_trifecta_diagnostics()
+        with mock.patch.object(nb, "role_specific_features",
+                               wraps=nb.role_specific_features) as compute:
+            nb.update_role_trifecta_diagnostics(
+                bucket, scored, history, payout,
+                role_rankings_cache=ranking_cache,
+                role_features_cache=feature_cache)
+        self.assertEqual(compute.call_count, 3)
+        self.assertEqual(set(feature_cache), {1,2,3})
+        self.assertEqual(set(ranking_cache), {"0.05","0.10","0.20","0.30","0.40"})
+        for blend_key, rankings in ranking_cache.items():
+            blend = float(blend_key)
+            for role in (1,2,3):
+                expected = nb.rank_role_specific_features(feature_cache[role], blend)
+                self.assertEqual(
+                    [horse["no"] for horse in rankings[role]],
+                    [horse["no"] for horse in expected])
