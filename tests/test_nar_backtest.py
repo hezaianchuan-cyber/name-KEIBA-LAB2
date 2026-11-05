@@ -64,8 +64,8 @@ class TrainingOnlyBacktestTests(unittest.TestCase):
         self.assertEqual(light[3], full[3])
         self.assertEqual(light[4], full[4])
         self.assertEqual(light[5], full[5])
-        self.assertEqual(sum(bucket["tickets"] for bucket in light[0].values()), 0)
-        self.assertGreater(sum(bucket["tickets"] for bucket in full[0].values()), 0)
+        self.assertEqual(light[0]["trio"]["tickets"], 0)
+        self.assertGreater(full[0]["trio"]["tickets"], 0)
 
 class BacktestCheckpointTests(unittest.TestCase):
     def test_local_checkpoint_round_trip_preserves_completed_stages(self):
