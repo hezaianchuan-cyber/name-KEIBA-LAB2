@@ -1357,8 +1357,8 @@ function generateTickets(){
      runnerDraws:field.map(h=>({horseNo:String(h.horseNo),frameNo:Number(h.frameNo??h.frame)||null,score:Number(h.score)||0,winProbability:Number(h.modelProb)||0})),
      dataStatus:'COMPLETE',
      modelLoaded:!!learnedModelLoaded,oddsCaptured:oddsRows.length>0,oddsRows:oddsRows.length,oddsMatchedCandidates:oddsMatchedCount,validatedBetTypes:validatedTypeCount
-   }
-   manualEditorPlan=snapshot;;
+   };
+   manualEditorPlan=snapshot;
    let prediction=(db.predictions||[]).find(p=>String(p.id)===String(raceId)&&normDate(p.date)===normDate(snapshot.date)&&!p.learned);
    if(!prediction){
      const raceRunners=field.map(h=>({no:String(h.horseNo),prob:Number(h.modelProb)||0,parts:h.parts||{}}));
