@@ -128,6 +128,7 @@ def build_review(now=None):
                 "development_rank_disagreement": development.get("rank_disagreement"),
                 "holdout_rank_disagreement": holdout.get("rank_disagreement"),
                 "time_bucket_market_movement": (g4 or {}).get("time_bucket_market_movement"),
+                "market_edge_conditions": (g4 or {}).get("market_edge_conditions"),
             },
             "live_model_changed": (g4 or {}).get("live_model_changed"),
             "profitable_claim": (g4 or {}).get("profitable_claim"),
