@@ -10,6 +10,7 @@ from __future__ import annotations
 import csv
 from collections import defaultdict
 import gzip
+import hashlib
 import math
 import datetime as dt
 import io
@@ -463,8 +464,61 @@ def race_readiness(race, horses, odds_rows, predictions, model_context):
     }
 
 
+PREDICTION_LOCK_VERSION = "nar-prediction-lock-v1"
+PREDICTION_LOCK_FIELDS = (
+    "race_key", "venue", "date", "race", "scheduled_post_time", "captured_at",
+    "minutes_to_post", "capture_policy", "model_version", "model_temperature",
+    "predictions", "combination_predictions", "candidate_combinations",
+    "model_g_version", "model_g_predictions", "model_g_candidate_combinations",
+    "model_g_strategy", "candidate_universe_policy", "race_readiness", "odds",
+)
+
+
+def prediction_lock_payload(record: dict) -> dict:
+    """Return only the pre-off inputs and predictions covered by the lock."""
+    return {key: record.get(key) for key in PREDICTION_LOCK_FIELDS}
+
+
+def prediction_lock_digest(record: dict) -> str:
+    canonical = json.dumps(
+        prediction_lock_payload(record), ensure_ascii=False, sort_keys=True,
+        separators=(",", ":"), allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def attach_prediction_lock(record: dict) -> dict:
+    """Attach a reproducible SHA-256 commitment before a snapshot is persisted."""
+    record["prediction_lock"] = {
+        "version": PREDICTION_LOCK_VERSION,
+        "algorithm": "sha256",
+        "digest": prediction_lock_digest(record),
+        "locked_at": record.get("captured_at"),
+        "policy": "Prediction, model version, odds, race identity and pre-off timestamps are hashed together before append.",
+    }
+    return record
+
+
+def verify_prediction_lock(record: dict) -> bool:
+    lock = record.get("prediction_lock") or {}
+    if lock.get("version") != PREDICTION_LOCK_VERSION or lock.get("algorithm") != "sha256":
+        return False
+    expected = lock.get("digest")
+    if not isinstance(expected, str) or len(expected) != 64:
+        return False
+    try:
+        return expected == prediction_lock_digest(record)
+    except (TypeError, ValueError):
+        return False
+
+
 def append_snapshot(path: Path, record: dict) -> bool:
     """Append a race once as a concatenated gzip member; return whether it was new."""
+    if record.get("prediction_lock"):
+        if not verify_prediction_lock(record):
+            raise ValueError("Prediction lock verification failed; refusing to persist a modified snapshot")
+    else:
+        attach_prediction_lock(record)
     race_key_text = record.get("race_key")
     capture_time = record.get("captured_at")
     if path.exists():
