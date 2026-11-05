@@ -1,0 +1,63 @@
+name: Three-day 3連複 narrowing pilot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/nar_trio_narrowing_pilot.py'
+      - 'tests/test_nar_trio_narrowing_pilot.py'
+      - '.github/workflows/trio-narrowing-pilot.yml'
+      - 'data/daily-payouts.json'
+      - 'data/odds-snapshots/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: trio-narrowing-pilot
+  cancel-in-progress: false
+
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run pilot unit tests
+        run: python3 -m unittest discover -s tests -p 'test_nar_trio_narrowing_pilot.py'
+
+      - name: Run three-day 3連複 narrowing pilot
+        run: python3 scripts/nar_trio_narrowing_pilot.py
+
+      - name: Publish exploratory report only
+        run: |
+          set -e
+          test -s data/trio-narrowing-pilot.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp data/trio-narrowing-pilot.json /tmp/trio-narrowing-pilot.json
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/trio-narrowing-pilot.json data/trio-narrowing-pilot.json
+            git add data/trio-narrowing-pilot.json
+            if git diff --cached --quiet; then
+              echo "No pilot report changes"
+              exit 0
+            fi
+            git commit -m "Publish three-day trio narrowing pilot"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push conflict; retrying against latest main (attempt $attempt)"
+          done
+          echo "Could not publish pilot report after 5 attempts"
+          exit 1
