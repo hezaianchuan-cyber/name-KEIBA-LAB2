@@ -2129,3 +2129,31 @@ class PerformanceFeatureCacheParityTests(unittest.TestCase):
             self.assertEqual(cached[1],fresh[1])
         self.assertEqual(len(parts_cache),1)
         self.assertEqual(len(performance_cache),1)
+
+
+class FinalOddsArchiveCacheTests(unittest.TestCase):
+    def test_completed_month_is_cached_and_reused_without_network(self):
+        today = nb.dt.date.today()
+        month_end = today.replace(day=1) - nb.dt.timedelta(days=1)
+        month_start = month_end.replace(day=1)
+        csv_buffer = io.StringIO()
+        writer = csv.writer(csv_buffer)
+        writer.writerow(["大井", month_start.strftime("%Y%m%d"), "1", "単勝",
+                         "1", "", "", "2.5", "", ""])
+        archive_buffer = io.BytesIO()
+        with zipfile.ZipFile(archive_buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("odds.csv", csv_buffer.getvalue().encode("cp932"))
+        response = mock.MagicMock()
+        response.__enter__.return_value.read.return_value = archive_buffer.getvalue()
+        with tempfile.TemporaryDirectory() as cache_dir:
+            with mock.patch.dict("os.environ", {"NAR_ODDS_CACHE_DIR": cache_dir}):
+                with mock.patch.object(nb.urllib.request, "urlopen", return_value=response) as request:
+                    first, first_meta = nb.load_final_odds_archives(month_start, month_end)
+                    self.assertEqual(request.call_count, 1)
+                with mock.patch.object(nb.urllib.request, "urlopen",
+                                       side_effect=AssertionError("cache should avoid network")):
+                    second, second_meta = nb.load_final_odds_archives(month_start, month_end)
+            self.assertEqual(first, second)
+            self.assertEqual(first[nb.race_key("大井", month_start.strftime("%Y%m%d"), "1")]["1"], 2.5)
+            self.assertEqual(first_meta[0]["odds_cache"], "miss")
+            self.assertEqual(second_meta[0]["odds_cache"], "hit")
