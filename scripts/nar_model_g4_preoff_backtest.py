@@ -309,8 +309,16 @@ def build_race_evaluation(snapshot, outcome, expected_temperature):
         return None, "invalid_market"
     market = {no: value / total for no, value in inverse.items()}
 
-    model_top = max(prediction_by_no, key=lambda no: (prediction_by_no[no], -int(no)))
+    # Fixed 50/50 blend: compare model and market on the same odds-covered field.
+    model_total = sum(prediction_by_no[no] for no in matched)
+    if model_total <= 0:
+        return None, "invalid_model_probability"
+    model_common = {no: prediction_by_no[no] / model_total for no in matched}
+    blend_market_weight = 0.50
+    blended = {no: 0.50 * model_common[no] + 0.50 * market[no] for no in matched}
+    model_top = max(model_common, key=lambda no: (model_common[no], -int(no)))
     market_top = min(matched, key=lambda no: (win_odds[no], int(no)))
+    blend_top = max(blended, key=lambda no: (blended[no], -int(no)))
     candidates = []
     for no in matched:
         p = prediction_by_no[no]
@@ -352,6 +360,8 @@ def build_race_evaluation(snapshot, outcome, expected_temperature):
         "odds_coverage": round(coverage, 4),
         "model_top": ticket(model_top, "G1_model_top"),
         "market_top": ticket(market_top, "market_favorite"),
+        "blend_top": ticket(blend_top, "G4_model_market_blend"),
+        "blend_market_weight": blend_market_weight,
         "value_ticket": value_ticket,
     }, None
 
@@ -459,12 +469,14 @@ def main():
             "development": {
                 "model_top": summarize([r["model_top"] for r in development]),
                 "market_favorite": summarize([r["market_top"] for r in development]),
+                "fixed_50_50_model_market_blend": summarize([r["blend_top"] for r in development]),
                 "value_rule": summarize(dev_value),
                 "value_rule_skip_rate_pct": round(100 * (len(development) - len(dev_value)) / len(development), 2) if development else None,
             },
             "holdout": {
                 "model_top": summarize([r["model_top"] for r in holdout]),
                 "market_favorite": summarize([r["market_top"] for r in holdout]),
+                "fixed_50_50_model_market_blend": summarize([r["blend_top"] for r in holdout]),
                 "value_rule": summarize(hold_value),
                 "value_rule_skip_rate_pct": round(100 * (len(holdout) - len(hold_value)) / len(holdout), 2) if holdout else None,
             },
@@ -507,6 +519,7 @@ def main():
         "holdout_period": [latest_holdout_start, latest_dates[-1]] if latest_holdout_start and latest_dates else None,
         "data_source": "KEIBA LAB timestamped official NAR pre-off odds snapshots from five-minute GitHub capture and one-minute Supabase capture; official final odds are not read.",
         "pre_registered_rule": {
+            "blend": "Fixed 50% model probability + 50% normalized captured-market probability; same odds-covered runners; no holdout tuning.",
             "minimum_odds_coverage": MIN_ODDS_COVERAGE,
             "minimum_model_to_market_probability_ratio": MIN_PROBABILITY_RATIO,
             "minimum_model_probability_times_captured_odds": MIN_EXPECTED_VALUE,
