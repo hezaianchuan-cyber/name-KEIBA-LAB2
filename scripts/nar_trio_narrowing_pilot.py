@@ -309,6 +309,134 @@ def load_github_snapshots():
     return rows, diagnostics
 
 
+def rank_divergence(model, market):
+    model_pos = {no: i for i, no in enumerate(model, start=1)}
+    market_pos = {no: i for i, no in enumerate(market, start=1)}
+    shared = set(model_pos) & set(market_pos)
+    union_top7 = set(model[:7]) | set(market[:7])
+    gaps = {
+        no: market_pos[no] - model_pos[no]
+        for no in shared
+    }
+    top7_gaps = [abs(gaps[no]) for no in union_top7 if no in gaps]
+    overlap = len(set(model[:7]) & set(market[:7]))
+    return {
+        "overlap_top7": overlap,
+        "mean_abs_rank_gap_top7_union": (
+            sum(top7_gaps) / len(top7_gaps) if top7_gaps else None
+        ),
+        "rank_gaps": gaps,
+        "model_positions": model_pos,
+        "market_positions": market_pos,
+    }
+
+
+def divergence_band(overlap):
+    if overlap >= 6:
+        return "agreement_6_7"
+    if overlap >= 4:
+        return "moderate_4_5"
+    return "high_divergence_0_3"
+
+
+def summarize_divergence(races):
+    grouped = defaultdict(list)
+    for race in races:
+        grouped[divergence_band(race["overlap_top7"])].append(race)
+
+    output = {}
+    for band in ("agreement_6_7", "moderate_4_5", "high_divergence_0_3"):
+        subset = grouped.get(band, [])
+        if not subset:
+            output[band] = {"races": 0}
+            continue
+        output[band] = {
+            "races": len(subset),
+            "avg_top7_overlap": round(
+                sum(r["overlap_top7"] for r in subset) / len(subset), 2
+            ),
+            "avg_abs_rank_gap_top7_union": round(
+                sum(r["mean_abs_rank_gap_top7_union"] for r in subset) / len(subset), 2
+            ),
+            "strategies": [
+                evaluate_strategy(subset, "LAB_19", lambda r: r["model_tickets"]),
+                evaluate_strategy(subset, "LAB_10", lambda r: r["model_narrow"]),
+                evaluate_strategy(subset, "MARKET_19", lambda r: r["market_tickets"]),
+                evaluate_strategy(subset, "MARKET_10", lambda r: r["market_narrow"]),
+            ],
+        }
+    return output
+
+
+def summarize_horse_signals(races):
+    buckets = {
+        "lab_upgrade_5plus": [],
+        "lab_upgrade_3_4": [],
+        "lab_upgrade_1_2": [],
+        "near_alignment_minus2_to_plus2": [],
+        "market_upgrade_3_4": [],
+        "market_upgrade_5plus": [],
+    }
+    top3 = {"LAB": [0, 0], "market": [0, 0]}
+    top7 = {"LAB": [0, 0], "market": [0, 0]}
+    for race in races:
+        winning_horses = {
+            no for combo in race["payouts"] for no in combo
+        }
+        model_pos = race["model_positions"]
+        market_pos = race["market_positions"]
+        for label, ranking in (("LAB", race["model_rank"]), ("market", race["market_rank"])):
+            for limit, store in ((3, top3[label]), (7, top7[label])):
+                selected = ranking[:limit]
+                store[0] += sum(no in winning_horses for no in selected)
+                store[1] += len(selected)
+        for no in set(model_pos) & set(market_pos):
+            gap = market_pos[no] - model_pos[no]
+            hit = int(no in winning_horses)
+            if no in race["model_rank"][:7]:
+                if gap >= 5:
+                    buckets["lab_upgrade_5plus"].append(hit)
+                elif gap >= 3:
+                    buckets["lab_upgrade_3_4"].append(hit)
+                elif gap >= 1:
+                    buckets["lab_upgrade_1_2"].append(hit)
+                elif gap >= -2:
+                    buckets["near_alignment_minus2_to_plus2"].append(hit)
+            if no in race["market_rank"][:7]:
+                if gap <= -5:
+                    buckets["market_upgrade_5plus"].append(hit)
+                elif gap <= -3:
+                    buckets["market_upgrade_3_4"].append(hit)
+    result = {
+        "horse_selection_in_winning_trio": {
+            "LAB_top3": {
+                "hits": top3["LAB"][0], "selected": top3["LAB"][1],
+                "rate_pct": round(100 * top3["LAB"][0] / top3["LAB"][1], 2) if top3["LAB"][1] else None,
+            },
+            "market_top3": {
+                "hits": top3["market"][0], "selected": top3["market"][1],
+                "rate_pct": round(100 * top3["market"][0] / top3["market"][1], 2) if top3["market"][1] else None,
+            },
+            "LAB_top7": {
+                "hits": top7["LAB"][0], "selected": top7["LAB"][1],
+                "rate_pct": round(100 * top7["LAB"][0] / top7["LAB"][1], 2) if top7["LAB"][1] else None,
+            },
+            "market_top7": {
+                "hits": top7["market"][0], "selected": top7["market"][1],
+                "rate_pct": round(100 * top7["market"][0] / top7["market"][1], 2) if top7["market"][1] else None,
+            },
+        },
+        "lab_vs_market_rank_gap": {},
+    }
+    for name, values in buckets.items():
+        result["lab_vs_market_rank_gap"][name] = {
+            "horses": len(values),
+            "horses_in_winning_trio": sum(values),
+            "inclusion_rate_pct": round(100 * sum(values) / len(values), 2) if values else None,
+        }
+    return result
+
+
 def main():
     outcomes = load_trio_outcomes()
     snapshots, loader_diagnostics = load_github_snapshots()
@@ -327,7 +455,8 @@ def main():
         market_tickets = build_245(market)
         if len(model_tickets) < 10 or len(market_tickets) < 10:
             continue
-        overlap = len(set(model[:7]).intersection(market[:7]))
+        divergence = rank_divergence(model, market)
+        overlap = divergence["overlap_top7"]
         races.append({
             "race_key": snapshot["race_key"],
             "date": snapshot["race_key"].split("|")[1],
@@ -338,6 +467,10 @@ def main():
             "model_narrow": narrow_by_rank_sum(model_tickets, model),
             "market_narrow": narrow_by_rank_sum(market_tickets, market),
             "overlap_top7": overlap,
+            "mean_abs_rank_gap_top7_union": divergence["mean_abs_rank_gap_top7_union"],
+            "rank_gaps": divergence["rank_gaps"],
+            "model_positions": divergence["model_positions"],
+            "market_positions": divergence["market_positions"],
             "payouts": payouts,
         })
 
@@ -394,6 +527,20 @@ def main():
             "selection_diagnostics": selection_diagnostics,
         },
         "results": strategies,
+        "divergence_analysis": {
+            "bands": summarize_divergence(races),
+            "horse_level_signals": summarize_horse_signals(races),
+            "definition": {
+                "overlap_top7": "count of horses shared by LAB top 7 and market top 7",
+                "bands": {
+                    "agreement_6_7": "top-7 overlap 6 or 7",
+                    "moderate_4_5": "top-7 overlap 4 or 5",
+                    "high_divergence_0_3": "top-7 overlap 0 to 3",
+                },
+                "rank_gap": "market rank minus LAB rank; positive means LAB ranks the horse higher",
+                "horse_outcome": "horse appears in at least one official winning 3連複 combination",
+            },
+        },
         "interpretation": (
             "This is a small three-day exploratory sample, not a profitability proof. "
             "Compare both actual 100-yen-per-ticket spend and the equal JPY1900-per-race view. "
