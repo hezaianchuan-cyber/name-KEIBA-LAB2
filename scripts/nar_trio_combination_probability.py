@@ -149,6 +149,19 @@ def select_top_tickets(ranked_combinations, count):
     return [tuple(item["combo"]) for item in ranked_combinations[:max(0, int(count))]]
 
 
+def rank_existing_tickets(tickets, ranked_horses):
+    """Preserve the existing 2-4-5 rank-sum method as a direct baseline."""
+    rank = {no: i for i, no in enumerate(ranked_horses, start=1)}
+    ordered = sorted(
+        tickets,
+        key=lambda combo: (
+            sum(rank.get(no, 10_000) for no in combo),
+            tuple(map(int, combo)),
+        ),
+    )
+    return [{"combo": list(combo), "probability": None} for combo in ordered]
+
+
 def allocate_budget_units(ticket_count, total_units=BUDGET_UNITS):
     if ticket_count <= 0:
         return []
@@ -196,9 +209,13 @@ def build_race_strategies(snapshot, payouts, temperature):
     base = blend_probabilities(model, market, 0.0)
     if not base:
         return None
+    model_rank = pilot.model_rank(snapshot.get("predictions"))
+    market_rank = pilot.market_rank(snapshot.get("odds"))
     strategies = {
         "model": rank_trio_combinations(blend_probabilities(model, market, 0.0)),
         "market": rank_trio_combinations(blend_probabilities(model, market, 1.0)),
+        "model_245_rank_sum": rank_existing_tickets(pilot.build_245(model_rank), model_rank),
+        "market_245_rank_sum": rank_existing_tickets(pilot.build_245(market_rank), market_rank),
     }
     for weight in MARKET_WEIGHTS:
         strategies[f"blend_{weight:.2f}"] = rank_trio_combinations(
@@ -237,7 +254,8 @@ def main():
         races.append(race)
 
     results = {}
-    for name in ["model", "market"] + [f"blend_{w:.2f}" for w in MARKET_WEIGHTS]:
+    strategy_names = ["model", "market", "model_245_rank_sum", "market_245_rank_sum"] + [f"blend_{w:.2f}" for w in MARKET_WEIGHTS]
+    for name in strategy_names:
         results[name] = {
             str(count): evaluate_tickets(
                 races,
@@ -261,7 +279,7 @@ def main():
                     )
                     for count in TICKET_COUNTS
                 }
-                for name in ["model", "market"] + [f"blend_{w:.2f}" for w in MARKET_WEIGHTS]
+                for name in strategy_names
             },
         }
 
@@ -277,6 +295,7 @@ def main():
             "market_probability": "normalized inverse captured pre-off win odds on the same runner intersection",
             "market_weights": list(MARKET_WEIGHTS),
             "ticket_counts": list(TICKET_COUNTS),
+            "baseline": "existing 2-4-5 formation, narrowed by sum of the corresponding model or market horse ranks",
             "budget": "JPY1900 per race for every strategy and ticket count; integer 100-yen units redistributed across selected tickets",
             "snapshot_window_minutes_to_post": [2, 30],
             "snapshot_selection": "one closest-to-post valid pre-off snapshot per race",
