@@ -1141,9 +1141,34 @@ function renderManualTicketEditor(plan,field){
  if(!plan?.raceId||!horses.length){editor.innerHTML='<p>出走馬データがそろったレースを分析すると、単勝・馬単・3連単を追加できます。</p>';return;}
  const options='<option value="">馬番を選択</option>'+horses.map(h=>'<option value="'+esc(h.no)+'">'+esc(h.no+'番 '+h.name)+'</option>').join('');
  const tickets=Array.isArray(plan.userTickets)?plan.userTickets:[];
- editor.innerHTML='<div class="grid"><div><label>券種</label><select id="manualTicketType"><option value="単勝">単勝</option><option value="馬単">馬単</option><option value="3連単">3連単</option></select></div><div><label>1点の購入額（円）</label><input id="manualTicketStake" type="number" min="100" step="100" value="100"></div><div><label>1着／単勝の馬</label><select id="manualHorse1">'+options+'</select></div><div id="manualHorse2Wrap"><label>2着の馬</label><select id="manualHorse2">'+options+'</select></div><div id="manualHorse3Wrap"><label>3着の馬</label><select id="manualHorse3">'+options+'</select></div></div><div class="actions"><button class="btn accent" id="manualTicketAdd">追加して保存</button></div><p id="manualTicketStatus" class="sub">追加した買い目はLABの自動3連複とは別に記録します。</p><h3 style="margin-top:14px">追加済みの買い目（'+tickets.length+'点）</h3><div class="tablewrap"><table style="min-width:420px"><thead><tr><th>券種</th><th>買い目</th><th>購入額</th><th></th></tr></thead><tbody>'+(tickets.length?tickets.map((t,i)=>'<tr><td>'+esc(t.type)+'</td><td><b>'+esc(t.comb)+'</b></td><td>'+Number(t.stake||0).toLocaleString()+'円</td><td><button class="btn" data-manual-delete="'+i+'">削除</button></td></tr>').join(''):'<tr><td colspan="4">まだ追加されていません。</td></tr>')+'</tbody></table></div>';
- const updateFields=()=>{const type=$('manualTicketType')?.value||'単勝';if($('manualHorse2Wrap'))$('manualHorse2Wrap').classList.toggle('hidden',type==='単勝');if($('manualHorse3Wrap'))$('manualHorse3Wrap').classList.toggle('hidden',type!=='3連単');};
- $('manualTicketType').onchange=updateFields;updateFields();
+ const getManualSelection=()=>{
+  const type=$('manualTicketType')?.value||'単勝';
+  const nums=type==='単勝'?[$('manualHorse1')?.value]:type==='馬単'?[$('manualHorse1')?.value,$('manualHorse2')?.value]:[$('manualHorse1')?.value,$('manualHorse2')?.value,$('manualHorse3')?.value];
+  return {type,nums};
+ };
+ const lookupManualOdds=(type,nums)=>{
+  if(nums.some(x=>!/^[0-9]+$/.test(String(x||''))))return null;
+  const unordered=['複勝','ワイド','馬連','3連複'].includes(type);
+  const normalize=x=>String(x??'').replace(/\\D/g,'').replace(/^0+(?=\\d)/,'');
+  const wanted=(unordered?nums.map(normalize).sort((a,b)=>Number(a)-Number(b)):nums.map(normalize)).join('-');
+  const matches=[...(minuteOddsRows||[]),...(db.odds||[])].filter(o=>String(o.id)===String(plan.raceId)&&Number(o.odds)>0&&(()=>{
+   const label=norm(o.type),match=type==='単勝'?label.includes(norm('単勝')):type==='馬単'?label.includes(norm('馬単')):type==='3連単'?(label.includes(norm('3連単'))||label.includes(norm('三連単'))):false;
+   if(!match)return false;
+   const values=[o.n1,o.n2,o.n3].filter(x=>String(x??'').trim()!=='').map(normalize);
+   return (unordered?values.sort((a,b)=>Number(a)-Number(b)):values).join('-')===wanted;
+  })()).sort((a,b)=>String(b.capturedAt||'').localeCompare(String(a.capturedAt||'')));
+  return matches[0]||null;
+ };
+ editor.innerHTML='<div class="grid"><div><label>券種</label><select id="manualTicketType"><option value="単勝">単勝</option><option value="馬単">馬単</option><option value="3連単">3連単</option></select></div><div><label>1点の購入額（円）</label><input id="manualTicketStake" type="number" min="100" step="100" value="100"></div><div><label>1着／単勝の馬</label><select id="manualHorse1">'+options+'</select></div><div id="manualHorse2Wrap"><label>2着の馬</label><select id="manualHorse2">'+options+'</select></div><div id="manualHorse3Wrap"><label>3着の馬</label><select id="manualHorse3">'+options+'</select></div></div><div id="manualOddsPreview" class="notice" style="margin-top:10px">買い目を選択すると、取得済みの最新オッズを表示します。</div><div class="actions"><button class="btn accent" id="manualTicketAdd">追加して保存</button></div><p id="manualTicketStatus" class="sub">追加した買い目はLABの自動3連複とは別に記録します。オッズは取得できた時点の値を保存します。</p><h3 style="margin-top:14px">追加済みの買い目（'+tickets.length+'点）</h3><div class="tablewrap"><table style="min-width:520px"><thead><tr><th>券種</th><th>買い目</th><th>取得オッズ</th><th>購入額</th><th></th></tr></thead><tbody>'+(tickets.length?tickets.map((t,i)=>'<tr><td>'+esc(t.type)+'</td><td><b>'+esc(t.comb)+'</b></td><td>'+(Number(t.odds)>0?Number(t.odds).toFixed(1)+'倍':'未取得')+'</td><td>'+Number(t.stake||0).toLocaleString()+'円</td><td><button class="btn" data-manual-delete="'+i+'">削除</button></td></tr>').join(''):'<tr><td colspan="5">まだ追加されていません。</td></tr>')+'</tbody></table></div>';
+ const updateFields=()=>{const type=$('manualTicketType')?.value||'単勝';if($('manualHorse2Wrap'))$('manualHorse2Wrap').classList.toggle('hidden',type==='単勝');if($('manualHorse3Wrap'))$('manualHorse3Wrap').classList.toggle('hidden',type!=='3連単');updateOddsPreview();};
+ const updateOddsPreview=()=>{
+  const preview=$('manualOddsPreview');if(!preview)return;
+  const {type,nums}=getManualSelection(),row=lookupManualOdds(type,nums);
+  preview.textContent=row?'取得オッズ：'+Number(row.odds).toFixed(1)+'倍 ／ 人気 '+(row.popularity||'—')+'位 ／ 取得 '+(row.capturedAt?new Date(row.capturedAt).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'}):'日時不明'):'この組み合わせのオッズはまだ取得できていません。1分オッズ更新後に再確認してください。';
+ };
+ $('manualTicketType').onchange=updateFields;
+ ['manualHorse1','manualHorse2','manualHorse3'].forEach(id=>{if($(id))$(id).onchange=updateOddsPreview;});
+ updateFields();
 }
 function updateManualTicketPlan(mutator){
  const records=loadLabTicketPlans(),item=records.find(x=>String(x.plan?.raceId)===manualTicketCurrentRaceId);
@@ -1172,7 +1197,8 @@ document.addEventListener('click',event=>{
   const plan=loadLabTicketPlans().find(x=>String(x.plan?.raceId)===manualTicketCurrentRaceId)?.plan;
   if(!plan){if(status)status.textContent='先にレースを分析してLABの記録を作成してください。';return;}
   const id='user-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);
-  const ticket={id,type,comb:nums.join('-'),stake,source:'USER',createdAt:new Date().toISOString()};
+  const oddsRow=(()=>{const unordered=false,wanted=nums.map(x=>String(x)).join('-');return [...(minuteOddsRows||[]),...(db.odds||[])].filter(o=>String(o.id)===manualTicketCurrentRaceId&&Number(o.odds)>0&&(()=>{const label=norm(o.type),match=type==='単勝'?label.includes(norm('単勝')):type==='馬単'?label.includes(norm('馬単')):(label.includes(norm('3連単'))||label.includes(norm('三連単')));if(!match)return false;return [o.n1,o.n2,o.n3].filter(x=>String(x??'').trim()!=='').map(String).join('-')===wanted;})()).sort((a,b)=>String(b.capturedAt||'').localeCompare(String(a.capturedAt||'')))[0]||null;})();
+  const ticket={id,type,comb:nums.join('-'),stake,odds:oddsRow?Number(oddsRow.odds):null,oddsCapturedAt:oddsRow?.capturedAt||null,source:'USER',createdAt:new Date().toISOString()};
   const ok=updateManualTicketPlan(list=>list.push(ticket));
   if(status)status.textContent=ok?'追加した買い目を保存しました。':'保存に失敗しました。ブラウザの保存容量を確認してください。';
   const updated=loadLabTicketPlans().find(x=>String(x.plan?.raceId)===manualTicketCurrentRaceId)?.plan;
