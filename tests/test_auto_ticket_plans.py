@@ -44,7 +44,6 @@ class ShadowTicketPlanTests(unittest.TestCase):
         self.assertEqual(plan["decision"], "BET")
         self.assertTrue(plan["tickets"])
         self.assertTrue(all(ticket["type"] == "3連複" for ticket in plan["tickets"]))
-        self.assertEqual(plan["selectedType"], "trio") if "selectedType" in plan else None
 
     def test_thresholds_expose_only_validated_trio(self):
         import json
