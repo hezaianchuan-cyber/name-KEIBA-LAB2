@@ -656,7 +656,7 @@ function renderDailyPayoutDay(date){
 function labLedgerDateKey(value){return String(value||'').replace(/[^0-9]/g,'').slice(0,8);}
 function labLedgerVenueKey(value){return String(value||'').normalize('NFKC').replace(/競馬場/g,'').replace(/\s|　/g,'').trim();}
 function labLedgerIsTrioType(type){
- const value=String(type??"").normalize("NFKC").replace(/\\s/g,"");
+ const value=String(type??"").normalize("NFKC").replace(/\s/g,"");
  return value==="3連複"||value==="三連複";
 }
 function labLedgerComb(value,type){
@@ -664,7 +664,7 @@ function labLedgerComb(value,type){
  const parts=raw.replace(/[／/,・\s]+/g,'-').split('-').map(x=>x.trim()).filter(Boolean);
  if(!parts.length||parts.some(x=>!/^\d+$/.test(x)))return '';
  const nums=parts.map(x=>String(Number(x)));
- return ['複勝','ワイド','馬連','3連複'].includes(type)?nums.sort((a,b)=>Number(a)-Number(b)).join('-'):nums.join('-');
+ return (['複勝','ワイド','馬連'].includes(type)||labLedgerIsTrioType(type))?nums.sort((a,b)=>Number(a)-Number(b)).join('-'):nums.join('-');
 }
 function labLedgerRecordsForDate(plans,date){
  const day=(dailyPayoutReport?.days||[]).find(d=>labLedgerDateKey(d.date)===date),dayRaces=day?.races||[];
