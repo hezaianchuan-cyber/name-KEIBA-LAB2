@@ -2201,3 +2201,22 @@ class RoleFeatureReuseTests(unittest.TestCase):
                 self.assertEqual(
                     [horse["no"] for horse in rankings[role]],
                     [horse["no"] for horse in expected])
+
+
+class FrameScoreReuseTests(unittest.TestCase):
+    def test_frame_form_is_computed_once_per_runner_and_race(self):
+        race = {"venue":"大井","surface":"ダート","distance":1600,"field_size":12}
+        horse = {"no":"4","frame_no":3}
+        frame_stats = {
+            nb.frame_context_key(race,horse): {"runs":40,"top3":18}
+        }
+        cache = {}
+        with mock.patch.object(nb,"frame_form_score",
+                               wraps=nb.frame_form_score) as compute:
+            first = nb.blend_frame_score(0.80,race,horse,frame_stats,cache)
+            second = nb.blend_frame_score(0.60,race,horse,frame_stats,cache)
+        expected_score = nb.frame_form_score(race,horse,frame_stats)
+        self.assertAlmostEqual(first,0.80*0.92+expected_score*0.08)
+        self.assertAlmostEqual(second,0.60*0.92+expected_score*0.08)
+        self.assertEqual(compute.call_count,1)
+        self.assertEqual(cache,{"4":expected_score})
