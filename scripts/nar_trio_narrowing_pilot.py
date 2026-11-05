@@ -361,6 +361,7 @@ def load_github_snapshots():
                     "model_version": record.get("model_version") or "unknown",
                     "predictions": predictions,
                     "odds": odds,
+                    "candidate_combinations": record.get("candidate_combinations") or [],
                 })
     return rows, diagnostics
 
