@@ -535,12 +535,14 @@ def main():
             "development": {
                 "model_top": summarize([r["model_top"] for r in latest_dev]),
                 "market_favorite": summarize([r["market_top"] for r in latest_dev]),
+                "fixed_50_50_model_market_blend": summarize([r["blend_top"] for r in latest_dev]),
                 "value_rule": summarize(value_dev),
                 "skip_rate_pct": round(100 * (len(latest_dev) - len(value_dev)) / len(latest_dev), 2) if latest_dev else None,
             },
             "holdout": {
                 "model_top": summarize([r["model_top"] for r in latest_hold]),
                 "market_favorite": summarize([r["market_top"] for r in latest_hold]),
+                "fixed_50_50_model_market_blend": summarize([r["blend_top"] for r in latest_hold]),
                 "value_rule": summarize(value_hold),
                 "skip_rate_pct": round(100 * (len(latest_hold) - len(value_hold)) / len(latest_hold), 2) if latest_hold else None,
             },
