@@ -3860,15 +3860,36 @@ def build_trifecta_research_fold(fold):
 
 def main():
     print(f"Backtest range: {START} through {END}", flush=True)
+    profile_started = time.perf_counter()
+    profile_last = profile_started
+    performance_profile = {}
+
+    def mark_profile(stage):
+        nonlocal profile_last
+        now = time.perf_counter()
+        elapsed = round(now - profile_last, 3)
+        performance_profile[stage] = elapsed
+        profile_last = now
+        print(f"PERF_PROFILE {stage}={elapsed}s total={round(now-profile_started, 3)}s", flush=True)
+
     races, horses, payouts, months = load_archives()
+    mark_profile("load_archives")
     metrics, examples, race_count, learned_weights, learning_updates, calibration_records = run_backtest(races, horses, payouts)
+    mark_profile("chronological_run_backtest")
     production_temperature = fit_temperature(calibration_records)
     production_calibration = calibration_metrics(calibration_records, production_temperature)
+    mark_profile("production_calibration")
     final_odds, final_odds_downloads = load_final_odds_archives(dt.date(2026, 3, 1), END)
     print(f"Official monthly final-odds races: {len(final_odds)}", flush=True)
+    mark_profile("final_odds_archive_load")
     validation = holdout_validation(races, horses, payouts, final_odds)
+    mark_profile("walk_forward_holdout_validation")
     preoff_type_report = preoff_ticket_type_backtest(payouts)
+    mark_profile("preoff_ticket_type_backtest")
     race_budget_report = race_budget_auto_strategy_backtest(payouts, preoff_type_report)
+    mark_profile("race_budget_strategy_backtest")
+    preoff_ranking_report = preoff_ranking_strategy_backtest(payouts)
+    mark_profile("preoff_ranking_strategy_backtest")
     result = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "period": {"start":START.isoformat(),"end":END.isoformat()},
@@ -3919,13 +3940,19 @@ def main():
         "preoff_value_backtest": preoff_value_backtest(payouts),
         "preoff_ticket_type_backtest": preoff_type_report,
         "race_budget_auto_strategy_backtest": race_budget_report,
-        "preoff_ranking_strategy_backtest": preoff_ranking_strategy_backtest(payouts),
+        "preoff_ranking_strategy_backtest": preoff_ranking_report,
+        "performance_profile": {
+            "stage_seconds": performance_profile,
+            "total_seconds_before_report_serialization": round(time.perf_counter() - profile_started, 3),
+            "note": "Wall-clock stage timings for identifying the next safe optimization target; timings do not affect model scores or selection."
+        },
         "online_learning": {"updates": learning_updates, "final_weights": learned_weights,
                             "temperature": round(production_temperature,4), "calibration": production_calibration,
                             "note": "Daily batch learning: all races on a date are scored before that date's results update weights for later dates."},
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
+    mark_profile("report_serialization_and_publish_views")
 
     # Publish three distinct backtest reports from the same cached source data
     # and the same untouched final-year holdout. No extra download or duplicate
