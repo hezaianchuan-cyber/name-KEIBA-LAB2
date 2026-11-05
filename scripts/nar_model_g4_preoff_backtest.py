@@ -45,7 +45,14 @@ BUCKETS = {
 
 
 def norm_venue(value):
-    return unicodedata.normalize("NFKC", str(value or "")).strip()
+    normalized = unicodedata.normalize("NFKC", str(value or "")).strip()
+    # Repair venue names that were previously stored after a UTF-8/CP932
+    # round-trip error in the one-minute Supabase collector.
+    repairs = {
+        "髢\u0080蛻・": "門別",
+        "驥第イ「": "金沢",
+    }
+    return repairs.get(normalized, normalized)
 
 
 def race_key(value):
