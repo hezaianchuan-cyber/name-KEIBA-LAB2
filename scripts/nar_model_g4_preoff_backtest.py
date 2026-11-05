@@ -484,22 +484,20 @@ def summarize_rank_disagreement(rows):
     ]
     groups = {
         "model_ranks_5plus_above_market": [
-            item for item in runners
+            (row, item) for row in rows for item in row.get("runner_diagnostics", [])
             if item["market_rank"] - item["model_rank"] >= 5
         ],
         "market_ranks_5plus_above_model": [
-            item for item in runners
+            (row, item) for row in rows for item in row.get("runner_diagnostics", [])
             if item["model_rank"] - item["market_rank"] >= 5
         ],
     }
     result = {}
-    for name, items in groups.items():
+    for name, pairs in groups.items():
+        items = [item for _, item in pairs]
         result[name] = {
             "horses": len(items),
-            "races": len({
-                row["race_key"] for row in rows
-                if any(item in row.get("runner_diagnostics", []) for item in items)
-            }),
+            "races": len({row["race_key"] for row, _ in pairs}),
             "winners": sum(item["is_winner"] for item in items),
             "horse_level_win_rate_pct": round(
                 100 * sum(item["is_winner"] for item in items) / len(items), 2
