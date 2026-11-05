@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   schedule:
     # 00:05 JST, after the 23:30 JST official payout refresh.
-    - cron: "5 15 * * *"
+    - cron: "30 21 * * *"
   push:
     branches: [main]
     paths:
