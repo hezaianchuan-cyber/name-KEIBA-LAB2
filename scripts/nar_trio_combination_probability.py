@@ -374,6 +374,36 @@ def main():
             },
         }
 
+    ticket_shortlists = {}
+    for weight in MARKET_WEIGHTS:
+        strategy = f"blend_{weight:.2f}"
+        per_race = []
+        for race in races:
+            ranked = race["strategies"][strategy][:12]
+            units = allocate_budget_units(len(ranked))
+            tickets = []
+            for index, item in enumerate(ranked):
+                combo = tuple(item["combo"])
+                payout = int(race["payouts"].get(combo, 0))
+                tickets.append({
+                    "combo": list(combo),
+                    "actual_odds": item["odds"],
+                    "labo_probability": item["model_probability"],
+                    "market_probability": item["market_probability"],
+                    "fused_hit_probability": item["fused_probability"],
+                    "labo_ev_index": item["lab_ev"],
+                    "stake_yen": units[index] * UNIT_JPY,
+                    "hit": payout > 0,
+                    "payout_per_100_yen": payout,
+                })
+            per_race.append({
+                "race_key": race["race_key"],
+                "date": race["date"],
+                "model_version": race["model_version"],
+                "tickets": tickets,
+            })
+        ticket_shortlists[strategy] = per_race
+
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "feature": "trio_combination_probability_backtest",
@@ -413,6 +443,7 @@ def main():
         },
         "results": results,
         "results_by_model_version": by_version,
+        "ticket_shortlists": ticket_shortlists,
         "interpretation": "Research comparison only. The Plackett-Luce trio score is a ranking model derived from win-strength probabilities, not a separately trained or validated place-probability model. No production settings are changed.",
     }
     OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
