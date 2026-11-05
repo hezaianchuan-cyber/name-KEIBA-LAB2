@@ -165,6 +165,8 @@ def load_supabase_snapshots(model_rows):
                 if len(model_page) < model_page_size:
                     break
                 model_offset += model_page_size
+            if model_table_rows:
+                models_by_race = {}
             for item in model_table_rows:
                 key = race_key(item.get("race_id"))
                 captured = parse_time(item.get("captured_at"))
