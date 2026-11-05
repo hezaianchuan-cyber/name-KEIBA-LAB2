@@ -29,6 +29,7 @@ SECONDARY_NARROW_TICKETS = 10
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import nar_model_g4_preoff_backtest as g4  # noqa: E402
+import capture_nar_odds as nar  # noqa: E402
 
 
 def norm(value):
@@ -121,6 +122,52 @@ def model_rank(predictions):
             result.append(no)
             seen.add(no)
     return result
+
+
+def trio_fusion_candidates(snapshot):
+    """Build odds-covered trio candidates with LAB and market joint top-three probabilities."""
+    inverse={}
+    for item in snapshot.get("odds") or []:
+        if norm(item.get("type")).replace(" ","")!="単勝": continue
+        no=horse_number(item.get("n1"))
+        try: price=float(item.get("odds") or 0)
+        except (TypeError,ValueError): continue
+        if no and price>0 and math.isfinite(price): inverse[no]=1.0/price
+    total=sum(inverse.values())
+    market={no:value/total for no,value in inverse.items()} if total>0 else {}
+    candidates=[]
+    for item in snapshot.get("candidate_combinations") or []:
+        if item.get("bet_type")!="trio": continue
+        nums=[horse_number(x) for x in item.get("numbers") or []]
+        try:
+            lab=float(item.get("probability") or 0)
+            odds=float(item.get("odds") or 0)
+        except (TypeError,ValueError): continue
+        if len(nums)!=3 or len(set(nums))!=3 or lab<=0 or odds<=0 or not all(n in market for n in nums): continue
+        market_probability=nar.combination_probability("trio",nums,market)
+        if market_probability<=0: continue
+        candidates.append({"comb":tuple(sorted(nums,key=int)),"lab_probability":lab,
+            "market_probability":market_probability,"odds":odds,"ev":lab*odds})
+    return candidates
+
+
+def rank_trio_fusion_candidates(candidates, market_weight, limit=12):
+    rows=[]
+    for item in candidates:
+        probability=(1.0-market_weight)*item["lab_probability"]+market_weight*item["market_probability"]
+        rows.append((probability,item["lab_probability"],item["ev"],item["comb"]))
+    rows.sort(key=lambda row:(-row[0],-row[1],-row[2],tuple(int(x) for x in row[3])))
+    return [row[3] for row in rows[:limit]]
+
+
+def evaluate_trio_fusion_weights(races):
+    weights=(0.0,0.25,0.50,0.75,1.0)
+    return {
+        f"{weight:.2f}":evaluate_strategy(
+            races,f"trio_12_market_weight_{weight:.2f}",
+            lambda race,w=weight:rank_trio_fusion_candidates(race["trio_fusion_candidates"],w,12))
+        for weight in weights
+    }
 
 
 def load_trio_outcomes():
@@ -468,7 +515,9 @@ def main():
             continue
         divergence = rank_divergence(model, market)
         overlap = divergence["overlap_top7"]
+        trio_candidates=trio_fusion_candidates(snapshot)
         races.append({
+            "trio_fusion_candidates":trio_candidates,
             "race_key": snapshot["race_key"],
             "date": snapshot["race_key"].split("|")[1],
             "model_version": snapshot.get("model_version") or "unknown",
@@ -504,6 +553,20 @@ def main():
         ]
 
     strategies = evaluate_all_strategies(races)
+    # Compare LAB-only, market-only and predeclared 25/50/75% fusion on the
+    # identical subset of races with at least 12 odds-quoted trio candidates.
+    trio_fusion_races=[race for race in races if len(race.get("trio_fusion_candidates") or [])>=12]
+    trio_fusion_by_version={
+        version:{
+            "races":sum(1 for race in trio_fusion_races if race["model_version"]==version),
+            "results":evaluate_trio_fusion_weights([race for race in trio_fusion_races if race["model_version"]==version])
+        }
+        for version in sorted({race["model_version"] for race in trio_fusion_races})
+    }
+    trio_fusion_by_day={
+        date:evaluate_trio_fusion_weights([race for race in trio_fusion_races if race["date"]==date])
+        for date in sorted({race["date"] for race in trio_fusion_races})
+    }
     results_by_model_version = {
         version: {
             "eligible_races": sum(1 for race in races if race["model_version"] == version),
@@ -568,6 +631,18 @@ def main():
             "selection_diagnostics": selection_diagnostics,
         },
         "results": strategies,
+        "trio_fusion_12_ticket_comparison": {
+            "method":"LAB trio probability and market-implied trio probability from the same pre-off win-odds snapshot; linear blend by market weight; rank top 12 by blended probability, EV only as a tie-breaker",
+            "market_weights": [0.0,0.25,0.50,0.75,1.0],
+            "same_race_subset": True,
+            "eligible_races": len(trio_fusion_races),
+            "eligible_model_versions": count_model_versions(trio_fusion_races),
+            "all_versions": evaluate_trio_fusion_weights(trio_fusion_races),
+            "by_model_version": trio_fusion_by_version,
+            "by_day": trio_fusion_by_day,
+            "current_model_only": trio_fusion_by_version.get(current_model_version),
+            "interpretation":"Exploratory only; all weights are compared on identical races. No live model or staking rules are changed."
+        },
         "results_by_model_version": results_by_model_version,
         "current_model_results": results_by_model_version.get(current_model_version),
         "current_model_divergence_analysis": (results_by_model_version.get(current_model_version) or {}).get("divergence_analysis"),
