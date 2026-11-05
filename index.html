@@ -785,12 +785,13 @@ async function fetchSupabaseLiveData(dateOverride){
   const from=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
   const to=day.slice(0,4)+'-'+day.slice(4,6)+'-'+day.slice(6,8);
   const cutoff=new Date().toISOString();
-  const pageSize=150,maxRows=2000,rows=[];
+  // Small JSONB pages and index-aligned ordering prevent REST statement timeouts.
+  const pageSize=100,maxRows=2000,rows=[];
   for(let offset=0;offset<maxRows;offset+=pageSize){
    const query='?select=id,race_id,race_date,venue,race_number,captured_at,odds_data'
     +'&race_date=gte.'+from+'&race_date=lte.'+to
     +'&captured_at=lte.'+encodeURIComponent(cutoff)
-    +'&order=captured_at.desc,id.desc&limit='+pageSize+'&offset='+offset;
+    +'&order=race_date.desc,captured_at.desc,id.desc&limit='+pageSize+'&offset='+offset;
    let response=null,lastError=null;
    for(let attempt=0;attempt<3;attempt++){
     try{
