@@ -148,7 +148,7 @@ async function archiveModelSnapshots(snapshots:any[],serviceUrl:string,serviceKe
   const response=await fetch(serviceUrl+"/rest/v1/model_prediction_snapshots?on_conflict=race_id,captured_at",{
     method:"POST",
     headers:{"apikey":serviceKey,"Authorization":"Bearer "+serviceKey,"Content-Type":"application/json",
-      "Prefer":"resolution=merge-duplicates,return=representation"},
+      "Prefer":"resolution=ignore-duplicates,return=representation"},
     body:JSON.stringify(valid),
     signal:AbortSignal.timeout(20000),
   });
