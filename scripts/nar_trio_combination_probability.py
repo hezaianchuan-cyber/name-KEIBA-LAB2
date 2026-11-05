@@ -145,6 +145,73 @@ def rank_trio_combinations(probabilities, candidate_count=TOP_HORSES):
     ]
 
 
+def market_trio_data(odds):
+    """Return normalized direct 3連複 implied probabilities and captured prices."""
+    inverse = {}
+    prices = {}
+    for item in odds or []:
+        label = pilot.norm(item.get("type")).replace(" ", "")
+        if "3連複" not in label and "三連複" not in label:
+            continue
+        numbers = tuple(sorted(
+            (_horse_no(item.get("n1")), _horse_no(item.get("n2")), _horse_no(item.get("n3"))),
+            key=int,
+        ))
+        if len(numbers) != 3 or not all(numbers) or len(set(numbers)) != 3:
+            continue
+        try:
+            price = float(item.get("odds"))
+        except (TypeError, ValueError):
+            continue
+        if not math.isfinite(price) or price <= 0:
+            continue
+        prices[numbers] = price
+        inverse[numbers] = 1.0 / price
+    if len(inverse) < 3:
+        return {}, prices
+    return _normalize({ "-".join(k): v for k, v in inverse.items() }), prices
+
+
+def rank_fused_trio_combinations(
+    model_probabilities_by_horse,
+    market_trio_probabilities,
+    market_trio_odds,
+    candidate_horses,
+    market_weight,
+):
+    """Rank tickets by fused trio hit probability; retain LAB EV as a separate signal."""
+    weight = float(market_weight)
+    if not 0.0 <= weight <= 1.0:
+        raise ValueError("market_weight must be between 0 and 1")
+    market_probs = {
+        tuple(key.split("-")): value
+        for key, value in market_trio_probabilities.items()
+    }
+    rows = []
+    for combo in itertools.combinations(sorted(candidate_horses, key=int), 3):
+        price = market_trio_odds.get(combo)
+        market_prob = market_probs.get(combo)
+        if not price or not market_prob:
+            continue
+        model_prob = plackett_luce_trio_probability(model_probabilities_by_horse, combo)
+        fused_prob = (1.0 - weight) * model_prob + weight * market_prob
+        rows.append({
+            "combo": list(combo),
+            "probability": fused_prob,
+            "fused_probability": fused_prob,
+            "model_probability": model_prob,
+            "market_probability": market_prob,
+            "odds": price,
+            "lab_ev": model_prob * price,
+        })
+    rows.sort(key=lambda item: (
+        -item["fused_probability"],
+        -item["lab_ev"],
+        tuple(map(int, item["combo"])),
+    ))
+    return rows
+
+
 def select_top_tickets(ranked_combinations, count):
     return [tuple(item["combo"]) for item in ranked_combinations[:max(0, int(count))]]
 
@@ -214,21 +281,26 @@ def evaluate_tickets(races, selector, ticket_count, candidate_strategy=None):
 def build_race_strategies(snapshot, payouts, temperature):
     model = model_probabilities(snapshot.get("predictions"), temperature)
     market = market_probabilities(snapshot.get("odds"))
-    base = blend_probabilities(model, market, 0.0)
-    if not base:
+    if not model or not market:
         return None
+    market_trio_probs, market_trio_odds = market_trio_data(snapshot.get("odds"))
+    if len(market_trio_probs) < 3:
+        return None
+
     model_rank = pilot.model_rank(snapshot.get("predictions"))
     market_rank = pilot.market_rank(snapshot.get("odds"))
     strategies = {
-        "model": rank_trio_combinations(blend_probabilities(model, market, 0.0)),
-        "market": rank_trio_combinations(blend_probabilities(model, market, 1.0)),
         "model_245_rank_sum": rank_existing_tickets(pilot.build_245(model_rank), model_rank),
         "market_245_rank_sum": rank_existing_tickets(pilot.build_245(market_rank), market_rank),
     }
     for weight in MARKET_WEIGHTS:
-        strategies[f"blend_{weight:.2f}"] = rank_trio_combinations(
-            blend_probabilities(model, market, weight)
+        horse_blend = blend_probabilities(model, market, weight)
+        ranked_horses = sorted(horse_blend, key=lambda no: (-horse_blend[no], int(no)))
+        candidate_horses = ranked_horses[:TOP_HORSES]
+        strategies[f"blend_{weight:.2f}"] = rank_fused_trio_combinations(
+            model, market_trio_probs, market_trio_odds, candidate_horses, weight
         )
+
     candidate_horses = {
         name: sorted({no for item in ranked for no in item["combo"]}, key=int)
         for name, ranked in strategies.items()
@@ -305,10 +377,14 @@ def main():
         "method": {
             "candidate_pool": "top seven horses by each strategy's blended win probability",
             "candidate_combinations_scored": "all 35 unordered triples from the seven-horse pool",
-            "combo_score": "sum of six Plackett-Luce ordered top-three probabilities",
+            "combo_score": "blend of LABO Plackett-Luce trio probability and direct market-implied 3連複 probability",
+            "ticket_order": "descending fused trio hit probability; LABO expected value is a separate display/ranking tie-break signal, never a hard EV cutoff",
+            "lab_expected_value": "LABO trio probability multiplied by the captured 3連複 odds; gross-return index per 100-yen stake",
+            "market_trio_probability": "normalized inverse captured official 3連複 odds across all available combinations",
             "candidate_coverage": "whether all three official top-three horses are contained in the strategy's top-seven candidate pool",
             "model_probability": "saved raw model scores recalibrated with validated G1 temperature",
-            "market_probability": "normalized inverse captured pre-off win odds on the same runner intersection",
+            "horse_candidate_pool": "top seven horses from the corresponding model/market win-probability blend",
+            "market_probability": "direct normalized inverse captured pre-off 3連複 odds for each unordered combination",
             "market_weights": list(MARKET_WEIGHTS),
             "ticket_counts": list(TICKET_COUNTS),
             "baseline": "existing 2-4-5 formation, narrowed by sum of the corresponding model or market horse ranks",
