@@ -224,6 +224,13 @@ def summarize(rows):
     }
 
 
+def count_model_versions(rows):
+    counts = defaultdict(int)
+    for row in rows:
+        counts[str(row.get("model_version") or "unknown")] += 1
+    return dict(sorted(counts.items()))
+
+
 def evaluate_strategy(races, strategy_name, ticket_selector):
     per_race_100, fixed_budget = [], []
     for race in races:
@@ -303,6 +310,7 @@ def load_github_snapshots():
                     "date": date,
                     "captured_at": record.get("captured_at"),
                     "minutes_to_post": minutes,
+                    "model_version": record.get("model_version") or "unknown",
                     "predictions": predictions,
                     "odds": odds,
                 })
@@ -460,6 +468,7 @@ def main():
         races.append({
             "race_key": snapshot["race_key"],
             "date": snapshot["race_key"].split("|")[1],
+            "model_version": snapshot.get("model_version") or "unknown",
             "model_rank": model,
             "market_rank": market,
             "model_tickets": model_tickets,
@@ -474,17 +483,32 @@ def main():
             "payouts": payouts,
         })
 
-    strategies = [
-        evaluate_strategy(races, "A_current_19_model_245", lambda r: r["model_tickets"]),
-        evaluate_strategy(races, "B_narrow_10_model_rank_sum", lambda r: r["model_narrow"]),
-        evaluate_strategy(
-            races,
-            "C_overlap_adaptive_10_if_overlap_ge_5_else_19",
-            lambda r: r["model_narrow"] if r["overlap_top7"] >= OVERLAP_NARROW_THRESHOLD else r["model_tickets"],
-        ),
-        evaluate_strategy(races, "D_market_19_market_245", lambda r: r["market_tickets"]),
-        evaluate_strategy(races, "E_market_narrow_10_market_rank_sum", lambda r: r["market_narrow"]),
-    ]
+    def evaluate_all_strategies(subset):
+        return [
+            evaluate_strategy(subset, "A_current_19_model_245", lambda r: r["model_tickets"]),
+            evaluate_strategy(subset, "B_narrow_10_model_rank_sum", lambda r: r["model_narrow"]),
+            evaluate_strategy(
+                subset,
+                "C_overlap_adaptive_10_if_overlap_ge_5_else_19",
+                lambda r: r["model_narrow"] if r["overlap_top7"] >= OVERLAP_NARROW_THRESHOLD else r["model_tickets"],
+            ),
+            evaluate_strategy(subset, "D_market_19_market_245", lambda r: r["market_tickets"]),
+            evaluate_strategy(subset, "E_market_narrow_10_market_rank_sum", lambda r: r["market_narrow"]),
+        ]
+
+    strategies = evaluate_all_strategies(races)
+    results_by_model_version = {
+        version: {
+            "eligible_races": sum(1 for race in races if race["model_version"] == version),
+            "results": evaluate_all_strategies([race for race in races if race["model_version"] == version]),
+        }
+        for version in sorted({race["model_version"] for race in races})
+    }
+    try:
+        current_model = json.loads((DATA / "live-model.json").read_text(encoding="utf-8"))
+        current_model_version = str(current_model.get("model_version") or "unknown")
+    except (OSError, json.JSONDecodeError):
+        current_model_version = "unknown"
 
     by_day = {}
     for date in sorted(PILOT_DATES):
@@ -494,6 +518,7 @@ def main():
             "model_market_top7_overlap_avg": round(
                 sum(r["overlap_top7"] for r in day_races) / len(day_races), 2
             ) if day_races else None,
+            "model_versions": count_model_versions(day_races),
         }
 
     report = {
@@ -503,6 +528,7 @@ def main():
         "period": ["2026-11-03", "2026-11-05"],
         "method": {
             "prediction_source": "timestamped raw model scores saved before race start",
+            "model_version_handling": "All results are split by the model_version stored in each snapshot; the pooled result is descriptive only and must not be treated as the current model's result.",
             "snapshot_archive": "GitHub five-minute pre-off archive only; Supabase one-minute rows excluded for reproducibility",
             "market_source": "win odds and explicit popularity from the same pre-off snapshot",
             "snapshot_window_minutes_to_post": [2, 30],
@@ -522,11 +548,17 @@ def main():
             "unique_preoff_races_with_model_and_market": len(selected),
             "eligible_races_with_trio_outcome": len(races),
             "races_missing_trio_outcome": no_outcome,
+            "current_model_version": current_model_version,
+            "selected_snapshot_model_versions": count_model_versions(selected),
+            "eligible_race_model_versions": count_model_versions(races),
+            "current_model_eligible_races": sum(1 for race in races if race["model_version"] == current_model_version),
             "by_day": by_day,
             "loader_diagnostics": loader_diagnostics,
             "selection_diagnostics": selection_diagnostics,
         },
         "results": strategies,
+        "results_by_model_version": results_by_model_version,
+        "current_model_results": results_by_model_version.get(current_model_version),
         "divergence_analysis": {
             "bands": summarize_divergence(races),
             "horse_level_signals": summarize_horse_signals(races),
@@ -543,6 +575,7 @@ def main():
         },
         "interpretation": (
             "This is a small three-day exploratory sample, not a profitability proof. "
+            "The pooled result may combine multiple model versions; use results_by_model_version and current_model_results for version-matched interpretation. "
             "Compare both actual 100-yen-per-ticket spend and the equal JPY1900-per-race view. "
             "Do not promote any strategy to live use from this pilot."
         ),
