@@ -1141,7 +1141,7 @@ def narrow_trio_by_rank_sum(tickets, ranked, count):
     """Select a fixed number of existing 2-4-5 tickets by the LAB rank sum."""
     rank = {}
     for index, horse in enumerate(ranked or [], start=1):
-        raw = re.sub(r"\\D", "", str(horse.get("no") or ""))
+        raw = re.sub(r"\D", "", str(horse.get("no") or ""))
         if raw:
             rank.setdefault(str(int(raw)), index)
     ordered = sorted(
@@ -1967,7 +1967,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     # E: pre-registered integrated challenger. The confidence gate and role blend
     # are fixed before holdout evaluation; no test-fold threshold tuning is allowed.
     market_comparison_names = ("C_model_top_pick", "final_odds_favorite",
-                               *(f"ablate_{feature}" for feature in ablation_features))
+                               *(f"ablate_{feature}" for feature in ablation_features),
+                               *FEATURE_WEIGHT_VARIANTS)
     final_market_stats = {name: {"races":0,"top1_hits":0,"hits":0,"tickets":0,"stake":0,"return":0,"race_count":0,"sum_return_sq":0,"sum_stake_sq":0,"sum_stake_return":0} for name in market_comparison_names}
     integrated_stats = {
         "confidence_threshold": 0.30,
@@ -3741,12 +3742,12 @@ def main():
             })
         total_races = sum(int(row.get("races") or 0) for row in fold_rows)
         top1_hits = sum(
-            round((number(row.get("winner_top1_rate")) or 0) * int(row.get("races") or 0) / 100)
-            for row in fold_rows
+            int(((fold.get("models") or {}).get(name) or {}).get("winner_top1") or 0)
+            for fold in prior_feature_folds
         )
         top3_hits = sum(
-            round((number(row.get("winner_top3_rate")) or 0) * int(row.get("races") or 0) / 100)
-            for row in fold_rows
+            int(((fold.get("models") or {}).get(name) or {}).get("winner_top3") or 0)
+            for fold in prior_feature_folds
         )
         feature_weight_rows[name] = {
             "feature": feature, "multiplier": multiplier,
