@@ -272,7 +272,7 @@ def parse_month_archive(blob, y, m):
                         "corner_positions": [parse_corner_order(row[i]) for i in range(58, min(len(row), 66))],
                     }
                 elif kind == "horses" and len(row) > 35:
-                    horse_no = re.sub(r"\\D", "", str(row[5] or ""))
+                    horse_no = re.sub(r"\D", "", str(row[5] or ""))
                     name = norm(row[6])
                     if not horse_no or not name:
                         continue
@@ -1147,7 +1147,7 @@ def allocate_formation_units(tickets, ranked, policy):
         return [1] * len(tickets)
     rank_by_no = {}
     for index, horse in enumerate(ranked or [], start=1):
-        raw = re.sub(r"\\D", "", str(horse.get("no") or ""))
+        raw = re.sub(r"\D", "", str(horse.get("no") or ""))
         if raw:
             rank_by_no.setdefault(str(int(raw)), index)
     strength = FORMATION_ALLOCATION_STRENGTHS[policy]
@@ -2354,7 +2354,7 @@ def preoff_value_backtest(payouts):
                 for prediction in predictions:
                     ev = number(prediction.get("expected_value"))
                     odds_value = number(prediction.get("win_odds"))
-                    horse_no = re.sub(r"\\D", "", str(prediction.get("horse_no") or ""))
+                    horse_no = re.sub(r"\D", "", str(prediction.get("horse_no") or ""))
                     if not horse_no or ev is None or odds_value is None or ev < threshold:
                         continue
                     race_bets += 1
