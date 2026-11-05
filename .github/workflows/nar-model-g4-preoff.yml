@@ -47,8 +47,9 @@ jobs:
           if missing:
               raise SystemExit("Daily review schema missing: " + ", ".join(missing))
           g4 = report["prospective_preoff_evaluation_G4"]
-          if g4.get("generated_at") != report["prospective_preoff_evaluation_G4"].get("generated_at"):
-              raise SystemExit("Daily review G4 timestamp is invalid")
+          g4_report = json.loads(Path("data/model-g4-preoff-backtest.json").read_text(encoding="utf-8"))
+          if g4.get("generated_at") != g4_report.get("generated_at"):
+              raise SystemExit("Daily review does not contain the latest G4 report")
           print("Validated refreshed daily review:", report["status"], report["as_of_date_jst"],
                 "G4=", g4.get("generated_at"))
           PY
