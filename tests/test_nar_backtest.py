@@ -2368,12 +2368,19 @@ class G4SupabasePaginationTests(unittest.TestCase):
 
         self.assertEqual(rows, [])
         self.assertEqual(diagnostics["supabase_status"], "loaded")
-        self.assertEqual(len(requests), 1)
+        self.assertEqual(len(requests), 2)
         from urllib.parse import parse_qs, urlparse
-        query = parse_qs(urlparse(requests[0].full_url).query)
-        self.assertEqual(query["race_date"], ["gte.2026-11-04", "lte.2026-11-04"])
-        self.assertEqual(query["order"], ["race_date.asc,captured_at.desc,id.desc"])
-        self.assertEqual(query["limit"], ["100"])
+        model_url = urlparse(requests[0].full_url)
+        odds_url = urlparse(requests[1].full_url)
+        self.assertTrue(model_url.path.endswith("/model_prediction_snapshots"))
+        self.assertTrue(odds_url.path.endswith("/odds_snapshots"))
+        model_query = parse_qs(model_url.query)
+        odds_query = parse_qs(odds_url.query)
+        self.assertEqual(model_query["race_date"], ["gte.2026-11-04", "lte.2026-11-04"])
+        self.assertEqual(model_query["order"], ["race_date.asc,captured_at.asc"])
+        self.assertEqual(odds_query["race_date"], ["gte.2026-11-04", "lte.2026-11-04"])
+        self.assertEqual(odds_query["order"], ["race_date.asc,captured_at.desc,id.desc"])
+        self.assertEqual(odds_query["limit"], ["100"])
 
 
 class G4ModelMarketBlendTests(unittest.TestCase):
