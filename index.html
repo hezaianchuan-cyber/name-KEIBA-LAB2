@@ -113,6 +113,7 @@ a{color:inherit}
       <div class="card"><h2>&#x5206;&#x6790;&#x30B5;&#x30DE;&#x30EA;&#x30FC;</h2><div class="kpis"><div class="kpi"><span>&#x51FA;&#x8D70;&#x982D;&#x6570;</span><b id="kRunners">&#x2014;</b></div><div class="kpi"><span>&#x671F;&#x5F85;&#x5024;&#x5019;&#x88DC;</span><b id="kValue">&#x2014;</b></div><div class="kpi"><span>&#x898B;&#x9001;&#x308A;&#x5224;&#x5B9A;</span><b id="kSkip">&#x2014;</b></div></div><p class="sub" id="summary" style="margin-top:12px">&#x51FA;&#x99AC;&#x8868;&#x304C;&#x306A;&#x3044;&#x5834;&#x5408;&#x306F;&#x3001;&#x30AA;&#x30C3;&#x30BA;&#x304B;&#x3089;&#x5E02;&#x5834;&#x4EBA;&#x6C17;&#x30FB;&#x5E02;&#x5834;&#x63A8;&#x5B9A;&#x78BA;&#x7387;&#x3092;&#x8868;&#x793A;&#x3057;&#x307E;&#x3059;&#xFF08;&#x72EC;&#x81EA;&#x306E;&#x52DD;&#x7387;&#x4E88;&#x6E2C;&#x3068;&#x306F;&#x533A;&#x5225;&#xFF09;&#x3002;</p></div>
     </div>
     <div class="card"><h2>&#x51FA;&#x8D70;&#x99AC;&#x30C7;&#x30FC;&#x30BF;</h2><div id="runnerList" class="sub">&#x307E;&#x3060;&#x51FA;&#x8D70;&#x99AC;&#x30C7;&#x30FC;&#x30BF;&#x304C;&#x3042;&#x308A;&#x307E;&#x305B;&#x3093;&#x3002;</div></div>
+    <div class="card" id="oddsTrendPanel"><h2>オッズ推移（公式1分記録）</h2><p class="sub">選択中のレースについて、保存された時点ごとのオッズを比較します。発走前に取得できた記録のみ表示します。</p><div id="oddsTrendRows" class="sub">1分オッズを取得すると推移を表示します。</div></div>
   </section>
   <section id="history" class="panel">
     <div class="card" id="cloudAuthCard"><h2>予想履歴のクラウド同期</h2><p class="sub">メールアドレスでログインすると、このアカウントの予想履歴を別の端末でも共有できます。ログイン前のこの端末の予想履歴も、ログイン後にクラウドへ移行します。</p><div class="grid"><div><label for="cloudEmail">メールアドレス</label><input id="cloudEmail" type="email" autocomplete="email" placeholder="メールアドレス"></div><div><label for="cloudPassword">パスワード（8文字以上）</label><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="パスワード"></div></div><div class="actions"><button class="btn primary" id="cloudSignIn">ログイン</button><button class="btn" id="cloudSignUp">新規登録</button><button class="btn" id="cloudSignOut" disabled>ログアウト</button></div><div class="status"><i class="dot" id="cloudDot"></i><span id="cloudStatus">クラウド未接続。ログインすると予想履歴を同期します。</span></div></div>
@@ -317,17 +318,48 @@ async function syncCloudPredictions(){
 try{initCloudSync();}catch(e){console.error('クラウド認証の初期化エラー',e);const status=document.getElementById('cloudStatus');if(status)status.textContent='認証画面の初期化に失敗しました。ページを再読み込みしてください。';}
 
 function csvRows(text){let rows=[],row=[],cell='',q=false;for(let i=0;i<text.length;i++){let c=text[i];if(c==='"'){if(q&&text[i+1]==='"'){cell+='"';i++}else q=!q}else if(c===','&&!q){row.push(cell);cell=''}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(x=>x!==''))rows.push(row);row=[];cell=''}else cell+=c}if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows;}
-function txt(buf){const bytes=buf instanceof Uint8Array?buf:new Uint8Array(buf);if(bytes.length>=3&&bytes[0]===0xEF&&bytes[1]===0xBB&&bytes[2]===0xBF)return new TextDecoder('utf-8').decode(bytes);if(bytes.length>=2&&bytes[0]===0xFF&&bytes[1]===0xFE)return new TextDecoder('utf-16le').decode(bytes);if(bytes.length>=2&&bytes[0]===0xFE&&bytes[1]===0xFF)return new TextDecoder('utf-16be').decode(bytes);try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes)}catch(e){try{return new TextDecoder('shift_jis').decode(bytes)}catch(e2){return new TextDecoder('utf-8').decode(bytes)}}}
+function txt(buf){
+ const bytes=buf instanceof Uint8Array?buf:new Uint8Array(buf);
+ if(bytes.length>=3&&bytes[0]===0xEF&&bytes[1]===0xBB&&bytes[2]===0xBF)return new TextDecoder('utf-8').decode(bytes);
+ if(bytes.length>=2&&bytes[0]===0xFF&&bytes[1]===0xFE)return new TextDecoder('utf-16le').decode(bytes);
+ if(bytes.length>=2&&bytes[0]===0xFE&&bytes[1]===0xFF)return new TextDecoder('utf-16be').decode(bytes);
+ const candidates=[];
+ for(const encoding of ['utf-8','shift_jis']){try{candidates.push({encoding,text:new TextDecoder(encoding,{fatal:true}).decode(bytes)})}catch(e){}}
+ if(!candidates.length)return new TextDecoder('shift_jis').decode(bytes);
+ const venues=['帯広','門別','盛岡','水沢','浦和','船橋','大井','川崎','金沢','笠松','名古屋','園田','姫路','高知','佐賀'];
+ const score=value=>{let points=0;for(const venue of venues){const matches=value.match(new RegExp(venue,'g'));if(matches)points+=matches.length*20;}points-=(value.match(/\uFFFD/g)||[]).length*50;return points;};
+ candidates.sort((a,b)=>score(b.text)-score(a.text));
+ return candidates[0].text;
+}
 async function unzip(buf){const u8=new Uint8Array(buf),dv=new DataView(buf),files=[];let eocd=-1;for(let i=u8.length-22;i>=Math.max(0,u8.length-65558);i--){if(dv.getUint32(i,true)===0x06054b50){eocd=i;break}}if(eocd<0)throw Error('ZIP\u306E\u69CB\u9020\u3092\u78BA\u8A8D\u3067\u304D\u307E\u305B\u3093');const count=dv.getUint16(eocd+10,true);let p=dv.getUint32(eocd+16,true);for(let n=0;n<count;n++){if(dv.getUint32(p,true)!==0x02014b50)break;const method=dv.getUint16(p+10,true),csize=dv.getUint32(p+20,true),nlen=dv.getUint16(p+28,true),elen=dv.getUint16(p+30,true),clen=dv.getUint16(p+32,true),off=dv.getUint32(p+42,true);const nameBytes=u8.slice(p+46,p+46+nlen);const utf8Name=(dv.getUint16(p+8,true)&0x0800)!==0;let name;try{name=new TextDecoder(utf8Name?'utf-8':'shift_jis',{fatal:true}).decode(nameBytes)}catch(e){try{name=new TextDecoder('utf-8').decode(nameBytes)}catch(e2){name=Array.from(nameBytes).map(x=>String.fromCharCode(x)).join('')}}const lp=off+30+dv.getUint16(off+26,true)+dv.getUint16(off+28,true);let data=u8.slice(lp,lp+csize);if(!name.endsWith('/')){if(method===8){const ds=new DecompressionStream('deflate-raw');const stream=new Blob([data]).stream().pipeThrough(ds);data=new Uint8Array(await new Response(stream).arrayBuffer())}else if(method!==0)throw Error('\u672A\u5BFE\u5FDC\u306EZIP\u5727\u7E2E\u65B9\u5F0F: '+method);files.push({name,bytes:data})}p+=46+nlen+elen+clen}return files;}
 function num(v){const n=parseFloat(String(v??'').replace(/[\uFF0C,]/g,''));return Number.isFinite(n)?n:null}
 function norm(s){return String(s??'').replace(/[\s\u3000]/g,'').replace(/[\uFF10-\uFF19]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));}
-function normDate(v){const s=norm(v);const m=s.match(/^(\d{4})[\/-]?(\d{2})[\/-]?(\d{2})$/);return m?m[1]+m[2]+m[3]:s}function key(v,d,r){return [norm(v),normDate(d),norm(r).replace(/R$/i,'')].join('|')}
+function normDate(v){const s=norm(v);const m=s.match(/^(\d{4})[\/-]?(\d{2})[\/-]?(\d{2})$/);return m?m[1]+m[2]+m[3]:s}function normalizeRaceNo(value){const raw=norm(value).replace(/R$/i,'');return /^\\d+$/.test(raw)?String(Number(raw)):raw;}
+function key(v,d,r){return [canonicalVenue(v)||norm(v),normDate(d),normalizeRaceNo(r)].join('|')}
 function classify(name){const n=String(name||'').replace(/\\/g,'/').split('/').pop().replace(/^\uFEFF/,'').normalize('NFKC').toLowerCase();if(/horselist|horse.?list|\u51FA\u99AC\u8868/.test(n))return 'horses';if(/racelist|race.?list|\u30EC\u30FC\u30B9\u4E00\u89A7/.test(n))return 'races';if(/odds|\u30AA\u30C3\u30BA/.test(n))return 'odds';if(/payback|payout|\u6255\u623B/.test(n))return 'payouts';return null}
-function parseOfficial(name,text){const type=classify(name);if(!type)return 0;const rows=csvRows(text);let added=0;for(const a of rows){if(!a.length)continue;const venue=a[0]||'',date=a[1]||'',race=a[2]||'';if(!venue||!date||!race||!/^\d{8}$/.test(normDate(date)))continue;const id=key(venue,date,race);const dateKey=normDate(date);if(type==='horses'){const obj={id,venue,date:dateKey,race,frame:a[3],horseNo:a[5],name:a[6],sex:a[7],age:num(a[8]),sire:a[11],dam:a[12],broodmareSire:a[13],jockey:a[14],weight:num(a[16]),bodyWeight:num(a[22]),bodyDiff:num(a[23]),record:a[24],venueRecord:a[27],distanceRecord:a[28],bestTime:a[29],lastRank:num(a[31]),lastTime:a[32],margin:a[33],last3f:num(a[34]),popularity:num(a[35])};if(obj.name&&obj.horseNo){db.horses.push(obj);added++}}
-else if(type==='races'){const obj={id,venue,date:dateKey,race,time:a[3],grade:a[4],name:a[5],surface:a[21],turn:a[22],distance:num(a[23]),weather:a[24],going:a[25],fieldSize:num(a[26]),condition:a[27]};db.races.push(obj);added++}
-else if(type==='odds'){const obj={id,venue,date:dateKey,race,type:a[3],n1:a[4],n2:a[5],n3:a[6],odds:num(a[7]),maxOdds:num(a[8]),popularity:num(a[9])};db.odds.push(obj);added++}
-else if(type==='payouts'){db.payouts.push({id,venue,date:dateKey,race,winNo:a[4],winPay:num(a[5]),winPop:num(a[6]),place1:a[7],placePay1:num(a[8]),place2:a[10],placePay2:num(a[11]),place3:a[13],placePay3:num(a[14]),quinella1:a[24],quinella2:a[25],quinellaPay:num(a[26]),exacta1:a[28],exacta2:a[29],exactaPay:num(a[30]),wide1a:a[32],wide1b:a[33],widePay1:num(a[34]),wide2a:a[36],wide2b:a[37],widePay2:num(a[38]),wide3a:a[40],wide3b:a[41],widePay3:num(a[42]),trio1:a[44],trio2:a[45],trio3:a[46],trioPay:num(a[47]),trifecta1:a[49],trifecta2:a[50],trifecta3:a[51],trifectaPay:num(a[52])});added++}}
-return added;}
+function parseOfficial(name,text){
+ const type=classify(name);if(!type)return 0;
+ const rows=csvRows(text);let added=0;
+ for(const a of rows){
+  if(!a.length)continue;
+  const venue=canonicalVenue(a[0])||String(a[0]||'').trim(),date=a[1]||'',race=normalizeRaceNo(a[2]);
+  if(!venue||!date||!race||!/^\\d{8}$/.test(normDate(date)))continue;
+  const id=key(venue,date,race),dateKey=normDate(date);
+  if(type==='horses'){
+   const obj={id,venue,date:dateKey,race,frame:a[3],horseNo:a[5],name:a[6],sex:a[7],age:num(a[8]),sire:a[11],dam:a[12],broodmareSire:a[13],jockey:a[14],weight:num(a[16]),bodyWeight:num(a[22]),bodyDiff:num(a[23]),record:a[24],venueRecord:a[27],distanceRecord:a[28],bestTime:a[29],lastRank:num(a[31]),lastTime:a[32],margin:a[33],last3f:num(a[34]),popularity:num(a[35])};
+   if(obj.name&&obj.horseNo){db.horses.push(obj);added++}
+  }else if(type==='races'){
+   const obj={id,venue,date:dateKey,race,time:a[3],grade:a[4],name:a[5],surface:a[21],turn:a[22],distance:num(a[23]),weather:a[24],going:a[25],fieldSize:num(a[26]),condition:a[27]};
+   db.races.push(obj);added++;
+  }else if(type==='odds'){
+   const obj={id,venue,date:dateKey,race,type:a[3],n1:a[4],n2:a[5],n3:a[6],odds:num(a[7]),maxOdds:num(a[8]),popularity:num(a[9])};
+   db.odds.push(obj);added++;
+  }else if(type==='payouts'){
+   db.payouts.push({id,venue,date:dateKey,race,winNo:a[4],winPay:num(a[5]),winPop:num(a[6]),place1:a[7],placePay1:num(a[8]),place2:a[10],placePay2:num(a[11]),place3:a[13],placePay3:num(a[14]),quinella1:a[24],quinella2:a[25],quinellaPay:num(a[26]),exacta1:a[28],exacta2:a[29],exactaPay:num(a[30]),wide1a:a[32],wide1b:a[33],widePay1:num(a[34]),wide2a:a[36],wide2b:a[37],widePay2:num(a[38]),wide3a:a[40],wide3b:a[41],widePay3:num(a[42]),trio1:a[44],trio2:a[45],trio3:a[46],trioPay:num(a[47]),trifecta1:a[49],trifecta2:a[50],trifecta3:a[51],trifectaPay:num(a[52])});added++;
+  }
+ }
+ return added;
+}
 function isMonthlyOddsCsv(text){const first=String(text||'').replace(/^\uFEFF/,'').split(/\r?\n/,1)[0];return first.includes('\u7AF6\u99AC\u5834')&&first.includes('\u7AF6\u8D70\u5E74\u6708\u65E5')&&first.includes('\u8CED\u5F0F')&&first.includes('\u30AA\u30C3\u30BA')}
 function canonicalVenue(value){const raw=String(value||'').normalize('NFKC').replace(/競馬場/g,'').replace(/[\s　]/g,'').trim();const names=['門別','帯広','盛岡','水沢','浦和','船橋','大井','川崎','金沢','笠松','名古屋','園田','姫路','高知','佐賀','旭川','岩見沢','北見','福山','荒尾','中津','益田','宇都宮','足利','高崎','新潟','三条','上山'];return names.includes(raw)?raw:'';}
 function indexMonthlyOdds(text){const lines=String(text||'').replace(/^\uFEFF/,'').split(/\r?\n/);const map=new Map();for(let i=1;i<lines.length;i++){const line=lines[i];if(!line)continue;const a=line.split(',');if(a.length<10)continue;const venue=canonicalVenue(a[0]),date=normDate(a[1]),race=norm(a[2]);if(!venue||!/^\d{8}$/.test(date)||!race)continue;const id=key(venue,date,race);if(!map.has(id))map.set(id,{id,venue,date,race,horseNos:new Set()});if(norm(a[3]).includes(norm('単勝'))&&/^\d+$/.test(norm(a[4])))map.get(id).horseNos.add(norm(a[4]));}return [...map.values()].map(x=>({id:x.id,venue:x.venue,date:x.date,race:x.race,count:x.horseNos.size})).sort((a,b)=>b.date.localeCompare(a.date)||a.venue.localeCompare(b.venue,'ja')||Number(a.race)-Number(b.race));}
@@ -475,6 +507,25 @@ async function refreshOddsCaptureStatus(){
   if(details)details.textContent='1分オッズ接続エラー：'+e.message;
  }
 }
+function renderOddsTrend(){
+ const host=$('oddsTrendRows');if(!host)return;
+ const id=$('raceSelect')?.value;if(!id){host.textContent='レースを選択すると、そのレースのオッズ推移を表示します。';return;}
+ const rows=(minuteOddsHistoryRows||[]).filter(x=>x.id===id&&Number(x.odds)>0);
+ if(!rows.length){host.textContent='選択中のレースの1分オッズ記録はまだありません。発走30〜2分前に取得された記録があると、ここに推移が表示されます。';return;}
+ const times=[...new Set(rows.map(x=>x.capturedAt).filter(Boolean))].sort().slice(-6);
+ const types=[['3連複',x=>String(x.type||'').normalize('NFKC').includes('3連複')||String(x.type||'').includes('三連複')],['単勝',x=>String(x.type||'').normalize('NFKC').includes('単勝')]];
+ const sections=[];
+ for(const [label,test] of types){
+  const selected=rows.filter(test);if(!selected.length)continue;
+  const grouped=new Map();
+  for(const item of selected){const comb=[item.n1,item.n2,item.n3].filter(v=>v!==null&&v!==undefined&&String(v)!=='').map(v=>String(v)).join('-');if(!comb)continue;if(!grouped.has(comb))grouped.set(comb,[]);grouped.get(comb).push(item);}
+  const ranked=[...grouped.entries()].map(([comb,items])=>{const latest=items.slice().sort((a,b)=>String(b.capturedAt).localeCompare(String(a.capturedAt)))[0];return {comb,items,latest:Number(latest?.odds)||0};}).sort((a,b)=>a.latest-b.latest).slice(0,label==='3連複'?12:8);
+  const head='<tr><th>組合せ</th>'+times.map(t=>'<th>'+new Date(t).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'})+'</th>').join('')+'</tr>';
+  const body=ranked.map(item=>'<tr><td>'+esc(item.comb)+'</td>'+times.map(t=>{const point=item.items.find(x=>x.capturedAt===t);return '<td>'+(point?Number(point.odds).toFixed(1)+'倍':'—')+'</td>';}).join('')+'</tr>').join('');
+  sections.push('<h3 style="margin:12px 0 6px">'+label+'（'+ranked.length+'組）</h3><div class="tablewrap"><table style="min-width:420px"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>');
+ }
+ host.innerHTML=sections.length?'<div class="sub">取得時刻：'+times.map(t=>new Date(t).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'})).join(' → ')+' ／ 表示は直近6時点</div>'+sections.join(''):'このレースの1分オッズに表示可能な券種がありません。';
+}
 function refreshRaceChoices(){
   const date=$('raceDate').value.replaceAll('-',''),venue=$('venue').value;
   const source=[...(db.races||[]),...(oddsRaceIndex||[]),...(minuteOddsRaceIndex||[])];
@@ -491,11 +542,11 @@ function refreshRaceChoices(){
   const opts=['<option value="">選択してください</option>',...known.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>')].join('');
   if(known.length){vs.innerHTML=opts;if(known.includes(current))vs.value=current;else if(current)vs.value='';}
   const map=new Map();
-  for(const r of all){if(!r||!r.id||!r.race)continue;if((!date||normDate(r.date)===date)&&(!$('venue').value||norm(r.venue)===norm($('venue').value))){const prior=map.get(r.id)||{};map.set(r.id,{...prior,...r});}}
-  const races=[...map.values()].sort((a,b)=>Number(norm(a.race).replace(/R$/i,''))-Number(norm(b.race).replace(/R$/i,'')));
+  for(const r of all){if(!r||!r.id||!r.race)continue;if((!date||normDate(r.date)===date)&&(!$('venue').value||norm(r.venue)===norm($('venue').value))){const prior=map.get(r.id)||{};const merged={...prior,...r};for(const field of ['name','time','grade','surface','turn','distance','weather','going','fieldSize','condition','count'])if(r[field]===''||r[field]===null||r[field]===undefined)merged[field]=prior[field]??r[field];merged.race=normalizeRaceNo(merged.race);map.set(r.id,merged);}}
+  const races=[...map.values()].sort((a,b)=>Number(normalizeRaceNo(a.race))-Number(normalizeRaceNo(b.race)));
   const select=$('raceSelect'),old=select.value;
   select.innerHTML='<option value="">'+(races.length?'レースを選択':'該当条件のレースデータなし')+'</option>';
-  races.forEach(r=>{const o=document.createElement('option');o.value=r.id;const runners=Number(r.fieldSize)||Number(r.count)||0;o.textContent=r.race+'R '+(r.time||'')+' '+(r.name||'')+(runners?' · '+runners+'頭':'');select.append(o)});
+  races.forEach(r=>{const o=document.createElement('option');o.value=r.id;const runners=Number(r.fieldSize)||Number(r.count)||0;o.textContent=normalizeRaceNo(r.race)+'R '+(r.time||'')+' '+(r.name||'')+(runners?' · '+runners+'頭':'');select.append(o)});
   if(races.some(r=>r.id===old))select.value=old;
 }
 $('raceDate').addEventListener('change',()=>{fetchSupabaseLiveData().catch(e=>console.warn('日付別1分オッズ取得失敗',e)).finally(()=>refreshRaceChoices());});$('venue').addEventListener('change',()=>{refreshRaceChoices();});$('raceSelect').addEventListener('change',()=>{if($('raceSelect').value){$('summary').textContent='選択レースを自動分析し、買い目を保存しています。';analyze();}});
@@ -654,7 +705,7 @@ function renderDailyPayoutDay(date){
 }
 // Ledger v2: only exact saved-ticket matches against official payouts count as hits. Refresh after cloud restore, payout load, or a newly frozen plan.
 function labLedgerDateKey(value){return String(value||'').replace(/[^0-9]/g,'').slice(0,8);}
-function labLedgerVenueKey(value){return String(value||'').normalize('NFKC').replace(/競馬場/g,'').replace(/\s|　/g,'').trim();}
+function labLedgerVenueKey(value){const raw=String(value||'').normalize('NFKC').replace(/競馬場/g,'').replace(/\s|　/g,'').trim();return canonicalVenue(raw)||raw;}
 function labLedgerIsTrioType(type){
  const value=String(type??"").normalize("NFKC").replace(/\s/g,"");
  return value==="3連複"||value==="三連複";
@@ -670,9 +721,9 @@ function labLedgerRecordsForDate(plans,date){
  const day=(dailyPayoutReport?.days||[]).find(d=>labLedgerDateKey(d.date)===date),dayRaces=day?.races||[];
  const keyByType={'単勝':'win','複勝':'place','ワイド':'wide','馬連':'quinella','馬単':'exacta','3連複':'trio','3連単':'trifecta'};
  return plans.filter(x=>x.date===date).map(({p,plan})=>{
-  const venue=labLedgerVenueKey(plan.venue),raceNo=String(Number(String(plan.raceNo||'').replace(/[^0-9]/g,'')));
-  const matches=dayRaces.filter(r=>labLedgerVenueKey(r.venue)===venue&&String(Number(r.race||0))===raceNo);
-  const race=matches.length===1?matches[0]:null,decision=String(plan.decision||'').toUpperCase();
+  const planDate=labLedgerDateKey(plan.date),venue=labLedgerVenueKey(plan.venue),raceNo=normalizeRaceNo(plan.raceNo);
+  const matches=dayRaces.filter(r=>labLedgerDateKey(day?.date)===planDate&&labLedgerVenueKey(r.venue)===venue&&normalizeRaceNo(r.race)===raceNo);
+  const race=planDate===date&&matches.length===1?matches[0]:null,decision=String(plan.decision||'').toUpperCase();
   const labTickets=(Array.isArray(plan.tickets)?plan.tickets:[]).filter(t=>labLedgerIsTrioType(t?.type));
   const userTickets=Array.isArray(plan.userTickets)?plan.userTickets:[];
   const validLabTickets=labTickets.filter(t=>t&&Number(t.stake)>0&&labLedgerComb(t.comb,t.type)).map(t=>({...t,owner:'LAB'}));
@@ -720,6 +771,7 @@ function labLedgerRecordsForDate(plans,date){
 const LAB_TICKET_STORAGE_KEY='keibaLabTicketPlansV1';
 let remoteLabTicketPlans=[];
 let minuteOddsRows=[];
+let minuteOddsHistoryRows=[];
 let minuteOddsRaceIndex=[];
 let minuteOddsFetchPromise=null;
 async function fetchSupabaseLiveData(dateOverride){
@@ -759,7 +811,7 @@ async function fetchSupabaseLiveData(dateOverride){
    rows.push(...(Array.isArray(page)?page:[]));
    if(!Array.isArray(page)||page.length<pageSize)break;
   }
-  const oddsMap=new Map(),planMap=new Map(),raceMap=new Map();
+  const oddsMap=new Map(),planMap=new Map(),raceMap=new Map(),historyRows=[];
   for(const row of rows){
    const date=String(row.race_date||'').replace(/-/g,'');
    const id=String(row.race_id||'');
@@ -772,15 +824,19 @@ async function fetchSupabaseLiveData(dateOverride){
    }
    for(const item of row.odds_data?.odds||[]){
     const key=[id,item.type,item.n1,item.n2,item.n3].map(x=>String(x??'').normalize('NFKC').replace(/\s/g,'')).join('|');
-    if(!oddsMap.has(key))oddsMap.set(key,{id,venue:row.venue,date,race:String(row.race_number||''),type:item.type,n1:item.n1,n2:item.n2,n3:item.n3,odds:Number(item.odds),maxOdds:Number(item.max_odds)||null,popularity:Number(item.popularity)||null,capturedAt:row.captured_at});
+    const snapshot={id,venue:row.venue,date,race:normalizeRaceNo(row.race_number),type:item.type,n1:item.n1,n2:item.n2,n3:item.n3,odds:Number(item.odds),maxOdds:Number(item.max_odds)||null,popularity:Number(item.popularity)||null,capturedAt:row.captured_at};
+    historyRows.push(snapshot);
+    if(!oddsMap.has(key))oddsMap.set(key,snapshot);
    }
   }
   minuteOddsRows=[...oddsMap.values()];
+  minuteOddsHistoryRows=historyRows;
   minuteOddsRaceIndex=[...raceMap.values()];
   remoteLabTicketPlans=[...planMap.values()];
   refreshRaceChoices();
   const selectedRace=$('raceSelect')?.value;
   if(selectedRace&&typeof analyze==='function')analyze();
+  renderOddsTrend();
   if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
   const latest=rows?.[0]?.captured_at;
   const badge=$('oddsCaptureBadge'),details=$('oddsCaptureDetails');
