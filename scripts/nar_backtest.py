@@ -622,6 +622,131 @@ def scaled_model_weights(model_weights, feature, multiplier):
     return {key: value / total for key, value in adjusted.items()}
 
 
+def market_rank_gap_bucket(gap):
+    """Positive gap means LAB ranks a horse above the market."""
+    gap = int(gap)
+    if gap >= 5: return "lab_upgrade_5_plus"
+    if gap >= 3: return "lab_upgrade_3_4"
+    if gap >= 1: return "lab_upgrade_1_2"
+    if gap <= -5: return "market_upgrade_5_plus"
+    if gap <= -3: return "market_upgrade_3_4"
+    return "near_alignment_minus2_to_plus2"
+
+
+def new_market_rank_diagnostics():
+    bands = ("lab_upgrade_5_plus", "lab_upgrade_3_4", "lab_upgrade_1_2",
+             "near_alignment_minus2_to_plus2", "market_upgrade_3_4",
+             "market_upgrade_5_plus")
+    return {
+        "races": 0, "matched_horses": 0, "top7_overlap_sum": 0,
+        "rank_gap_bands": {name: {"horses": 0, "finish_top3": 0, "winner": 0}
+                           for name in bands},
+        "top_k_selection": {
+            side: {str(k): {"selected": 0, "finish_top3": 0, "winner": 0,
+                            "races_with_any_top3": 0, "races_with_all_top3": 0}
+                   for k in (1, 3, 5, 7)}
+            for side in ("lab", "market")
+        },
+    }
+
+
+def update_market_rank_diagnostics(report, lab_ranked, field, odds_by_no):
+    """Compare LAB and market ranks on exactly the same horses in a race."""
+    field_by_no = {str(h.get("no")): h for h in field if h.get("no") is not None}
+    market_rows = [(float(odds), str(no)) for no, odds in odds_by_no.items()
+                   if str(no) in field_by_no and number(odds) is not None
+                   and float(odds) > 0]
+    market_rows.sort(key=lambda item: (item[0], int(item[1]) if item[1].isdigit() else item[1]))
+    if len(market_rows) < 3:
+        return
+    market_order = [no for _, no in market_rows]
+    market_set = set(market_order)
+    lab_order = [str(h.get("no")) for h in lab_ranked if str(h.get("no")) in market_set]
+    if len(lab_order) < 3:
+        return
+    market_rank = {no: i + 1 for i, no in enumerate(market_order)}
+    lab_rank = {no: i + 1 for i, no in enumerate(lab_order)}
+    report["races"] += 1
+    report["matched_horses"] += len(lab_order)
+    report["top7_overlap_sum"] += len(set(lab_order[:7]) & set(market_order[:7]))
+    for no in lab_order:
+        horse = field_by_no[no]
+        finish = number(horse.get("finish"))
+        bucket = report["rank_gap_bands"][market_rank_gap_bucket(market_rank[no] - lab_rank[no])]
+        bucket["horses"] += 1
+        bucket["finish_top3"] += int(finish is not None and finish <= 3)
+        bucket["winner"] += int(finish == 1)
+    for side, ranking in (("lab", lab_order), ("market", market_order)):
+        for k in (1, 3, 5, 7):
+            selected = [field_by_no[no] for no in ranking[:k] if no in field_by_no]
+            bucket = report["top_k_selection"][side][str(k)]
+            top3_count = sum(1 for h in selected
+                             if number(h.get("finish")) is not None and number(h.get("finish")) <= 3)
+            winner_count = sum(1 for h in selected if number(h.get("finish")) == 1)
+            actual_top3 = sum(1 for h in field_by_no.values()
+                              if number(h.get("finish")) is not None and number(h.get("finish")) <= 3)
+            bucket["selected"] += len(selected)
+            bucket["finish_top3"] += top3_count
+            bucket["winner"] += winner_count
+            bucket["races_with_any_top3"] += int(top3_count > 0)
+            bucket["races_with_all_top3"] += int(actual_top3 > 0 and top3_count == min(k, actual_top3))
+
+
+def summarize_market_rank_diagnostics(report):
+    if not report["races"]:
+        return {"races": 0, "matched_horses": 0, "avg_top7_overlap": None,
+                "rank_gap_bands": {}, "top_k_selection": {}}
+    bands = {}
+    for name, row in report["rank_gap_bands"].items():
+        bands[name] = {
+            **row,
+            "finish_top3_rate_pct": round(100 * row["finish_top3"] / row["horses"], 2)
+                if row["horses"] else None,
+            "winner_rate_pct": round(100 * row["winner"] / row["horses"], 2)
+                if row["horses"] else None,
+        }
+    selection = {}
+    for side, by_k in report["top_k_selection"].items():
+        selection[side] = {}
+        for k, row in by_k.items():
+            selection[side][k] = {
+                **row,
+                "finish_top3_precision_pct": round(100 * row["finish_top3"] / row["selected"], 2)
+                    if row["selected"] else None,
+                "winner_precision_pct": round(100 * row["winner"] / row["selected"], 2)
+                    if row["selected"] else None,
+                "race_any_top3_rate_pct": round(100 * row["races_with_any_top3"] / report["races"], 2),
+                "race_all_top3_rate_pct": round(100 * row["races_with_all_top3"] / report["races"], 2),
+            }
+    return {
+        "races": report["races"], "matched_horses": report["matched_horses"],
+        "avg_top7_overlap": round(report["top7_overlap_sum"] / report["races"], 2),
+        "rank_gap_definition": "market rank minus LAB rank; positive means LAB ranks the horse higher",
+        "rank_gap_bands": bands, "top_k_selection": selection,
+        "comparison_policy": "LAB and market ranks are recomputed on the same horses with valid official final odds in each race; outcomes are official finishing positions.",
+    }
+
+
+def select_feature_weight_candidate(candidate_rows, baseline_top3_rate, baseline_trio_roi,
+                                    roi_tolerance_pp=1.0):
+    """Only select a challenger that improves top-3 coverage without materially harming trio ROI."""
+    eligible = []
+    for name, row in candidate_rows.items():
+        top3 = row.get("development_winner_top3_rate")
+        roi = row.get("development_trio_roi")
+        if top3 is None or roi is None or baseline_top3_rate is None or baseline_trio_roi is None:
+            continue
+        if top3 > baseline_top3_rate and roi >= baseline_trio_roi - roi_tolerance_pp:
+            eligible.append(name)
+    if not eligible:
+        return None
+    return max(eligible, key=lambda name: (
+        candidate_rows[name]["development_winner_top3_rate"],
+        candidate_rows[name].get("development_winner_top1_rate") or -1,
+        candidate_rows[name].get("development_trio_roi") or -1,
+    ))
+
+
 def update_model(field, parts_by_no, model_weights):
     valid = [h for h in field if h.get("finish") and h["no"] in parts_by_no]
     if len(valid) < 3:
@@ -1972,6 +2097,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                                *(f"ablate_{feature}" for feature in ablation_features),
                                *FEATURE_WEIGHT_VARIANTS)
     final_market_stats = {name: {"races":0,"top1_hits":0,"hits":0,"tickets":0,"stake":0,"return":0,"race_count":0,"sum_return_sq":0,"sum_stake_sq":0,"sum_stake_return":0} for name in market_comparison_names}
+    market_rank_diagnostics = new_market_rank_diagnostics()
     integrated_stats = {
         "confidence_threshold": 0.30,
         "role_blend": 0.10,
@@ -2092,6 +2218,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                 available_market = [(float(odds), str(no)) for no, odds in odds_for_race.items()
                                     if str(no) in field_numbers]
                 if available_market:
+                    if model_name == "C_performance_pace":
+                        update_market_rank_diagnostics(market_rank_diagnostics, ranked, field, odds_for_race)
                     favorite_no = min(available_market, key=lambda item: (item[0], int(item[1])))[1]
                     selected_label = ("C_model_top_pick" if model_name == "C_performance_pace"
                                       else model_name)
@@ -2354,6 +2482,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             "condition_finish_position_segments":condition_finish_segments,
             "confidence_filter_backtest":summarize_confidence_filter_stats(confidence_filter_stats),
             "integrated_strategy_E": integrated_summary,
+            "market_rank_diagnostics": summarize_market_rank_diagnostics(market_rank_diagnostics),
             "final_odds_market_comparison": {name: summarize_final_market_pair(bucket) for name, bucket in final_market_stats.items()}}
 
 
@@ -3711,10 +3840,14 @@ def main():
                 "winner_top3_rate": (recent_models.get(name) or {}).get("winner_top3_rate"),
                 "winner_topk_rate": (recent_models.get(name) or {}).get("winner_topk_rate"),
                 "win_roi": (recent_models.get(name) or {}).get("win_roi"),
+                "trio_roi": (((recent_models.get(name) or {}).get("bet_types") or {}).get("trio") or {}).get("roi"),
+                "trio_hit_rate": (((recent_models.get(name) or {}).get("bet_types") or {}).get("trio") or {}).get("hit_rate"),
+                "trio_profit": (((recent_models.get(name) or {}).get("bet_types") or {}).get("trio") or {}).get("profit"),
             } for name in ablation_names
         },
         "feature_weight_experiment": {},
         "market_comparison": recent_fold.get("final_odds_market_comparison", {}),
+        "market_rank_diagnostics": recent_fold.get("market_rank_diagnostics", {}),
         "method": {
             "type": "one_feature_at_a_time_ablation_plus_chronological_weight_challenger",
             "weight_policy": "Ablations remove one learned B-model feature and renormalize. Challenger variants independently scale form, jockey, distance, or venue weight by a fixed multiplier and renormalize; they are selected only on the two earlier chronological test folds, then assessed on the untouched final-year holdout.",
@@ -3730,41 +3863,52 @@ def main():
         fold for fold in (validation.get("folds") or [])
         if fold.get("period_label") in ("previous_year_2", "previous_year_1")
     ]
+    baseline_dev_races = sum(int(((fold.get("models") or {}).get("C_performance_pace") or {}).get("races") or 0)
+                             for fold in prior_feature_folds)
+    baseline_dev_top1 = sum(int(((fold.get("models") or {}).get("C_performance_pace") or {}).get("winner_top1") or 0)
+                            for fold in prior_feature_folds)
+    baseline_dev_top3 = sum(int(((fold.get("models") or {}).get("C_performance_pace") or {}).get("winner_top3") or 0)
+                            for fold in prior_feature_folds)
+    baseline_dev_trio_stake = sum(int((((((fold.get("models") or {}).get("C_performance_pace") or {}).get("bet_types") or {}).get("trio") or {}).get("stake") or 0)
+                                  for fold in prior_feature_folds)
+    baseline_dev_trio_return = sum(int((((((fold.get("models") or {}).get("C_performance_pace") or {}).get("bet_types") or {}).get("trio") or {}).get("return") or 0)
+                                   for fold in prior_feature_folds)
+    baseline_dev_top3_rate = round(100 * baseline_dev_top3 / baseline_dev_races, 2) if baseline_dev_races else None
+    baseline_dev_top1_rate = round(100 * baseline_dev_top1 / baseline_dev_races, 2) if baseline_dev_races else None
+    baseline_dev_trio_roi = round(100 * baseline_dev_trio_return / baseline_dev_trio_stake, 2) if baseline_dev_trio_stake else None
     feature_weight_rows = {}
     for name, (feature, multiplier) in FEATURE_WEIGHT_VARIANTS.items():
         fold_rows = []
         for fold in prior_feature_folds:
             metrics = ((fold.get("models") or {}).get(name) or {})
+            trio = ((metrics.get("bet_types") or {}).get("trio") or {})
             fold_rows.append({
                 "fold": fold.get("period_label"),
                 "races": metrics.get("races"),
                 "winner_top1_rate": metrics.get("winner_top1_rate"),
                 "winner_top3_rate": metrics.get("winner_top3_rate"),
-                "trio_roi": ((metrics.get("bet_types") or {}).get("trio") or {}).get("roi"),
+                "trio_roi": trio.get("roi"),
             })
         total_races = sum(int(row.get("races") or 0) for row in fold_rows)
-        top1_hits = sum(
-            int(((fold.get("models") or {}).get(name) or {}).get("winner_top1") or 0)
-            for fold in prior_feature_folds
-        )
-        top3_hits = sum(
-            int(((fold.get("models") or {}).get(name) or {}).get("winner_top3") or 0)
-            for fold in prior_feature_folds
-        )
+        top1_hits = sum(int(((fold.get("models") or {}).get(name) or {}).get("winner_top1") or 0)
+                        for fold in prior_feature_folds)
+        top3_hits = sum(int(((fold.get("models") or {}).get(name) or {}).get("winner_top3") or 0)
+                        for fold in prior_feature_folds)
+        trio_stake = sum(int((((((fold.get("models") or {}).get(name) or {}).get("bet_types") or {}).get("trio") or {}).get("stake") or 0)
+                          for fold in prior_feature_folds)
+        trio_return = sum(int((((((fold.get("models") or {}).get(name) or {}).get("bet_types") or {}).get("trio") or {}).get("return") or 0)
+                           for fold in prior_feature_folds)
         feature_weight_rows[name] = {
             "feature": feature, "multiplier": multiplier,
             "development_folds": fold_rows,
             "development_races": total_races,
             "development_winner_top1_rate": round(100 * top1_hits / total_races, 2) if total_races else None,
             "development_winner_top3_rate": round(100 * top3_hits / total_races, 2) if total_races else None,
+            "development_trio_roi": round(100 * trio_return / trio_stake, 2) if trio_stake else None,
             "holdout": recent_models.get(name),
         }
-    selected_weight_name = max(
-        feature_weight_rows,
-        key=lambda name: (
-            feature_weight_rows[name]["development_winner_top3_rate"] or -1,
-            feature_weight_rows[name]["development_winner_top1_rate"] or -1,
-        ),
+    selected_weight_name = select_feature_weight_candidate(
+        feature_weight_rows, baseline_dev_top3_rate, baseline_dev_trio_roi, roi_tolerance_pp=1.0
     ) if feature_weight_rows and prior_feature_folds else None
     selected_weight = feature_weight_rows.get(selected_weight_name) if selected_weight_name else None
     baseline_c = recent_models.get("C_performance_pace") or {}
@@ -3773,8 +3917,11 @@ def main():
     holdout_trio_candidate = ((selected_holdout.get("bet_types") or {}).get("trio") or {})
     feature_weight_experiment = {
         "candidate_variants": feature_weight_rows,
+        "baseline_development": {"races": baseline_dev_races, "winner_top1_rate": baseline_dev_top1_rate,
+                                 "winner_top3_rate": baseline_dev_top3_rate, "trio_roi": baseline_dev_trio_roi},
         "selected_on_prior_folds": selected_weight_name,
-        "selection_rule": "Choose the single-feature multiplier with the highest pooled winner-top3 rate across the two earlier chronological test folds; tie-break by winner-top1 rate. The latest one-year fold is excluded from selection.",
+        "selection_rule": "A candidate is eligible only when pooled development winner-top3 rate exceeds C and development trio ROI is no more than 1.0 percentage point below C. Among eligible candidates, rank by top3, then top1, then trio ROI. The latest one-year holdout is untouched.",
+        "development_roi_tolerance_pp": 1.0,
         "holdout_comparison": {
             "baseline_C": {
                 "races": baseline_c.get("races"),
@@ -3801,6 +3948,7 @@ def main():
             "winner_top3_delta_pp": round((selected_holdout.get("winner_top3_rate") or 0) - (baseline_c.get("winner_top3_rate") or 0), 2) if selected_holdout else None,
             "trio_roi_delta_pp": round((holdout_trio_candidate.get("roi") or 0) - (holdout_trio_base.get("roi") or 0), 2) if selected_holdout and holdout_trio_candidate else None,
             "promotion_ready": False,
+            "selection_guardrail_passed": bool(selected_weight_name),
             "note": "Candidate remains research-only. Promotion requires repeatable improvement in ranking and trio ROI on independent future holdout data; this single selected holdout does not change live weights.",
         },
     }

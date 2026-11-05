@@ -105,6 +105,46 @@ class FeatureAblationWeightTests(unittest.TestCase):
         self.assertAlmostEqual(reduced["venue"], 0.12 / 0.96)
 
 
+class MarketRankDiagnosticsTests(unittest.TestCase):
+    def test_market_rank_gap_direction_and_bands(self):
+        self.assertEqual(nb.market_rank_gap_bucket(5), "lab_upgrade_5_plus")
+        self.assertEqual(nb.market_rank_gap_bucket(3), "lab_upgrade_3_4")
+        self.assertEqual(nb.market_rank_gap_bucket(1), "lab_upgrade_1_2")
+        self.assertEqual(nb.market_rank_gap_bucket(0), "near_alignment_minus2_to_plus2")
+        self.assertEqual(nb.market_rank_gap_bucket(-3), "market_upgrade_3_4")
+        self.assertEqual(nb.market_rank_gap_bucket(-5), "market_upgrade_5_plus")
+
+    def test_compares_lab_and_market_on_the_same_horses(self):
+        report = nb.new_market_rank_diagnostics()
+        field = [
+            {"no":"1","finish":1}, {"no":"2","finish":2},
+            {"no":"3","finish":3}, {"no":"4","finish":7},
+        ]
+        lab = field[:]
+        odds = {"1":10.0,"2":1.5,"3":2.0,"4":3.0}
+        nb.update_market_rank_diagnostics(report, lab, field, odds)
+        result = nb.summarize_market_rank_diagnostics(report)
+        self.assertEqual(result["races"], 1)
+        self.assertEqual(result["matched_horses"], 4)
+        self.assertEqual(result["avg_top7_overlap"], 4.0)
+        self.assertEqual(result["rank_gap_bands"]["lab_upgrade_3_4"]["horses"], 1)
+        self.assertEqual(result["rank_gap_bands"]["market_upgrade_3_4"]["horses"], 1)
+        self.assertEqual(result["top_k_selection"]["lab"]["3"]["finish_top3_precision_pct"], 100.0)
+
+    def test_feature_weight_selection_obeys_roi_guardrail(self):
+        candidates = {
+            "accuracy_only": {"development_winner_top3_rate": 64.0,
+                              "development_winner_top1_rate": 33.0,
+                              "development_trio_roi": 55.0},
+            "balanced": {"development_winner_top3_rate": 63.0,
+                         "development_winner_top1_rate": 32.0,
+                         "development_trio_roi": 60.0},
+        }
+        self.assertEqual(nb.select_feature_weight_candidate(candidates, 62.0, 60.0), "balanced")
+        self.assertIsNone(nb.select_feature_weight_candidate(
+            {"accuracy_only": candidates["accuracy_only"]}, 62.0, 60.0))
+
+
 class RecentHistoryAblationTests(unittest.TestCase):
     def test_recent_history_is_an_explicit_optional_prediction_input(self):
         h={"name":"馬A","sire":"父A","jockey":"騎手A","age":5}
