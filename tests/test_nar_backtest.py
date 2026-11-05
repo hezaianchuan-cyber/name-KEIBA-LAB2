@@ -2347,6 +2347,35 @@ class MarketRankComparisonTests(unittest.TestCase):
         self.assertEqual(summary["market_winner_top3_rate"], 100.0)
 
 
+class G4SupabasePaginationTests(unittest.TestCase):
+    def test_supabase_query_is_date_bounded_and_uses_index_order(self):
+        model_rows = [{
+            "race_key": "大井|20261104|1",
+            "date": "20261104",
+            "captured_at": "2026-11-04T10:00:00+09:00",
+            "predictions": [],
+        }]
+        requests = []
+
+        def fake_urlopen(request, timeout=30):
+            requests.append(request)
+            return io.BytesIO(b"[]")
+
+        with mock.patch.object(g4, "SUPABASE_URL", "https://example.supabase.co"), \
+             mock.patch.object(g4, "SUPABASE_KEY", "test-key"), \
+             mock.patch.object(g4.urllib.request, "urlopen", side_effect=fake_urlopen):
+            rows, diagnostics = g4.load_supabase_snapshots(model_rows)
+
+        self.assertEqual(rows, [])
+        self.assertEqual(diagnostics["supabase_status"], "loaded")
+        self.assertEqual(len(requests), 1)
+        from urllib.parse import parse_qs, urlparse
+        query = parse_qs(urlparse(requests[0].full_url).query)
+        self.assertEqual(query["race_date"], ["gte.2026-11-04", "lte.2026-11-04"])
+        self.assertEqual(query["order"], ["race_date.asc,captured_at.asc,id.asc"])
+        self.assertEqual(query["limit"], ["100"])
+
+
 class G4ModelMarketBlendTests(unittest.TestCase):
     def test_fixed_blend_compares_model_and_market_on_same_covered_field(self):
         snapshot = {
