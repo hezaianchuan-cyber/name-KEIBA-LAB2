@@ -88,7 +88,7 @@ def make_plan(r,limits):
     predictions=r.get("predictions") or []
     plan=base_plan(r.get("date"),r.get("venue"),r.get("race"),r.get("race_key"),predictions,
                    r.get("model_version"),r.get("captured_at"),r.get("odds") or [])
-    plan.update({"captureTime":r.get("captured_at"),"oddsMatchedCandidates":0,"validatedBetTypes":len(limits)})
+    plan.update({"captureTime":r.get("captured_at"),"oddsMatchedCandidates":0,"validatedBetTypes":int("trio" in limits)})
     horses=sorted(predictions,key=lambda x:(float(x.get("win_probability") or 0),float(x.get("score") or 0)),reverse=True)
     top=horses[:5]; nums=[no(x.get("horse_no")) for x in top]
     if len(set(nums))<3:
@@ -125,7 +125,7 @@ def make_plan(r,limits):
     bet=bool(model_ok and odds_rows and limits and selected and allocation)
     if not model_ok:reason,code="学習モデルまたは予測データ未準備","MODEL_NOT_READY"
     elif not odds_rows:reason,code="締切前オッズ未取得","ODDS_NOT_CAPTURED"
-    elif not limits:reason,code="券種別の検証済みEV基準が未成立","NO_VALIDATED_TICKET_THRESHOLD"
+    elif "trio" not in limits:reason,code="3連複の検証済みEV基準が未成立","NO_VALIDATED_TICKET_THRESHOLD"
     elif not candidates:reason,code="候補買い目のオッズ未照合","TICKET_ODDS_NOT_MATCHED"
     else:reason,code="検証済みEV基準を満たす候補なし","EV_BELOW_VALIDATED_THRESHOLD"
     plan.update({"decision":"BET" if bet else "SKIP","skipReason":"" if bet else reason,
