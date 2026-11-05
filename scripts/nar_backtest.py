@@ -609,6 +609,16 @@ FEATURE_WEIGHT_VARIANTS = {
     "weight_venue_up_1_3": ("venue", 1.30),
 }
 
+# Combined challengers are research-only. All adjustments are applied together
+# and normalized once, so interaction effects are measured on the same race set.
+FEATURE_WEIGHT_COMBINATIONS = {
+    "D1_jockey_venue": (("jockey", 1.50), ("venue", 0.70)),
+    "D2_jockey_distance": (("jockey", 1.50), ("distance", 0.70)),
+    "D3_venue_distance": (("venue", 0.70), ("distance", 0.70)),
+    "D4_jockey_venue_distance": (("jockey", 1.50), ("venue", 0.70), ("distance", 0.70)),
+}
+FEATURE_WEIGHT_NAMES = tuple(FEATURE_WEIGHT_VARIANTS) + tuple(FEATURE_WEIGHT_COMBINATIONS)
+
 
 def scaled_model_weights(model_weights, feature, multiplier):
     """Change one learned feature weight by a fixed factor and renormalize."""
@@ -616,6 +626,21 @@ def scaled_model_weights(model_weights, feature, multiplier):
         raise ValueError("Invalid feature-weight experiment")
     adjusted = dict(model_weights)
     adjusted[feature] *= multiplier
+    total = sum(adjusted.values())
+    if total <= 0:
+        raise ValueError("Feature weights must have a positive sum")
+    return {key: value / total for key, value in adjusted.items()}
+
+
+def combined_scaled_model_weights(model_weights, adjustments):
+    """Apply multiple fixed feature multipliers together, then normalize once."""
+    adjusted = dict(model_weights)
+    if not adjustments:
+        raise ValueError("At least one feature adjustment is required")
+    for feature, multiplier in adjustments:
+        if feature not in adjusted or multiplier <= 0:
+            raise ValueError("Invalid combined feature-weight experiment")
+        adjusted[feature] *= multiplier
     total = sum(adjusted.values())
     if total <= 0:
         raise ValueError("Feature weights must have a positive sum")
@@ -2065,10 +2090,14 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     # named feature removed and the remaining weights renormalized. This is a
     # diagnostic sensitivity test, not a separately refitted candidate model.
     models.update({f"ablate_{feature}": learned for feature in ablation_features})
-    weight_variant_names = tuple(FEATURE_WEIGHT_VARIANTS)
+    weight_variant_names = FEATURE_WEIGHT_NAMES
     models.update({
         name: scaled_model_weights(learned, feature, multiplier)
         for name, (feature, multiplier) in FEATURE_WEIGHT_VARIANTS.items()
+    })
+    models.update({
+        name: combined_scaled_model_weights(learned, adjustments)
+        for name, adjustments in FEATURE_WEIGHT_COMBINATIONS.items()
     })
     performance_blends = {
         "trained_with_performance": (0.10, 0.10, 0.00),
@@ -2128,7 +2157,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     # are fixed before holdout evaluation; no test-fold threshold tuning is allowed.
     market_comparison_names = ("C_model_top_pick", "final_odds_favorite",
                                *(f"ablate_{feature}" for feature in ablation_features),
-                               *FEATURE_WEIGHT_VARIANTS)
+                               *FEATURE_WEIGHT_NAMES)
     final_market_stats = {name: {"races":0,"top1_hits":0,"hits":0,"tickets":0,"stake":0,"return":0,"race_count":0,"sum_return_sq":0,"sum_stake_sq":0,"sum_stake_return":0} for name in market_comparison_names}
     market_rank_diagnostics = new_market_rank_diagnostics()
     integrated_stats = {
@@ -2219,13 +2248,13 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             elif model_name in ("B_condition", "trained_with_conditions", "trained_with_conditions_and_pace"):
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
                             0.0,0.0,0.0,include_recent_history,going_weight=0.10)[0],h) for h in field]
-            elif model_name in ("C_performance_pace", "C_performance_pace_no_frame") or model_name in FEATURE_WEIGHT_VARIANTS:
+            elif model_name in ("C_performance_pace", "C_performance_pace_no_frame") or model_name in FEATURE_WEIGHT_NAMES:
                 scored=[]
                 for h in field:
                     performance_score = score_runner_performance(
                         h, history, sire_stats, jockey_stats, race, weights,
                         0.10, 0.10, 0.10, include_recent_history, going_weight=0.10)[0]
-                    if model_name == "C_performance_pace" or model_name in FEATURE_WEIGHT_VARIANTS:
+                    if model_name == "C_performance_pace" or model_name in FEATURE_WEIGHT_NAMES:
                         performance_score = blend_frame_score(
                             performance_score, race, h, frame_stats)
                     scored.append((performance_score, h))
@@ -2236,7 +2265,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             else:
                 scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights,
                             include_recent_history=include_recent_history)[0],h) for h in field]
-            if model_name in ("C_performance_pace", "C_performance_pace_no_frame", "trained_with_pace", "trained_performance_with_pace", "trained_with_conditions_and_pace") or model_name.startswith("ablate_") or model_name in FEATURE_WEIGHT_VARIANTS:
+            if model_name in ("C_performance_pace", "C_performance_pace_no_frame", "trained_with_pace", "trained_performance_with_pace", "trained_with_conditions_and_pace") or model_name.startswith("ablate_") or model_name in FEATURE_WEIGHT_NAMES:
                 _, _, pace_delta = pace_adjustments(field, history)
                 scored = [(score + pace_delta.get(h["no"], 0.0), h) for score, h in scored]
             if model_name == "trained":
@@ -2245,7 +2274,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                     test_calibration_records.append({"scores":[score for score,_ in scored],
                                                      "winner_indices":winner_indices})
             ranked=[h for _,h in sorted(scored,key=lambda x:x[0],reverse=True)]
-            if (model_name == "C_performance_pace" or model_name.startswith("ablate_") or model_name in FEATURE_WEIGHT_VARIANTS) and final_odds:
+            if (model_name == "C_performance_pace" or model_name.startswith("ablate_") or model_name in FEATURE_WEIGHT_NAMES) and final_odds:
                 odds_for_race = final_odds.get(key, {})
                 field_numbers = {str(h["no"]) for h in field}
                 available_market = [(float(odds), str(no)) for no, odds in odds_for_race.items()
@@ -3456,7 +3485,7 @@ def holdout_validation(races, horses, payouts, final_odds=None):
                        "baseline","trained","trained_no_recent_history","trained_race_relative",
                        "trained_with_pace","trained_with_performance","trained_performance_with_pace","trained_with_conditions","trained_with_conditions_and_pace",
                        "trained_margin_only","trained_closing_only","trained_performance_light",
-                       "trained_with_time","trained_performance_with_time", *FEATURE_WEIGHT_VARIANTS):
+                       "trained_with_time","trained_performance_with_time", *FEATURE_WEIGHT_NAMES):
         total={"races":0,"winner_top1":0,"winner_top3":0,
                "winner_topk":{str(k):0 for k in (5,6,7)},
                "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0,
@@ -3882,8 +3911,8 @@ def main():
         "market_comparison": recent_fold.get("final_odds_market_comparison", {}),
         "market_rank_diagnostics": recent_fold.get("market_rank_diagnostics", {}),
         "method": {
-            "type": "one_feature_at_a_time_ablation_plus_chronological_weight_challenger",
-            "weight_policy": "Ablations remove one learned B-model feature and renormalize. Challenger variants independently scale form, jockey, distance, or venue weight by a fixed multiplier and renormalize; they are selected only on the two earlier chronological test folds, then assessed on the untouched final-year holdout.",
+            "type": "feature_ablation_plus_single_and_combined_chronological_weight_challengers",
+            "weight_policy": "Ablations remove one learned B-model feature and renormalize. Single-feature challengers scale one learned weight; D1-D4 apply the predefined jockey/venue/distance multipliers together and normalize once. Candidate selection uses the two earlier chronological development folds and the same 12-ticket, 1,900-yen trio portfolio, then assesses the selected candidate on the untouched final-year holdout.",
             "market_data": "Official final confirmed odds are retrospective only and were not available before the race. This is a market benchmark, not a live pre-off comparison.",
             "selection": "All model and market picks are compared on the same holdout races with available official final odds.",
             "production_impact": "Diagnostic only. No live model weights, predictions, or G4 preregistered value thresholds are changed.",
@@ -3906,8 +3935,9 @@ def main():
         total = 0
         for fold in prior_feature_folds:
             metrics = ((fold.get("models") or {}).get(model_name) or {})
-            trio = ((metrics.get("bet_types") or {}).get("trio") or {})
-            total += int(trio.get(field_name) or 0)
+            narrowed = (((metrics.get("trio_diagnostics") or {}).get(
+                "formation_2_4_5_narrowed") or {}).get("12") or {})
+            total += int(narrowed.get(field_name) or 0)
         return total
 
     baseline_dev_trio_stake = pooled_trio_amount("C_performance_pace", "stake")
@@ -3918,7 +3948,8 @@ def main():
     baseline_dev_fold_rows = []
     for fold in prior_feature_folds:
         metrics = ((fold.get("models") or {}).get("C_performance_pace") or {})
-        trio = ((metrics.get("bet_types") or {}).get("trio") or {})
+        trio = (((metrics.get("trio_diagnostics") or {}).get(
+            "formation_2_4_5_narrowed") or {}).get("12") or {})
         baseline_dev_fold_rows.append({
             "fold": fold.get("period_label"),
             "races": metrics.get("races"),
@@ -3927,11 +3958,15 @@ def main():
             "trio_roi": trio.get("roi"),
         })
     feature_weight_rows = {}
-    for name, (feature, multiplier) in FEATURE_WEIGHT_VARIANTS.items():
+    for name in weight_variant_names:
+        single_spec = FEATURE_WEIGHT_VARIANTS.get(name)
+        feature, multiplier = single_spec if single_spec else ("combined", None)
+        adjustments = FEATURE_WEIGHT_COMBINATIONS.get(name)
         fold_rows = []
         for fold in prior_feature_folds:
             metrics = ((fold.get("models") or {}).get(name) or {})
-            trio = ((metrics.get("bet_types") or {}).get("trio") or {})
+            trio = (((metrics.get("trio_diagnostics") or {}).get(
+                "formation_2_4_5_narrowed") or {}).get("12") or {})
             fold_rows.append({
                 "fold": fold.get("period_label"),
                 "races": metrics.get("races"),
@@ -3948,6 +3983,10 @@ def main():
         trio_return = pooled_trio_amount(name, "return")
         feature_weight_rows[name] = {
             "feature": feature, "multiplier": multiplier,
+            "combined_adjustments": (
+                [{"feature": item[0], "multiplier": item[1]} for item in adjustments]
+                if adjustments else None
+            ),
             "development_folds": fold_rows,
             "development_races": total_races,
             "development_winner_top1_rate": round(100 * top1_hits / total_races, 2) if total_races else None,
@@ -3962,16 +4001,19 @@ def main():
     selected_weight = feature_weight_rows.get(selected_weight_name) if selected_weight_name else None
     baseline_c = recent_models.get("C_performance_pace") or {}
     selected_holdout = (selected_weight or {}).get("holdout") or {}
-    holdout_trio_base = ((baseline_c.get("bet_types") or {}).get("trio") or {})
-    holdout_trio_candidate = ((selected_holdout.get("bet_types") or {}).get("trio") or {})
+    holdout_trio_base = (((baseline_c.get("trio_diagnostics") or {}).get(
+        "formation_2_4_5_narrowed") or {}).get("12") or {})
+    holdout_trio_candidate = (((selected_holdout.get("trio_diagnostics") or {}).get(
+        "formation_2_4_5_narrowed") or {}).get("12") or {})
     feature_weight_experiment = {
         "candidate_variants": feature_weight_rows,
         "baseline_development": {"races": baseline_dev_races, "winner_top1_rate": baseline_dev_top1_rate,
                                  "winner_top3_rate": baseline_dev_top3_rate, "trio_roi": baseline_dev_trio_roi,
                                  "folds": baseline_dev_fold_rows},
         "selected_on_prior_folds": selected_weight_name,
-        "selection_rule": "A candidate must beat C on pooled top-3 coverage and stay within 1.0 ROI percentage point, and must independently beat C top-3 coverage while staying within the same ROI tolerance in every prior development fold. Among eligible candidates, rank by pooled top3, then top1, then trio ROI. The latest one-year holdout is untouched.",
+        "selection_rule": "A candidate must beat C on pooled top-3 coverage and stay within 1.0 ROI percentage point for the 12-ticket 2-4-5 narrowed trio portfolio (19 x 100-yen units allocated across 12 tickets; 1,900 yen per race), and must independently beat C top-3 coverage while staying within the same ROI tolerance in every prior development fold. Among eligible candidates, rank by pooled top3, then top1, then trio ROI. The latest one-year holdout is untouched.",
         "development_roi_tolerance_pp": 1.0,
+        "trio_comparison_policy": "12 unique 2-4-5 narrowed tickets per race, 19 x 100-yen units allocated equally, fixed 1,900-yen race budget; identical race set for every model.",
         "holdout_comparison": {
             "baseline_C": {
                 "races": baseline_c.get("races"),
@@ -3999,7 +4041,7 @@ def main():
             "trio_roi_delta_pp": round((holdout_trio_candidate.get("roi") or 0) - (holdout_trio_base.get("roi") or 0), 2) if selected_holdout and holdout_trio_candidate else None,
             "promotion_ready": False,
             "selection_guardrail_passed": bool(selected_weight_name),
-            "note": "Candidate remains research-only. Promotion requires repeatable improvement in ranking and trio ROI on independent future holdout data; this single selected holdout does not change live weights.",
+            "note": "Candidate remains research-only. Promotion requires repeatable improvement in ranking and 12-ticket trio ROI on independent future holdout data; this single selected holdout does not change live weights.",
         },
     }
     ablation_report["feature_weight_experiment"] = feature_weight_experiment
