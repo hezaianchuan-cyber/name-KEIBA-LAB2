@@ -127,9 +127,10 @@ def publish(rows: list[dict], endpoint: str, token: str, batch_size: int = 40) -
         )
         with urllib.request.urlopen(request, timeout=45) as response:
             payload = json.loads(response.read().decode("utf-8"))
-            if response.status < 200 or response.status >= 300 or not payload.get("ok"):
-                raise RuntimeError("Model snapshot archive rejected: " + str(payload)[:500])
-            published += int(payload.get("upserted", len(batch)))
+            if (response.status < 200 or response.status >= 300 or not payload.get("ok")
+                    or "upserted" not in payload or "received" not in payload):
+                raise RuntimeError("Model snapshot archive endpoint did not confirm the archive action: " + str(payload)[:500])
+            published += int(payload.get("upserted", 0))
     return published
 
 
