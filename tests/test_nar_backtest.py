@@ -2294,3 +2294,39 @@ class FrameScoreReuseTests(unittest.TestCase):
         self.assertAlmostEqual(second,0.60*0.92+expected_score*0.08)
         self.assertEqual(compute.call_count,1)
         self.assertEqual(cache,{"4":expected_score})
+
+
+
+class ConfidenceBucketTests(unittest.TestCase):
+    def test_calibration_metrics_report_confidence_bucket_hit_rates(self):
+        records = [
+            {"scores": [3.0, 1.0, 0.0], "winner_indices": [0]},
+            {"scores": [0.0, 2.0, 1.0], "winner_indices": [1]},
+            {"scores": [2.0, 1.0, 0.0], "winner_indices": [2]},
+        ]
+        metrics = nb.calibration_metrics(records, 0.18)
+        buckets = metrics["confidence_buckets"]
+        self.assertEqual(len(buckets), 10)
+        self.assertEqual(sum(bucket["races"] for bucket in buckets), 3)
+        occupied = [bucket for bucket in buckets if bucket["races"]]
+        self.assertTrue(all(bucket["hit_rate_pct"] is not None for bucket in occupied))
+        self.assertTrue(all("calibration_gap_pp" in bucket for bucket in buckets))
+
+
+class MarketRankComparisonTests(unittest.TestCase):
+    def test_market_rank_summary_compares_both_directions_and_top_three(self):
+        rows = [
+            {"model_top1_market_rank": 2, "market_top1_model_rank": 3,
+             "top3_overlap_count": 2, "mean_absolute_rank_difference": 1.0,
+             "best_winner_rank_g1": 1, "best_winner_rank_market": 2},
+            {"model_top1_market_rank": 1, "market_top1_model_rank": 1,
+             "top3_overlap_count": 3, "mean_absolute_rank_difference": 0.0,
+             "best_winner_rank_g1": 4, "best_winner_rank_market": 1},
+        ]
+        summary = g2.rank_comparison(rows)
+        self.assertEqual(summary["races"], 2)
+        self.assertEqual(summary["model_top1_market_rank_mean"], 1.5)
+        self.assertEqual(summary["market_top1_model_rank_mean"], 2.0)
+        self.assertEqual(summary["top3_overlap_mean"], 2.5)
+        self.assertEqual(summary["model_winner_top3_rate"], 50.0)
+        self.assertEqual(summary["market_winner_top3_rate"], 100.0)
