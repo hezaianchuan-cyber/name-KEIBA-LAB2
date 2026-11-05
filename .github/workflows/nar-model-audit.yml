@@ -30,9 +30,11 @@ jobs:
         with:
           python-version: '3.11'
       - name: Compile backtest and audit code
-        run: python3 -m py_compile scripts/nar_backtest.py scripts/capture_nar_odds.py scripts/nar_pipeline_audit.py
+        run: python3 -m py_compile scripts/nar_backtest.py scripts/capture_nar_odds.py scripts/nar_pipeline_audit.py scripts/audit_prediction_locks.py
       - name: Verify immutable pre-off prediction locks
         run: python3 -m unittest discover -s tests -p 'test_prediction_lock.py'
+      - name: Audit stored pre-off prediction locks
+        run: python3 scripts/audit_prediction_locks.py
       - name: Run model and data leakage audit
         run: python3 scripts/nar_pipeline_audit.py
       - name: Upload audit report
@@ -40,4 +42,10 @@ jobs:
         with:
           name: nar-pipeline-audit
           path: data/nar-pipeline-audit.json
+          if-no-files-found: error
+      - name: Upload prediction lock audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: nar-prediction-lock-audit
+          path: data/prediction-lock-audit.json
           if-no-files-found: error
