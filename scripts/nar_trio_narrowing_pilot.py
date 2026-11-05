@@ -501,6 +501,10 @@ def main():
         version: {
             "eligible_races": sum(1 for race in races if race["model_version"] == version),
             "results": evaluate_all_strategies([race for race in races if race["model_version"] == version]),
+            "divergence_analysis": {
+                "bands": summarize_divergence([race for race in races if race["model_version"] == version]),
+                "horse_level_signals": summarize_horse_signals([race for race in races if race["model_version"] == version]),
+            },
         }
         for version in sorted({race["model_version"] for race in races})
     }
@@ -559,7 +563,9 @@ def main():
         "results": strategies,
         "results_by_model_version": results_by_model_version,
         "current_model_results": results_by_model_version.get(current_model_version),
+        "current_model_divergence_analysis": (results_by_model_version.get(current_model_version) or {}).get("divergence_analysis"),
         "divergence_analysis": {
+            "scope": "pooled across model versions; descriptive only",
             "bands": summarize_divergence(races),
             "horse_level_signals": summarize_horse_signals(races),
             "definition": {
