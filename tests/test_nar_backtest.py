@@ -2057,3 +2057,40 @@ class TrioNarrow12Tests(unittest.TestCase):
         self.assertEqual(narrow10["stake"], 1900)
         self.assertEqual(narrow10["budget_per_race_jpy"], 1900)
 
+
+
+class RaceFeatureCacheParityTests(unittest.TestCase):
+    def test_cached_feature_vector_matches_uncached_scores_for_multiple_weights(self):
+        horse = {"no":"7", "name":"テスト馬", "sire":"父", "jockey":"騎手",
+                 "age":5}
+        history = {"テスト馬":[
+            {"finish":2,"field_size":10,"venue":"大井","distance":1600},
+            {"finish":4,"field_size":10,"venue":"大井","distance":1600},
+            {"finish":1,"field_size":10,"venue":"川崎","distance":1400},
+        ]}
+        sire_stats = {"父":{"runs":20,"top3":9}}
+        jockey_stats = {"騎手":{"runs":30,"top3":12}}
+        race = {"venue":"大井","distance":1600}
+        weights_a = {"form":0.55,"venue":0.12,"distance":0.12,
+                     "sire":0.10,"jockey":0.07,"age":0.04}
+        weights_b = nb.scaled_model_weights(weights_a,"jockey",1.5)
+        cache = {}
+        cached_a = nb.score_runner(horse,history,sire_stats,jockey_stats,race,
+                                   weights_a,parts_cache=cache)
+        cached_b = nb.score_runner(horse,history,sire_stats,jockey_stats,race,
+                                   weights_b,parts_cache=cache)
+        fresh_b = nb.score_runner(horse,history,sire_stats,jockey_stats,race,weights_b)
+        self.assertAlmostEqual(cached_a[0], nb.score_runner(
+            horse,history,sire_stats,jockey_stats,race,weights_a)[0])
+        self.assertAlmostEqual(cached_b[0], fresh_b[0])
+        self.assertEqual(cached_b[1], fresh_b[1])
+        self.assertEqual(len(cache),1)
+
+    def test_cache_is_separate_for_history_modes(self):
+        horse = {"no":"7","name":"テスト馬","sire":"","jockey":"","age":5}
+        race = {"venue":"大井","distance":1600}
+        cache = {}
+        weights = {"form":1.0}
+        nb.score_runner(horse,{}, {}, {}, race, weights, True, cache)
+        nb.score_runner(horse,{}, {}, {}, race, weights, False, cache)
+        self.assertEqual(len(cache),2)
