@@ -121,7 +121,7 @@ class MarketRankDiagnosticsTests(unittest.TestCase):
             {"no":"3","finish":3}, {"no":"4","finish":7},
         ]
         lab = field[:]
-        odds = {"1":10.0,"2":1.5,"3":2.0,"4":3.0}
+        odds = {"1":10.0,"2":3.0,"3":2.0,"4":1.5}
         nb.update_market_rank_diagnostics(report, lab, field, odds)
         result = nb.summarize_market_rank_diagnostics(report)
         self.assertEqual(result["races"], 1)

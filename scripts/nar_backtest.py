@@ -689,7 +689,7 @@ def update_market_rank_diagnostics(report, lab_ranked, field, odds_by_no):
             bucket["finish_top3"] += top3_count
             bucket["winner"] += winner_count
             bucket["races_with_any_top3"] += int(top3_count > 0)
-            bucket["races_with_all_top3"] += int(actual_top3 > 0 and top3_count == min(k, actual_top3))
+            bucket["races_with_all_top3"] += int(actual_top3 > 0 and top3_count == actual_top3)
 
 
 def summarize_market_rank_diagnostics(report):
