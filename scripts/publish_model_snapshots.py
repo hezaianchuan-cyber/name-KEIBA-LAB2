@@ -76,6 +76,7 @@ def record_to_row(record: dict) -> dict | None:
         "model_g_predictions": record.get("model_g_predictions") or [],
         "model_g_candidate_combinations": record.get("model_g_candidate_combinations") or [],
         "prediction_lock": record["prediction_lock"],
+        "locked_payload": {key: record.get(key) for key in LOCK_FIELDS},
     }
 
 
