@@ -84,6 +84,19 @@ class TrioCombinationProbabilityTests(unittest.TestCase):
         self.assertEqual(ranked[0]["combo"], ["1", "2", "6"])
         self.assertIsNone(ranked[0]["probability"])
 
+    def test_candidate_coverage_is_distinct_from_exact_ticket_hit(self):
+        race = {
+            "payouts": {("1", "2", "3"): 500},
+            "candidate_horses": {"model": ["1", "2", "3", "4", "5", "6", "7"]},
+        }
+        result = combo.evaluate_tickets(
+            [race], lambda _race: [("1", "2", "4")], 1, candidate_strategy="model"
+        )
+        self.assertEqual(result["hit_races"], 0)
+        self.assertEqual(result["candidate_top3_coverage_hits"], 1)
+        self.assertEqual(result["candidate_top3_coverage_pct"], 100.0)
+        self.assertEqual(result["stake_jpy"], 1900)
+
     def test_invalid_trio_is_rejected(self):
         with self.assertRaises(ValueError):
             combo.plackett_luce_trio_probability({"1": 0.5, "2": 0.3, "3": 0.2}, ("1", "1", "2"))
