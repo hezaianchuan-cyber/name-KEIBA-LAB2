@@ -64,6 +64,8 @@ def build_review(now=None):
     daily_archive = (payouts or {}).get("daily_archive") or {}
     closest = (g4 or {}).get("closest_to_post") or {}
     holdout = closest.get("holdout") or {}
+    daily_results = (g4 or {}).get("daily_results") or []
+    latest_daily = daily_results[-1] if daily_results else None
     diagnostics = (g4 or {}).get("diagnostics") or {}
     calibrated = ((g1 or {}).get("holdout_metrics") or {}).get("G1_calibrated") or {}
     weight_exp = (weights or {}).get("feature_weight_experiment") or {}
@@ -108,6 +110,8 @@ def build_review(now=None):
             "age_hours": age_hours((g4 or {}).get("generated_at"), now),
             "status": (g4 or {}).get("status"),
             "evaluation_period": (g4 or {}).get("evaluation_period"),
+            "latest_completed_day": latest_daily,
+            "recent_daily_results": daily_results[-7:],
             "valid_snapshots": diagnostics.get("valid_snapshots"),
             "snapshots_with_official_result": diagnostics.get("snapshots_with_official_result"),
             "snapshots_missing_official_result": diagnostics.get("snapshots_missing_official_result"),
