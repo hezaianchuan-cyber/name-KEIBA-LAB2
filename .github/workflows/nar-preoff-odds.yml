@@ -56,6 +56,17 @@ jobs:
       - name: Build automatic ticket plans from captured snapshots
         run: python3 scripts/build_auto_ticket_plans.py
 
+      - name: Preserve source archives for race-safe retry
+        shell: bash
+        run: |
+          set -e
+          mkdir -p /tmp/nar-capture-source
+          for name in latest-race latest-odds; do
+            if [ -s "data/${name}.zip" ]; then
+              cp "data/${name}.zip" "/tmp/nar-capture-source/${name}.zip"
+            fi
+          done
+
       - name: Commit new snapshots and automatic plans with race-safe retry
         shell: bash
         run: |
@@ -65,28 +76,20 @@ jobs:
           for attempt in 1 2 3 4 5; do
             git fetch origin main
             git reset --hard origin/main
-            # A rejected push followed by reset removes uncommitted ZIPs. Re-download
-            # both official archives on every retry before parsing or staging them.
-            BASE="https://www.keiba.go.jp/KeibaWeb/DataDownload"
-            fetch_zip() {
-              name="$1"
-              endpoint="$2"
-              tmp="data/${name}.zip.tmp"
-              out="data/${name}.zip"
-              if curl -fLsS --retry 1 --retry-delay 2 --max-time 45 "$BASE/$endpoint" -o "$tmp" && unzip -t "$tmp" >/dev/null 2>&1; then
-                mv "$tmp" "$out"
-                echo "$name=updated"
-              else
-                rm -f "$tmp"
-                echo "$name=unavailable"
-                return 1
-              fi
-            }
+            # A rejected push followed by reset removes uncommitted files.
+            # Reuse the validated archives from this run: the official
+            # download endpoint can return a transient 404 on a retry.
             mkdir -p data
-            fetch_zip latest-race "RaceDataDownload?type=daily"
-            fetch_zip latest-odds "OddsDataDownload?type=daily"
-            # Recompute against the latest archive so concurrent captures
-            # cannot append duplicate race snapshots or conflict gzip files.
+            for name in latest-race latest-odds; do
+              if [ -s "/tmp/nar-capture-source/${name}.zip" ]; then
+                cp "/tmp/nar-capture-source/${name}.zip" "data/${name}.zip"
+              elif [ ! -s "data/${name}.zip" ]; then
+                echo "Missing source archive: ${name}.zip"
+                exit 1
+              fi
+            done
+            # Recompute against the latest main tree using the same source
+            # archives so concurrent captures cannot duplicate snapshots.
             python3 scripts/capture_nar_odds.py
             python3 scripts/build_auto_ticket_plans.py
             git add data/odds-snapshots data/odds-capture-status.json data/auto-ticket-plans.json
