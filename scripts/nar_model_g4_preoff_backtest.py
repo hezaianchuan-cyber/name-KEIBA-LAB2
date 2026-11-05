@@ -34,6 +34,7 @@ MIN_PROBABILITY_RATIO = 1.20
 MIN_EXPECTED_VALUE = 1.08
 STAKE = 100
 BOOTSTRAP_REPS = 2000
+BLEND_MARKET_WEIGHTS = (0.0, 0.25, 0.50, 0.75, 1.0)
 
 # Disjoint buckets work with the existing 5-minute collector and improve as
 # the one-minute Supabase collector starts filling the T-2 bucket.
@@ -364,6 +365,22 @@ def build_race_evaluation(snapshot, outcome, expected_temperature):
             "expected_value": round(ev, 4),
         })
 
+    blend_candidates = {}
+    for market_weight in BLEND_MARKET_WEIGHTS:
+        candidate_probabilities = {
+            no: (1.0 - market_weight) * model_common[no] + market_weight * market[no]
+            for no in matched
+        }
+        candidate_order = sorted(
+            matched, key=lambda no: (-candidate_probabilities[no], int(no))
+        )
+        candidate_top = ticket(candidate_order[0], f"blend_market_{market_weight:.2f}")
+        blend_candidates[f"{market_weight:.2f}"] = {
+            "top": candidate_top,
+            "top3": candidate_order[:3],
+            "top3_hit": int(bool(set(candidate_order[:3]).intersection(winners))),
+        }
+
     return {
         "race_key": snapshot["race_key"],
         "date": snapshot["date"],
@@ -374,6 +391,7 @@ def build_race_evaluation(snapshot, outcome, expected_temperature):
         "market_top": ticket(market_top, "market_favorite"),
         "blend_top": ticket(blend_top, "G4_model_market_blend"),
         "blend_market_weight": blend_market_weight,
+        "blend_candidates": blend_candidates,
         "value_ticket": value_ticket,
     }, None
 
@@ -414,6 +432,29 @@ def summarize(rows):
         "roi_pct": round(100 * returned / stake, 2) if stake else None,
         "roi_95ci": roi_interval(rows),
     }
+
+
+def summarize_blend_candidates(rows):
+    """Compare predeclared model/market probability blends on identical races."""
+    report = {}
+    for weight in BLEND_MARKET_WEIGHTS:
+        key = f"{weight:.2f}"
+        candidates = [
+            row.get("blend_candidates", {}).get(key)
+            for row in rows
+            if row.get("blend_candidates", {}).get(key)
+        ]
+        top_rows = [item["top"] for item in candidates]
+        report[key] = {
+            "market_probability_weight_pct": round(weight * 100, 1),
+            "races": len(candidates),
+            "top1": summarize(top_rows),
+            "top3_coverage_hits": sum(item["top3_hit"] for item in candidates),
+            "top3_coverage_pct": round(
+                100 * sum(item["top3_hit"] for item in candidates) / len(candidates), 2
+            ) if candidates else None,
+        }
+    return report
 
 
 def choose_bucket(rows, name):
@@ -513,6 +554,7 @@ def main():
             "model_top": summarize([row["model_top"] for row in day_rows]),
             "market_favorite": summarize([row["market_top"] for row in day_rows]),
             "fixed_50_50_model_market_blend": summarize([row["blend_top"] for row in day_rows]),
+            "blend_candidate_comparison": summarize_blend_candidates(day_rows),
             "value_rule": summarize(day_value),
             "value_rule_bets": len(day_value),
             "note": "One closest-to-post captured pre-off snapshot per race; official result joined after the race.",
@@ -566,6 +608,7 @@ def main():
                 "model_top": summarize([r["model_top"] for r in latest_dev]),
                 "market_favorite": summarize([r["market_top"] for r in latest_dev]),
                 "fixed_50_50_model_market_blend": summarize([r["blend_top"] for r in latest_dev]),
+                "blend_candidate_comparison": summarize_blend_candidates(latest_dev),
                 "value_rule": summarize(value_dev),
                 "skip_rate_pct": round(100 * (len(latest_dev) - len(value_dev)) / len(latest_dev), 2) if latest_dev else None,
             },
@@ -573,6 +616,7 @@ def main():
                 "model_top": summarize([r["model_top"] for r in latest_hold]),
                 "market_favorite": summarize([r["market_top"] for r in latest_hold]),
                 "fixed_50_50_model_market_blend": summarize([r["blend_top"] for r in latest_hold]),
+                "blend_candidate_comparison": summarize_blend_candidates(latest_hold),
                 "value_rule": summarize(value_hold),
                 "skip_rate_pct": round(100 * (len(latest_hold) - len(value_hold)) / len(latest_hold), 2) if latest_hold else None,
             },
