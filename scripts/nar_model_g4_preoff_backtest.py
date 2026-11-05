@@ -620,6 +620,37 @@ def choose_bucket(rows, name):
     return [item[1] for item in by_race.values()]
 
 
+def build_coverage_audit(outcomes, snapshots, joined, snapshot_exclusions=None):
+    """Report unique race-level coverage and explicit reasons for excluded snapshots."""
+    outcome_keys=set(outcomes)
+    snapshot_keys={row.get("race_key") for row in snapshots if row.get("race_key")}
+    joined_keys={row.get("race_key") for row in joined if row.get("race_key")}
+    missing=sorted(outcome_keys-snapshot_keys)
+    by_day={}
+    for key in sorted(outcome_keys|snapshot_keys):
+        parts=key.split("|")
+        if len(parts)!=3: continue
+        date=parts[1]
+        day=by_day.setdefault(date,{"official_result_races":0,"valid_preoff_snapshot_races":0,
+            "matched_races":0,"missing_preoff_snapshot_races":0})
+        if key in outcome_keys: day["official_result_races"]+=1
+        if key in snapshot_keys: day["valid_preoff_snapshot_races"]+=1
+        if key in outcome_keys and key in snapshot_keys: day["matched_races"]+=1
+        if key in outcome_keys and key not in snapshot_keys: day["missing_preoff_snapshot_races"]+=1
+    return {
+        "unit":"unique race_key (not snapshot rows)",
+        "official_result_races":len(outcome_keys),
+        "unique_valid_preoff_snapshot_races":len(snapshot_keys),
+        "official_result_races_with_snapshot":len(outcome_keys&snapshot_keys),
+        "official_result_races_without_valid_snapshot":len(missing),
+        "snapshot_races_without_official_result":len(snapshot_keys-outcome_keys),
+        "unique_evaluated_races":len(joined_keys),
+        "missing_preoff_snapshot_race_keys":missing,
+        "snapshot_evaluation_exclusions":snapshot_exclusions or [],
+        "by_day":by_day,
+    }
+
+
 def main():
     g1 = json.loads(G1_FILE.read_text(encoding="utf-8"))
     if g1.get("status") != "G1_improved_on_untouched_holdout":
@@ -633,15 +664,18 @@ def main():
     diagnostics["insufficient_odds_coverage"] = 0
 
     joined = []
+    snapshot_exclusions = []
     for snapshot in snapshots:
         outcome = outcomes.get(snapshot["race_key"])
         if not outcome:
             diagnostics["snapshots_missing_official_result"] += 1
+            snapshot_exclusions.append({"race_key":snapshot["race_key"],"reason":"official_result_not_available"})
             continue
         diagnostics["snapshots_with_official_result"] += 1
         evaluated, reason = build_race_evaluation(snapshot, outcome, temperature)
         if reason:
             diagnostics[reason] = diagnostics.get(reason, 0) + 1
+            snapshot_exclusions.append({"race_key":snapshot["race_key"],"reason":reason})
             continue
         joined.append(evaluated)
         diagnostics["recalibrated_with_g1_temperature"] += 1
@@ -752,6 +786,7 @@ def main():
             "thresholds": "Fixed before G4 evaluation; no tuning on holdout.",
         },
         "diagnostics": diagnostics,
+        "coverage_audit": build_coverage_audit(outcomes, snapshots, joined, snapshot_exclusions),
         "time_buckets": buckets_report,
         "market_rank_disagreement": {
             "development": summarize_rank_disagreement(latest_dev),
