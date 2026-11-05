@@ -29,7 +29,9 @@ jobs:
       - name: Restore official monthly archive cache
         uses: actions/cache@v4
         with:
-          path: .cache/nar-monthly
+          path: |
+            .cache/nar-monthly
+            .cache/nar-odds-monthly
           key: nar-monthly-v1-${{ runner.os }}-${{ github.run_id }}
           restore-keys: |
             nar-monthly-v1-${{ runner.os }}-
@@ -49,6 +51,7 @@ jobs:
         env:
           NAR_CACHE_DIR: .cache/nar-monthly
           NAR_PARSED_CACHE_DIR: .cache/nar-parsed
+          NAR_ODDS_CACHE_DIR: .cache/nar-odds-monthly
         run: python3 scripts/nar_backtest.py
 
       - name: Publish aggregate report only
