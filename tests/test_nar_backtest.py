@@ -18,6 +18,31 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import capture_nar_odds as capture
 
 
+class BacktestCheckpointTests(unittest.TestCase):
+    def test_local_checkpoint_round_trip_preserves_completed_stages(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch.object(nb, "ROOT", Path(tmp)), mock.patch.dict(
+                "os.environ",
+                {"NAR_BACKTEST_CHECKPOINT_TOKEN": "", "GITHUB_TOKEN": ""},
+            ):
+                state = {
+                    "signature": nb.checkpoint_signature(),
+                    "chronological": {"race_count": 123},
+                    "folds": {"previous_year_2": {"period_label": "previous_year_2"}},
+                }
+                nb.save_backtest_checkpoint(state, "unit-test")
+                restored = nb.load_backtest_checkpoint()
+                self.assertEqual(restored["chronological"]["race_count"], 123)
+                self.assertIn("previous_year_2", restored["folds"])
+
+    def test_checkpoint_signature_rejects_different_period_or_code(self):
+        signature = nb.checkpoint_signature()
+        self.assertEqual(signature["version"], nb.BACKTEST_CHECKPOINT_VERSION)
+        self.assertIn("start", signature)
+        self.assertIn("end", signature)
+        self.assertIn("commit_sha", signature)
+
+
 class StrategyRiskDiagnosticsTests(unittest.TestCase):
     def test_reports_drawdown_losing_streak_and_worst_ten_race_roi(self):
         report = nb.strategy_risk_diagnostics([(100, 0)] * 10)
