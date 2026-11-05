@@ -5,7 +5,7 @@ Raw NAR CSV/ZIP files are processed in the ephemeral runner only. Only aggregate
 metrics and a small set of race-level examples are written to data/backtest-summary.json.
 """
 from __future__ import annotations
-import csv, datetime as dt, gzip, io, json, math, os, pickle, random, re, sys, time, urllib.parse, urllib.request, zipfile
+import base64, csv, datetime as dt, gzip, io, json, math, os, pickle, random, re, sys, time, urllib.parse, urllib.request, zipfile
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -15,6 +15,152 @@ OUT = ROOT / "data" / "backtest-summary.json"
 END = dt.date.today() - dt.timedelta(days=1)
 START = END - dt.timedelta(days=1460)  # four years: one year warm-up + three untouched annual test windows
 UA = "Mozilla/5.0 (compatible; KEIBA-LAB-backtest/1.0)"
+
+
+# Durable stage checkpoints live on a dedicated GitHub branch, separate from
+# production data and reports. Completed expensive stages/folds can therefore
+# be reused after a runner timeout or a failed workflow.
+BACKTEST_CHECKPOINT_VERSION = "nar-four-year-stage-checkpoint-v1"
+BACKTEST_CHECKPOINT_BRANCH = "nar-backtest-checkpoints"
+BACKTEST_CHECKPOINT_PATH = "nar-backtest-checkpoint.pkl.gz"
+
+
+def checkpoint_signature():
+    return {
+        "version": BACKTEST_CHECKPOINT_VERSION,
+        "commit_sha": os.environ.get("GITHUB_SHA", "local"),
+        "start": START.isoformat(),
+        "end": END.isoformat(),
+    }
+
+
+def _github_checkpoint_request(url, method="GET", payload=None, raw=False):
+    token = (os.environ.get("NAR_BACKTEST_CHECKPOINT_TOKEN")
+             or os.environ.get("GITHUB_TOKEN"))
+    if not token:
+        raise RuntimeError("GitHub checkpoint token is not configured")
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "User-Agent": "KEIBA-LAB-backtest-checkpoint",
+        "Accept": "application/vnd.github.raw" if raw else "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    data = json.dumps(payload).encode("utf-8") if payload is not None else None
+    request = urllib.request.Request(url, data=data, headers=headers, method=method)
+    with urllib.request.urlopen(request, timeout=45) as response:
+        return response.read()
+
+
+def _checkpoint_api_base():
+    repository = os.environ.get("GITHUB_REPOSITORY")
+    if not repository:
+        raise RuntimeError("GITHUB_REPOSITORY is not configured")
+    return f"https://api.github.com/repos/{repository}"
+
+
+def load_backtest_checkpoint():
+    local_path = ROOT / ".cache" / BACKTEST_CHECKPOINT_PATH
+    token = (os.environ.get("NAR_BACKTEST_CHECKPOINT_TOKEN")
+             or os.environ.get("GITHUB_TOKEN"))
+    if not token:
+        if local_path.is_file():
+            try:
+                with gzip.open(local_path, "rb") as handle:
+                    state = pickle.load(handle)
+                if state.get("signature") == checkpoint_signature():
+                    print("CHECKPOINT_RESUME source=local", flush=True)
+                    return state
+            except Exception as exc:
+                print(f"CHECKPOINT_WARNING local checkpoint ignored: {exc}", flush=True)
+        return {"signature": checkpoint_signature(), "chronological": None, "folds": {}}
+
+    base = _checkpoint_api_base()
+    metadata_url = (f"{base}/contents/{BACKTEST_CHECKPOINT_PATH}"
+                    f"?ref={BACKTEST_CHECKPOINT_BRANCH}")
+    try:
+        metadata = json.loads(_github_checkpoint_request(metadata_url).decode("utf-8"))
+        raw_url = metadata.get("download_url")
+        if not raw_url:
+            raise RuntimeError("checkpoint download URL missing")
+        compressed = _github_checkpoint_request(raw_url, raw=True)
+        state = pickle.loads(gzip.decompress(compressed))
+        if state.get("signature") != checkpoint_signature():
+            print("CHECKPOINT_RESUME ignored_stale_checkpoint=true", flush=True)
+            return {"signature": checkpoint_signature(), "chronological": None, "folds": {}}
+        print(
+            f"CHECKPOINT_RESUME source=github chronological={bool(state.get('chronological'))} "
+            f"completed_folds={len(state.get('folds') or {})}",
+            flush=True,
+        )
+        return state
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            print("CHECKPOINT_RESUME no_previous_checkpoint=true", flush=True)
+            return {"signature": checkpoint_signature(), "chronological": None, "folds": {}}
+        raise
+
+
+def save_backtest_checkpoint(state, reason):
+    state["signature"] = checkpoint_signature()
+    local_path = ROOT / ".cache" / BACKTEST_CHECKPOINT_PATH
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = local_path.with_suffix(local_path.suffix + ".tmp")
+    with gzip.open(temp_path, "wb", compresslevel=6) as handle:
+        pickle.dump(state, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    os.replace(temp_path, local_path)
+
+    token = (os.environ.get("NAR_BACKTEST_CHECKPOINT_TOKEN")
+             or os.environ.get("GITHUB_TOKEN"))
+    if not token:
+        print(f"CHECKPOINT_SAVED source=local reason={reason}", flush=True)
+        return
+
+    base = _checkpoint_api_base()
+    branch_url = f"{base}/git/ref/heads/{BACKTEST_CHECKPOINT_BRANCH}"
+    try:
+        _github_checkpoint_request(branch_url)
+    except urllib.error.HTTPError as exc:
+        if exc.code != 404:
+            raise
+        starting_sha = os.environ.get("GITHUB_SHA")
+        if not starting_sha:
+            raise RuntimeError("GITHUB_SHA is required to create checkpoint branch")
+        create_url = f"{base}/git/refs"
+        try:
+            _github_checkpoint_request(create_url, method="POST", payload={
+                "ref": f"refs/heads/{BACKTEST_CHECKPOINT_BRANCH}",
+                "sha": starting_sha,
+            })
+        except urllib.error.HTTPError as create_exc:
+            # Another retry/worker may have created the branch first.
+            if create_exc.code != 422:
+                raise
+
+    contents_url = f"{base}/contents/{BACKTEST_CHECKPOINT_PATH}"
+    existing_sha = None
+    try:
+        metadata = json.loads(_github_checkpoint_request(
+            f"{contents_url}?ref={BACKTEST_CHECKPOINT_BRANCH}"
+        ).decode("utf-8"))
+        existing_sha = metadata.get("sha")
+    except urllib.error.HTTPError as exc:
+        if exc.code != 404:
+            raise
+
+    compressed = local_path.read_bytes()
+    payload = {
+        "message": f"Save NAR backtest checkpoint: {reason}",
+        "content": base64.b64encode(compressed).decode("ascii"),
+        "branch": BACKTEST_CHECKPOINT_BRANCH,
+    }
+    if existing_sha:
+        payload["sha"] = existing_sha
+    _github_checkpoint_request(contents_url, method="PUT", payload=payload)
+    print(
+        f"CHECKPOINT_SAVED source=github reason={reason} "
+        f"bytes={len(compressed)}",
+        flush=True,
+    )
 
 def norm(s):
     return re.sub(r"\s+", "", str(s or "")).replace("　", "")
@@ -3475,7 +3621,7 @@ def evaluate_walk_forward_selection(folds, min_tickets=300, min_roi_gain=5.0):
     }
 
 
-def holdout_validation(races, horses, payouts, final_odds=None):
+def holdout_validation(races, horses, payouts, final_odds=None, checkpoint_state=None):
     dates=sorted({r["date"] for r in races.values()})
     if len(dates)<60:
         return {"status":"insufficient_dates","available_dates":len(dates)}
@@ -3498,6 +3644,13 @@ def holdout_validation(races, horses, payouts, final_odds=None):
         test_dates=[d for d in dates if test_start <= d < test_end]
         if not train_dates or not test_dates:
             continue
+        saved_folds = (checkpoint_state or {}).get("folds") or {}
+        if label in saved_folds:
+            saved_fold = saved_folds[label]
+            folds.append(saved_fold)
+            fold_runtime_seconds[label] = saved_fold.get("runtime_seconds", 0)
+            print(f"CHECKPOINT_RESUME fold={label} reused=true", flush=True)
+            continue
         fold_started = time.perf_counter()
         print(f"HOLDOUT_PROGRESS fold_start={label} train_dates={len(train_dates)} test_dates={len(test_dates)}", flush=True)
         fold_result = evaluate_holdout_fold(
@@ -3506,8 +3659,12 @@ def holdout_validation(races, horses, payouts, final_odds=None):
         fold_runtime_seconds[label] = fold_elapsed
         print(f"PERF_PROFILE holdout_fold_{label}={fold_elapsed}s "
               f"train_dates={len(train_dates)} test_dates={len(test_dates)}", flush=True)
-        folds.append({"fold":index,"period_label":label,
-                      "runtime_seconds":fold_elapsed, **fold_result})
+        completed_fold = {"fold":index,"period_label":label,
+                          "runtime_seconds":fold_elapsed, **fold_result}
+        folds.append(completed_fold)
+        if checkpoint_state is not None:
+            checkpoint_state.setdefault("folds", {})[label] = completed_fold
+            save_backtest_checkpoint(checkpoint_state, f"fold-{label}")
     if len(folds)<3:
         return {"status":"insufficient_folds","folds":folds,
                 "fold_runtime_seconds":fold_runtime_seconds,
@@ -3921,9 +4078,26 @@ def main():
         profile_last = now
         print(f"PERF_PROFILE {stage}={elapsed}s total={round(now-profile_started, 3)}s", flush=True)
 
+    checkpoint_state = load_backtest_checkpoint()
     races, horses, payouts, months = load_archives()
     mark_profile("load_archives")
-    metrics, examples, race_count, learned_weights, learning_updates, calibration_records = run_backtest(races, horses, payouts)
+    saved_chronological = checkpoint_state.get("chronological")
+    if saved_chronological:
+        metrics = saved_chronological["metrics"]
+        examples = saved_chronological["examples"]
+        race_count = saved_chronological["race_count"]
+        learned_weights = saved_chronological["learned_weights"]
+        learning_updates = saved_chronological["learning_updates"]
+        calibration_records = saved_chronological["calibration_records"]
+        print("CHECKPOINT_RESUME stage=chronological_run_backtest reused=true", flush=True)
+    else:
+        metrics, examples, race_count, learned_weights, learning_updates, calibration_records = run_backtest(races, horses, payouts)
+        checkpoint_state["chronological"] = {
+            "metrics": metrics, "examples": examples, "race_count": race_count,
+            "learned_weights": learned_weights, "learning_updates": learning_updates,
+            "calibration_records": calibration_records,
+        }
+        save_backtest_checkpoint(checkpoint_state, "chronological-complete")
     mark_profile("chronological_run_backtest")
     production_temperature = fit_temperature(calibration_records)
     production_calibration = calibration_metrics(calibration_records, production_temperature)
@@ -3931,7 +4105,13 @@ def main():
     final_odds, final_odds_downloads = load_final_odds_archives(dt.date(2026, 3, 1), END)
     print(f"Official monthly final-odds races: {len(final_odds)}", flush=True)
     mark_profile("final_odds_archive_load")
-    validation = holdout_validation(races, horses, payouts, final_odds)
+    validation = checkpoint_state.get("validation")
+    if validation:
+        print("CHECKPOINT_RESUME stage=walk_forward_holdout_validation reused=true", flush=True)
+    else:
+        validation = holdout_validation(races, horses, payouts, final_odds, checkpoint_state)
+        checkpoint_state["validation"] = validation
+        save_backtest_checkpoint(checkpoint_state, "walk-forward-validation-complete")
     mark_profile("walk_forward_holdout_validation")
     preoff_type_report = preoff_ticket_type_backtest(payouts)
     mark_profile("preoff_ticket_type_backtest")
