@@ -365,6 +365,23 @@ def build_race_evaluation(snapshot, outcome, expected_temperature):
             "expected_value": round(ev, 4),
         })
 
+    model_order = sorted(matched, key=lambda no: (-model_common[no], int(no)))
+    market_order = sorted(matched, key=lambda no: (-market[no], int(no)))
+    model_rank = {no: rank + 1 for rank, no in enumerate(model_order)}
+    market_rank = {no: rank + 1 for rank, no in enumerate(market_order)}
+    runner_diagnostics = [
+        {
+            "horse_no": no,
+            "model_rank": model_rank[no],
+            "market_rank": market_rank[no],
+            "model_probability": round(model_common[no], 8),
+            "market_probability": round(market[no], 8),
+            "captured_odds": round(win_odds[no], 4),
+            "is_winner": int(no in winners),
+        }
+        for no in matched
+    ]
+
     blend_candidates = {}
     for market_weight in BLEND_MARKET_WEIGHTS:
         candidate_probabilities = {
@@ -392,6 +409,7 @@ def build_race_evaluation(snapshot, outcome, expected_temperature):
         "blend_top": ticket(blend_top, "G4_model_market_blend"),
         "blend_market_weight": blend_market_weight,
         "blend_candidates": blend_candidates,
+        "runner_diagnostics": runner_diagnostics,
         "value_ticket": value_ticket,
     }, None
 
@@ -455,6 +473,95 @@ def summarize_blend_candidates(rows):
             ) if candidates else None,
         }
     return report
+
+
+def summarize_rank_disagreement(rows):
+    """Describe horses whose model rank sharply disagrees with the market."""
+    runners = [
+        runner
+        for row in rows
+        for runner in row.get("runner_diagnostics", [])
+    ]
+    groups = {
+        "model_ranks_5plus_above_market": [
+            item for item in runners
+            if item["market_rank"] - item["model_rank"] >= 5
+        ],
+        "market_ranks_5plus_above_model": [
+            item for item in runners
+            if item["model_rank"] - item["market_rank"] >= 5
+        ],
+    }
+    result = {}
+    for name, items in groups.items():
+        result[name] = {
+            "horses": len(items),
+            "races": len({
+                row["race_key"] for row in rows
+                if any(item in row.get("runner_diagnostics", []) for item in items)
+            }),
+            "winners": sum(item["is_winner"] for item in items),
+            "horse_level_win_rate_pct": round(
+                100 * sum(item["is_winner"] for item in items) / len(items), 2
+            ) if items else None,
+        }
+    return result
+
+
+def summarize_bucket_movement(joined):
+    """Compare captured market ranks/odds from T10 to T5 to T2."""
+    selected = {name: choose_bucket(joined, name) for name in BUCKETS}
+
+    def compare(left_name, right_name):
+        left = {row["race_key"]: row for row in selected[left_name]}
+        right = {row["race_key"]: row for row in selected[right_name]}
+        common = sorted(set(left).intersection(right))
+        rank_changes = []
+        odds_changes = []
+        winner_odds_changes = []
+        favorite_changed = 0
+        for race_key in common:
+            left_row, right_row = left[race_key], right[race_key]
+            left_runners = {
+                item["horse_no"]: item
+                for item in left_row.get("runner_diagnostics", [])
+            }
+            right_runners = {
+                item["horse_no"]: item
+                for item in right_row.get("runner_diagnostics", [])
+            }
+            left_favorite = min(left_runners.values(), key=lambda x: x["market_rank"]) if left_runners else None
+            right_favorite = min(right_runners.values(), key=lambda x: x["market_rank"]) if right_runners else None
+            if left_favorite and right_favorite and left_favorite["horse_no"] != right_favorite["horse_no"]:
+                favorite_changed += 1
+            for no in set(left_runners).intersection(right_runners):
+                a, b = left_runners[no], right_runners[no]
+                rank_changes.append(abs(b["market_rank"] - a["market_rank"]))
+                if a["captured_odds"] > 0:
+                    change = 100 * (b["captured_odds"] / a["captured_odds"] - 1)
+                    odds_changes.append(change)
+                    if a["is_winner"] or b["is_winner"]:
+                        winner_odds_changes.append(change)
+        return {
+            "matched_races": len(common),
+            "shared_horses": len(rank_changes),
+            "favorite_changed_races": favorite_changed,
+            "favorite_changed_pct": round(100 * favorite_changed / len(common), 2) if common else None,
+            "mean_absolute_market_rank_change": round(sum(rank_changes) / len(rank_changes), 3) if rank_changes else None,
+            "horses_with_shortened_odds_pct": round(100 * sum(value < 0 for value in odds_changes) / len(odds_changes), 2) if odds_changes else None,
+            "winner_horses_with_shortened_odds": sum(value < 0 for value in winner_odds_changes),
+            "winner_horses_compared": len(winner_odds_changes),
+            "winner_odds_shortened_pct": round(100 * sum(value < 0 for value in winner_odds_changes) / len(winner_odds_changes), 2) if winner_odds_changes else None,
+            "median_winner_odds_change_pct": round(sorted(winner_odds_changes)[len(winner_odds_changes) // 2], 2) if winner_odds_changes else None,
+        }
+
+    return {
+        "selected_races_by_bucket": {name: len(rows) for name, rows in selected.items()},
+        "T10_to_T5": compare("T10", "T5"),
+        "T5_to_T2": compare("T5", "T2"),
+        "T10_to_T2": compare("T10", "T2"),
+        "note": "Odds change is (later captured odds / earlier captured odds - 1); negative means odds shortened. Only horses present in both snapshots are compared.",
+    }
 
 
 def choose_bucket(rows, name):
@@ -523,6 +630,8 @@ def main():
                 "model_top": summarize([r["model_top"] for r in development]),
                 "market_favorite": summarize([r["market_top"] for r in development]),
                 "fixed_50_50_model_market_blend": summarize([r["blend_top"] for r in development]),
+                "blend_candidate_comparison": summarize_blend_candidates(development),
+                "rank_disagreement": summarize_rank_disagreement(development),
                 "value_rule": summarize(dev_value),
                 "value_rule_skip_rate_pct": round(100 * (len(development) - len(dev_value)) / len(development), 2) if development else None,
             },
@@ -530,6 +639,8 @@ def main():
                 "model_top": summarize([r["model_top"] for r in holdout]),
                 "market_favorite": summarize([r["market_top"] for r in holdout]),
                 "fixed_50_50_model_market_blend": summarize([r["blend_top"] for r in holdout]),
+                "blend_candidate_comparison": summarize_blend_candidates(holdout),
+                "rank_disagreement": summarize_rank_disagreement(holdout),
                 "value_rule": summarize(hold_value),
                 "value_rule_skip_rate_pct": round(100 * (len(holdout) - len(hold_value)) / len(holdout), 2) if holdout else None,
             },
@@ -600,6 +711,11 @@ def main():
         },
         "diagnostics": diagnostics,
         "time_buckets": buckets_report,
+        "market_rank_disagreement": {
+            "development": summarize_rank_disagreement(latest_dev),
+            "holdout": summarize_rank_disagreement(latest_hold),
+        },
+        "time_bucket_market_movement": summarize_bucket_movement(joined),
         "closest_to_post": {
             "unique_races": len(latest_rows),
             "development_races": len(latest_dev),
@@ -609,6 +725,7 @@ def main():
                 "market_favorite": summarize([r["market_top"] for r in latest_dev]),
                 "fixed_50_50_model_market_blend": summarize([r["blend_top"] for r in latest_dev]),
                 "blend_candidate_comparison": summarize_blend_candidates(latest_dev),
+                "rank_disagreement": summarize_rank_disagreement(latest_dev),
                 "value_rule": summarize(value_dev),
                 "skip_rate_pct": round(100 * (len(latest_dev) - len(value_dev)) / len(latest_dev), 2) if latest_dev else None,
             },
@@ -617,6 +734,7 @@ def main():
                 "market_favorite": summarize([r["market_top"] for r in latest_hold]),
                 "fixed_50_50_model_market_blend": summarize([r["blend_top"] for r in latest_hold]),
                 "blend_candidate_comparison": summarize_blend_candidates(latest_hold),
+                "rank_disagreement": summarize_rank_disagreement(latest_hold),
                 "value_rule": summarize(value_hold),
                 "skip_rate_pct": round(100 * (len(latest_hold) - len(value_hold)) / len(latest_hold), 2) if latest_hold else None,
             },
