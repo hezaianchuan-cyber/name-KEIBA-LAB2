@@ -20,14 +20,45 @@ class ShadowTicketPlanTests(unittest.TestCase):
             {"horse_no": "2", "win_probability": 0.10, "score": 0.6},
         ]
 
-    def test_shadow_portfolio_uses_unique_model_ranks(self):
+    def test_shadow_portfolio_contains_only_unique_trio(self):
         tickets = plans.shadow_tickets(self.predictions)
-        self.assertEqual(tickets[0]["type"], "単勝")
-        self.assertEqual(tickets[0]["comb"], "2")
-        self.assertEqual(tickets[1]["comb"], "2")
-        self.assertEqual(tickets[2]["comb"], "1")
-        self.assertEqual(tickets[3]["comb"], "1-2")
-        self.assertEqual(tickets[4]["comb"], "1-2-3")
+        self.assertEqual(len(tickets), 1)
+        self.assertEqual(tickets[0]["type"], "3連複")
+        self.assertEqual(tickets[0]["comb"], "1-2-3")
+
+    def test_real_auto_plan_never_selects_non_trio_even_if_other_thresholds_pass(self):
+        race = {
+            "date": "20261105", "venue": "大井", "race": "10",
+            "race_key": "大井|20261105|10", "model_version": "test",
+            "captured_at": "2026-11-05T12:00:00+09:00",
+            "predictions": self.predictions,
+            "odds": [{"type": "単勝", "n1": "2", "odds": 2.1}],
+            "candidate_combinations": [
+                {"bet_type": "win", "numbers": ["2"], "odds": 8.0, "probability": 0.8},
+                {"bet_type": "trio", "numbers": ["2", "1", "3"], "odds": 3.0, "probability": 0.7},
+                {"bet_type": "trifecta", "numbers": ["2", "1", "3"], "odds": 100.0, "probability": 0.5},
+            ],
+        }
+        limits = {"win": 1.1, "trio": 1.1, "trifecta": 1.1}
+        plan = plans.make_plan(race, limits)
+        self.assertEqual(plan["decision"], "BET")
+        self.assertTrue(plan["tickets"])
+        self.assertTrue(all(ticket["type"] == "3連複" for ticket in plan["tickets"]))
+        self.assertEqual(plan["selectedType"], "trio") if "selectedType" in plan else None
+
+    def test_thresholds_expose_only_validated_trio(self):
+        import json
+        with tempfile.TemporaryDirectory() as tmp:
+            data_dir = Path(tmp)
+            (data_dir / "backtest-summary.json").write_text(json.dumps({
+                "preoff_ticket_type_backtest": {"bet_types": {
+                    "win": {"selected_threshold": 1.2, "selected_holdout": {"candidate_pass": True}},
+                    "trio": {"selected_threshold": 1.35, "selected_holdout": {"candidate_pass": True}},
+                    "trifecta": {"selected_threshold": 1.5, "selected_holdout": {"candidate_pass": True}},
+                }}
+            }), encoding="utf-8")
+            with patch.object(plans, "DATA", data_dir):
+                self.assertEqual(plans.thresholds(), {"trio": 1.35})
 
     def test_market_favorite_uses_lowest_positive_win_odds(self):
         odds = [
@@ -51,7 +82,7 @@ class ShadowTicketPlanTests(unittest.TestCase):
         self.assertEqual(plan["decision"], "SKIP")
         self.assertEqual(plan["skipReasonCode"], "NO_VALIDATED_TICKET_THRESHOLD")
         self.assertEqual(plan["tickets"], [])
-        self.assertGreater(len(plan["shadowTickets"]), 0)
+        self.assertEqual(plan["shadowTickets"], [{"type": "3連複", "comb": "1-2-3", "stake": 100, "basis": "model_top_3"}])
         self.assertEqual(plan["modelTopHorse"], "2")
         self.assertEqual(plan["modelTop3"], ["2", "1", "3"])
 
@@ -66,7 +97,8 @@ class ShadowTicketPlanTests(unittest.TestCase):
         plan = plans.make_plan(race, {"win": 1.1})
         self.assertEqual(plan["decision"], "SKIP")
         self.assertEqual(plan["skipReasonCode"], "ODDS_NOT_CAPTURED")
-        self.assertEqual(len(plan["shadowTickets"]), 5)
+        self.assertEqual(len(plan["shadowTickets"]), 1)
+        self.assertEqual(plan["shadowTickets"][0]["type"], "3連複")
         self.assertEqual(plan["totalStake"], 0)
 
 
