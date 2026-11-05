@@ -13,6 +13,7 @@ create table if not exists public.model_prediction_snapshots (
   model_g_predictions jsonb not null default '[]'::jsonb,
   model_g_candidate_combinations jsonb not null default '[]'::jsonb,
   prediction_lock jsonb not null,
+  locked_payload jsonb not null,
   created_at timestamptz not null default now(),
   constraint model_prediction_snapshots_race_capture_key unique (race_id, captured_at),
   constraint model_prediction_snapshots_preoff_check check (captured_at < scheduled_post_time),
