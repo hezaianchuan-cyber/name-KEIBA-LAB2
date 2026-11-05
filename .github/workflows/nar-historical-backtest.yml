@@ -52,6 +52,7 @@ jobs:
           NAR_CACHE_DIR: .cache/nar-monthly
           NAR_PARSED_CACHE_DIR: .cache/nar-parsed
           NAR_ODDS_CACHE_DIR: .cache/nar-odds-monthly
+          NAR_BACKTEST_CHECKPOINT_TOKEN: ${{ github.token }}
         run: python3 scripts/nar_backtest.py
 
       - name: Publish aggregate report only
