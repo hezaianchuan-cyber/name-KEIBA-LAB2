@@ -24,7 +24,8 @@ PILOT_DATES = {"20261103", "20261104", "20261105"}
 BASE_TICKETS = 19
 UNIT = 100
 OVERLAP_NARROW_THRESHOLD = 5
-NARROW_TICKETS = 10
+NARROW_TICKETS = 12
+SECONDARY_NARROW_TICKETS = 10
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import nar_model_g4_preoff_backtest as g4  # noqa: E402
@@ -368,9 +369,11 @@ def summarize_divergence(races):
             ),
             "strategies": [
                 evaluate_strategy(subset, "LAB_19", lambda r: r["model_tickets"]),
-                evaluate_strategy(subset, "LAB_10", lambda r: r["model_narrow"]),
+                evaluate_strategy(subset, "LAB_12", lambda r: r["model_narrow_12"]),
+                evaluate_strategy(subset, "LAB_10", lambda r: r["model_narrow_10"]),
                 evaluate_strategy(subset, "MARKET_19", lambda r: r["market_tickets"]),
-                evaluate_strategy(subset, "MARKET_10", lambda r: r["market_narrow"]),
+                evaluate_strategy(subset, "MARKET_12", lambda r: r["market_narrow_12"]),
+                evaluate_strategy(subset, "MARKET_10", lambda r: r["market_narrow_10"]),
             ],
         }
     return output
@@ -473,8 +476,10 @@ def main():
             "market_rank": market,
             "model_tickets": model_tickets,
             "market_tickets": market_tickets,
-            "model_narrow": narrow_by_rank_sum(model_tickets, model),
-            "market_narrow": narrow_by_rank_sum(market_tickets, market),
+            "model_narrow_12": narrow_by_rank_sum(model_tickets, model, NARROW_TICKETS),
+            "model_narrow_10": narrow_by_rank_sum(model_tickets, model, SECONDARY_NARROW_TICKETS),
+            "market_narrow_12": narrow_by_rank_sum(market_tickets, market, NARROW_TICKETS),
+            "market_narrow_10": narrow_by_rank_sum(market_tickets, market, SECONDARY_NARROW_TICKETS),
             "overlap_top7": overlap,
             "mean_abs_rank_gap_top7_union": divergence["mean_abs_rank_gap_top7_union"],
             "rank_gaps": divergence["rank_gaps"],
@@ -486,14 +491,16 @@ def main():
     def evaluate_all_strategies(subset):
         return [
             evaluate_strategy(subset, "A_current_19_model_245", lambda r: r["model_tickets"]),
-            evaluate_strategy(subset, "B_narrow_10_model_rank_sum", lambda r: r["model_narrow"]),
+            evaluate_strategy(subset, "B_narrow_12_model_rank_sum", lambda r: r["model_narrow_12"]),
+            evaluate_strategy(subset, "C_narrow_10_model_rank_sum", lambda r: r["model_narrow_10"]),
             evaluate_strategy(
                 subset,
-                "C_overlap_adaptive_10_if_overlap_ge_5_else_19",
-                lambda r: r["model_narrow"] if r["overlap_top7"] >= OVERLAP_NARROW_THRESHOLD else r["model_tickets"],
+                "D_overlap_adaptive_12_if_overlap_ge_5_else_19",
+                lambda r: r["model_narrow_12"] if r["overlap_top7"] >= OVERLAP_NARROW_THRESHOLD else r["model_tickets"],
             ),
-            evaluate_strategy(subset, "D_market_19_market_245", lambda r: r["market_tickets"]),
-            evaluate_strategy(subset, "E_market_narrow_10_market_rank_sum", lambda r: r["market_narrow"]),
+            evaluate_strategy(subset, "E_market_19_market_245", lambda r: r["market_tickets"]),
+            evaluate_strategy(subset, "F_market_narrow_12_market_rank_sum", lambda r: r["market_narrow_12"]),
+            evaluate_strategy(subset, "G_market_narrow_10_market_rank_sum", lambda r: r["market_narrow_10"]),
         ]
 
     strategies = evaluate_all_strategies(races)
@@ -538,8 +545,8 @@ def main():
             "snapshot_window_minutes_to_post": [2, 30],
             "snapshot_selection": "one closest-to-post valid snapshot per race; no post-off odds",
             "formation": "deduplicated 2-4-5 3連複, up to 19 unordered combinations",
-            "narrowing": "select 10 of the existing 19 combinations with the lowest sum of LAB (or market) ranks",
-            "adaptive_rule": f"narrow to 10 only when LAB top-7 and market top-7 overlap is at least {OVERLAP_NARROW_THRESHOLD}; otherwise retain 19",
+            "narrowing": "primary candidate selects 12 of the existing 19 combinations with the lowest sum of LAB (or market) ranks; 10 tickets remain as a secondary comparison",
+            "adaptive_rule": f"narrow to 12 only when LAB top-7 and market top-7 overlap is at least {OVERLAP_NARROW_THRESHOLD}; otherwise retain 19",
             "same_budget": f"JPY{BASE_TICKETS * UNIT} per race, redistributed in 100-yen units over selected tickets",
             "outcome_source": "official 3連複 pay_100 in data/daily-payouts.json",
             "thresholds_tuned_on_pilot": False,
