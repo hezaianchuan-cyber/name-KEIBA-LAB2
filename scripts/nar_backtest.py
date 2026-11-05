@@ -598,6 +598,28 @@ def ablated_model_weights(model_weights, excluded_feature):
     return {key: value / total for key, value in remaining.items()}
 
 
+FEATURE_WEIGHT_VARIANTS = {
+    "weight_form_down_0_8": ("form", 0.80),
+    "weight_form_up_1_2": ("form", 1.20),
+    "weight_jockey_down_0_5": ("jockey", 0.50),
+    "weight_jockey_up_1_5": ("jockey", 1.50),
+    "weight_distance_down_0_7": ("distance", 0.70),
+    "weight_distance_up_1_3": ("distance", 1.30),
+}
+
+
+def scaled_model_weights(model_weights, feature, multiplier):
+    """Change one learned feature weight by a fixed factor and renormalize."""
+    if feature not in model_weights or multiplier <= 0:
+        raise ValueError("Invalid feature-weight experiment")
+    adjusted = dict(model_weights)
+    adjusted[feature] *= multiplier
+    total = sum(adjusted.values())
+    if total <= 0:
+        raise ValueError("Feature weights must have a positive sum")
+    return {key: value / total for key, value in adjusted.items()}
+
+
 def update_model(field, parts_by_no, model_weights):
     valid = [h for h in field if h.get("finish") and h["no"] in parts_by_no]
     if len(valid) < 3:
@@ -1829,6 +1851,11 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     # named feature removed and the remaining weights renormalized. This is a
     # diagnostic sensitivity test, not a separately refitted candidate model.
     models.update({f"ablate_{feature}": learned for feature in ablation_features})
+    weight_variant_names = tuple(FEATURE_WEIGHT_VARIANTS)
+    models.update({
+        name: scaled_model_weights(learned, feature, multiplier)
+        for name, (feature, multiplier) in FEATURE_WEIGHT_VARIANTS.items()
+    })
     performance_blends = {
         "trained_with_performance": (0.10, 0.10, 0.00),
         "trained_performance_with_pace": (0.10, 0.10, 0.00),
@@ -1976,7 +2003,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             elif model_name in ("B_condition", "trained_with_conditions", "trained_with_conditions_and_pace"):
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
                             0.0,0.0,0.0,include_recent_history,going_weight=0.10)[0],h) for h in field]
-            elif model_name in ("C_performance_pace", "C_performance_pace_no_frame"):
+            elif model_name in ("C_performance_pace", "C_performance_pace_no_frame") or model_name in FEATURE_WEIGHT_VARIANTS:
                 scored=[]
                 for h in field:
                     performance_score = score_runner_performance(
@@ -1993,7 +2020,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             else:
                 scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights,
                             include_recent_history=include_recent_history)[0],h) for h in field]
-            if model_name in ("C_performance_pace", "C_performance_pace_no_frame", "trained_with_pace", "trained_performance_with_pace", "trained_with_conditions_and_pace") or model_name.startswith("ablate_"):
+            if model_name in ("C_performance_pace", "C_performance_pace_no_frame", "trained_with_pace", "trained_performance_with_pace", "trained_with_conditions_and_pace") or model_name.startswith("ablate_") or model_name in FEATURE_WEIGHT_VARIANTS:
                 _, _, pace_delta = pace_adjustments(field, history)
                 scored = [(score + pace_delta.get(h["no"], 0.0), h) for score, h in scored]
             if model_name == "trained":
@@ -2002,7 +2029,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                     test_calibration_records.append({"scores":[score for score,_ in scored],
                                                      "winner_indices":winner_indices})
             ranked=[h for _,h in sorted(scored,key=lambda x:x[0],reverse=True)]
-            if (model_name == "C_performance_pace" or model_name.startswith("ablate_")) and final_odds:
+            if (model_name == "C_performance_pace" or model_name.startswith("ablate_") or model_name in FEATURE_WEIGHT_VARIANTS) and final_odds:
                 odds_for_race = final_odds.get(key, {})
                 field_numbers = {str(h["no"]) for h in field}
                 available_market = [(float(odds), str(no)) for no, odds in odds_for_race.items()
@@ -3210,7 +3237,7 @@ def holdout_validation(races, horses, payouts, final_odds=None):
                        "baseline","trained","trained_no_recent_history","trained_race_relative",
                        "trained_with_pace","trained_with_performance","trained_performance_with_pace","trained_with_conditions","trained_with_conditions_and_pace",
                        "trained_margin_only","trained_closing_only","trained_performance_light",
-                       "trained_with_time","trained_performance_with_time"):
+                       "trained_with_time","trained_performance_with_time", *FEATURE_WEIGHT_VARIANTS):
         total={"races":0,"winner_top1":0,"winner_top3":0,
                "winner_topk":{str(k):0 for k in (5,6,7)},
                "bet_types":{kind:{"tickets":0,"hits":0,"stake":0,"return":0,
@@ -3603,6 +3630,7 @@ def main():
     recent_models = recent_fold.get("models") or {}
     canonical_models = ("A_baseline", "B_condition", "C_performance_pace")
     ablation_names = [f"ablate_{feature}" for feature in ("form", "venue", "distance", "sire", "jockey", "age")]
+    weight_variant_names = list(FEATURE_WEIGHT_VARIANTS)
     ablation_report = {
         "generated_at": result["generated_at"],
         "holdout_period": recent_validation.get("period"),
@@ -3628,6 +3656,7 @@ def main():
                 "win_roi": (recent_models.get(name) or {}).get("win_roi"),
             } for name in ablation_names
         },
+        "feature_weight_experiment": {},
         "market_comparison": recent_fold.get("final_odds_market_comparison", {}),
         "method": {
             "type": "one_feature_at_a_time_ablation",
@@ -3638,6 +3667,81 @@ def main():
             "interpretation": "Compare winner_top1_rate first. A feature whose removal improves the top-1 rate is a candidate for deeper review, not automatic deletion. Check sample size and uncertainty before any change.",
         },
     }
+    # Tune only on the two earlier chronological validation folds. The latest
+    # year is untouched and is used once to assess the selected weight variant.
+    prior_feature_folds = [
+        fold for fold in (validation.get("folds") or [])
+        if fold.get("period_label") in ("previous_year_2", "previous_year_1")
+    ]
+    feature_weight_rows = {}
+    for name, (feature, multiplier) in FEATURE_WEIGHT_VARIANTS.items():
+        fold_rows = []
+        for fold in prior_feature_folds:
+            metrics = ((fold.get("models") or {}).get(name) or {})
+            fold_rows.append({
+                "fold": fold.get("period_label"),
+                "races": metrics.get("races"),
+                "winner_top1_rate": metrics.get("winner_top1_rate"),
+                "winner_top3_rate": metrics.get("winner_top3_rate"),
+                "trio_roi": ((metrics.get("bet_types") or {}).get("trio") or {}).get("roi"),
+            })
+        total_races = sum(int(row.get("races") or 0) for row in fold_rows)
+        top1_hits = sum(
+            round((number(row.get("winner_top1_rate")) or 0) * int(row.get("races") or 0) / 100)
+            for row in fold_rows
+        )
+        top3_hits = sum(
+            round((number(row.get("winner_top3_rate")) or 0) * int(row.get("races") or 0) / 100)
+            for row in fold_rows
+        )
+        feature_weight_rows[name] = {
+            "feature": feature, "multiplier": multiplier,
+            "development_folds": fold_rows,
+            "development_races": total_races,
+            "development_winner_top1_rate": round(100 * top1_hits / total_races, 2) if total_races else None,
+            "development_winner_top3_rate": round(100 * top3_hits / total_races, 2) if total_races else None,
+            "holdout": recent_models.get(name),
+        }
+    selected_weight_name = max(
+        feature_weight_rows,
+        key=lambda name: (
+            feature_weight_rows[name]["development_winner_top3_rate"] or -1,
+            feature_weight_rows[name]["development_winner_top1_rate"] or -1,
+        ),
+    ) if feature_weight_rows and prior_feature_folds else None
+    selected_weight = feature_weight_rows.get(selected_weight_name) if selected_weight_name else None
+    baseline_c = recent_models.get("C_performance_pace") or {}
+    selected_holdout = (selected_weight or {}).get("holdout") or {}
+    holdout_trio_base = ((baseline_c.get("bet_types") or {}).get("trio") or {})
+    holdout_trio_candidate = ((selected_holdout.get("bet_types") or {}).get("trio") or {})
+    feature_weight_experiment = {
+        "candidate_variants": feature_weight_rows,
+        "selected_on_prior_folds": selected_weight_name,
+        "selection_rule": "Choose the single-feature multiplier with the highest pooled winner-top3 rate across the two earlier chronological test folds; tie-break by winner-top1 rate. The latest one-year fold is excluded from selection.",
+        "holdout_comparison": {
+            "baseline_C": {
+                "races": baseline_c.get("races"),
+                "winner_top1_rate": baseline_c.get("winner_top1_rate"),
+                "winner_top3_rate": baseline_c.get("winner_top3_rate"),
+                "trio_roi": holdout_trio_base.get("roi"),
+                "trio_roi_95ci": holdout_trio_base.get("roi_95ci"),
+            },
+            "selected_candidate": {
+                "name": selected_weight_name,
+                "races": selected_holdout.get("races"),
+                "winner_top1_rate": selected_holdout.get("winner_top1_rate"),
+                "winner_top3_rate": selected_holdout.get("winner_top3_rate"),
+                "trio_roi": holdout_trio_candidate.get("roi"),
+                "trio_roi_95ci": holdout_trio_candidate.get("roi_95ci"),
+            },
+            "winner_top1_delta_pp": round((selected_holdout.get("winner_top1_rate") or 0) - (baseline_c.get("winner_top1_rate") or 0), 2) if selected_holdout else None,
+            "winner_top3_delta_pp": round((selected_holdout.get("winner_top3_rate") or 0) - (baseline_c.get("winner_top3_rate") or 0), 2) if selected_holdout else None,
+            "trio_roi_delta_pp": round((holdout_trio_candidate.get("roi") or 0) - (holdout_trio_base.get("roi") or 0), 2) if selected_holdout and holdout_trio_candidate else None,
+            "promotion_ready": False,
+            "note": "Candidate remains research-only. Promotion requires repeatable improvement in ranking and trio ROI on independent future holdout data; this single selected holdout does not change live weights.",
+        },
+    }
+    ablation_report["feature_weight_experiment"] = feature_weight_experiment
     (OUT.parent / "backtest-5-feature-ablation.json").write_text(
         json.dumps(ablation_report, ensure_ascii=False, indent=2), encoding="utf-8")
 
