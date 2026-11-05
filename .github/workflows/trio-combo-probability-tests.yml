@@ -1,0 +1,45 @@
+name: Trio combination probability tests
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/nar_trio_combination_probability.py'
+      - 'tests/test_nar_trio_combination_probability.py'
+      - '.github/workflows/trio-combo-probability-tests.yml'
+  push:
+    branches:
+      - 'experiment/trio-combination-probability'
+    paths:
+      - 'scripts/nar_trio_combination_probability.py'
+      - 'tests/test_nar_trio_combination_probability.py'
+      - '.github/workflows/trio-combo-probability-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run trio combination probability tests
+        run: python3 -m unittest discover -s tests -p 'test_nar_trio_combination_probability.py'
+
+      - name: Run historical trio combination evaluator
+        run: python3 scripts/nar_trio_combination_probability.py
+
+      - name: Upload auditable 3連複 backtest report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trio-combination-probability-backtest
+          path: data/trio-combination-probability-backtest.json
+          if-no-files-found: error
+          retention-days: 14
