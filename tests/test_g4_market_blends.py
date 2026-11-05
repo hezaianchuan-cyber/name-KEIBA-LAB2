@@ -82,6 +82,32 @@ class PreoffMarketBlendComparisonTests(unittest.TestCase):
         self.assertEqual(report["winner_odds_shortened_pct"], 100.0)
         self.assertEqual(report["winner_horses_compared"], 1)
 
+    def test_market_edge_conditions_separate_agreement_from_disagreement(self):
+        def row(model_hit, market_hit, agree, model_market_rank, market_model_rank):
+            return {
+                "model_top": {"stake": 100, "return": 200 if model_hit else 0, "hit": model_hit},
+                "market_top": {"stake": 100, "return": 200 if market_hit else 0, "hit": market_hit},
+                "model_market_top_agree": agree,
+                "model_top_market_rank": model_market_rank,
+                "market_favorite_model_rank": market_model_rank,
+                "model_top3_hit": model_hit,
+                "market_top3_hit": market_hit,
+                "blend_candidates": {
+                    key: {"top": {"stake": 100, "return": 0, "hit": 0}}
+                    for key in ("0.25", "0.50", "0.75")
+                },
+            }
+
+        report = g4.summarize_market_edge_conditions([
+            row(1, 1, 1, 1, 1),
+            row(0, 1, 0, 6, 7),
+        ])
+        self.assertEqual(report["model_agrees_with_market_favorite"]["races"], 1)
+        self.assertEqual(report["model_disagrees_with_market_favorite"]["races"], 1)
+        self.assertEqual(report["model_top_is_market_rank_4_to_6"]["races"], 1)
+        self.assertEqual(report["market_favorite_is_model_rank_7_plus"]["races"], 1)
+        self.assertEqual(report["model_disagrees_with_market_favorite"]["market_favorite_hit_rate_pct"], 100.0)
+
     def test_empty_input_does_not_invent_performance(self):
         report = g4.summarize_blend_candidates([])
         self.assertEqual(len(report), 5)
