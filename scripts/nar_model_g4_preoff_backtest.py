@@ -111,23 +111,28 @@ def load_supabase_snapshots(model_rows):
         diagnostics["supabase_status"] = "credentials_unavailable"
         return [], diagnostics
 
-    dates = [row["date"] for row in model_rows if row.get("date")]
-    start_date = min(dates) if dates else dt.datetime.now(dt.timezone.utc).date().isoformat().replace("-", "")
-    if len(start_date) == 8:
-        start_date = start_date[:4] + "-" + start_date[4:6] + "-" + start_date[6:8]
+    dates = [str(row["date"]).replace("-", "") for row in model_rows if row.get("date")]
+    today = dt.datetime.now(dt.timezone.utc).date().isoformat().replace("-", "")
+    start_date = min(dates) if dates else today
+    end_date = max(dates) if dates else today
+    start_date = start_date[:4] + "-" + start_date[4:6] + "-" + start_date[6:8]
+    end_date = end_date[:4] + "-" + end_date[4:6] + "-" + end_date[6:8]
 
     output = []
     offset = 0
-    page_size = 1000
+    # Keep JSONB response pages small and match the composite
+    # (race_date, captured_at DESC, id DESC) index to avoid API timeouts.
+    page_size = 100
     try:
         while True:
-            query = urllib.parse.urlencode({
-                "select": "race_id,race_date,captured_at,odds_data",
-                "race_date": "gte." + start_date,
-                "order": "captured_at.asc",
-                "limit": str(page_size),
-                "offset": str(offset),
-            })
+            query = urllib.parse.urlencode([
+                ("select", "id,race_id,race_date,captured_at,odds_data"),
+                ("race_date", "gte." + start_date),
+                ("race_date", "lte." + end_date),
+                ("order", "race_date.asc,captured_at.asc,id.asc"),
+                ("limit", str(page_size)),
+                ("offset", str(offset)),
+            ])
             request = urllib.request.Request(
                 SUPABASE_URL + "/rest/v1/odds_snapshots?" + query,
                 headers={
