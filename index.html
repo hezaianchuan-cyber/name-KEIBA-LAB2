@@ -798,7 +798,17 @@ setInterval(loadAutoTicketPlans,60*1000);
 function loadLabTicketPlans(){
  try{
   const stored=JSON.parse(localStorage.getItem(LAB_TICKET_STORAGE_KEY)||'[]'),map=new Map();
-  const add=item=>{if(!item||!item.plan||!item.plan.raceId)return;const plan=item.plan,key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date);const previous=map.get(key);if(!previous||String(plan.modifiedAt||plan.createdAt||'')>=String(previous.plan.modifiedAt||previous.plan.createdAt||''))map.set(key,item);};
+  const add=item=>{
+   if(!item||!item.plan||!item.plan.raceId)return;
+   const plan=item.plan,key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date),previous=map.get(key);
+   const incomingAt=String(plan.modifiedAt||plan.createdAt||''),previousAt=String(previous?.plan?.modifiedAt||previous?.plan?.createdAt||'');
+   let nextPlan={...plan};
+   const previousUser=Array.isArray(previous?.plan?.userTickets)?previous.plan.userTickets:null;
+   const incomingUser=Array.isArray(plan.userTickets)?plan.userTickets:null;
+   if(previousUser&&(!incomingUser||(incomingUser.length===0&&previousUser.length>0&&incomingAt<previousAt)))nextPlan.userTickets=previousUser;
+   if(!previous||incomingAt>=previousAt)map.set(key,{...item,plan:nextPlan});
+   else if(previousUser&&nextPlan.userTickets!==plan.userTickets)map.set(key,{...previous,plan:{...previous.plan,userTickets:previousUser}});
+  };
   for(const item of remoteLabTicketPlans)add(item);
   for(const item of Array.isArray(stored)?stored:[])add(item);
   for(const p of db.predictions||[])if(p&&p.ticketPlan&&p.ticketPlan.raceId)add({predictionId:p.id,plan:p.ticketPlan});
