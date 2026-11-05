@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-05T09:48:01.388696+00:00",
+  "generated_at": "2026-11-05T09:48:51.512535+00:00",
   "feature": "G4_real_preoff_odds_evaluation",
   "status": "insufficient_prospective_sample",
   "g1_temperature": 0.115,
@@ -500,6 +500,23 @@
           ]
         }
       },
+      "fixed_50_50_model_market_blend": {
+        "races_bet": 47,
+        "hits": 16,
+        "hit_rate_pct": 34.04,
+        "stake_jpy": 4700,
+        "return_jpy": 2840,
+        "profit_jpy": -1860,
+        "roi_pct": 60.43,
+        "roi_95ci": {
+          "method": "race-level bootstrap percentile interval",
+          "replicates": 2000,
+          "roi_95ci": [
+            35.3191,
+            88.2979
+          ]
+        }
+      },
       "value_rule": {
         "races_bet": 46,
         "hits": 1,
@@ -535,6 +552,20 @@
         }
       },
       "market_favorite": {
+        "races_bet": 17,
+        "hits": 6,
+        "hit_rate_pct": 35.29,
+        "stake_jpy": 1700,
+        "return_jpy": 1210,
+        "profit_jpy": -490,
+        "roi_pct": 71.18,
+        "roi_95ci": {
+          "method": "race-level bootstrap",
+          "replicates": 0,
+          "roi_95ci": null
+        }
+      },
+      "fixed_50_50_model_market_blend": {
         "races_bet": 17,
         "hits": 6,
         "hit_rate_pct": 35.29,
