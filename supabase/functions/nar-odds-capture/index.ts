@@ -177,7 +177,6 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>,serv
   if(!model)return {...base,decision:"SKIP",skipReason:"15分以内の予測スナップショットがありません",skipReasonCode:"MODEL_SNAPSHOT_NOT_AVAILABLE",totalStake:0,tickets:[],validatedBetTypes:Object.keys(thresholds).length};
   const predictions=[...(model.predictions||[])].sort((a:any,b:any)=>(Number(b.win_probability)||0)-(Number(a.win_probability)||0));
   const top=predictions.slice(0,5),topNumbers=new Set(top.map((x:any)=>horseNo(x.horse_no)));
-  const firstNumbers=new Set(predictions.slice(0,2).map((x:any)=>horseNo(x.horse_no)));
   const oddsLookup=new Map<string,number>();
   for(const item of oddsRows){
     const kind=betKind(item.type);if(!kind)continue;
@@ -190,7 +189,6 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>,serv
     const kind=String(item.bet_type||"");if(kind!=="trio"||!(kind in REQUIRED)||!(kind in thresholds))continue;
     const nums=(item.numbers||[]).map(horseNo);
     if(nums.length!==REQUIRED[kind]||new Set(nums).size!==nums.length||nums.some((n:string)=>!topNumbers.has(n)))continue;
-    if((kind==="exacta"||kind==="trifecta")&&!firstNumbers.has(nums[0]))continue;
     const price=oddsLookup.get(kind+"|"+combinationKey(kind,nums)),prob=Number(item.probability);
     if(!(price&&price>0&&prob>0))continue;
     candidates.push({kind,type:BET_TYPES[kind],comb:nums.join("-"),odds:price,probability:prob,ev:price*prob});
@@ -198,9 +196,9 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>,serv
   const eligible:any[]=[];
   for(const [kind,threshold] of Object.entries(thresholds)){
     if(kind!=="trio")continue;
-    const rows=candidates.filter(x=>x.kind===kind&&x.ev>=Math.max(1.05,threshold))
-      .sort((a,b)=>(b.probability-a.probability)||(b.ev-a.ev)).slice(0,20);
-    if(rows.length)eligible.push({kind,rows,avg:rows.slice(0,5).reduce((s,x)=>s+x.ev,0)/Math.min(5,rows.length),best:rows[0]});
+    const rows:any[]=candidates.filter((x:any)=>x.kind===kind&&x.ev>=Math.max(1.05,threshold))
+      .sort((a:any,b:any)=>(b.probability-a.probability)||(b.ev-a.ev)).slice(0,20);
+    if(rows.length)eligible.push({kind,rows,avg:rows.slice(0,5).reduce((s:number,x:any)=>s+x.ev,0)/Math.min(5,rows.length),best:rows[0]});
   }
   eligible.sort((a,b)=>(b.avg-a.avg)||(b.best.probability-a.best.probability));
   const selected=eligible[0];
@@ -209,22 +207,22 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>,serv
     const code=!oddsRows.length?"ODDS_NOT_CAPTURED":!Object.keys(thresholds).length?"NO_VALIDATED_TICKET_THRESHOLD":"EV_BELOW_VALIDATED_THRESHOLD";
     return {...base,decision:"SKIP",skipReason:reason,skipReasonCode:code,totalStake:0,tickets:[],modelCapturedAt:model.captured_at,modelVersion:model.model_version,oddsRows:oddsRows.length,validatedBetTypes:Object.keys(thresholds).length};
   }
-  const rows=selected.rows,target=Math.min(2000,rows.length*100);
-  const weights=rows.map(x=>Math.max(0.0001,(x.ev-1)*Math.sqrt(Math.max(x.probability,0.000001))));
-  const total=weights.reduce((a,b)=>a+b,0);
-  const tickets=rows.map((x,i)=>({...x,stake:total?Math.floor((target*weights[i]/total)/100)*100:0})).filter(x=>x.stake>=100);
-  let allocated=tickets.reduce((s,x)=>s+x.stake,0),index=0;
+  const rows:any[]=selected.rows,target=Math.min(2000,selected.rows.length*100);
+  const weights=rows.map((x:any)=>Math.max(0.0001,(x.ev-1)*Math.sqrt(Math.max(x.probability,0.000001))));
+  const total=weights.reduce((a:number,b:number)=>a+b,0);
+  const tickets=rows.map((x:any,i:number)=>({...x,stake:total?Math.floor((target*weights[i]/total)/100)*100:0})).filter((x:any)=>x.stake>=100);
+  let allocated=tickets.reduce((s:number,x:any)=>s+x.stake,0),index=0;
   while(tickets.length&&allocated+100<=target){tickets[index].stake+=100;allocated+=100;index=(index+1)%tickets.length;}
   return {...base,decision:tickets.length?"BET":"SKIP",skipReason:"",skipReasonCode:"BET",selectedType:selected.kind,totalStake:allocated,
-    tickets:tickets.map(x=>({type:x.type,comb:x.comb,stake:x.stake,odds:x.odds,probability:x.probability,ev:x.ev})),
+    tickets:tickets.map((x:any)=>({type:x.type,comb:x.comb,stake:x.stake,odds:x.odds,probability:x.probability,ev:x.ev})),
     modelCapturedAt:model.captured_at,modelVersion:model.model_version,oddsRows:oddsRows.length,oddsMatchedCandidates:candidates.length,validatedBetTypes:Object.keys(thresholds).length};
 }
 
 Deno.serve(async (request) => {
   if (request.method !== "POST") return new Response("Method not allowed", { status: 405 });
-  const serviceUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const expectedToken = Deno.env.get("NAR_CAPTURE_TOKEN");
+  const serviceUrl = Deno.env.get("SUPABASE_URL") || "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  const expectedToken = Deno.env.get("NAR_CAPTURE_TOKEN") || "";
   if (!serviceUrl || !serviceKey || !expectedToken) {
     return Response.json({ ok: false, error: "Required function secrets are missing" }, { status: 500 });
   }
