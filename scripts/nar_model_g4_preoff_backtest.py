@@ -129,7 +129,7 @@ def load_supabase_snapshots(model_rows):
                 ("select", "id,race_id,race_date,captured_at,odds_data"),
                 ("race_date", "gte." + start_date),
                 ("race_date", "lte." + end_date),
-                ("order", "race_date.asc,captured_at.asc,id.asc"),
+                ("order", "race_date.asc,captured_at.desc,id.desc"),
                 ("limit", str(page_size)),
                 ("offset", str(offset)),
             ])
