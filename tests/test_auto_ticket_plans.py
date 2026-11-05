@@ -122,6 +122,40 @@ class ShadowTicketPlanTests(unittest.TestCase):
         self.assertEqual(odds, {})
 
 
+    def test_trio_fusion_builds_12_ranked_preview_independent_of_ev_threshold(self):
+        race = {
+            "odds": [
+                {"type":"単勝","n1":str(i),"odds":float(i+1)} for i in range(1,9)
+            ] + [
+                {"type":"3連複","n1":"1","n2":"2","n3":"3","odds":2.4},
+                {"type":"3連複","n1":"1","n2":"2","n3":"4","odds":18.0},
+            ],
+            "candidate_combinations": [
+                {"bet_type":"trio","numbers":["1","2",str(i)],"odds":float(2+i*3),"probability":0.12/(i-1)}
+                for i in range(3,15)
+            ]
+        }
+        rankings = plans.trio_fusion_rankings(race)
+        self.assertEqual(set(rankings), {"0.25","0.50","0.75"})
+        self.assertEqual(len(rankings["0.50"]), 12)
+        self.assertEqual([x["rank"] for x in rankings["0.50"]], list(range(1,13)))
+        self.assertTrue(all(x["odds"] > 0 and x["fusedProbability"] > 0 for x in rankings["0.50"]))
+
+    def test_fusion_preview_does_not_turn_unvalidated_plan_into_bet(self):
+        race = {
+            "date":"20261105","venue":"大井","race":"10","race_key":"大井|20261105|10",
+            "model_version":"test","captured_at":"2026-11-05T12:00:00+09:00",
+            "predictions":[{"horse_no":str(i),"win_probability":0.2-i*0.01,"score":1-i*0.1} for i in range(1,9)],
+            "odds":[{"type":"単勝","n1":str(i),"odds":float(i+1)} for i in range(1,9)] +
+                   [{"type":"3連複","n1":"1","n2":"2","n3":str(i),"odds":float(i+2)} for i in range(3,9)],
+            "candidate_combinations":[{"bet_type":"trio","numbers":["1","2",str(i)],"odds":float(i+2),"probability":0.08} for i in range(3,9)]
+        }
+        plan=plans.make_plan(race,{})
+        self.assertEqual(plan["decision"],"SKIP")
+        self.assertEqual(plan["tickets"],[])
+        self.assertEqual(len(plan["shadowTickets"]),6)
+        self.assertEqual(plan["trioRanking"]["selectedMarketWeight"],0.50)
+
 
 class CompetitorBenchmarkDataTests(unittest.TestCase):
     def test_competitor_predictions_require_sourced_records_and_start_empty(self):
