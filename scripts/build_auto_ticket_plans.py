@@ -19,8 +19,10 @@ def thresholds():
     try:
         report=json.loads((DATA/"backtest-summary.json").read_text(encoding="utf-8"))
         items=report.get("preoff_ticket_type_backtest",{}).get("bet_types",{})
-        return {k:float(v["selected_threshold"]) for k,v in items.items()
-                if v.get("selected_threshold") and (v.get("selected_holdout") or {}).get("candidate_pass") is True}
+        trio=items.get("trio") or {}
+        if trio.get("selected_threshold") and (trio.get("selected_holdout") or {}).get("candidate_pass") is True:
+            return {"trio":float(trio["selected_threshold"])}
+        return {}
     except (OSError,ValueError,TypeError,KeyError):
         return {}
 
@@ -45,15 +47,11 @@ def shadow_tickets(predictions):
     ranked=[x for x in ranked if no(x.get("horse_no"))]
     nums=list(dict.fromkeys(no(x.get("horse_no")) for x in ranked))
     if not nums:return []
-    # Fixed virtual portfolio: one win pick, up to two place picks, and a top-three wide/trio set.
-    picks=[{"type":"単勝","comb":nums[0],"stake":100,"basis":"model_rank_1"}]
-    for n in nums[:2]:
-        picks.append({"type":"複勝","comb":n,"stake":100,"basis":"model_top_2"})
-    if len(nums)>=2:
-        picks.append({"type":"ワイド","comb":"-".join(sorted(nums[:2],key=int)),"stake":100,"basis":"model_top_2"})
-    if len(nums)>=3:
-        picks.append({"type":"3連複","comb":"-".join(sorted(nums[:3],key=int)),"stake":100,"basis":"model_top_3"})
-    return picks
+    # The LAB shadow ticket is also trio-only; user-added tickets are stored separately.
+    if len(nums)<3:
+        return []
+    trio="-".join(sorted(nums[:3],key=int))
+    return [{"type":"3連複","comb":trio,"stake":100,"basis":"model_top_3"}]
 
 def market_favorite(odds):
     rows=[]
@@ -99,7 +97,7 @@ def make_plan(r,limits):
     top_set=set(nums);first_set=set(nums[:2]);candidates=[]
     for x in r.get("candidate_combinations") or []:
         kind=x.get("bet_type")
-        if kind not in limits:continue
+        if kind!="trio" or kind not in limits:continue
         ns=[no(v) for v in x.get("numbers") or []]
         if len(ns)!=REQUIRED[kind] or len(set(ns))!=len(ns) or any(v not in top_set for v in ns):continue
         if kind in ("exacta","trifecta") and ns[0] not in first_set:continue
@@ -107,7 +105,9 @@ def make_plan(r,limits):
         if odds>0 and prob>0:candidates.append({"kind":kind,"type":TYPES[kind],"comb":"-".join(ns),"odds":odds,"probability":prob,"ev":odds*prob})
     plan["oddsMatchedCandidates"]=len(candidates)
     eligible=[]
-    for kind,label in TYPES.items():
+    for kind in ("trio",):
+        if kind not in limits:continue
+        label=TYPES[kind]
         rows=sorted([x for x in candidates if x["kind"]==kind and x["ev"]>=max(1.05,limits[kind])],key=lambda x:(-x["probability"],-x["ev"]))
         if rows:eligible.append({"kind":kind,"type":label,"rows":rows[:20],"avg":sum(x["ev"] for x in rows[:5])/min(5,len(rows)),"best":rows[0]})
     eligible.sort(key=lambda x:(-x["avg"],-x["best"]["probability"]))
