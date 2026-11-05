@@ -2421,9 +2421,11 @@ class G4SupabasePaginationTests(unittest.TestCase):
                 return io.BytesIO(json.dumps(model_page).encode("utf-8"))
             return io.BytesIO(json.dumps(odds_page).encode("utf-8"))
 
-        with mock.patch.object(g4, "SUPABASE_URL", "https://example.supabase.co"), \\
-             mock.patch.object(g4, "SUPABASE_KEY", "test-key"), \\
-             mock.patch.object(g4.urllib.request, "urlopen", side_effect=fake_urlopen):
+        with (
+            mock.patch.object(g4, "SUPABASE_URL", "https://example.supabase.co"),
+            mock.patch.object(g4, "SUPABASE_KEY", "test-key"),
+            mock.patch.object(g4.urllib.request, "urlopen", side_effect=fake_urlopen),
+        ):
             rows, diagnostics = g4.load_supabase_snapshots(model_rows)
 
         self.assertEqual(len(rows), 1)
