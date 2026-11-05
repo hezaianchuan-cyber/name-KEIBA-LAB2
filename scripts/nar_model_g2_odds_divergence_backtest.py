@@ -122,8 +122,14 @@ def score_records(records, odds_by_race, payouts, temperature, min_divergence=MI
                 winners.add(str(nums[0]))
         if not winners:
             continue
-        best_model = max(field, key=lambda no: model_by_no[no])
-        favorite = min(matched, key=lambda no: (odds_by_no[no], int(no)))
+        model_order = sorted(field, key=lambda no: (-model_by_no[no], int(no)))
+        market_order = sorted(matched, key=lambda no: (odds_by_no[no], int(no)))
+        best_model = model_order[0]
+        favorite = market_order[0]
+        model_rank = {no: index + 1 for index, no in enumerate(model_order)}
+        market_rank = {no: index + 1 for index, no in enumerate(market_order)}
+        common = [no for no in field if no in market_rank]
+        rank_differences = [abs(model_rank[no] - market_rank[no]) for no in common]
         model_winner_mass = sum(model_by_no[no] for no in winners if no in model_by_no)
         market_winner_mass = sum(market.get(no, 0.0) for no in winners)
         selected = candidates[0] if candidates else None
@@ -146,9 +152,37 @@ def score_records(records, odds_by_race, payouts, temperature, min_divergence=MI
             "date": record["date"], "race_key": "|".join(key),
             "coverage": coverage, "winner_mass_g1": model_winner_mass,
             "winner_mass_market": market_winner_mass,
+            "model_top1_market_rank": market_rank.get(best_model),
+            "market_top1_model_rank": model_rank.get(favorite),
+            "model_top3": model_order[:3], "market_top3": market_order[:3],
+            "top3_overlap_count": len(set(model_order[:3]) & set(market_order[:3])),
+            "mean_absolute_rank_difference": (sum(rank_differences) / len(rank_differences)) if rank_differences else None,
+            "best_winner_rank_g1": min((model_rank[no] for no in winners if no in model_rank), default=None),
+            "best_winner_rank_market": min((market_rank[no] for no in winners if no in market_rank), default=None),
             "g1_top": g1_top, "market_top": market_top, "g2": g2_row,
         })
     return evaluated
+
+
+def rank_comparison(rows):
+    usable = [row for row in rows if row.get("model_top1_market_rank") is not None
+              and row.get("market_top1_model_rank") is not None]
+    if not usable:
+        return {"races": 0, "model_top1_market_rank_mean": None,
+                "market_top1_model_rank_mean": None, "top3_overlap_mean": None,
+                "mean_absolute_rank_difference": None,
+                "model_winner_top3_rate": None, "market_winner_top3_rate": None}
+    return {
+        "races": len(usable),
+        "model_top1_market_rank_mean": round(sum(r["model_top1_market_rank"] for r in usable) / len(usable), 3),
+        "market_top1_model_rank_mean": round(sum(r["market_top1_model_rank"] for r in usable) / len(usable), 3),
+        "top3_overlap_mean": round(sum(r["top3_overlap_count"] for r in usable) / len(usable), 3),
+        "mean_absolute_rank_difference": round(sum(r["mean_absolute_rank_difference"] for r in usable) / len(usable), 3),
+        "model_winner_top3_rate": round(100 * sum((r.get("best_winner_rank_g1") or 999) <= 3 for r in usable) / len(usable), 2),
+        "market_winner_top3_rate": round(100 * sum((r.get("best_winner_rank_market") or 999) <= 3 for r in usable) / len(usable), 2),
+        "model_winner_top1_rate": round(100 * sum(r.get("best_winner_rank_g1") == 1 for r in usable) / len(usable), 2),
+        "market_winner_top1_rate": round(100 * sum(r.get("best_winner_rank_market") == 1 for r in usable) / len(usable), 2),
+    }
 
 
 def probability_metrics(rows, key):
@@ -304,6 +338,17 @@ def main():
         "holdout_probability_quality": {
             "G1_model_winner_mass": probability_metrics(holdout, "winner_mass_g1"),
             "market_winner_mass": probability_metrics(holdout, "winner_mass_market"),
+        },
+        "market_rank_comparison": {
+            "development": rank_comparison(development),
+            "untouched_holdout": rank_comparison(holdout),
+            "definitions": {
+                "model_top1_market_rank": "Market odds rank of the model's highest-probability horse; 1 is market favorite.",
+                "market_top1_model_rank": "Model rank of the market's shortest-odds horse; 1 is model top pick.",
+                "top3_overlap_mean": "Average number of shared horses in model and market top-three rankings.",
+                "mean_absolute_rank_difference": "Average absolute rank difference over horses with both model and market ranks.",
+                "winner_top3_rate": "Share of races where at least one actual winner appears in the top three.",
+            },
         },
         "development_bets": {
             "G1_top_pick": summarize_bets(dev_g1),
