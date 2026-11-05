@@ -1354,7 +1354,7 @@ function generateTickets(){
      skipReasonCode:selectedType&&allocation.length?'BET':(!learnedModelLoaded?'MODEL_NOT_READY':oddsRows.length===0?'ODDS_NOT_CAPTURED':oddsMatchedCount===0?'TICKET_ODDS_NOT_MATCHED':validatedTypeCount===0?'NO_VALIDATED_TICKET_THRESHOLD':'EV_BELOW_VALIDATED_THRESHOLD'),
      totalStake:allocated||0,tickets:allocation.map(x=>({type:x.type,comb:x.comb,stake:x.stake,odds:x.odds,probability:x.probability,ev:x.ev})),
      shadowTickets:(selectedType&&allocation.length?allocation:ranked('3連複').slice(0,3)).map(x=>({type:'3連複',comb:x.comb,odds:x.odds,probability:x.probability,ev:x.ev,virtualStake:100})),
-     runnerDraws:field.map(h=>({horseNo:String(h.horseNo),frameNo:Number(h.frameNo??h.frame)||null,score:Number(h.score)||0,winProbability:Number(h.modelProb)||0})),
+     runnerDraws:field.map(h=>({horseNo:String(h.horseNo),name:String(h.name||''),frameNo:Number(h.frameNo??h.frame)||null,score:Number(h.score)||0,winProbability:Number(h.modelProb)||0})),
      dataStatus:'COMPLETE',
      modelLoaded:!!learnedModelLoaded,oddsCaptured:oddsRows.length>0,oddsRows:oddsRows.length,oddsMatchedCandidates:oddsMatchedCount,validatedBetTypes:validatedTypeCount
    };
