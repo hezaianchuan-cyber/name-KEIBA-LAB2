@@ -1156,13 +1156,18 @@ def new_role_trifecta_diagnostics():
     }
 
 
-def update_role_trifecta_diagnostics(bucket, scored, history, payout):
+def update_role_trifecta_diagnostics(bucket, scored, history, payout, role_rankings_cache=None):
     for blend_key, formations in bucket.items():
         blend = float(blend_key)
-        role_rankings = {
-            role: role_specific_ranking(scored, history, role, blend)
-            for role in (1,2,3)
-        }
+        if role_rankings_cache is not None and blend_key in role_rankings_cache:
+            role_rankings = role_rankings_cache[blend_key]
+        else:
+            role_rankings = {
+                role: role_specific_ranking(scored, history, role, blend)
+                for role in (1,2,3)
+            }
+            if role_rankings_cache is not None:
+                role_rankings_cache[blend_key] = role_rankings
         for formation, stats in formations.items():
             a,b,c = (int(x) for x in formation.split("-"))
             tickets = build_role_trifecta_formation(role_rankings, a, b, c)
@@ -2246,6 +2251,9 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
         winners={numbers[0] for numbers, _ in payout.get("win", [])}
         if not winners: continue
         race_feature_cache = {}
+        # Pace profiles depend on the race and strictly prior history, not on
+        # model weights. Calculate once and reuse across all challenger models.
+        _, _, race_pace_delta = pace_adjustments(field, history)
         for model_name,weights in models.items():
             include_recent_history = model_name != "trained_no_recent_history"
             if model_name == "trained_race_relative":
@@ -2292,8 +2300,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                             include_recent_history=include_recent_history,
                             parts_cache=race_feature_cache)[0],h) for h in field]
             if model_name in ("C_performance_pace", "C_performance_pace_no_frame", "trained_with_pace", "trained_performance_with_pace", "trained_with_conditions_and_pace") or model_name.startswith("ablate_") or model_name in FEATURE_WEIGHT_NAMES:
-                _, _, pace_delta = pace_adjustments(field, history)
-                scored = [(score + pace_delta.get(h["no"], 0.0), h) for score, h in scored]
+                scored = [(score + race_pace_delta.get(h["no"], 0.0), h) for score, h in scored]
             if model_name == "trained":
                 winner_indices=[i for i,h in enumerate(field) if h.get("finish") == 1]
                 if winner_indices:
@@ -2369,19 +2376,16 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             # Collect role-specific trifecta diagnostics for every candidate model.
             # Walk-forward selection may choose baseline or any trained variant;
             # restricting this to "trained" leaves the selected model's report empty.
-            update_role_trifecta_diagnostics(m["role_trifecta_diagnostics"], scored, history, payout)
-            role_rankings_for_positions = {
-                role: role_specific_ranking(scored, history, role, 0.10)
-                for role in (1, 2, 3)
-            }
+            role_rankings_cache = {}
+            update_role_trifecta_diagnostics(
+                m["role_trifecta_diagnostics"], scored, history, payout,
+                role_rankings_cache=role_rankings_cache)
+            role_rankings_for_positions = role_rankings_cache["0.10"]
             update_finish_position_diagnostics(
                 m["finish_position_diagnostics"], ranked, role_rankings_for_positions, field)
             update_trio_diagnostics(m["trio_diagnostics"], ranked, field, payout)
             if model_name == "trained":
-                role_segment_rankings = {
-                    role: role_specific_ranking(scored, history, role, 0.10)
-                    for role in (1, 2, 3)
-                }
+                role_segment_rankings = role_rankings_cache["0.10"]
                 for dimension, label in race_segment_labels(race).items():
                     update_condition_finish_bucket(
                         condition_finish_stats[f"{dimension}:{label}"],
