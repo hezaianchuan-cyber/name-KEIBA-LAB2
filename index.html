@@ -1500,11 +1500,17 @@ function generateTickets(){
    };
    manualEditorPlan=snapshot;
    let prediction=(db.predictions||[]).find(p=>String(p.id)===String(raceId)&&normDate(p.date)===normDate(snapshot.date)&&!p.learned);
+   const raceRunners=field.map(h=>({no:String(h.horseNo),prob:Number(h.modelProb)||0,parts:h.parts||{}}));
+   const raceTop=field.slice(0,3).map(h=>({no:String(h.horseNo),name:h.name||'',prob:Number(h.modelProb)||0}));
    if(!prediction){
-     const raceRunners=field.map(h=>({no:String(h.horseNo),prob:Number(h.modelProb)||0,parts:h.parts||{}}));
-     prediction={id:String(raceId),date:normDate(snapshot.date),at:snapshot.createdAt,top:field.slice(0,3).map(h=>({no:String(h.horseNo),name:h.name||'',prob:Number(h.modelProb)||0})),runners:raceRunners,learned:false};
+     prediction={id:String(raceId),date:normDate(snapshot.date),at:snapshot.createdAt,top:raceTop,runners:raceRunners,learned:false};
      if(!Array.isArray(db.predictions))db.predictions=[];
      db.predictions.push(prediction);
+   }else{
+     // Keep the saved display ranking and ticket-plan ranking in sync whenever
+     // the same race is recalculated; otherwise an older top-3 can survive.
+     prediction.top=raceTop;
+     prediction.runners=raceRunners;
    }
    prediction.ticketPlan=snapshot;prediction.at=snapshot.createdAt;prediction.venue=snapshot.venue;prediction.race=snapshot.raceNo;
    const ticketSaved=persistLabTicketPlan(prediction,snapshot);
