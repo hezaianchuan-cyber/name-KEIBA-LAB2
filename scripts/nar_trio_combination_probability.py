@@ -169,7 +169,7 @@ def market_trio_data(odds):
             continue
         prices[numbers] = price
         inverse[numbers] = 1.0 / price
-    if len(inverse) < 3:
+    if len(inverse) < 2:
         return {}, prices
     return _normalize({ "-".join(k): v for k, v in inverse.items() }), prices
 
