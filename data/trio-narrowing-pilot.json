@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-05T02:17:51.116005+00:00",
+  "generated_at": "2026-11-05T02:18:24.018560+00:00",
   "feature": "three_day_trio_narrowing_pilot",
   "status": "exploratory_only",
   "period": [
@@ -8,6 +8,7 @@
   ],
   "method": {
     "prediction_source": "timestamped raw model scores saved before race start",
+    "snapshot_archive": "GitHub five-minute pre-off archive only; Supabase one-minute rows excluded for reproducibility",
     "market_source": "win odds and explicit popularity from the same pre-off snapshot",
     "snapshot_window_minutes_to_post": [
       2,
@@ -48,53 +49,13 @@
       }
     },
     "loader_diagnostics": {
+      "source": "archived five-minute GitHub pre-off snapshots only",
       "files": 3,
       "lines": 65,
       "invalid_json": 0,
       "outside_window": 0,
       "missing_predictions": 0,
-      "missing_odds": 0,
-      "missing_result": 0,
-      "temperature_mismatch": 0,
-      "valid_snapshots": 0,
-      "supabase_query_rows": 0,
-      "supabase_snapshots_joined": 0,
-      "supabase_model_races": 49,
-      "supabase_race_key_matches": 0,
-      "supabase_no_prior_model": 0,
-      "supabase_model_too_old": 0,
-      "supabase_empty_odds": 0,
-      "supabase_model_dates": [
-        "20261103",
-        "20261104",
-        "20261105"
-      ],
-      "supabase_model_key_samples": [
-        "園田|20261104|1",
-        "園田|20261104|11",
-        "園田|20261104|3",
-        "園田|20261104|4",
-        "園田|20261104|6",
-        "園田|20261104|9",
-        "園田|20261105|2",
-        "盛岡|20261104|1"
-      ],
-      "supabase_odds_key_samples": [],
-      "supabase_odds_dates": [],
-      "supabase_model_venues": [
-        "園田",
-        "盛岡",
-        "笠松",
-        "船橋",
-        "金沢",
-        "門別"
-      ],
-      "supabase_odds_venues": [],
-      "supabase_common_venues": [],
-      "supabase_status": "unavailable",
-      "supabase_error": "HTTP Error 500: Internal Server Error",
-      "snapshots_from_github_five_minute": 65,
-      "snapshots_from_supabase_one_minute": 0
+      "missing_odds": 0
     },
     "selection_diagnostics": {
       "snapshot_rows_in_three_day_window": 65,
