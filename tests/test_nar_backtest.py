@@ -2372,7 +2372,7 @@ class G4SupabasePaginationTests(unittest.TestCase):
         from urllib.parse import parse_qs, urlparse
         query = parse_qs(urlparse(requests[0].full_url).query)
         self.assertEqual(query["race_date"], ["gte.2026-11-04", "lte.2026-11-04"])
-        self.assertEqual(query["order"], ["race_date.asc,captured_at.asc,id.asc"])
+        self.assertEqual(query["order"], ["race_date.asc,captured_at.desc,id.desc"])
         self.assertEqual(query["limit"], ["100"])
 
 
