@@ -134,6 +134,9 @@ a{color:inherit}
       <div class="kpis" style="margin-top:8px">
         <div class="kpi"><span>予想レース</span><b id="labLedgerRaces">—</b></div><div class="kpi"><span>購入／見送り</span><b id="labLedgerBetSkip">—</b></div><div class="kpi"><span>的中率（確定購入R）</span><b id="labLedgerHitRate">—</b></div><div class="kpi"><span>未確定購入R</span><b id="labLedgerPending">—</b></div>
       </div>
+      <div class="kpis" style="margin-top:8px">
+        <div class="kpi"><span>LAB購入額</span><b id="labLedgerLabStake">—</b></div><div class="kpi"><span>LAB払戻</span><b id="labLedgerLabReturn">—</b></div><div class="kpi"><span>自分の購入額</span><b id="labLedgerUserStake">—</b></div><div class="kpi"><span>自分の払戻</span><b id="labLedgerUserReturn">—</b></div>
+      </div>
       <div id="labLedgerRows" class="sub" style="margin-top:14px">保存済みの買い目を読み込んでいます。</div>
     </div>
   </section>
@@ -647,10 +650,16 @@ function labLedgerRecordsForDate(plans,date){
  return plans.filter(x=>x.date===date).map(({p,plan})=>{
   const venue=labLedgerVenueKey(plan.venue),raceNo=String(Number(String(plan.raceNo||'').replace(/[^0-9]/g,'')));
   const matches=dayRaces.filter(r=>labLedgerVenueKey(r.venue)===venue&&String(Number(r.race||0))===raceNo);
-  const race=matches.length===1?matches[0]:null,decision=String(plan.decision||'').toUpperCase(),isSkip=decision==='SKIP';
-  const tickets=Array.isArray(plan.tickets)?plan.tickets:[];
-  const validTickets=tickets.filter(t=>t&&Number(t.stake)>0&&labLedgerComb(t.comb,t.type));
-  const stake=validTickets.reduce((sum,t)=>sum+Math.max(0,Number(t.stake)||0),0);
+  const race=matches.length===1?matches[0]:null,decision=String(plan.decision||'').toUpperCase();
+  const labTickets=Array.isArray(plan.tickets)?plan.tickets:[];
+  const userTickets=Array.isArray(plan.userTickets)?plan.userTickets:[];
+  const isSkip=decision==='SKIP'&&!userTickets.some(t=>t&&Number(t.stake)>0);
+  const validLabTickets=labTickets.filter(t=>t&&Number(t.stake)>0&&labLedgerComb(t.comb,t.type)).map(t=>({...t,owner:'LAB'}));
+  const validUserTickets=userTickets.filter(t=>t&&Number(t.stake)>0&&labLedgerComb(t.comb,t.type)).map(t=>({...t,owner:'USER'}));
+  const validTickets=[...validLabTickets,...validUserTickets];
+  const labStake=validLabTickets.reduce((sum,t)=>sum+Math.max(0,Number(t.stake)||0),0);
+  const userStake=validUserTickets.reduce((sum,t)=>sum+Math.max(0,Number(t.stake)||0),0);
+  const stake=labStake+userStake;
   const shadowTickets=Array.isArray(plan.shadowTickets)?plan.shadowTickets:[];
   const payoutEntries=race?.payouts?Object.entries(race.payouts).filter(([,items])=>Array.isArray(items)&&items.some(x=>x&&Array.isArray(x.numbers)&&Number(x.pay_100)>0)):[];
   const officialResults=payoutEntries.flatMap(([key,items])=>items.map(item=>({type:Object.keys(keyByType).find(type=>keyByType[type]===key)||key,comb:labLedgerComb(item.numbers,Object.keys(keyByType).find(type=>keyByType[type]===key)),pay100:Number(item.pay_100)||0})));
@@ -664,12 +673,12 @@ function labLedgerRecordsForDate(plans,date){
   }
   const shadowSettled=payoutEntries.length>0,shadowHit=shadowMatchedTickets.length>0;
   if(isSkip){
-   if(plan.dataStatus==='INSUFFICIENT_DATA')return {plan,p,isSkip:true,settled:false,stake:0,returned:0,hit:false,matchedTickets:[],officialResults,shadowTickets:[],shadowSettled,shadowHit:false,shadowMatchedTickets:[],modelResultSettled,dataInsufficient:true};
-   return {plan,p,isSkip:true,settled:shadowSettled,stake:0,returned:0,hit:false,matchedTickets:[],officialResults,shadowTickets,shadowSettled,shadowHit,shadowMatchedTickets,modelResultSettled};
+   if(plan.dataStatus==='INSUFFICIENT_DATA')return {plan,p,isSkip:true,settled:false,stake:0,labStake:0,userStake:0,returned:0,labReturned:0,userReturned:0,hit:false,matchedTickets:[],officialResults,shadowTickets:[],shadowSettled,shadowHit:false,shadowMatchedTickets:[],modelResultSettled,dataInsufficient:true};
+   return {plan,p,isSkip:true,settled:shadowSettled,stake:0,labStake:0,userStake:0,returned:0,labReturned:0,userReturned:0,hit:false,matchedTickets:[],officialResults,shadowTickets,shadowSettled,shadowHit,shadowMatchedTickets,modelResultSettled};
   }
-  if(decision!=='BET'||!validTickets.length||!race||!race.payouts)return {plan,p,isSkip:false,settled:false,stake,returned:0,hit:false,matchedTickets:[],officialResults,shadowTickets,shadowSettled,shadowHit,shadowMatchedTickets,modelResultSettled};
+  if(!validTickets.length||!race||!race.payouts)return {plan,p,isSkip:false,settled:false,stake,labStake,userStake,returned:0,labReturned:0,userReturned:0,hit:false,matchedTickets:[],officialResults,shadowTickets,shadowSettled,shadowHit,shadowMatchedTickets,modelResultSettled};
   if(!payoutEntries.length)return {plan,p,isSkip:false,settled:false,stake,returned:0,hit:false,matchedTickets:[],officialResults,shadowTickets,shadowSettled:false,shadowHit:false,shadowMatchedTickets:[],modelResultSettled:false};
-  let returned=0;
+  let returned=0,labReturned=0,userReturned=0;
   const matchedTicketDetails=[];
   for(const ticket of validTickets){
    const key=keyByType[ticket.type];if(!key)continue;
@@ -678,10 +687,11 @@ function labLedgerRecordsForDate(plans,date){
    if(matching.length){
     const pay100=Math.max(0,Number(matching[0].pay_100)||0),ticketReturn=(Math.max(0,Number(ticket.stake)||0)/100)*pay100;
     returned+=ticketReturn;
-    matchedTicketDetails.push({type:ticket.type,comb:wanted,stake:Number(ticket.stake)||0,pay100,returned:ticketReturn});
+    if(ticket.owner==='USER')userReturned+=ticketReturn;else labReturned+=ticketReturn;
+    matchedTicketDetails.push({type:ticket.type,comb:wanted,stake:Number(ticket.stake)||0,pay100,returned:ticketReturn,owner:ticket.owner||'LAB'});
    }
   }
-  return {plan,p,isSkip:false,settled:true,stake,returned,hit:matchedTicketDetails.length>0,matchedTickets:matchedTicketDetails,officialResults,shadowTickets,shadowSettled,shadowHit,shadowMatchedTickets,modelResultSettled};
+  return {plan,p,isSkip:false,settled:true,stake,labStake,userStake,returned,labReturned,userReturned,hit:matchedTicketDetails.length>0,matchedTickets:matchedTicketDetails,officialResults,shadowTickets,shadowSettled,shadowHit,shadowMatchedTickets,modelResultSettled};
  });
 }
 // Independent compact archive for saved ticket plans.
@@ -766,7 +776,7 @@ async function loadPublishedAutoTicketPlans(){
  const merged=new Map();
  for(const item of [...remoteLabTicketPlans,...data.plans.filter(p=>p&&p.raceId&&p.date).map(plan=>({predictionId:plan.raceId,plan}))]){
   const plan=item.plan,key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date),previous=merged.get(key);
-  if(!previous||String(plan.createdAt||'')>=String(previous.plan.createdAt||''))merged.set(key,item);
+  if(!previous||String(plan.modifiedAt||plan.createdAt||'')>=String(previous.plan.modifiedAt||previous.plan.createdAt||''))merged.set(key,item);
  }
  remoteLabTicketPlans=[...merged.values()];
  if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
@@ -788,7 +798,7 @@ setInterval(loadAutoTicketPlans,60*1000);
 function loadLabTicketPlans(){
  try{
   const stored=JSON.parse(localStorage.getItem(LAB_TICKET_STORAGE_KEY)||'[]'),map=new Map();
-  const add=item=>{if(!item||!item.plan||!item.plan.raceId)return;const plan=item.plan,key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date);const previous=map.get(key);if(!previous||String(plan.createdAt||'')>=String(previous.plan.createdAt||''))map.set(key,item);};
+  const add=item=>{if(!item||!item.plan||!item.plan.raceId)return;const plan=item.plan,key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date);const previous=map.get(key);if(!previous||String(plan.modifiedAt||plan.createdAt||'')>=String(previous.plan.modifiedAt||previous.plan.createdAt||''))map.set(key,item);};
   for(const item of remoteLabTicketPlans)add(item);
   for(const item of Array.isArray(stored)?stored:[])add(item);
   for(const p of db.predictions||[])if(p&&p.ticketPlan&&p.ticketPlan.raceId)add({predictionId:p.id,plan:p.ticketPlan});
@@ -829,6 +839,10 @@ function renderLabVirtualLedger(){
  $('labLedgerProfit').textContent=(profit>0?'+':'')+profit.toLocaleString()+'円';$('labLedgerRoi').textContent=totalStake?(totalReturn/totalStake*100).toFixed(1)+'%':'—';
  $('labLedgerRaces').textContent=records.length+'R';$('labLedgerBetSkip').textContent=records.filter(x=>!x.isSkip).length+'／'+records.filter(x=>x.isSkip).length;
  $('labLedgerHitRate').textContent=settled.length?(hitRaces/settled.length*100).toFixed(1)+'%':'—';$('labLedgerPending').textContent=pending.length+'R';
+ const labStakeTotal=settled.reduce((a,x)=>a+(Number(x.labStake)||0),0),labReturnTotal=settled.reduce((a,x)=>a+(Number(x.labReturned)||0),0);
+ const userStakeTotal=settled.reduce((a,x)=>a+(Number(x.userStake)||0),0),userReturnTotal=settled.reduce((a,x)=>a+(Number(x.userReturned)||0),0);
+ $('labLedgerLabStake').textContent=labStakeTotal.toLocaleString()+'円';$('labLedgerLabReturn').textContent=labReturnTotal.toLocaleString()+'円';
+ $('labLedgerUserStake').textContent=userStakeTotal.toLocaleString()+'円';$('labLedgerUserReturn').textContent=userReturnTotal.toLocaleString()+'円';
  $('labLedgerStatus').textContent='公式払戻照合：確定 '+settled.length+'R ／ 未確定 '+pending.length+'R（保存買い目との完全一致のみ的中）';
  const winnerOf=x=>(x.officialResults||[]).find(r=>r.type==='単勝')?.comb||'';
  const comparable=records.filter(x=>x.modelResultSettled&&winnerOf(x)&&x.plan.modelTopHorse&&x.plan.marketFavoriteHorse);
@@ -839,8 +853,8 @@ function renderLabVirtualLedger(){
  $('labLedgerStatus').textContent+=' ／ モデル1位 '+(comparable.length?(modelTopHits+'/'+comparable.length+'R・'+(modelTopHits/comparable.length*100).toFixed(1)+'%'):'比較待ち')+' ／ 市場1番人気 '+(comparable.length?(marketHits+'/'+comparable.length+'R・'+(marketHits/comparable.length*100).toFixed(1)+'%'):'比較待ち')+' ／ モデル上位3頭 '+(top3Comparable.length?(top3Hits+'/'+top3Comparable.length+'R・'+(top3Hits/top3Comparable.length*100).toFixed(1)+'%'):'比較待ち')+'（モデル比較は単勝払戻確定レース、市場比較はそのうち締切前オッズ取得レース）';
  const rows=records.map(x=>{
   const label=x.isSkip?(!x.shadowSettled?'見送り・検証待ち':x.shadowHit?'見送り・仮想的中':'見送り・仮想不的中'):!x.settled?'未確定':x.hit?'的中':'不的中';
-  const details=x.isSkip?'【検証用】'+(x.shadowTickets||[]).map(t=>t.type+' '+t.comb+'（仮想100円）').join('<br>'):'【購入候補】'+(x.plan.tickets||[]).map(t=>t.type+' '+t.comb+' '+Number(t.stake||0).toLocaleString()+'円').join('<br>');
-  const hitDetails=x.isSkip?(!x.shadowSettled?'結果待ち':x.shadowHit?x.shadowMatchedTickets.map(t=>t.type+' '+t.comb+'（払戻 '+t.pay100.toLocaleString()+'円/100円）').join('<br>'):'検証用買い目に的中なし'):!x.settled?'結果待ち':x.hit?x.matchedTickets.map(t=>t.type+' '+t.comb+'（'+t.returned.toLocaleString()+'円）').join('<br>'):'該当買い目なし';
+  const details=x.isSkip?'【検証用】'+(x.shadowTickets||[]).map(t=>t.type+' '+t.comb+'（仮想100円）').join('<br>'):'【LAB自動3連複】'+(x.plan.tickets||[]).map(t=>t.type+' '+t.comb+' '+Number(t.stake||0).toLocaleString()+'円').join('<br>')+'<br>【自分で追加】'+(x.plan.userTickets||[]).map(t=>t.type+' '+t.comb+' '+Number(t.stake||0).toLocaleString()+'円').join('<br>');
+  const hitDetails=x.isSkip?(!x.shadowSettled?'結果待ち':x.shadowHit?x.shadowMatchedTickets.map(t=>t.type+' '+t.comb+'（払戻 '+t.pay100.toLocaleString()+'円/100円）').join('<br>'):'検証用買い目に的中なし'):!x.settled?'結果待ち':x.hit?x.matchedTickets.map(t=>(t.owner==='USER'?'【自分】':'【LAB】')+' '+t.type+' '+t.comb+'（'+t.returned.toLocaleString()+'円）').join('<br>'):'該当買い目なし';
   const officialDetails=!x.settled&&!x.shadowSettled?'結果待ち':x.officialResults.map(r=>r.type+' '+r.comb).join('<br>')||'払戻組合せなし';
   const returned=x.isSkip?'購入なし（仮想検証）':!x.settled?'未確定':x.returned.toLocaleString()+'円',stake=x.isSkip?'0円':x.stake.toLocaleString()+'円';
   return '<tr><td>'+esc(x.plan.venue||'')+' '+esc(x.plan.raceNo||'')+'R</td><td>'+label+'</td><td>'+details+'</td><td>'+officialDetails+'</td><td>'+hitDetails+'</td><td>'+stake+'</td><td>'+returned+'</td><td>'+(!x.settled?'—':(x.returned-x.stake>0?'+':'')+(x.returned-x.stake).toLocaleString()+'円')+'</td></tr>';
@@ -1043,7 +1057,7 @@ dedupeImportedData();refreshRaceChoices();updateHistory();$('importCounts').text
 const ticketBox=document.createElement('div');
 ticketBox.className='card';
 ticketBox.style.marginTop='16px';
-ticketBox.innerHTML='<h2>買い目自動生成</h2><p class="sub">レース選択・公式データ更新・1分オッズ更新に合わせて自動分析し、買い目を保存します。参考推定であり、的中や利益を保証しません。</p><div id="ticketResult" class="sub" style="margin-top:12px">レースを分析すると買い目を自動表示します。</div>';
+ticketBox.innerHTML='<h2>LABの自動買い目（3連複のみ）</h2><p class="sub">LABは馬の評価・順位をこれまで通り表示し、自動生成する買い目は3連複の2-4-5フォーメーションに限定します。</p><div id="ticketResult" class="sub" style="margin-top:12px">レースを分析すると馬の評価とLABの3連複買い目を表示します。</div><div id="manualTicketPanel" style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px"><h3>自分で追加する買い目</h3><p class="sub">LABの3連複とは別に、単勝・馬単・3連単を追加して保存できます。</p><div id="manualTicketEditor" class="sub">レースを分析すると追加フォームが使えます。</div></div>';
 $('runnerList').parentElement.after(ticketBox);
 function saveInsufficientTicketPlan(raceId,reason,code){
  if(!raceId)return false;
@@ -1058,6 +1072,60 @@ function saveInsufficientTicketPlan(raceId,reason,code){
  if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
  return saved;
 }
+let manualTicketCurrentRaceId='';
+function renderManualTicketEditor(plan,field){
+ const editor=$('manualTicketEditor');if(!editor)return;
+ manualTicketCurrentRaceId=String(plan?.raceId||'');
+ const horses=(Array.isArray(field)&&field.length?field:(plan?.runnerDraws||[])).map(h=>({no:String(h.horseNo??h.no??''),name:String(h.name||'')})).filter(h=>/^\d+$/.test(h.no));
+ if(!plan?.raceId||!horses.length){editor.innerHTML='<p>出走馬データがそろったレースを分析すると、単勝・馬単・3連単を追加できます。</p>';return;}
+ const options='<option value="">馬番を選択</option>'+horses.map(h=>'<option value="'+esc(h.no)+'">'+esc(h.no+'番 '+h.name)+'</option>').join('');
+ const tickets=Array.isArray(plan.userTickets)?plan.userTickets:[];
+ editor.innerHTML='<div class="grid"><div><label>券種</label><select id="manualTicketType"><option value="単勝">単勝</option><option value="馬単">馬単</option><option value="3連単">3連単</option></select></div><div><label>1点の購入額（円）</label><input id="manualTicketStake" type="number" min="100" step="100" value="100"></div><div><label>1着／単勝の馬</label><select id="manualHorse1">'+options+'</select></div><div id="manualHorse2Wrap"><label>2着の馬</label><select id="manualHorse2">'+options+'</select></div><div id="manualHorse3Wrap"><label>3着の馬</label><select id="manualHorse3">'+options+'</select></div></div><div class="actions"><button class="btn accent" id="manualTicketAdd">追加して保存</button></div><p id="manualTicketStatus" class="sub">追加した買い目はLABの自動3連複とは別に記録します。</p><h3 style="margin-top:14px">追加済みの買い目（'+tickets.length+'点）</h3><div class="tablewrap"><table style="min-width:420px"><thead><tr><th>券種</th><th>買い目</th><th>購入額</th><th></th></tr></thead><tbody>'+(tickets.length?tickets.map((t,i)=>'<tr><td>'+esc(t.type)+'</td><td><b>'+esc(t.comb)+'</b></td><td>'+Number(t.stake||0).toLocaleString()+'円</td><td><button class="btn" data-manual-delete="'+i+'">削除</button></td></tr>').join(''):'<tr><td colspan="4">まだ追加されていません。</td></tr>')+'</tbody></table></div>';
+ const updateFields=()=>{const type=$('manualTicketType')?.value||'単勝';if($('manualHorse2Wrap'))$('manualHorse2Wrap').classList.toggle('hidden',type==='単勝');if($('manualHorse3Wrap'))$('manualHorse3Wrap').classList.toggle('hidden',type!=='3連単');};
+ $('manualTicketType').onchange=updateFields;updateFields();
+}
+function updateManualTicketPlan(mutator){
+ const records=loadLabTicketPlans(),item=records.find(x=>String(x.plan?.raceId)===manualTicketCurrentRaceId);
+ if(!item)return false;
+ const plan={...item.plan,userTickets:[...(Array.isArray(item.plan.userTickets)?item.plan.userTickets:[])]};
+ mutator(plan.userTickets);
+ plan.modifiedAt=new Date().toISOString();
+ const prediction=(db.predictions||[]).find(p=>String(p.id)===manualTicketCurrentRaceId&&labLedgerDateKey(p.date)===labLedgerDateKey(plan.date))||{id:manualTicketCurrentRaceId,date:labLedgerDateKey(plan.date),top:[],runners:[],learned:false};
+ prediction.ticketPlan=plan;prediction.at=plan.modifiedAt;
+ if(!Array.isArray(db.predictions))db.predictions=[];
+ const existingIndex=db.predictions.findIndex(p=>String(p.id)===manualTicketCurrentRaceId&&labLedgerDateKey(p.date)===labLedgerDateKey(plan.date));
+ if(existingIndex>=0)db.predictions[existingIndex]=prediction;else db.predictions.push(prediction);
+ const ok=persistLabTicketPlan(prediction,plan);save();scheduleCloudSync();
+ if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
+ return ok;
+}
+document.addEventListener('click',event=>{
+ const add=event.target.closest&&event.target.closest('#manualTicketAdd');
+ if(add){
+  const type=$('manualTicketType')?.value||'単勝',stake=Number($('manualTicketStake')?.value);
+  const nums=type==='単勝'?[$('manualHorse1')?.value]:type==='馬単'?[$('manualHorse1')?.value,$('manualHorse2')?.value]:[$('manualHorse1')?.value,$('manualHorse2')?.value,$('manualHorse3')?.value];
+  const status=$('manualTicketStatus');
+  if(nums.some(x=>!/^\d+$/.test(String(x||'')))){if(status)status.textContent='必要な馬番をすべて選択してください。';return;}
+  if(new Set(nums).size!==nums.length){if(status)status.textContent='同じ馬番を重複して指定できません。';return;}
+  if(!Number.isInteger(stake)||stake<100||stake%100!==0){if(status)status.textContent='購入額は100円以上、100円単位で入力してください。';return;}
+  const plan=loadLabTicketPlans().find(x=>String(x.plan?.raceId)===manualTicketCurrentRaceId)?.plan;
+  if(!plan){if(status)status.textContent='先にレースを分析してLABの記録を作成してください。';return;}
+  const id='user-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);
+  const ticket={id,type,comb:nums.join('-'),stake,source:'USER',createdAt:new Date().toISOString()};
+  const ok=updateManualTicketPlan(list=>list.push(ticket));
+  if(status)status.textContent=ok?'追加した買い目を保存しました。':'保存に失敗しました。ブラウザの保存容量を確認してください。';
+  const updated=loadLabTicketPlans().find(x=>String(x.plan?.raceId)===manualTicketCurrentRaceId)?.plan;
+  if(updated)renderManualTicketEditor(updated,updated.runnerDraws||currentRunners);
+  return;
+ }
+ const del=event.target.closest&&event.target.closest('[data-manual-delete]');
+ if(del){
+  const index=Number(del.getAttribute('data-manual-delete'));
+  updateManualTicketPlan(list=>{if(Number.isInteger(index)&&index>=0&&index<list.length)list.splice(index,1);});
+  const updated=loadLabTicketPlans().find(x=>String(x.plan?.raceId)===manualTicketCurrentRaceId)?.plan;
+  if(updated)renderManualTicketEditor(updated,updated.runnerDraws||currentRunners);
+ }
+});
 function generateTickets(){
  const out=$('ticketResult');if(!out)return;
  const source=[...(currentRunners||[])];
@@ -1106,27 +1174,32 @@ function generateTickets(){
    const row=oddsRows.find(o=>{if(!typeMatch(o))return false;const nums=[o.n1,o.n2,o.n3].filter(x=>String(x??'').trim()!=='');return (unordered?unorderedKey(nums):orderedKey(nums))===wanted;});
    return row?Number(row.odds):null;
  };
- const candidates=[],add=(type,comb)=>{const numbers=comb.map(h=>String(h.horseNo)),probability=Math.max(0,Math.min(1,comboProbability(type,numbers))),odds=findOdds(type,numbers);candidates.push({type,comb:numbers.join('-'),probability,odds,ev:odds&&odds>0?probability*odds:null});};
- const ticketTop=field.slice(0,Math.min(5,field.length));
- ticketTop.forEach(h=>add('単勝',[h]));
- ticketTop.forEach(h=>add('複勝',[h]));
- for(let i=0;i<ticketTop.length;i++)for(let j=i+1;j<ticketTop.length;j++){
-   add('ワイド',[ticketTop[i],ticketTop[j]]);
-   add('馬連',[ticketTop[i],ticketTop[j]]);
+ const candidates=[],add=(type,comb)=>{
+   const numbers=comb.map(h=>String(h.horseNo));
+   const probability=Math.max(0,Math.min(1,comboProbability(type,numbers)));
+   const odds=findOdds(type,numbers);
+   candidates.push({type,comb:numbers.join('-'),probability,odds,ev:odds&&odds>0?probability*odds:null});
+ };
+ // LAB's automatic ticket generator is fixed to the 2-4-5 trio formation:
+ // top 2 / top 4 / ranks 3-7, with repeated horses and duplicate combinations removed.
+ const formationFirst=field.slice(0,2),formationSecond=field.slice(0,4),formationThird=field.slice(2,7);
+ const seenTrioCombinations=new Set();
+ for(const first of formationFirst)for(const second of formationSecond)for(const third of formationThird){
+   const nums=[String(first.horseNo),String(second.horseNo),String(third.horseNo)];
+   if(new Set(nums).size!==3)continue;
+   const combo=nums.map(normNo).sort((a,b)=>Number(a)-Number(b));
+   const key=combo.join('-');
+   if(seenTrioCombinations.has(key))continue;
+   seenTrioCombinations.add(key);
+   add('3連複',combo.map(no=>field.find(h=>normNo(h.horseNo)===no)).filter(Boolean));
  }
- const firstCandidates=ticketTop.slice(0,2),secondCandidates=ticketTop;
- firstCandidates.forEach(first=>secondCandidates.filter(second=>second!==first).forEach(second=>add('馬単',[first,second])));
- for(let i=0;i<ticketTop.length;i++)for(let j=i+1;j<ticketTop.length;j++)for(let k=j+1;k<ticketTop.length;k++)add('3連複',[ticketTop[i],ticketTop[j],ticketTop[k]]);
- firstCandidates.forEach(first=>ticketTop.filter(second=>second!==first).forEach(second=>ticketTop.filter(third=>third!==first&&third!==second).forEach(third=>add('3連単',[first,second,third]))));
- const groups=['単勝','複勝','ワイド','馬連','馬単','3連複','3連単'];
- const typeKeys={'単勝':'win','複勝':'place','ワイド':'wide','馬連':'quinella','馬単':'exacta','3連複':'trio','3連単':'trifecta'};
+ const groups=['3連複'];
+ const typeKeys={'3連複':'trio'};
  const thresholdFor=type=>{const v=Number(verifiedTicketThresholds[typeKeys[type]]);return Number.isFinite(v)&&v>0?v:null;};
  const decision=x=>{if(x.ev==null)return 'オッズ待ち';const t=thresholdFor(x.type);if(t==null)return '検証基準未成立・購入対象外';return x.ev>=Math.max(1.05,t)?'検証済みEV基準通過':x.ev>=0.85?'EV基準未達（控えめ）':'EV基準未達（低め）';};
  const ranked=type=>candidates.filter(x=>x.type===type).sort((a,b)=>{const p=b.probability-a.probability;if(Math.abs(p)>1e-9)return p;return (b.ev??-1)-(a.ev??-1);});
  const formatPct=v=>(v*100).toFixed(2)+'%',formatOdds=v=>v==null?'未取得':v.toFixed(1)+'倍',formatEv=v=>v==null?'—':v.toFixed(3);
- const trifectaFormation={first:firstCandidates.map(h=>String(h.horseNo)),second:ticketTop.map(h=>String(h.horseNo)),third:ticketTop.map(h=>String(h.horseNo))};
- const trifectaList=ranked('3連単').slice(0,24);
- const main=groups.map(type=>ranked(type)[0]).filter(Boolean);
+ const main=ranked('3連複');
  const MAX_RACE_STAKE=2000,UNIT_STAKE=100;
  const eligibleByType=groups.map(type=>{
    const verifiedThreshold=Number(verifiedTicketThresholds[typeKeys[type]]);
@@ -1137,7 +1210,7 @@ function generateTickets(){
    const best=rows[0]||null;
    return {type,rows:rows.slice(0,20),avg,best,qualified};
  }).filter(x=>x.qualified).sort((a,b)=>(b.avg-a.avg)||(b.best.probability-a.best.probability));
- const selectedType=learnedModelLoaded?eligibleByType[0]?.type:null;
+ const selectedType=learnedModelLoaded&&eligibleByType[0]?.type==='3連複'?'3連複':null;
  const selectedRows=selectedType?eligibleByType[0].rows:[];
  const targetRaceStake=Math.min(MAX_RACE_STAKE,selectedRows.length*UNIT_STAKE);
  const stakeWeights=selectedRows.map(x=>Math.max(0.0001,(x.ev-1)*Math.sqrt(Math.max(x.probability,0.000001))));
@@ -1152,21 +1225,21 @@ function generateTickets(){
    ? '<h3>このレースの自動選択：'+selectedType+'</h3><p>券種別の候補を比較し、検証済みEV基準を満たす候補の平均EVが最も高い券種を選択。購入上限2,000円の範囲で配分します。</p><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>EV</th><th>配分額</th></tr></thead><tbody>'+allocation.map(x=>'<tr><td><b>'+selectedType+' '+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+x.stake.toLocaleString()+'円</td></tr>').join('')+'</tbody></table></div><p><b>推奨購入額：'+allocated.toLocaleString()+'円／上限2,000円</b></p>'
    : '<h3>このレースは見送り</h3><p><b>今回の理由：</b>'+esc(skipReason)+'</p><details open><summary>見送り基準の詳細</summary><ol><li>校正済みモデルが読み込まれていること</li><li>選択レースの実オッズが取得できていること</li><li>候補買い目と券種・組番が一致するオッズがあること</li><li>券種別の検証基準が成立していること（未使用期間で購入対象100レース以上・300点以上、回収率100％超、回収率95％信頼区間の下限も100％超）</li><li>候補EVが1.05以上かつ、その券種で検証済みのEV閾値以上であること</li></ol><p>現在は券種別の検証済み閾値が成立していないため、EVが高く見えてもBETにはしません。見送りは検証未達を示すもので、馬の能力が低いという意味ではありません。</p></details>';
  const pct=v=>(v*100).toFixed(2)+'%',odds=v=>v==null?'未取得':v.toFixed(1)+'倍',ev=v=>v==null?'—':v.toFixed(3);
- const mainHtml='<h3>的中率優先・券種別候補</h3><div class="tablewrap"><table><thead><tr><th>券種</th><th>買い目・方式</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+main.map(x=>'<tr><td>'+x.type+'</td><td><b>'+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'<tr><td>3連単</td><td><b>フォーメーション '+trifectaFormation.first.join(',')+' → '+trifectaFormation.second.join(',')+' → '+trifectaFormation.third.join(',')+'</b>（'+trifectaList.length+'点）</td><td colspan="4">着順別候補を指定・同一馬の重複組合せは除外</td></tr></tbody></table></div>';
+ const mainHtml='<h3>LABの3連複候補（2-4-5）</h3><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+main.map(x=>'<tr><td><b>3連複 '+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';
  const horseHtml='<h3>予想上位馬</h3><div class="tablewrap"><table><thead><tr><th>順位</th><th>馬番・馬名</th><th>評価点</th><th>'+(learnedModelLoaded?'学習モデル推定勝率':'参考スコア比率')+'</th><th>単勝オッズ</th></tr></thead><tbody>'+top.map((h,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(h.horseNo+'番 '+(h.name||''))+'</td><td>'+(Number(h.score)||0).toFixed(1)+'</td><td>'+formatPct(h.modelProb)+'</td><td>'+formatOdds(Number(h.odds)>0?Number(h.odds):null)+'</td></tr>').join('')+'</tbody></table></div>';
- const ticketLimits={'単勝':5,'複勝':5,'ワイド':10,'馬連':10,'馬単':10,'3連複':10,'3連単':24};
- const allHtml=groups.map(type=>{const list=ranked(type).slice(0,ticketLimits[type]||0);if(type==='3連単'){const roleText='<p><b>1着：</b>'+trifectaFormation.first.join('・')+'番　<b>2着：</b>'+trifectaFormation.second.join('・')+'番　<b>3着：</b>'+trifectaFormation.third.join('・')+'番</p><p class="sub">同一馬が1着・2着・3着に重複する組合せは除外。基本形は2-5-5、計24点です。</p>';return '<h3>3連単フォーメーション（'+list.length+'点）</h3>'+roleText+'<div class="tablewrap"><table><thead><tr><th>成立買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+list.map(x=>'<tr><td><b>'+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';}return '<h3>'+type+'（'+list.length+'点）</h3><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+list.map(x=>'<tr><td><b>'+type+' '+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';}).join('');
+ const allHtml='<h3>3連複候補一覧（'+main.length+'点）</h3><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+main.map(x=>'<tr><td><b>'+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';
  // Freeze the exact recommendation at prediction time. Never recalculate this snapshot after odds/results change.
  if(raceId){
    const race=[...(db.races||[]),...(oddsRaceIndex||[]),...(minuteOddsRaceIndex||[])].find(r=>String(r.id)===String(raceId))||{};
+   const previousPlan=loadLabTicketPlans().find(x=>String(x.plan?.raceId)===String(raceId)&&labLedgerDateKey(x.plan?.date)===labLedgerDateKey(race.date||$('raceDate')?.value))?.plan;
    const snapshot={
-     version:1,createdAt:new Date().toISOString(),date:String(race.date||$('raceDate')?.value||''),
+     version:2,createdAt:new Date().toISOString(),modifiedAt:new Date().toISOString(),userTickets:Array.isArray(previousPlan?.userTickets)?previousPlan.userTickets:[],date:String(race.date||$('raceDate')?.value||''),
      raceId:String(raceId),venue:String(race.venue||''),raceNo:String(race.race||''),
      decision:selectedType&&allocation.length?'BET':'SKIP',
      skipReason:selectedType&&allocation.length?'':skipReason,
      skipReasonCode:selectedType&&allocation.length?'BET':(!learnedModelLoaded?'MODEL_NOT_READY':oddsRows.length===0?'ODDS_NOT_CAPTURED':oddsMatchedCount===0?'TICKET_ODDS_NOT_MATCHED':validatedTypeCount===0?'NO_VALIDATED_TICKET_THRESHOLD':'EV_BELOW_VALIDATED_THRESHOLD'),
      totalStake:allocated||0,tickets:allocation.map(x=>({type:x.type,comb:x.comb,stake:x.stake,odds:x.odds,probability:x.probability,ev:x.ev})),
-     shadowTickets:(selectedType&&allocation.length?allocation:groups.flatMap(type=>ranked(type).slice(0,Math.min(3,type==='3連単'?6:3)))).map(x=>({type:x.type,comb:x.comb,odds:x.odds,probability:x.probability,ev:x.ev,virtualStake:100})),
+     shadowTickets:(selectedType&&allocation.length?allocation:ranked('3連複').slice(0,3)).map(x=>({type:'3連複',comb:x.comb,odds:x.odds,probability:x.probability,ev:x.ev,virtualStake:100})),
      runnerDraws:field.map(h=>({horseNo:String(h.horseNo),frameNo:Number(h.frameNo??h.frame)||null,score:Number(h.score)||0,winProbability:Number(h.modelProb)||0})),
      dataStatus:'COMPLETE',
      modelLoaded:!!learnedModelLoaded,oddsCaptured:oddsRows.length>0,oddsRows:oddsRows.length,oddsMatchedCandidates:oddsMatchedCount,validatedBetTypes:validatedTypeCount
@@ -1184,7 +1257,8 @@ function generateTickets(){
    if(!ticketSaved)out.insertAdjacentHTML('afterbegin','<p class="notice">買い目の保存に失敗しました。ブラウザの保存容量を確認してください。</p>');
    else out.insertAdjacentHTML('afterbegin','<p class="notice">保存確認済み：'+esc(snapshot.date)+' '+esc(snapshot.venue)+' '+esc(snapshot.raceNo)+'R／'+(snapshot.decision==='BET'?snapshot.tickets.length+'点・'+snapshot.totalStake.toLocaleString()+'円':'見送り')+'。保存買い目タブから再確認できます。</p>');
  }
- out.innerHTML=horseHtml+selectedHtml+mainHtml+'<details style="margin-top:12px"><summary>券種別の候補一覧（比較用）</summary>'+allHtml+'</details><p>券種選択は、校正済みモデル・実オッズ・券種別EV基準を満たす候補がある場合のみ行います。候補確率はPlackett–Luce方式による近似です。各候補のオッズが未取得、モデル未校正、または基準未達の場合は見送り。1点100円単位、1レース合計2,000円を超えないよう配分します。実際の購入・払戻ではなく、アプリの推奨額です。候補 '+candidates.length+'点 / オッズ照合済み '+candidates.filter(x=>x.ev!=null).length+'点。</p>';
+ out.innerHTML=horseHtml+selectedHtml+mainHtml+'<details style="margin-top:12px"><summary>3連複候補一覧（比較用）</summary>'+allHtml+'</details><p>LABが自動生成する買い目は3連複のみです。馬の評価・順位は従来通り表示します。候補確率はPlackett–Luce方式による近似です。オッズ未取得、モデル未校正、または検証基準未達の場合は見送り。1点100円単位、1レース合計2,000円を超えないよう配分します。候補 '+candidates.length+'点 / オッズ照合済み '+candidates.filter(x=>x.ev!=null).length+'点。</p>';
+ renderManualTicketEditor(snapshot,field);
 }
 let autoDailyBatchBusy=false;
 async function autoAnalyzeAllTodayRaces(){
