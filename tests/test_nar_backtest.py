@@ -15,6 +15,7 @@ import nar_backtest as nb
 import nar_model_g2_odds_divergence_backtest as g2
 import nar_model_g3_risk_gated_backtest as g3
 import nar_model_g4_preoff_backtest as g4
+import nar_trio_narrowing_pilot as trio_pilot
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import capture_nar_odds as capture
 
@@ -2400,6 +2401,44 @@ class G4ModelMarketBlendTests(unittest.TestCase):
         self.assertEqual(row["blend_top"]["horse_no"], "1")
         self.assertEqual(row["blend_market_weight"], 0.5)
         self.assertEqual(row["blend_top"]["hit"], 1)
+
+
+    def test_g4_coverage_audit_uses_unique_race_keys_and_lists_missing_snapshot_reasons(self):
+        outcomes = {
+            "大井|20261105|1": {"winners":{"1"}},
+            "大井|20261105|2": {"winners":{"2"}},
+            "園田|20261105|1": {"winners":{"3"}},
+        }
+        snapshots = [
+            {"race_key":"大井|20261105|1"},
+            {"race_key":"大井|20261105|1"},
+            {"race_key":"大井|20261105|2"},
+            {"race_key":"浦和|20261105|1"},
+        ]
+        joined = [{"race_key":"大井|20261105|1"}]
+        exclusions = [{"race_key":"大井|20261105|2","reason":"insufficient_odds_coverage"}]
+        audit = g4.build_coverage_audit(outcomes,snapshots,joined,exclusions)
+        self.assertEqual(audit["official_result_races"],3)
+        self.assertEqual(audit["unique_valid_preoff_snapshot_races"],3)
+        self.assertEqual(audit["official_result_races_with_snapshot"],2)
+        self.assertEqual(audit["official_result_races_without_valid_snapshot"],1)
+        self.assertEqual(audit["snapshot_races_without_official_result"],1)
+        self.assertEqual(audit["unique_evaluated_races"],1)
+        self.assertEqual(audit["missing_preoff_snapshot_race_keys"],["園田|20261105|1"])
+        self.assertEqual(audit["snapshot_evaluation_exclusions"][0]["reason"],"insufficient_odds_coverage")
+
+
+    def test_trio_fusion_ranking_prioritizes_probability_over_ev_and_changes_with_market_weight(self):
+        candidates = [
+            {"comb":("1","2","3"),"lab_probability":0.15,"market_probability":0.01,"odds":100.0,"ev":15.0},
+            {"comb":("1","2","4"),"lab_probability":0.10,"market_probability":0.12,"odds":1.2,"ev":0.12},
+        ]
+        lab_only=trio_pilot.rank_trio_fusion_candidates(candidates,0.0)
+        balanced=trio_pilot.rank_trio_fusion_candidates(candidates,0.50)
+        market_only=trio_pilot.rank_trio_fusion_candidates(candidates,1.0)
+        self.assertEqual(lab_only[0],("1","2","3"))
+        self.assertEqual(balanced[0],("1","2","4"))
+        self.assertEqual(market_only[0],("1","2","4"))
 
     def test_blend_is_not_emitted_when_odds_coverage_is_insufficient(self):
         snapshot = {
