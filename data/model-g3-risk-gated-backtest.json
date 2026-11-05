@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-05T04:10:46.488631+00:00",
+  "generated_at": "2026-11-05T04:16:06.679347+00:00",
   "feature": "G3_risk_gated_value_selection",
   "status": "no_eligible_development_strategy",
   "g1_temperature": 0.115,
@@ -24,7 +24,8 @@
   },
   "races_with_final_odds_and_outcomes": 10769,
   "races_with_odds_and_outcomes_before_strategy_filters": 10769,
-  "races_evaluated_after_selected_strategy": 0,
+  "races_with_benchmark_metrics": 10768,
+  "races_with_selected_value_ticket": 0,
   "development_period": [
     "2026-03-01",
     "2026-08-18"
@@ -401,45 +402,51 @@
   },
   "holdout_probability_quality": {
     "G1_model_winner_mass": {
-      "races": 0,
-      "log_loss": null,
-      "brier_winner_mass": null
+      "races": 3351,
+      "log_loss": 1.99316,
+      "brier_winner_mass": 0.6951
     },
     "market_winner_mass": {
-      "races": 0,
-      "log_loss": null,
-      "brier_winner_mass": null
+      "races": 3351,
+      "log_loss": 1.543801,
+      "brier_winner_mass": 0.533296
     }
   },
   "development_bets": {
     "G1_top_pick": {
-      "races_bet": 0,
-      "tickets": 0,
-      "hits": 0,
-      "hit_rate": null,
-      "stake_jpy": 0,
-      "return_jpy": 0,
-      "profit_jpy": 0,
-      "roi": null,
+      "races_bet": 7417,
+      "tickets": 7417,
+      "hits": 2194,
+      "hit_rate": 29.58,
+      "stake_jpy": 741700,
+      "return_jpy": 525500.0,
+      "profit_jpy": -216200.0,
+      "roi": 70.85,
       "roi_95ci": {
-        "method": "paired race-level bootstrap",
-        "replicates": 0,
-        "roi_delta_95ci": null
+        "method": "race-level bootstrap ROI percentile interval",
+        "replicates": 2000,
+        "roi_95ci": [
+          67.205069,
+          74.497775
+        ]
       }
     },
     "market_favorite": {
-      "races_bet": 0,
-      "tickets": 0,
-      "hits": 0,
-      "hit_rate": null,
-      "stake_jpy": 0,
-      "return_jpy": 0,
-      "profit_jpy": 0,
-      "roi": null,
+      "races_bet": 7417,
+      "tickets": 7417,
+      "hits": 3276,
+      "hit_rate": 44.17,
+      "stake_jpy": 741700,
+      "return_jpy": 589960.0,
+      "profit_jpy": -151740.0,
+      "roi": 79.54,
       "roi_95ci": {
-        "method": "paired race-level bootstrap",
-        "replicates": 0,
-        "roi_delta_95ci": null
+        "method": "race-level bootstrap ROI percentile interval",
+        "replicates": 2000,
+        "roi_95ci": [
+          77.391128,
+          81.67588
+        ]
       }
     },
     "G3_value_pick": {
@@ -460,33 +467,39 @@
   },
   "holdout_bets": {
     "G1_top_pick": {
-      "races_bet": 0,
-      "tickets": 0,
-      "hits": 0,
-      "hit_rate": null,
-      "stake_jpy": 0,
-      "return_jpy": 0,
-      "profit_jpy": 0,
-      "roi": null,
+      "races_bet": 3351,
+      "tickets": 3351,
+      "hits": 1002,
+      "hit_rate": 29.9,
+      "stake_jpy": 335100,
+      "return_jpy": 242240.0,
+      "profit_jpy": -92860.0,
+      "roi": 72.29,
       "roi_95ci": {
-        "method": "paired race-level bootstrap",
-        "replicates": 0,
-        "roi_delta_95ci": null
+        "method": "race-level bootstrap ROI percentile interval",
+        "replicates": 2000,
+        "roi_95ci": [
+          66.675619,
+          78.719785
+        ]
       }
     },
     "market_favorite": {
-      "races_bet": 0,
-      "tickets": 0,
-      "hits": 0,
-      "hit_rate": null,
-      "stake_jpy": 0,
-      "return_jpy": 0,
-      "profit_jpy": 0,
-      "roi": null,
+      "races_bet": 3351,
+      "tickets": 3351,
+      "hits": 1516,
+      "hit_rate": 45.24,
+      "stake_jpy": 335100,
+      "return_jpy": 272930.0,
+      "profit_jpy": -62170.0,
+      "roi": 81.45,
       "roi_95ci": {
-        "method": "paired race-level bootstrap",
-        "replicates": 0,
-        "roi_delta_95ci": null
+        "method": "race-level bootstrap ROI percentile interval",
+        "replicates": 2000,
+        "roi_95ci": [
+          78.236347,
+          84.762757
+        ]
       }
     },
     "G3_value_pick": {
@@ -505,7 +518,7 @@
       }
     }
   },
-  "holdout_G3_selection_rate_pct": null,
+  "holdout_G3_selection_rate_pct": 0.0,
   "g3_pass": false,
   "interpretation": "G3 is only considered ROI-confirmed if the untouched holdout has at least 100 eligible races and 100 G3 bets and the race-bootstrap 95% ROI lower bound exceeds 100%. The skip rule is tuned only on development data; the untouched holdout evaluates the selected thresholds once. A pass still requires at least 100 holdout bets and a race-bootstrap 95% ROI lower bound above 100%."
 }
