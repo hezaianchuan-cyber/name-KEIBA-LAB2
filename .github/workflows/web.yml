@@ -7,6 +7,8 @@ on:
     paths:
       - 'index.html'
       - 'data/daily-payouts.json'
+      - 'data/model-g4-preoff-backtest.json'
+      - 'data/daily-review.json'
       - 'data/auto-ticket-plans.json'
       - 'data/latest-race.zip'
       - 'data/latest-odds.zip'
@@ -17,7 +19,7 @@ on:
   # Commits made with GITHUB_TOKEN do not start push workflows.
   # Deploy after the payout publisher commits the official same-day results.
   workflow_run:
-    workflows: ["Publish daily official NAR payouts", "Capture NAR pre-off odds every five minutes"]
+    workflows: ["Publish daily official NAR payouts", "Capture NAR pre-off odds every five minutes", "G4 real pre-off odds backtest"]
     types: [completed]
     branches: [main]
 
