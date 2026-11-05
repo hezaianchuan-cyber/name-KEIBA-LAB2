@@ -334,7 +334,7 @@ function txt(buf){
 async function unzip(buf){const u8=new Uint8Array(buf),dv=new DataView(buf),files=[];let eocd=-1;for(let i=u8.length-22;i>=Math.max(0,u8.length-65558);i--){if(dv.getUint32(i,true)===0x06054b50){eocd=i;break}}if(eocd<0)throw Error('ZIP\u306E\u69CB\u9020\u3092\u78BA\u8A8D\u3067\u304D\u307E\u305B\u3093');const count=dv.getUint16(eocd+10,true);let p=dv.getUint32(eocd+16,true);for(let n=0;n<count;n++){if(dv.getUint32(p,true)!==0x02014b50)break;const method=dv.getUint16(p+10,true),csize=dv.getUint32(p+20,true),nlen=dv.getUint16(p+28,true),elen=dv.getUint16(p+30,true),clen=dv.getUint16(p+32,true),off=dv.getUint32(p+42,true);const nameBytes=u8.slice(p+46,p+46+nlen);const utf8Name=(dv.getUint16(p+8,true)&0x0800)!==0;let name;try{name=new TextDecoder(utf8Name?'utf-8':'shift_jis',{fatal:true}).decode(nameBytes)}catch(e){try{name=new TextDecoder('utf-8').decode(nameBytes)}catch(e2){name=Array.from(nameBytes).map(x=>String.fromCharCode(x)).join('')}}const lp=off+30+dv.getUint16(off+26,true)+dv.getUint16(off+28,true);let data=u8.slice(lp,lp+csize);if(!name.endsWith('/')){if(method===8){const ds=new DecompressionStream('deflate-raw');const stream=new Blob([data]).stream().pipeThrough(ds);data=new Uint8Array(await new Response(stream).arrayBuffer())}else if(method!==0)throw Error('\u672A\u5BFE\u5FDC\u306EZIP\u5727\u7E2E\u65B9\u5F0F: '+method);files.push({name,bytes:data})}p+=46+nlen+elen+clen}return files;}
 function num(v){const n=parseFloat(String(v??'').replace(/[\uFF0C,]/g,''));return Number.isFinite(n)?n:null}
 function norm(s){return String(s??'').replace(/[\s\u3000]/g,'').replace(/[\uFF10-\uFF19]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));}
-function normDate(v){const s=norm(v);const m=s.match(/^(\d{4})[\/-]?(\d{2})[\/-]?(\d{2})$/);return m?m[1]+m[2]+m[3]:s}function normalizeRaceNo(value){const raw=norm(value).replace(/R$/i,'');return /^\\d+$/.test(raw)?String(Number(raw)):raw;}
+function normDate(v){const s=norm(v);const m=s.match(/^(\d{4})[\/-]?(\d{2})[\/-]?(\d{2})$/);return m?m[1]+m[2]+m[3]:s}function normalizeRaceNo(value){const raw=norm(value).replace(/R$/i,'');return /^\d+$/.test(raw)?String(Number(raw)):raw;}
 function key(v,d,r){return [canonicalVenue(v)||norm(v),normDate(d),normalizeRaceNo(r)].join('|')}
 function classify(name){const n=String(name||'').replace(/\\/g,'/').split('/').pop().replace(/^\uFEFF/,'').normalize('NFKC').toLowerCase();if(/horselist|horse.?list|\u51FA\u99AC\u8868/.test(n))return 'horses';if(/racelist|race.?list|\u30EC\u30FC\u30B9\u4E00\u89A7/.test(n))return 'races';if(/odds|\u30AA\u30C3\u30BA/.test(n))return 'odds';if(/payback|payout|\u6255\u623B/.test(n))return 'payouts';return null}
 function parseOfficial(name,text){
@@ -343,7 +343,7 @@ function parseOfficial(name,text){
  for(const a of rows){
   if(!a.length)continue;
   const venue=canonicalVenue(a[0])||String(a[0]||'').trim(),date=a[1]||'',race=normalizeRaceNo(a[2]);
-  if(!venue||!date||!race||!/^\\d{8}$/.test(normDate(date)))continue;
+  if(!venue||!date||!race||!/^\d{8}$/.test(normDate(date)))continue;
   const id=key(venue,date,race),dateKey=normDate(date);
   if(type==='horses'){
    const obj={id,venue,date:dateKey,race,frame:a[3],horseNo:a[5],name:a[6],sex:a[7],age:num(a[8]),sire:a[11],dam:a[12],broodmareSire:a[13],jockey:a[14],weight:num(a[16]),bodyWeight:num(a[22]),bodyDiff:num(a[23]),record:a[24],venueRecord:a[27],distanceRecord:a[28],bestTime:a[29],lastRank:num(a[31]),lastTime:a[32],margin:a[33],last3f:num(a[34]),popularity:num(a[35])};
@@ -610,6 +610,7 @@ function scoreRunner(h,all){
   return {...h,parts:{...parts,going:goingScore,odds},score,recentRuns:history.map(x=>({date:x.date,rank:x.lastRank,margin:x.margin,last3f:x.last3f,venue:x.venue,distance:x.distance,going:x.going,surface:x.surface,fieldSize:x.fieldSize??x.field_size})),pedigreeSampleSize:sireRows.length,previousRun:{rank:history[0]?.lastRank??null,margin:history[0]?.margin??null,last3f:history[0]?.last3f??null,popularity:null,score:form},pedigreeScore:sireScore,modelSource:learnedModelLoaded?'学習済みモデル':'標準モデル'};
 }
 function analyze(){
+ renderOddsTrend();
  const id=$('raceSelect').value;
  const race=db.races.find(r=>r.id===id)||oddsRaceIndex.find(r=>r.id===id)||minuteOddsRaceIndex.find(r=>r.id===id);
  let runners=db.horses.filter(h=>h.id===id).map(h=>({...h,going:h.going??race?.going,surface:h.surface??race?.surface}));
