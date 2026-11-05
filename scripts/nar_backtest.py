@@ -3454,15 +3454,24 @@ def holdout_validation(races, horses, payouts, final_odds=None):
         ("recent_year", recent_start, END + dt.timedelta(days=1)),
     ]
     folds=[]
+    fold_runtime_seconds = {}
     for index,(label,test_start,test_end) in enumerate(fold_specs,1):
         train_dates=[d for d in dates if d < test_start]
         test_dates=[d for d in dates if test_start <= d < test_end]
         if not train_dates or not test_dates:
             continue
+        fold_started = time.perf_counter()
+        fold_result = evaluate_holdout_fold(
+            races,horses,payouts,train_dates,test_dates,final_odds)
+        fold_elapsed = round(time.perf_counter() - fold_started, 3)
+        fold_runtime_seconds[label] = fold_elapsed
+        print(f"PERF_PROFILE holdout_fold_{label}={fold_elapsed}s "
+              f"train_dates={len(train_dates)} test_dates={len(test_dates)}", flush=True)
         folds.append({"fold":index,"period_label":label,
-                      **evaluate_holdout_fold(races,horses,payouts,train_dates,test_dates,final_odds)})
+                      "runtime_seconds":fold_elapsed, **fold_result})
     if len(folds)<3:
         return {"status":"insufficient_folds","folds":folds,
+                "fold_runtime_seconds":fold_runtime_seconds,
                 "required_periods":["previous_year_2","previous_year_1","recent_year"]}
 
     def summarize_period(period_folds):
@@ -3636,6 +3645,7 @@ def holdout_validation(races, horses, payouts, final_odds=None):
     return {"status":"ok","auto_improvement_loop":auto_selection,
             "integrated_strategy_E": integrated_e_oos,"method":"three rolling-origin folds with non-overlapping test windows; weights frozen within each test window; prior results added only after all races on a date are scored; market-value bets use timestamped official pre-off odds snapshots",
             "folds":folds,
+            "fold_runtime_seconds":fold_runtime_seconds,
             "recent_year_validation":recent_year_validation,
             "previous_two_year_validation":previous_two_year_validation,
             "period_comparison":period_comparison,
