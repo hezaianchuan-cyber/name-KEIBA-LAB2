@@ -123,6 +123,8 @@ def build_review(now=None):
                 "holdout_model_top": compact_metric(holdout.get("model_top")),
                 "holdout_market_favorite": compact_metric(holdout.get("market_favorite")),
                 "holdout_value_rule": compact_metric(holdout.get("value_rule")),
+                "development_blend_candidate_comparison": development.get("blend_candidate_comparison"),
+                "holdout_blend_candidate_comparison": holdout.get("blend_candidate_comparison"),
             },
             "live_model_changed": (g4 or {}).get("live_model_changed"),
             "profitable_claim": (g4 or {}).get("profitable_claim"),
