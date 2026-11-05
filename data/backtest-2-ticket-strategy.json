@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-05T05:30:04.577182+00:00",
+  "generated_at": "2026-11-05T07:10:41.589484+00:00",
   "holdout_period": {
     "start": "2025-11-05",
     "end": "2026-11-04"
@@ -177,6 +177,209 @@
       "candidate_pass": false,
       "profit": -14922940.0
     }
+  },
+  "trio_formation_comparison": {
+    "races": 15392,
+    "all_podium_top4": 3167,
+    "all_podium_top5": 5508,
+    "all_podium_top6": 7896,
+    "all_podium_top7": 10099,
+    "rates": {
+      "all_podium_top4": 20.58,
+      "all_podium_top5": 35.78,
+      "all_podium_top6": 51.3,
+      "all_podium_top7": 65.61
+    },
+    "structures": {
+      "top4": {
+        "races": 15412,
+        "tickets": 61648,
+        "hits": 3169,
+        "hit_races": 3169,
+        "stake": 6164800,
+        "return": 3599100.0,
+        "hit_rate": 5.1405,
+        "race_hit_rate": 20.56,
+        "roi": 58.38,
+        "roi_ci95_normal_low": 54.82,
+        "roi_ci95_normal_high": 61.94,
+        "roi_variance_components": {
+          "sum_return_sq": 13384167800.0,
+          "sum_stake_sq": 2465920000,
+          "sum_stake_return": 1439640000.0
+        },
+        "profit": -2565700.0,
+        "tickets_per_race": 4.0
+      },
+      "top5": {
+        "races": 15412,
+        "tickets": 154120,
+        "hits": 5515,
+        "hit_races": 5514,
+        "stake": 15412000,
+        "return": 9071670.0,
+        "hit_rate": 3.5784,
+        "race_hit_rate": 35.78,
+        "roi": 58.86,
+        "roi_ci95_normal_low": 55.91,
+        "roi_ci95_normal_high": 61.81,
+        "roi_variance_components": {
+          "sum_return_sq": 59115346700.0,
+          "sum_stake_sq": 15412000000,
+          "sum_stake_return": 9071670000.0
+        },
+        "profit": -6340330.0,
+        "tickets_per_race": 10.0
+      },
+      "top6": {
+        "races": 15412,
+        "tickets": 307090,
+        "hits": 7910,
+        "hit_races": 7905,
+        "stake": 30709000,
+        "return": 17513820.0,
+        "hit_rate": 2.5758,
+        "race_hit_rate": 51.29,
+        "roi": 57.03,
+        "roi_ci95_normal_low": 54.25,
+        "roi_ci95_normal_high": 59.81,
+        "roi_variance_components": {
+          "sum_return_sq": 210112397800.0,
+          "sum_stake_sq": 61303000000,
+          "sum_stake_return": 34970330000.0
+        },
+        "profit": -13195180.0,
+        "tickets_per_race": 19.93
+      },
+      "top7": {
+        "races": 15412,
+        "tickets": 532945,
+        "hits": 10123,
+        "hit_races": 10113,
+        "stake": 53294500,
+        "return": 28722100.0,
+        "hit_rate": 1.8994,
+        "race_hit_rate": 65.62,
+        "roi": 53.89,
+        "roi_ci95_normal_low": 51.67,
+        "roi_ci95_normal_high": 56.11,
+        "roi_variance_components": {
+          "sum_return_sq": 417933629600.0,
+          "sum_stake_sq": 185523250000,
+          "sum_stake_return": 100061935000.0
+        },
+        "profit": -24572400.0,
+        "tickets_per_race": 34.58
+      }
+    },
+    "formation_2_4_5": {
+      "races": 15412,
+      "tickets": 290478,
+      "hits": 8148,
+      "hit_races": 8145,
+      "stake": 29047800,
+      "return": 16717350.0,
+      "sum_return_sq": 140086789100.0,
+      "sum_stake_sq": 54919320000,
+      "sum_stake_return": 31622990000.0,
+      "hit_rate": 2.805,
+      "race_hit_rate": 52.85,
+      "roi": 57.55,
+      "roi_ci95_normal_low": 55.2,
+      "roi_ci95_normal_high": 59.91,
+      "profit": -12330450.0,
+      "tickets_per_race": 18.85,
+      "formation": "top2 / top4 / ranks3-7",
+      "stake_per_ticket_yen": 100,
+      "allocation_policies": {
+        "equal": {
+          "races": 15412,
+          "tickets": 290478,
+          "funded_tickets": 290478,
+          "winning_candidates": 8148,
+          "hits": 8148,
+          "hit_races": 8145,
+          "stake": 29047800,
+          "return": 1671735000.0,
+          "funded_ticket_hit_rate": 2.805,
+          "race_hit_rate": 52.85,
+          "roi": 5755.12,
+          "profit": 1642687200.0,
+          "funded_tickets_per_race": 18.85,
+          "budget_per_race_matches_equal_policy": true
+        },
+        "rank_weighted_mild": {
+          "races": 15412,
+          "tickets": 290478,
+          "funded_tickets": 229655,
+          "winning_candidates": 8148,
+          "hits": 7408,
+          "hit_races": 7405,
+          "stake": 29047800,
+          "return": 1728886000.0,
+          "funded_ticket_hit_rate": 3.2257,
+          "race_hit_rate": 48.05,
+          "roi": 5951.87,
+          "profit": 1699838200.0,
+          "funded_tickets_per_race": 14.9,
+          "budget_per_race_matches_equal_policy": true
+        },
+        "rank_weighted_strong": {
+          "races": 15412,
+          "tickets": 290478,
+          "funded_tickets": 168237,
+          "winning_candidates": 8148,
+          "hits": 6372,
+          "hit_races": 6370,
+          "stake": 29047800,
+          "return": 1772680000.0,
+          "funded_ticket_hit_rate": 3.7875,
+          "race_hit_rate": 41.33,
+          "roi": 6102.63,
+          "profit": 1743632200.0,
+          "funded_tickets_per_race": 10.92,
+          "budget_per_race_matches_equal_policy": true
+        }
+      },
+      "allocation_method": "Exploratory rank-weighted allocation with the same total stake per race as 100-yen equal staking. Historical pre-off trio combination odds are unavailable, so these policies are not expected-value or Kelly staking."
+    },
+    "formation_2_4_5_narrowed": {
+      "12": {
+        "races": 15412,
+        "tickets": 184599,
+        "funded_tickets": 184599,
+        "hits": 6672,
+        "hit_races": 6670,
+        "stake": 29282800,
+        "return": 1752890000.0,
+        "ticket_hit_rate": 3.6143,
+        "race_hit_rate": 43.28,
+        "roi": 5986.07,
+        "profit": 1723607200.0,
+        "tickets_per_race": 11.98,
+        "budget_per_race_jpy": 1900,
+        "selection": "lowest sum of the three LAB horse ranks among the original 19 unique 2-4-5 combinations",
+        "allocation": "19 equal 100-yen units distributed across the selected tickets"
+      },
+      "10": {
+        "races": 15412,
+        "tickets": 154005,
+        "funded_tickets": 154005,
+        "hits": 5969,
+        "hit_races": 5967,
+        "stake": 29282800,
+        "return": 1746652000.0,
+        "ticket_hit_rate": 3.8758,
+        "race_hit_rate": 38.72,
+        "roi": 5964.77,
+        "profit": 1717369200.0,
+        "tickets_per_race": 9.99,
+        "budget_per_race_jpy": 1900,
+        "selection": "lowest sum of the three LAB horse ranks among the original 19 unique 2-4-5 combinations",
+        "allocation": "19 equal 100-yen units distributed across the selected tickets"
+      }
+    },
+    "interpretation": "Trio tickets are unordered combinations. hit_rate is winning tickets divided by tickets; race_hit_rate is races with at least one winning ticket divided by races. ROI confidence intervals use a race-level normal ratio approximation and are diagnostic, not a promotion guarantee. Top5 is the unchanged fixed baseline. formation_2_4_5 is top2 / top4 / ranks3-7 with duplicate unordered combinations removed. The 12- and 10-ticket subsets are selected from those same 19 combinations by the lowest sum of LAB ranks; each keeps the same 1,900-yen race budget by distributing 19 equal 100-yen units. These are research comparisons, not live betting rules."
   },
   "production_shadow_portfolio": {
     "races": 15412,
