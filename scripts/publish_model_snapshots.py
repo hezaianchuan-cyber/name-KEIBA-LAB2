@@ -82,7 +82,10 @@ def record_to_row(record: dict) -> dict | None:
 def load_rows() -> tuple[list[dict], dict]:
     rows_by_key = {}
     stats = {"files": 0, "lines": 0, "valid": 0, "invalid_lock": 0, "invalid_shape": 0}
-    for path in sorted(SNAPSHOT_DIR.glob("*.jsonl.gz")):
+    # Re-publish the newest two daily archives on every run. Upserts make
+    # retries safe while keeping the five-minute workflow bounded.
+    archive_files = sorted(SNAPSHOT_DIR.glob("*.jsonl.gz"))[-2:]
+    for path in archive_files:
         stats["files"] += 1
         try:
             with gzip.open(path, "rt", encoding="utf-8") as stream:
