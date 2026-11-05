@@ -63,6 +63,7 @@ def build_review(now=None):
 
     daily_archive = (payouts or {}).get("daily_archive") or {}
     closest = (g4 or {}).get("closest_to_post") or {}
+    development = closest.get("development") or {}
     holdout = closest.get("holdout") or {}
     daily_results = (g4 or {}).get("daily_results") or []
     latest_daily = daily_results[-1] if daily_results else None
