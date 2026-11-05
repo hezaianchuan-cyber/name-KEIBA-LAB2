@@ -125,7 +125,7 @@ class ShadowTicketPlanTests(unittest.TestCase):
     def test_trio_fusion_builds_12_ranked_preview_independent_of_ev_threshold(self):
         race = {
             "odds": [
-                {"type":"単勝","n1":str(i),"odds":float(i+1)} for i in range(1,9)
+                {"type":"単勝","n1":str(i),"odds":float(i+1)} for i in range(1,16)
             ] + [
                 {"type":"3連複","n1":"1","n2":"2","n3":"3","odds":2.4},
                 {"type":"3連複","n1":"1","n2":"2","n3":"4","odds":18.0},
