@@ -97,6 +97,44 @@ class TrioCombinationProbabilityTests(unittest.TestCase):
         self.assertEqual(result["candidate_top3_coverage_pct"], 100.0)
         self.assertEqual(result["stake_jpy"], 1900)
 
+    def test_market_trio_odds_are_normalized_from_direct_trio_prices(self):
+        odds = [
+            {"type": "3連複", "n1": "1", "n2": "2", "n3": "3", "odds": 5.0},
+            {"type": "三連複", "n1": "1", "n2": "2", "n3": "4", "odds": 10.0},
+            {"type": "単勝", "n1": "1", "odds": 2.0},
+            {"type": "3連複", "n1": "1", "n2": "1", "n3": "2", "odds": 3.0},
+        ]
+        probabilities, prices = combo.market_trio_data(odds)
+        self.assertAlmostEqual(sum(probabilities.values()), 1.0, places=12)
+        self.assertEqual(prices[("1", "2", "3")], 5.0)
+        self.assertGreater(probabilities["1-2-3"], probabilities["1-2-4"])
+
+    def test_fused_ticket_ranking_keeps_high_hit_probability_even_at_low_odds(self):
+        model = {"1": 0.70, "2": 0.20, "3": 0.08, "4": 0.02}
+        market_probs = {
+            "1-2-3": 0.05,
+            "1-2-4": 0.35,
+            "1-3-4": 0.30,
+            "2-3-4": 0.30,
+        }
+        prices = {
+            ("1", "2", "3"): 4.0,
+            ("1", "2", "4"): 25.0,
+            ("1", "3", "4"): 30.0,
+            ("2", "3", "4"): 40.0,
+        }
+        ranked = combo.rank_fused_trio_combinations(
+            model, market_probs, prices, ["1", "2", "3", "4"], 0.10
+        )
+        self.assertEqual(ranked[0]["combo"], ["1", "2", "3"])
+        self.assertEqual(ranked[0]["odds"], 4.0)
+        self.assertGreater(ranked[0]["model_probability"], 0)
+        self.assertAlmostEqual(
+            ranked[0]["lab_ev"],
+            ranked[0]["model_probability"] * ranked[0]["odds"],
+            places=12,
+        )
+
     def test_invalid_trio_is_rejected(self):
         with self.assertRaises(ValueError):
             combo.plackett_luce_trio_probability({"1": 0.5, "2": 0.3, "3": 0.2}, ("1", "1", "2"))
