@@ -45,6 +45,24 @@ class PredictionLockTests(unittest.TestCase):
         second = dict(reversed(list(self.sample().items())))
         self.assertEqual(capture.prediction_lock_digest(first), capture.prediction_lock_digest(second))
 
+    def test_lock_rejects_post_off_capture_even_with_valid_digest(self):
+        record = self.sample()
+        record["captured_at"] = "2026-11-05T18:01:00+09:00"
+        capture.attach_prediction_lock(record)
+        self.assertFalse(capture.verify_prediction_lock(record))
+
+    def test_lock_rejects_capture_outside_preoff_window(self):
+        record = self.sample()
+        record["captured_at"] = "2026-11-05T17:20:00+09:00"
+        capture.attach_prediction_lock(record)
+        self.assertFalse(capture.verify_prediction_lock(record))
+
+    def test_lock_rejects_missing_model_or_prediction_payload(self):
+        record = self.sample()
+        record.pop("model_version")
+        capture.attach_prediction_lock(record)
+        self.assertFalse(capture.verify_prediction_lock(record))
+
 
 if __name__ == "__main__":
     unittest.main()
