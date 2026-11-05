@@ -153,12 +153,14 @@ def market_trio_data(odds):
         label = pilot.norm(item.get("type")).replace(" ", "")
         if "3連複" not in label and "三連複" not in label:
             continue
-        numbers = tuple(sorted(
-            (_horse_no(item.get("n1")), _horse_no(item.get("n2")), _horse_no(item.get("n3"))),
-            key=int,
-        ))
-        if len(numbers) != 3 or not all(numbers) or len(set(numbers)) != 3:
+        raw_numbers = [
+            _horse_no(item.get("n1")),
+            _horse_no(item.get("n2")),
+            _horse_no(item.get("n3")),
+        ]
+        if len(raw_numbers) != 3 or not all(raw_numbers) or len(set(raw_numbers)) != 3:
             continue
+        numbers = tuple(sorted(raw_numbers, key=int))
         try:
             price = float(item.get("odds"))
         except (TypeError, ValueError):
@@ -300,6 +302,8 @@ def build_race_strategies(snapshot, payouts, temperature):
         strategies[f"blend_{weight:.2f}"] = rank_fused_trio_combinations(
             model, market_trio_probs, market_trio_odds, candidate_horses, weight
         )
+    strategies["model"] = strategies["blend_0.00"]
+    strategies["market"] = strategies["blend_1.00"]
 
     candidate_horses = {
         name: sorted({no for item in ranked for no in item["combo"]}, key=int)
