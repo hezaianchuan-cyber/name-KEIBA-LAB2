@@ -164,16 +164,31 @@ a{color:inherit}
     document.querySelectorAll('.panel').forEach(function (panel) {
       panel.classList.toggle('active', panel.id === target);
     });
+    // Navigation must continue to work even if a later app script fails.
+    if (target === 'tickets') {
+      if (typeof loadDailyPayouts === 'function') loadDailyPayouts();
+      if (typeof renderLabVirtualLedger === 'function') renderLabVirtualLedger();
+    } else if (target === 'history' && typeof updateHistory === 'function') {
+      updateHistory();
+    } else if (target === 'settings' && typeof renderWeights === 'function') {
+      renderWeights();
+    }
   }
+  function findTab(event) {
+    return event.target && event.target.closest
+      ? event.target.closest('.tabs button[data-tab]')
+      : null;
+  }
+  // Capture phase prevents unrelated handlers from swallowing tab navigation.
   document.addEventListener('click', function (event) {
-    var button = event.target.closest && event.target.closest('.tabs button[data-tab]');
+    var button = findTab(event);
     if (button) activateTab(button);
-  });
+  }, true);
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Enter' && event.key !== ' ') return;
-    var button = event.target.closest && event.target.closest('.tabs button[data-tab]');
+    var button = findTab(event);
     if (button) activateTab(button);
-  });
+  }, true);
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -613,7 +628,7 @@ function updateHistory(){
 }
 $('analyzeBtn').onclick=analyze;
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='keiba-lab-local-data.json';a.click();URL.revokeObjectURL(a.href)};
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));if(b.dataset.tab==='settings')renderWeights();if(b.dataset.tab==='history')updateHistory();if(b.dataset.tab==='tickets'){loadDailyPayouts();renderLabVirtualLedger()}});
+// Tab navigation and section refresh are handled by the early capture-phase bootstrap.
 if('serviceWorker' in navigator && location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
 
 let dailyPayoutReport=null;
