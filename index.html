@@ -591,12 +591,12 @@ function scoreRunner(h,all){
   const sameGoing=history.filter(x=>targetGoing&&norm(x.going)===targetGoing&&(!targetSurface||!norm(x.surface)||norm(x.surface)===targetSurface));
   const goingValues=sameGoing.map(rankQuality).filter(x=>x!=null);
   const goingScore=goingValues.length?(goingValues.reduce((a,b)=>a+b,0)+50*4)/(goingValues.length+4):50;
-  const sireRows=prior.filter(x=>h.sire&&norm(x.sire)===norm(h.sire)&&(useSnapshot?String(x.date||'')>learnedModelEnd:true));
+  const sireRows=prior.filter(x=>h.sire&&norm(x.sire)===norm(h.sire)&&(useSnapshot?normDate(x.date||'')>modelEndDate:true));
   const sireBase=useSnapshot?(learnedHistory.sire_stats?.[norm(h.sire)]||{runs:0,top3:0}):{runs:0,top3:0};
   const sireRuns=sireBase.runs+sireRows.length;
   const sireTop3=sireBase.top3+sireRows.filter(x=>Number(x.lastRank)<=3).length;
   const sireScore=sireRuns>=5?100*sireTop3/sireRuns:50;
-  const jockeyRows=prior.filter(x=>h.jockey&&norm(x.jockey)===norm(h.jockey)&&(useSnapshot?String(x.date||'')>learnedModelEnd:true));
+  const jockeyRows=prior.filter(x=>h.jockey&&norm(x.jockey)===norm(h.jockey)&&(useSnapshot?normDate(x.date||'')>modelEndDate:true));
   const jockeyBase=useSnapshot?(learnedHistory.jockey_stats?.[norm(h.jockey)]||{runs:0,top3:0}):{runs:0,top3:0};
   const jockeyRuns=jockeyBase.runs+jockeyRows.length;
   const jockeyTop3=jockeyBase.top3+jockeyRows.filter(x=>Number(x.lastRank)<=3).length;
