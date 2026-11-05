@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/capture_nar_odds.py'
+      - 'scripts/publish_model_snapshots.py'
       - 'scripts/build_auto_ticket_plans.py'
       - 'scripts/nar_model_g.py'
       - 'tests/test_nar_model_g.py'
@@ -53,6 +54,12 @@ jobs:
       - name: Capture timestamped pre-off snapshots
         run: python3 scripts/capture_nar_odds.py
 
+      - name: Archive locked model snapshots to Supabase
+        env:
+          SUPABASE_URL: https://mwiinzmnoludksnfnjaa.supabase.co
+          NAR_CAPTURE_TOKEN: ${{ secrets.NAR_CAPTURE_TOKEN }}
+        run: python3 scripts/publish_model_snapshots.py
+
       - name: Build automatic ticket plans from captured snapshots
         run: python3 scripts/build_auto_ticket_plans.py
 
@@ -69,6 +76,9 @@ jobs:
 
       - name: Commit new snapshots and automatic plans with race-safe retry
         shell: bash
+        env:
+          SUPABASE_URL: https://mwiinzmnoludksnfnjaa.supabase.co
+          NAR_CAPTURE_TOKEN: ${{ secrets.NAR_CAPTURE_TOKEN }}
         run: |
           set -e
           git config user.name "github-actions[bot]"
@@ -91,6 +101,7 @@ jobs:
             # Recompute against the latest main tree using the same source
             # archives so concurrent captures cannot duplicate snapshots.
             python3 scripts/capture_nar_odds.py
+            python3 scripts/publish_model_snapshots.py
             python3 scripts/build_auto_ticket_plans.py
             git add data/odds-snapshots data/odds-capture-status.json data/auto-ticket-plans.json
             # Publish the official ZIP archives consumed by the web race/runner importer.
