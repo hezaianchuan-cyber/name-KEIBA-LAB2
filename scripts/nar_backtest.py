@@ -3779,7 +3779,10 @@ def main():
                 "winner_top1_rate": baseline_c.get("winner_top1_rate"),
                 "winner_top3_rate": baseline_c.get("winner_top3_rate"),
                 "trio_roi": holdout_trio_base.get("roi"),
-                "trio_roi_95ci": holdout_trio_base.get("roi_95ci"),
+                "trio_roi_ci95_normal": {
+                    "low": holdout_trio_base.get("roi_ci95_normal_low"),
+                    "high": holdout_trio_base.get("roi_ci95_normal_high"),
+                },
             },
             "selected_candidate": {
                 "name": selected_weight_name,
@@ -3787,7 +3790,10 @@ def main():
                 "winner_top1_rate": selected_holdout.get("winner_top1_rate"),
                 "winner_top3_rate": selected_holdout.get("winner_top3_rate"),
                 "trio_roi": holdout_trio_candidate.get("roi"),
-                "trio_roi_95ci": holdout_trio_candidate.get("roi_95ci"),
+                "trio_roi_ci95_normal": {
+                    "low": holdout_trio_candidate.get("roi_ci95_normal_low"),
+                    "high": holdout_trio_candidate.get("roi_ci95_normal_high"),
+                },
             },
             "winner_top1_delta_pp": round((selected_holdout.get("winner_top1_rate") or 0) - (baseline_c.get("winner_top1_rate") or 0), 2) if selected_holdout else None,
             "winner_top3_delta_pp": round((selected_holdout.get("winner_top3_rate") or 0) - (baseline_c.get("winner_top3_rate") or 0), 2) if selected_holdout else None,
