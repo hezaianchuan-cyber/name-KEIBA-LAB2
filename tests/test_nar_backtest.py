@@ -344,8 +344,22 @@ class OddsSnapshotParsingTests(unittest.TestCase):
     def test_gzip_snapshot_appends_once_and_preserves_prior_records(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "2026-11-03.jsonl.gz"
-            first = {"race_key":"大井|20261103|10","odds":[{"type":"単勝","odds":2.5}]}
-            second = {"race_key":"大井|20261103|11","odds":[{"type":"単勝","odds":3.2}]}
+            first = {
+                "race_key":"大井|20261103|10", "venue":"大井", "date":"20261103", "race":"10",
+                "scheduled_post_time":"2026-11-03T18:00:00+09:00",
+                "captured_at":"2026-11-03T17:45:00+09:00",
+                "model_version":"test-model",
+                "predictions":[{"horse_no":"1","win_probability":0.6}],
+                "odds":[{"type":"単勝","n1":"1","odds":2.5}],
+            }
+            second = {
+                "race_key":"大井|20261103|11", "venue":"大井", "date":"20261103", "race":"11",
+                "scheduled_post_time":"2026-11-03T18:10:00+09:00",
+                "captured_at":"2026-11-03T17:55:00+09:00",
+                "model_version":"test-model",
+                "predictions":[{"horse_no":"2","win_probability":0.6}],
+                "odds":[{"type":"単勝","n1":"2","odds":3.2}],
+            }
             self.assertTrue(capture.append_snapshot(path, first))
             self.assertFalse(capture.append_snapshot(path, first))
             self.assertTrue(capture.append_snapshot(path, second))
