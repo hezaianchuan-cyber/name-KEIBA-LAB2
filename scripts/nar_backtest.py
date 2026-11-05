@@ -1863,7 +1863,7 @@ def update_frame_stats(race, field, frame_stats):
         frame_stats[key]["top3"] += int(horse["finish"] <= 3)
 
 
-def run_backtest(races, horses, payouts):
+def run_backtest(races, horses, payouts, training_only=False):
     history = defaultdict(list)
     sire_stats = defaultdict(lambda: {"runs":0,"top3":0})
     jockey_stats = defaultdict(lambda: {"runs":0,"top3":0})
@@ -1949,6 +1949,12 @@ def run_backtest(races, horses, payouts):
                                         "race":race["race"], "race_key":"|".join(key),
                                         "scores":[score for score,_ in scored],
                                         "winner_indices":winner_indices})
+        if training_only:
+            # Walk-forward fold fitting needs only chronological model updates
+            # and calibration scores. Skip ranking, ticket construction, payout
+            # matching, and report aggregation; these do not affect learned weights.
+            daily_pending.append((field, parts_by_no, race))
+            continue
         ranked = [h for score,h in sorted(scored,key=lambda item:item[0],reverse=True)]
         shadow_tickets = build_shadow_portfolio_tickets(ranked)
         t = build_fixed_tickets(ranked)
@@ -2287,7 +2293,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     test_races = {k:r for k,r in races.items() if r["date"] in test_set}
     train_horses = {k:v for k,v in horses.items() if k in train_races}
     train_payouts = {k:v for k,v in payouts.items() if k in train_races}
-    _, _, _, learned, updates, train_calibration_records = run_backtest(train_races, train_horses, train_payouts)
+    _, _, _, learned, updates, train_calibration_records = run_backtest(
+        train_races, train_horses, train_payouts, training_only=True)
     temperature = fit_temperature(train_calibration_records)
     baseline = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
     # Keep the learned B weights normalized to 1.0. The performance scorer
@@ -2342,7 +2349,9 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     history = defaultdict(list)
     sire_stats = defaultdict(lambda:{"runs":0,"top3":0})
     jockey_stats = defaultdict(lambda:{"runs":0,"top3":0})
-    frame_stats = build_frame_stats(train_races, train_horses)
+    # Build frame context in the same pass as the other fold training history.
+    # build_frame_stats() used to make a separate full traversal of every race.
+    frame_stats = defaultdict(lambda: {"runs": 0, "top3": 0})
     train_ordered = sorted(train_races.values(),
                            key=lambda r:(r["date"],r["venue"],int(r["race"])))
     train_progress_every = max(1, len(train_ordered) // 10)
@@ -2351,6 +2360,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
         if train_index == 1 or train_index % train_progress_every == 0 or train_index == len(train_ordered):
             print(f"HOLDOUT_PROGRESS training {train_index}/{len(train_ordered)} ({100*train_index/max(1,len(train_ordered)):.0f}%) date={train_race['date']}", flush=True)
         train_field = train_horses.get(train_race["key"], [])
+        update_frame_stats(train_race, train_field, frame_stats)
         train_performance = field_performance_features(train_field)
         for h in train_field:
             if not h.get("finish"):
