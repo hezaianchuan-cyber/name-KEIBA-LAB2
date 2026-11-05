@@ -132,7 +132,7 @@ def make_plan(r,limits):
         "skipReasonCode":"BET" if bet else code,"totalStake":allocated if bet else 0,
         "tickets":[{"type":x["type"],"comb":x["comb"],"stake":x["stake"],"odds":x["odds"],"probability":x["probability"],"ev":x["ev"]} for x in allocation] if bet else [],
         "modelLoaded":model_ok,"oddsCaptured":bool(odds_rows),"oddsRows":len(odds_rows),
-        "validatedBetTypes":len(limits),"dataStatus":"READY"})
+        "validatedBetTypes":int("trio" in limits),"dataStatus":"READY"})
     return plan
 
 def all_racecard_plans(snapshot_map,limits,now):
