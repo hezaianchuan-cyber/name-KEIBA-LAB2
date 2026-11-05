@@ -2377,7 +2377,7 @@ class G4SupabasePaginationTests(unittest.TestCase):
         model_query = parse_qs(model_url.query)
         odds_query = parse_qs(odds_url.query)
         self.assertEqual(model_query["race_date"], ["gte.2026-11-04", "lte.2026-11-04"])
-        self.assertEqual(model_query["order"], ["race_date.asc,captured_at.asc"])
+        self.assertEqual(model_query["order"], ["race_date.asc,captured_at.desc"])
         self.assertEqual(odds_query["race_date"], ["gte.2026-11-04", "lte.2026-11-04"])
         self.assertEqual(odds_query["order"], ["race_date.asc,captured_at.desc,id.desc"])
         self.assertEqual(odds_query["limit"], ["100"])
