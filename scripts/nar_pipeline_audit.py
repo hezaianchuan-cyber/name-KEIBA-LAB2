@@ -66,7 +66,10 @@ def main() -> int:
         ),
         "backtest_and_live_share_D_frame_pace_scoring": (
             "score_runner_performance(" in source
-            and "performance_score, race, h, frame_stats)" in source
+            and (
+                "performance_score, race, h, frame_stats)" in source
+                or "performance_score, race, h, frame_stats," in source
+            )
             and "pace_adjustments(field, history)" in source
             and "nb.frame_form_score(race, horse, frame_stats)" in capture_source
         ),
