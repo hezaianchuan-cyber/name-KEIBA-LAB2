@@ -3878,7 +3878,7 @@ def main():
     recent_models = recent_fold.get("models") or {}
     canonical_models = ("A_baseline", "B_condition", "C_performance_pace")
     ablation_names = [f"ablate_{feature}" for feature in ("form", "venue", "distance", "sire", "jockey", "age")]
-    weight_variant_names = list(FEATURE_WEIGHT_VARIANTS)
+    weight_variant_names = list(FEATURE_WEIGHT_NAMES)
     ablation_report = {
         "generated_at": result["generated_at"],
         "holdout_period": recent_validation.get("period"),
