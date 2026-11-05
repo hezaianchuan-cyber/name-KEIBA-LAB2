@@ -938,7 +938,15 @@ async function loadPublishedAutoTicketPlans(){
  const merged=new Map();
  for(const item of [...remoteLabTicketPlans,...data.plans.filter(p=>p&&p.raceId&&p.date).map(plan=>({predictionId:plan.raceId,plan}))]){
   const plan=item.plan,key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date),previous=merged.get(key);
-  if(!previous||String(plan.modifiedAt||plan.createdAt||'')>=String(previous.plan.modifiedAt||previous.plan.createdAt||''))merged.set(key,item);
+  const enriched={...plan};
+  // Keep the research-only fusion ranking if a newer one-minute SKIP record
+  // lacks the separately generated five-minute model/market candidate payload.
+  if(!enriched.trioRanking&&previous?.plan?.trioRanking){
+   enriched.trioRanking=previous.plan.trioRanking;
+   if(Array.isArray(previous.plan.shadowTickets)&&previous.plan.shadowTickets.length)enriched.shadowTickets=previous.plan.shadowTickets;
+  }
+  const nextItem={...item,plan:enriched};
+  if(!previous||String(plan.modifiedAt||plan.createdAt||'')>=String(previous.plan.modifiedAt||previous.plan.createdAt||''))merged.set(key,nextItem);
  }
  remoteLabTicketPlans=[...merged.values()];
  if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
@@ -971,7 +979,7 @@ function loadLabTicketPlans(){
    // Keep market/model comparison fields when a newer local manual-ticket edit
    // is merged over the enriched, read-only comparison view.
    if(previous?.plan){
-    for(const field of ['modelTopHorse','modelTop3','marketFavoriteHorse','marketTop3','marketOddsCapturedAt','marketComparisonAvailable','runnerDraws']){
+    for(const field of ['modelTopHorse','modelTop3','marketFavoriteHorse','marketTop3','marketOddsCapturedAt','marketComparisonAvailable','runnerDraws','trioRanking','shadowTickets']){
      const current=nextPlan[field],prior=previous.plan[field];
      const empty=current==null||current===''||(Array.isArray(current)&&current.length===0)
       ||(field==='marketComparisonAvailable'&&current===false&&prior===true);
