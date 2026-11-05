@@ -201,7 +201,7 @@ def main():
         "records_with_70pct_odds_coverage": 0,
         "records_with_extracted_winner": 0,
         "sample_score_race_key": aligned[0].get("race_key") if aligned else None,
-        "sample_odds_race_key": "|".join(next(iter(odds_by_race))) if odds_by_race else None,
+        "sample_matched_odds_race_key": None,
     }
     for record in aligned:
         parts = str(record.get("race_key") or "").split("|")
@@ -219,6 +219,8 @@ def main():
             alignment["records_with_matching_horse_count"] += 1
         if odds:
             alignment["exact_odds_race_key_matches"] += 1
+            if alignment["sample_matched_odds_race_key"] is None:
+                alignment["sample_matched_odds_race_key"] = "|".join(key)
             odds_nos = {str(int(x)) for x in odds if str(x).isdigit()}
             alignment["odds_horse_matches"] += len(set(horse_nos).intersection(odds_nos))
             coverage = len(set(horse_nos).intersection(odds_nos)) / len(horse_nos) if horse_nos else 0.0
@@ -276,6 +278,19 @@ def main():
         selected_divergence = None
         selected_ev = None
         tuning_status = "no_eligible_development_threshold_skip_all"
+    data_ready_dates = []
+    for record in aligned:
+        parts = str(record.get("race_key") or "").split("|")
+        if len(parts) != 3: continue
+        key = nb.race_key(*parts)
+        if not key: continue
+        odds = odds_by_race.get(key, {})
+        payout = payouts.get(key) or {}
+        nums = [str(int(x)) for x in (record.get("horse_numbers") or []) if str(x).isdigit()]
+        odds_nums = {str(int(x)) for x in odds if str(x).isdigit()}
+        coverage = len(set(nums) & odds_nums) / len(nums) if nums else 0.0
+        if odds and payout.get("win") and coverage >= MIN_ODDS_COVERAGE:
+            data_ready_dates.append(record["date"])
     evaluated = (score_records(aligned, odds_by_race, payouts, temperature,
                                 selected_divergence, selected_ev, MIN_ODDS_COVERAGE)
                  if chosen else [])
@@ -317,8 +332,8 @@ def main():
         "races_evaluated_after_selected_strategy": len(evaluated),
         "development_period": [all_dates[0], dev_end],
         "holdout_period": [holdout_start, all_dates[-1]],
-        "development_races_with_odds": len(development),
-        "holdout_races_with_odds": len(holdout),
+        "development_races_with_odds": sum(1 for d in data_ready_dates if d <= dev_end),
+        "holdout_races_with_odds": sum(1 for d in data_ready_dates if d >= holdout_start),
         "official_final_odds_months": odds_months,
         "rule": {
             "minimum_odds_coverage": MIN_ODDS_COVERAGE,
