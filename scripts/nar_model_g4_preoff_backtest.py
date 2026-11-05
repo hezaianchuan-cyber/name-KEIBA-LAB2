@@ -555,6 +555,7 @@ def summarize_bucket_movement(joined):
         rank_changes = []
         odds_changes = []
         winner_odds_changes = []
+        nonwinner_odds_changes = []
         favorite_changed = 0
         for race_key in common:
             left_row, right_row = left[race_key], right[race_key]
@@ -578,6 +579,8 @@ def summarize_bucket_movement(joined):
                     odds_changes.append(change)
                     if a["is_winner"] or b["is_winner"]:
                         winner_odds_changes.append(change)
+                    else:
+                        nonwinner_odds_changes.append(change)
         return {
             "matched_races": len(common),
             "shared_horses": len(rank_changes),
@@ -588,6 +591,9 @@ def summarize_bucket_movement(joined):
             "winner_horses_with_shortened_odds": sum(value < 0 for value in winner_odds_changes),
             "winner_horses_compared": len(winner_odds_changes),
             "winner_odds_shortened_pct": round(100 * sum(value < 0 for value in winner_odds_changes) / len(winner_odds_changes), 2) if winner_odds_changes else None,
+            "nonwinner_horses_with_shortened_odds": sum(value < 0 for value in nonwinner_odds_changes),
+            "nonwinner_horses_compared": len(nonwinner_odds_changes),
+            "nonwinner_odds_shortened_pct": round(100 * sum(value < 0 for value in nonwinner_odds_changes) / len(nonwinner_odds_changes), 2) if nonwinner_odds_changes else None,
             "median_winner_odds_change_pct": round(sorted(winner_odds_changes)[len(winner_odds_changes) // 2], 2) if winner_odds_changes else None,
         }
 
