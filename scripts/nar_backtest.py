@@ -5,7 +5,7 @@ Raw NAR CSV/ZIP files are processed in the ephemeral runner only. Only aggregate
 metrics and a small set of race-level examples are written to data/backtest-summary.json.
 """
 from __future__ import annotations
-import csv, datetime as dt, gzip, io, json, math, os, random, re, sys, time, urllib.parse, urllib.request, zipfile
+import csv, datetime as dt, gzip, io, json, math, os, pickle, random, re, sys, time, urllib.parse, urllib.request, zipfile
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -242,48 +242,122 @@ def summarize_final_market_pair(bucket):
     }
 
 
+PARSED_ARCHIVE_CACHE_VERSION = "nar-monthly-parsed-v1"
+
+def parse_month_archive(blob, y, m):
+    """Parse one official monthly archive into compact race/runner/payout objects."""
+    races, horses, payouts = {}, defaultdict(list), {}
+    with zipfile.ZipFile(io.BytesIO(blob)) as zf:
+        for info in zf.infolist():
+            kind = classify(info.filename)
+            if not kind or info.is_dir():
+                continue
+            for row in rows_from_bytes(zf.read(info)):
+                if len(row) < 4:
+                    continue
+                key = race_key(row[0], row[1], row[2])
+                if not key:
+                    continue
+                date = dt.datetime.strptime(key[1], "%Y%m%d").date()
+                if date < START or date > END:
+                    continue
+                if kind == "races":
+                    races[key] = {
+                        "key": key, "date": date, "venue": row[0], "race": key[2],
+                        "name": row[5] if len(row) > 5 else "",
+                        "distance": number(row[23]) if len(row) > 23 else None,
+                        "field_size": number(row[26]) if len(row) > 26 else None,
+                        "surface": row[21] if len(row) > 21 else "",
+                        "going": row[25] if len(row) > 25 else "",
+                        "corner_positions": [parse_corner_order(row[i]) for i in range(58, min(len(row), 66))],
+                    }
+                elif kind == "horses" and len(row) > 35:
+                    horse_no = re.sub(r"\D", "", str(row[5] or ""))
+                    name = norm(row[6])
+                    if not horse_no or not name:
+                        continue
+                    horses[key].append({
+                        "no": horse_no, "name": name,
+                        "frame_no": rank_value(row[4]) if len(row) > 4 else None,
+                        "age": number(row[8]), "sire": norm(row[11]),
+                        "jockey": norm(row[14]), "carried": number(row[16]),
+                        "finish": rank_value(row[31]),
+                        "time_seconds": parse_race_time(row[32]) if len(row) > 32 else None,
+                        "margin": row[33] if len(row) > 33 else "",
+                        "last3f": number(row[34]) if len(row) > 34 else None,
+                    })
+                elif kind == "payouts" and len(row) > 52:
+                    merge_payout_row(payouts, key, row)
+    finalize_payout_indexes(payouts)
+    return races, dict(horses), payouts
+
+
+def load_parsed_month(ym):
+    """Load a trusted, versioned parsed-month cache or download and parse one month."""
+    y, m = ym
+    current = dt.date.today()
+    cache_dir = Path(os.environ.get("NAR_PARSED_CACHE_DIR", ROOT / ".cache" / "nar-parsed"))
+    cache_path = cache_dir / f"{PARSED_ARCHIVE_CACHE_VERSION}-{y}-{m:02d}.pkl"
+    cacheable = (y, m) < (current.year, current.month)
+    if cacheable and cache_path.is_file():
+        try:
+            with cache_path.open("rb") as handle:
+                cached = pickle.load(handle)
+            if cached.get("version") == PARSED_ARCHIVE_CACHE_VERSION:
+                return cached["races"], cached["horses"], cached["payouts"], {
+                    "month": f"{y}-{m:02d}", "bytes": cached.get("archive_bytes", 0),
+                    "parsed_cache": "hit",
+                }
+        except Exception:
+            # A corrupt or incompatible cache is discarded and rebuilt below.
+            try:
+                cache_path.unlink()
+            except OSError:
+                pass
+
+    blob, _ = download_month(y, m)
+    races, horses, payouts = parse_month_archive(blob, y, m)
+    if cacheable:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        temp_path = cache_path.with_suffix(cache_path.suffix + ".tmp")
+        payload = {
+            "version": PARSED_ARCHIVE_CACHE_VERSION,
+            "archive_bytes": len(blob),
+            "races": races, "horses": horses, "payouts": payouts,
+        }
+        with temp_path.open("wb") as handle:
+            pickle.dump(payload, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        os.replace(temp_path, cache_path)
+    return races, horses, payouts, {
+        "month": f"{y}-{m:02d}", "bytes": len(blob),
+        "parsed_cache": "miss" if cacheable else "current_month_refresh",
+    }
+
+
 def load_archives():
+    """Load monthly archives in bounded parallel batches and reuse parsed results."""
     races, horses, payouts = {}, defaultdict(list), {}
     months = list(month_iter(START, END))
-    with ThreadPoolExecutor(max_workers=3) as pool:
-        archives = list(pool.map(lambda ym: (ym, download_month(*ym)), months))
     downloaded = []
-    for (y, m), (blob, url) in archives:
-        downloaded.append({"month": f"{y}-{m:02d}", "bytes": len(blob)})
-        with zipfile.ZipFile(io.BytesIO(blob)) as zf:
-            for info in zf.infolist():
-                kind = classify(info.filename)
-                if not kind or info.is_dir(): continue
-                for row in rows_from_bytes(zf.read(info)):
-                    if len(row) < 4: continue
-                    key = race_key(row[0], row[1], row[2])
-                    if not key: continue
-                    date = dt.datetime.strptime(key[1], "%Y%m%d").date()
-                    if date < START or date > END: continue
-                    if kind == "races":
-                        races[key] = {
-                            "key": key, "date": date, "venue": row[0], "race": key[2],
-                            "name": row[5] if len(row) > 5 else "",
-                            "distance": number(row[23]) if len(row) > 23 else None,
-                            "field_size": number(row[26]) if len(row) > 26 else None,
-                            "surface": row[21] if len(row) > 21 else "",
-                            "going": row[25] if len(row) > 25 else "",
-                            "corner_positions": [parse_corner_order(row[i]) for i in range(58, min(len(row), 66))],
-                        }
-                    elif kind == "horses" and len(row) > 35:
-                        horse_no = re.sub(r"\D", "", str(row[5] or ""))
-                        name = norm(row[6])
-                        if not horse_no or not name: continue
-                        horses[key].append({
-                            "no": horse_no, "name": name, "frame_no": rank_value(row[4]) if len(row) > 4 else None, "age": number(row[8]),
-                            "sire": norm(row[11]), "jockey": norm(row[14]),
-                            "carried": number(row[16]), "finish": rank_value(row[31]),
-                            "time_seconds": parse_race_time(row[32]) if len(row) > 32 else None,
-                            "margin": row[33] if len(row) > 33 else "",
-                            "last3f": number(row[34]) if len(row) > 34 else None,
-                        })
-                    elif kind == "payouts" and len(row) > 52:
-                        merge_payout_row(payouts, key, row)
+    # Bound memory: at most four parsed months are held before merging into the
+    # aggregate dictionaries. The previous implementation retained every ZIP
+    # archive in memory before parsing any of them.
+    batch_size = 4
+    for offset in range(0, len(months), batch_size):
+        batch = months[offset:offset + batch_size]
+        with ThreadPoolExecutor(max_workers=min(batch_size, len(batch))) as pool:
+            parsed_months = list(pool.map(load_parsed_month, batch))
+        for (month_year, month_num), (month_races, month_horses, month_payouts, metadata) in zip(batch, parsed_months):
+            races.update(month_races)
+            for key, rows in month_horses.items():
+                horses[key].extend(rows)
+            payouts.update(month_payouts)
+            downloaded.append(metadata)
+            print(
+                f"Loaded {metadata['month']}: races={len(month_races)}, "
+                f"horse_races={len(month_horses)}, parsed_cache={metadata['parsed_cache']}",
+                flush=True,
+            )
     finalize_payout_indexes(payouts)
     return races, horses, payouts, downloaded
 
@@ -1052,6 +1126,45 @@ def build_trio_formation_2_4_5(ranked):
     return tickets
 
 
+FORMATION_ALLOCATION_STRENGTHS = {
+    "equal": 0.0,
+    "rank_weighted_mild": 0.18,
+    "rank_weighted_strong": 0.35,
+}
+
+
+def allocate_formation_units(tickets, ranked, policy):
+    """Allocate the same 100-yen units per race, prioritizing stronger model ranks.
+
+    This is deliberately rank-only: historical pre-off trio combination odds are
+    not available for the full four-year holdout, so it is not an EV/Kelly model.
+    """
+    if policy not in FORMATION_ALLOCATION_STRENGTHS:
+        raise ValueError(f"unknown formation allocation policy: {policy}")
+    if not tickets:
+        return []
+    if policy == "equal":
+        return [1] * len(tickets)
+    rank_by_no = {}
+    for index, horse in enumerate(ranked or [], start=1):
+        raw = re.sub(r"\D", "", str(horse.get("no") or ""))
+        if raw:
+            rank_by_no.setdefault(str(int(raw)), index)
+    strength = FORMATION_ALLOCATION_STRENGTHS[policy]
+    weights = []
+    for ticket in tickets:
+        rank_sum = sum(rank_by_no.get(str(no), len(ranked or []) + 1) for no in ticket)
+        weights.append(math.exp(-strength * max(0, rank_sum - 6)))
+    # Allocate one 100-yen unit at a time using a divisor method. The race
+    # budget remains exactly equal to the equal-stake baseline; zero-unit
+    # candidates are intentionally left unbet under concentrated policies.
+    units = [0] * len(tickets)
+    for _ in range(len(tickets)):
+        chosen = max(range(len(tickets)), key=lambda i: (weights[i] / (units[i] + 1), -i))
+        units[chosen] += 1
+    return units
+
+
 def new_trio_diagnostics():
     return {
         "races": 0,
@@ -1065,6 +1178,12 @@ def new_trio_diagnostics():
         "formation_2_4_5": {"races": 0, "tickets": 0, "hits": 0, "hit_races": 0,
                             "stake": 0, "return": 0, "sum_return_sq": 0,
                             "sum_stake_sq": 0, "sum_stake_return": 0},
+        "formation_2_4_5_allocations": {
+            policy: {"races": 0, "tickets": 0, "funded_tickets": 0,
+                     "winning_candidates": 0, "hits": 0, "hit_races": 0,
+                     "stake": 0, "return": 0}
+            for policy in FORMATION_ALLOCATION_STRENGTHS
+        },
     }
 
 
@@ -1114,6 +1233,21 @@ def update_trio_diagnostics(bucket, ranked, field, payout):
         formation["sum_return_sq"] += returned * returned
         formation["sum_stake_sq"] += race_stake * race_stake
         formation["sum_stake_return"] += race_stake * returned
+
+        ticket_returns = [payout_for("trio", ticket, payout) or 0 for ticket in tickets]
+        for policy in FORMATION_ALLOCATION_STRENGTHS:
+            allocation = bucket["formation_2_4_5_allocations"][policy]
+            units = allocate_formation_units(tickets, ranked, policy)
+            funded_wins = sum(1 for unit, pay in zip(units, ticket_returns) if unit > 0 and pay > 0)
+            allocated_return = sum(100 * unit * pay for unit, pay in zip(units, ticket_returns))
+            allocation["races"] += 1
+            allocation["tickets"] += len(tickets)
+            allocation["funded_tickets"] += sum(1 for unit in units if unit > 0)
+            allocation["winning_candidates"] += sum(1 for pay in ticket_returns if pay > 0)
+            allocation["hits"] += funded_wins
+            allocation["hit_races"] += int(funded_wins > 0)
+            allocation["stake"] += 100 * sum(units)
+            allocation["return"] += allocated_return
 
 
 def summarize_trio_diagnostics(bucket):
@@ -1173,7 +1307,27 @@ def summarize_trio_diagnostics(bucket):
         "formation": "top2 / top4 / ranks3-7",
         "stake_per_ticket_yen": 100,
     }
-    output["interpretation"] = "Trio tickets are unordered combinations. hit_rate is winning tickets divided by tickets; race_hit_rate is races with at least one winning ticket divided by races. ROI confidence intervals use a race-level normal ratio approximation and are diagnostic, not a promotion guarantee. Top5 is the unchanged fixed baseline. formation_2_4_5 is top2 / top4 / ranks3-7 with duplicate unordered combinations removed."
+    allocation_summary = {}
+    for policy, allocation in bucket["formation_2_4_5_allocations"].items():
+        stake = allocation["stake"]
+        funded = allocation["funded_tickets"]
+        races = allocation["races"]
+        allocation_summary[policy] = {
+            **allocation,
+            "funded_ticket_hit_rate": round(100 * allocation["hits"] / funded, 4) if funded else None,
+            "race_hit_rate": round(100 * allocation["hit_races"] / races, 2) if races else None,
+            "roi": round(100 * allocation["return"] / stake, 2) if stake else None,
+            "profit": allocation["return"] - stake,
+            "funded_tickets_per_race": round(funded / races, 2) if races else None,
+            "budget_per_race_matches_equal_policy": True,
+        }
+    output["formation_2_4_5"]["allocation_policies"] = allocation_summary
+    output["formation_2_4_5"]["allocation_method"] = (
+        "Exploratory rank-weighted allocation with the same total stake per race as "
+        "100-yen equal staking. Historical pre-off trio combination odds are unavailable, "
+        "so these policies are not expected-value or Kelly staking."
+    )
+    output["interpretation"] = "Trio tickets are unordered combinations. hit_rate is winning tickets divided by tickets; race_hit_rate is races with at least one winning ticket divided by races. ROI confidence intervals use a race-level normal ratio approximation and are diagnostic, not a promotion guarantee. Top5 is the unchanged fixed baseline. formation_2_4_5 is top2 / top4 / ranks3-7 with duplicate unordered combinations removed. Allocation policies keep the same race-level stake and reweight 100-yen units by model rank; they are exploratory, not EV staking."
     return output
 
 
@@ -2200,7 +2354,7 @@ def preoff_value_backtest(payouts):
                 for prediction in predictions:
                     ev = number(prediction.get("expected_value"))
                     odds_value = number(prediction.get("win_odds"))
-                    horse_no = re.sub(r"\\D", "", str(prediction.get("horse_no") or ""))
+                    horse_no = re.sub(r"\D", "", str(prediction.get("horse_no") or ""))
                     if not horse_no or ev is None or odds_value is None or ev < threshold:
                         continue
                     race_bets += 1

@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/nar_backtest.py'
+      - 'tests/test_nar_backtest.py'
       - '.github/workflows/nar-historical-backtest.yml'
   workflow_dispatch:
   schedule:
@@ -33,9 +34,21 @@ jobs:
           restore-keys: |
             nar-monthly-v1-${{ runner.os }}-
 
+      - name: Restore parsed monthly data cache
+        uses: actions/cache@v4
+        with:
+          path: .cache/nar-parsed
+          key: nar-parsed-v1-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            nar-parsed-v1-${{ runner.os }}-
+
+      - name: Run backtest unit tests
+        run: python3 -m unittest discover -s tests -p 'test_nar_backtest.py'
+
       - name: Run four-year backtest with final one-year holdout
         env:
           NAR_CACHE_DIR: .cache/nar-monthly
+          NAR_PARSED_CACHE_DIR: .cache/nar-parsed
         run: python3 scripts/nar_backtest.py
 
       - name: Publish aggregate report only
