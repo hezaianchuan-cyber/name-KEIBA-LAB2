@@ -605,6 +605,8 @@ FEATURE_WEIGHT_VARIANTS = {
     "weight_jockey_up_1_5": ("jockey", 1.50),
     "weight_distance_down_0_7": ("distance", 0.70),
     "weight_distance_up_1_3": ("distance", 1.30),
+    "weight_venue_down_0_7": ("venue", 0.70),
+    "weight_venue_up_1_3": ("venue", 1.30),
 }
 
 
@@ -3714,8 +3716,8 @@ def main():
         "feature_weight_experiment": {},
         "market_comparison": recent_fold.get("final_odds_market_comparison", {}),
         "method": {
-            "type": "one_feature_at_a_time_ablation",
-            "weight_policy": "Uses the learned B-model weights, removes one feature, then renormalizes remaining weights to sum to 1. The ablated models are not independently refitted.",
+            "type": "one_feature_at_a_time_ablation_plus_chronological_weight_challenger",
+            "weight_policy": "Ablations remove one learned B-model feature and renormalize. Challenger variants independently scale form, jockey, distance, or venue weight by a fixed multiplier and renormalize; they are selected only on the two earlier chronological test folds, then assessed on the untouched final-year holdout.",
             "market_data": "Official final confirmed odds are retrospective only and were not available before the race. This is a market benchmark, not a live pre-off comparison.",
             "selection": "All model and market picks are compared on the same holdout races with available official final odds.",
             "production_impact": "Diagnostic only. No live model weights, predictions, or G4 preregistered value thresholds are changed.",
