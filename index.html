@@ -655,6 +655,10 @@ function renderDailyPayoutDay(date){
 // Ledger v2: only exact saved-ticket matches against official payouts count as hits. Refresh after cloud restore, payout load, or a newly frozen plan.
 function labLedgerDateKey(value){return String(value||'').replace(/[^0-9]/g,'').slice(0,8);}
 function labLedgerVenueKey(value){return String(value||'').normalize('NFKC').replace(/競馬場/g,'').replace(/\s|　/g,'').trim();}
+function labLedgerIsTrioType(type){
+ const value=String(type??"").normalize("NFKC").replace(/\\s/g,"");
+ return value==="3連複"||value==="三連複";
+}
 function labLedgerComb(value,type){
  const raw=Array.isArray(value)?value.join('-'):String(value??'');
  const parts=raw.replace(/[／/,・\s]+/g,'-').split('-').map(x=>x.trim()).filter(Boolean);
@@ -669,7 +673,7 @@ function labLedgerRecordsForDate(plans,date){
   const venue=labLedgerVenueKey(plan.venue),raceNo=String(Number(String(plan.raceNo||'').replace(/[^0-9]/g,'')));
   const matches=dayRaces.filter(r=>labLedgerVenueKey(r.venue)===venue&&String(Number(r.race||0))===raceNo);
   const race=matches.length===1?matches[0]:null,decision=String(plan.decision||'').toUpperCase();
-  const labTickets=Array.isArray(plan.tickets)?plan.tickets:[];
+  const labTickets=(Array.isArray(plan.tickets)?plan.tickets:[]).filter(t=>labLedgerIsTrioType(t?.type));
   const userTickets=Array.isArray(plan.userTickets)?plan.userTickets:[];
   const isSkip=decision==='SKIP'&&!userTickets.some(t=>t&&Number(t.stake)>0);
   const validLabTickets=labTickets.filter(t=>t&&Number(t.stake)>0&&labLedgerComb(t.comb,t.type)).map(t=>({...t,owner:'LAB'}));
@@ -678,7 +682,7 @@ function labLedgerRecordsForDate(plans,date){
   const labStake=validLabTickets.reduce((sum,t)=>sum+Math.max(0,Number(t.stake)||0),0);
   const userStake=validUserTickets.reduce((sum,t)=>sum+Math.max(0,Number(t.stake)||0),0);
   const stake=labStake+userStake;
-  const shadowTickets=Array.isArray(plan.shadowTickets)?plan.shadowTickets:[];
+  const shadowTickets=(Array.isArray(plan.shadowTickets)?plan.shadowTickets:[]).filter(t=>labLedgerIsTrioType(t?.type));
   const payoutEntries=race?.payouts?Object.entries(race.payouts).filter(([,items])=>Array.isArray(items)&&items.some(x=>x&&Array.isArray(x.numbers)&&Number(x.pay_100)>0)):[];
   const officialResults=payoutEntries.flatMap(([key,items])=>items.map(item=>({type:Object.keys(keyByType).find(type=>keyByType[type]===key)||key,comb:labLedgerComb(item.numbers,Object.keys(keyByType).find(type=>keyByType[type]===key)),pay100:Number(item.pay_100)||0})));
   const modelResultSettled=!!(race?.payouts?.win||[]).some(x=>x&&Array.isArray(x.numbers)&&Number(x.pay_100)>0);
@@ -850,7 +854,10 @@ function loadLabTicketPlans(){
    if(!item||!item.plan||!item.plan.raceId)return;
    const plan=item.plan,key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date),previous=map.get(key);
    const incomingAt=String(plan.modifiedAt||plan.createdAt||''),previousAt=String(previous?.plan?.modifiedAt||previous?.plan?.createdAt||'');
-   let nextPlan={...plan};
+   let nextPlan={...plan,
+   tickets:(Array.isArray(plan.tickets)?plan.tickets:[]).filter(t=>labLedgerIsTrioType(t?.type)),
+   shadowTickets:(Array.isArray(plan.shadowTickets)?plan.shadowTickets:[]).filter(t=>labLedgerIsTrioType(t?.type))
+  };
    const previousUser=Array.isArray(previous?.plan?.userTickets)?previous.plan.userTickets:null;
    const incomingUser=Array.isArray(plan.userTickets)?plan.userTickets:null;
    if(previousUser&&(!incomingUser||(incomingUser.length===0&&previousUser.length>0&&(!plan.modifiedAt||incomingAt<previousAt))))nextPlan.userTickets=previousUser;
@@ -913,7 +920,7 @@ function renderLabVirtualLedger(){
  $('labLedgerStatus').textContent+=' ／ モデル1位 '+(comparable.length?(modelTopHits+'/'+comparable.length+'R・'+(modelTopHits/comparable.length*100).toFixed(1)+'%'):'比較待ち')+' ／ 市場1番人気 '+(comparable.length?(marketHits+'/'+comparable.length+'R・'+(marketHits/comparable.length*100).toFixed(1)+'%'):'比較待ち')+' ／ モデル上位3頭 '+(top3Comparable.length?(top3Hits+'/'+top3Comparable.length+'R・'+(top3Hits/top3Comparable.length*100).toFixed(1)+'%'):'比較待ち')+'（モデル比較は単勝払戻確定レース、市場比較はそのうち締切前オッズ取得レース）';
  const rows=records.map(x=>{
   const label=x.isSkip?(!x.shadowSettled?'見送り・検証待ち':x.shadowHit?'見送り・仮想的中':'見送り・仮想不的中'):!x.settled?'未確定':x.hit?'的中':'不的中';
-  const details=x.isSkip?'【検証用】'+(x.shadowTickets||[]).map(t=>t.type+' '+t.comb+'（仮想100円）').join('<br>'):'【LAB自動3連複】'+(x.plan.tickets||[]).map(t=>t.type+' '+t.comb+' '+Number(t.stake||0).toLocaleString()+'円').join('<br>')+'<br>【自分で追加】'+(x.plan.userTickets||[]).map(t=>t.type+' '+t.comb+' '+Number(t.stake||0).toLocaleString()+'円').join('<br>');
+  const details=x.isSkip?'【検証用】'+(x.shadowTickets||[]).filter(t=>labLedgerIsTrioType(t?.type)).map(t=>t.type+' '+t.comb+'（仮想100円）').join('<br>'):'【LAB自動3連複】'+(x.plan.tickets||[]).filter(t=>labLedgerIsTrioType(t?.type)).map(t=>t.type+' '+t.comb+' '+Number(t.stake||0).toLocaleString()+'円').join('<br>')+'<br>【自分で追加】'+(x.plan.userTickets||[]).map(t=>t.type+' '+t.comb+' '+Number(t.stake||0).toLocaleString()+'円').join('<br>');
   const hitDetails=x.isSkip?(!x.shadowSettled?'結果待ち':x.shadowHit?x.shadowMatchedTickets.map(t=>t.type+' '+t.comb+'（払戻 '+t.pay100.toLocaleString()+'円/100円）').join('<br>'):'検証用買い目に的中なし'):!x.settled?'結果待ち':x.hit?x.matchedTickets.map(t=>(t.owner==='USER'?'【自分】':'【LAB】')+' '+t.type+' '+t.comb+'（'+t.returned.toLocaleString()+'円）').join('<br>'):'該当買い目なし';
   const officialDetails=!x.settled&&!x.shadowSettled?'結果待ち':x.officialResults.map(r=>r.type+' '+r.comb).join('<br>')||'払戻組合せなし';
   const returned=x.isSkip?'購入なし（仮想検証）':!x.settled?'未確定':x.returned.toLocaleString()+'円',stake=x.isSkip?'0円':x.stake.toLocaleString()+'円';
@@ -966,7 +973,7 @@ async function loadHistoricalBacktest(){
  const card=document.createElement('div');
  card.className='card';
  card.id='historicalBacktest';
- card.innerHTML='<h2>過去約3年・全券種バックテスト</h2><p class="sub">NAR公式の月次レース情報・払戻データを時系列で検証します。結果がまだ公開されていない場合は、GitHub Actionsで初回実行してください。</p><div id="historicalBacktestBody" class="sub">検証レポートを確認中…</div>';
+ card.innerHTML='<h2>過去約3年・全券種の過去成績（自動買い目ではありません）</h2><p class="sub">これは単勝・複勝・ワイド・馬連・馬単・3連複・3連単の過去成績を比較する検証表です。LABが現在自動生成する買い目は3連複のみで、ほかの券種は自動購入候補として表示しません。結果がまだ公開されていない場合は、GitHub Actionsで初回実行してください。</p><div id="historicalBacktestBody" class="sub">検証レポートを確認中…</div>';
  const notice=section.querySelector('.notice');
  if(notice)notice.before(card);else section.append(card);
  try{
@@ -1262,6 +1269,7 @@ function generateTickets(){
    return row?Number(row.odds):null;
  };
  const candidates=[],add=(type,comb)=>{
+   if(type!=="3連複")return;
    const numbers=comb.map(h=>String(h.horseNo));
    const probability=Math.max(0,Math.min(1,comboProbability(type,numbers)));
    const odds=findOdds(type,numbers);
