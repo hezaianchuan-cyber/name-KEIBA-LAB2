@@ -1,50 +1,298 @@
 {
   "version": "nar-daily-review-v1",
-  "generated_at": "2026-11-05T21:03:40.386630+09:00",
+  "generated_at": "2026-11-05T21:04:39.961342+09:00",
   "as_of_date_jst": "2026-11-05",
   "status": "collecting_evidence",
   "daily_official_results": {
     "report_generated_at": "2026-11-05T20:36:18.053674+09:00",
-    "report_age_hours": 0.46,
+    "report_age_hours": 0.47,
     "daily_archive_available": true,
     "today_payout_races": 46,
     "monthly_archive_available": true
   },
   "prospective_preoff_evaluation_G4": {
-    "generated_at": "2026-11-05T09:56:18.837000+00:00",
-    "age_hours": 2.12,
+    "generated_at": "2026-11-05T12:04:16.403660+00:00",
+    "age_hours": 0.01,
     "status": "insufficient_prospective_sample",
     "evaluation_period": [
       "20261103",
       "20261105"
     ],
-    "latest_completed_day": null,
-    "recent_daily_results": [],
-    "valid_snapshots": 347,
-    "snapshots_with_official_result": 347,
-    "snapshots_missing_official_result": 51,
-    "supabase_snapshots_joined": 309,
+    "latest_completed_day": {
+      "date": "20261105",
+      "unique_races": 21,
+      "model_top": {
+        "races_bet": 21,
+        "hits": 7,
+        "hit_rate_pct": 33.33,
+        "stake_jpy": 2100,
+        "return_jpy": 1860,
+        "profit_jpy": -240,
+        "roi_pct": 88.57,
+        "roi_95ci": {
+          "method": "race-level bootstrap",
+          "replicates": 0,
+          "roi_95ci": null
+        }
+      },
+      "market_favorite": {
+        "races_bet": 21,
+        "hits": 9,
+        "hit_rate_pct": 42.86,
+        "stake_jpy": 2100,
+        "return_jpy": 1970,
+        "profit_jpy": -130,
+        "roi_pct": 93.81,
+        "roi_95ci": {
+          "method": "race-level bootstrap",
+          "replicates": 0,
+          "roi_95ci": null
+        }
+      },
+      "fixed_50_50_model_market_blend": {
+        "races_bet": 21,
+        "hits": 9,
+        "hit_rate_pct": 42.86,
+        "stake_jpy": 2100,
+        "return_jpy": 1970,
+        "profit_jpy": -130,
+        "roi_pct": 93.81,
+        "roi_95ci": {
+          "method": "race-level bootstrap",
+          "replicates": 0,
+          "roi_95ci": null
+        }
+      },
+      "value_rule": {
+        "races_bet": 21,
+        "hits": 2,
+        "hit_rate_pct": 9.52,
+        "stake_jpy": 2100,
+        "return_jpy": 7950,
+        "profit_jpy": 5850,
+        "roi_pct": 378.57,
+        "roi_95ci": {
+          "method": "race-level bootstrap",
+          "replicates": 0,
+          "roi_95ci": null
+        }
+      },
+      "value_rule_bets": 21,
+      "note": "One closest-to-post captured pre-off snapshot per race; official result joined after the race."
+    },
+    "recent_daily_results": [
+      {
+        "date": "20261103",
+        "unique_races": 20,
+        "model_top": {
+          "races_bet": 20,
+          "hits": 3,
+          "hit_rate_pct": 15.0,
+          "stake_jpy": 2000,
+          "return_jpy": 1890,
+          "profit_jpy": -110,
+          "roi_pct": 94.5,
+          "roi_95ci": {
+            "method": "race-level bootstrap",
+            "replicates": 0,
+            "roi_95ci": null
+          }
+        },
+        "market_favorite": {
+          "races_bet": 20,
+          "hits": 7,
+          "hit_rate_pct": 35.0,
+          "stake_jpy": 2000,
+          "return_jpy": 1540,
+          "profit_jpy": -460,
+          "roi_pct": 77.0,
+          "roi_95ci": {
+            "method": "race-level bootstrap",
+            "replicates": 0,
+            "roi_95ci": null
+          }
+        },
+        "fixed_50_50_model_market_blend": {
+          "races_bet": 20,
+          "hits": 4,
+          "hit_rate_pct": 20.0,
+          "stake_jpy": 2000,
+          "return_jpy": 710,
+          "profit_jpy": -1290,
+          "roi_pct": 35.5,
+          "roi_95ci": {
+            "method": "race-level bootstrap",
+            "replicates": 0,
+            "roi_95ci": null
+          }
+        },
+        "value_rule": {
+          "races_bet": 19,
+          "hits": 1,
+          "hit_rate_pct": 5.26,
+          "stake_jpy": 1900,
+          "return_jpy": 200,
+          "profit_jpy": -1700,
+          "roi_pct": 10.53,
+          "roi_95ci": {
+            "method": "race-level bootstrap",
+            "replicates": 0,
+            "roi_95ci": null
+          }
+        },
+        "value_rule_bets": 19,
+        "note": "One closest-to-post captured pre-off snapshot per race; official result joined after the race."
+      },
+      {
+        "date": "20261104",
+        "unique_races": 27,
+        "model_top": {
+          "races_bet": 27,
+          "hits": 8,
+          "hit_rate_pct": 29.63,
+          "stake_jpy": 2700,
+          "return_jpy": 1640,
+          "profit_jpy": -1060,
+          "roi_pct": 60.74,
+          "roi_95ci": {
+            "method": "race-level bootstrap",
+            "replicates": 0,
+            "roi_95ci": null
+          }
+        },
+        "market_favorite": {
+          "races_bet": 27,
+          "hits": 14,
+          "hit_rate_pct": 51.85,
+          "stake_jpy": 2700,
+          "return_jpy": 2670,
+          "profit_jpy": -30,
+          "roi_pct": 98.89,
+          "roi_95ci": {
+            "method": "race-level bootstrap",
+            "replicates": 0,
+            "roi_95ci": null
+          }
+        },
+        "fixed_50_50_model_market_blend": {
+          "races_bet": 27,
+          "hits": 12,
+          "hit_rate_pct": 44.44,
+          "stake_jpy": 2700,
+          "return_jpy": 2130,
+          "profit_jpy": -570,
+          "roi_pct": 78.89,
+          "roi_95ci": {
+            "method": "race-level bootstrap",
+            "replicates": 0,
+            "roi_95ci": null
+          }
+        },
+        "value_rule": {
+          "races_bet": 27,
+          "hits": 0,
+          "hit_rate_pct": 0.0,
+          "stake_jpy": 2700,
+          "return_jpy": 0,
+          "profit_jpy": -2700,
+          "roi_pct": 0.0,
+          "roi_95ci": {
+            "method": "race-level bootstrap",
+            "replicates": 0,
+            "roi_95ci": null
+          }
+        },
+        "value_rule_bets": 27,
+        "note": "One closest-to-post captured pre-off snapshot per race; official result joined after the race."
+      },
+      {
+        "date": "20261105",
+        "unique_races": 21,
+        "model_top": {
+          "races_bet": 21,
+          "hits": 7,
+          "hit_rate_pct": 33.33,
+          "stake_jpy": 2100,
+          "return_jpy": 1860,
+          "profit_jpy": -240,
+          "roi_pct": 88.57,
+          "roi_95ci": {
+            "method": "race-level bootstrap",
+            "replicates": 0,
+            "roi_95ci": null
+          }
+        },
+        "market_favorite": {
+          "races_bet": 21,
+          "hits": 9,
+          "hit_rate_pct": 42.86,
+          "stake_jpy": 2100,
+          "return_jpy": 1970,
+          "profit_jpy": -130,
+          "roi_pct": 93.81,
+          "roi_95ci": {
+            "method": "race-level bootstrap",
+            "replicates": 0,
+            "roi_95ci": null
+          }
+        },
+        "fixed_50_50_model_market_blend": {
+          "races_bet": 21,
+          "hits": 9,
+          "hit_rate_pct": 42.86,
+          "stake_jpy": 2100,
+          "return_jpy": 1970,
+          "profit_jpy": -130,
+          "roi_pct": 93.81,
+          "roi_95ci": {
+            "method": "race-level bootstrap",
+            "replicates": 0,
+            "roi_95ci": null
+          }
+        },
+        "value_rule": {
+          "races_bet": 21,
+          "hits": 2,
+          "hit_rate_pct": 9.52,
+          "stake_jpy": 2100,
+          "return_jpy": 7950,
+          "profit_jpy": 5850,
+          "roi_pct": 378.57,
+          "roi_95ci": {
+            "method": "race-level bootstrap",
+            "replicates": 0,
+            "roi_95ci": null
+          }
+        },
+        "value_rule_bets": 21,
+        "note": "One closest-to-post captured pre-off snapshot per race; official result joined after the race."
+      }
+    ],
+    "valid_snapshots": 414,
+    "snapshots_with_official_result": 414,
+    "snapshots_missing_official_result": 30,
+    "supabase_snapshots_joined": 349,
     "closest_to_post": {
-      "unique_races": 64,
+      "unique_races": 68,
       "development_races": 47,
-      "holdout_races": 17,
+      "holdout_races": 21,
       "holdout_model_top": {
-        "races": 17,
-        "hits": 5,
-        "hit_rate_pct": 29.41,
-        "roi_pct": 81.76
+        "races": 21,
+        "hits": 7,
+        "hit_rate_pct": 33.33,
+        "roi_pct": 88.57
       },
       "holdout_market_favorite": {
-        "races": 17,
-        "hits": 6,
-        "hit_rate_pct": 35.29,
-        "roi_pct": 71.18
+        "races": 21,
+        "hits": 9,
+        "hit_rate_pct": 42.86,
+        "roi_pct": 93.81
       },
       "holdout_value_rule": {
-        "races": 17,
-        "hits": 1,
-        "hit_rate_pct": 5.88,
-        "roi_pct": 66.47
+        "races": 21,
+        "hits": 2,
+        "hit_rate_pct": 9.52,
+        "roi_pct": 378.57
       }
     },
     "live_model_changed": false,
@@ -228,7 +476,7 @@
   },
   "weekly_historical_backtest": {
     "generated_at": "2026-11-05T11:46:58.150412+00:00",
-    "age_hours": 0.28,
+    "age_hours": 0.29,
     "period": {
       "start": "2022-11-05",
       "end": "2026-11-04"
