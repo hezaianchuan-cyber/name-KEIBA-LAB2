@@ -459,7 +459,7 @@ def field_performance_features(field):
 def score_runner_performance(h, history, sire_stats, jockey_stats, race, model_weights,
                              margin_weight=0.10, closing_weight=0.10,
                              time_weight=0.0, include_recent_history=True,
-                             going_weight=0.0, parts_cache=None):
+                             going_weight=0.0, parts_cache=None, performance_cache=None):
     """B score blended with strictly prior margin/closing-speed form.
 
     parts_cache is scoped to one race. Feature values depend on prior history,
@@ -473,44 +473,52 @@ def score_runner_performance(h, history, sire_stats, jockey_stats, race, model_w
         base_score, parts = score_runner(
             h, history, sire_stats, jockey_stats, race, model_weights,
             include_recent_history, parts_cache=parts_cache)
-    past = history.get(h["name"], [])[-5:] if include_recent_history else []
-    def recent_average(key):
-        values = [number(row.get(key)) for row in past]
-        values = [value for value in values if value is not None]
-        if not values:
-            return 0.5
-        weights = list(range(1, len(values) + 1))
-        return sum(value * weight for value, weight in zip(values, weights)) / sum(weights)
-    margin_form = recent_average("margin_quality")
-    closing_form = recent_average("last3f_rank_score")
-    # Going suitability is calculated only from this horse's earlier starts.
-    # Sparse samples shrink toward neutral; no same-day/current-race outcome leaks in.
-    target_going = norm(race.get("going"))
-    target_surface = norm(race.get("surface"))
-    going_rows = [row for row in past if target_going and norm(row.get("going")) == target_going
-                  and (not target_surface or not norm(row.get("surface")) or norm(row.get("surface")) == target_surface)
-                  and number(row.get("going_quality")) is not None]
-    going_quality = [number(row.get("going_quality")) for row in going_rows]
-    going_form = smoothed_rate(
-        sum(going_quality), len(going_quality), prior_rate=0.5, prior_strength=4.0
-    ) if going_quality else 0.5
-    target_distance = number(race.get("distance"))
-    comparable = [
-        row for row in past
-        if row.get("venue") == race.get("venue")
-        and target_distance is not None
-        and number(row.get("distance")) is not None
-        and abs(number(row.get("distance")) - target_distance) <= 200
-        and number(row.get("time_per_km")) is not None
-    ]
-    time_form = 0.5
-    if len(comparable) >= 3:
-        recent_times = [number(row["time_per_km"]) for row in comparable[-2:]]
-        baseline_times = [number(row["time_per_km"]) for row in comparable[:-2]]
-        if baseline_times:
-            improvement = (sum(baseline_times)/len(baseline_times)
-                           - sum(recent_times)/len(recent_times)) / max(sum(baseline_times)/len(baseline_times), 1.0)
-            time_form = min(1.0, max(0.0, 0.5 + improvement * 8.0))
+    performance_key = (str(h.get("no", "")), bool(include_recent_history))
+    cached_performance = (performance_cache.get(performance_key)
+                          if performance_cache is not None else None)
+    if cached_performance is None:
+        past = history.get(h["name"], [])[-5:] if include_recent_history else []
+        def recent_average(key):
+            values = [number(row.get(key)) for row in past]
+            values = [value for value in values if value is not None]
+            if not values:
+                return 0.5
+            weights = list(range(1, len(values) + 1))
+            return sum(value * weight for value, weight in zip(values, weights)) / sum(weights)
+        margin_form = recent_average("margin_quality")
+        closing_form = recent_average("last3f_rank_score")
+        # Going suitability is calculated only from this horse's earlier starts.
+        # Sparse samples shrink toward neutral; no same-day/current-race outcome leaks in.
+        target_going = norm(race.get("going"))
+        target_surface = norm(race.get("surface"))
+        going_rows = [row for row in past if target_going and norm(row.get("going")) == target_going
+                      and (not target_surface or not norm(row.get("surface")) or norm(row.get("surface")) == target_surface)
+                      and number(row.get("going_quality")) is not None]
+        going_quality = [number(row.get("going_quality")) for row in going_rows]
+        going_form = smoothed_rate(
+            sum(going_quality), len(going_quality), prior_rate=0.5, prior_strength=4.0
+        ) if going_quality else 0.5
+        target_distance = number(race.get("distance"))
+        comparable = [
+            row for row in past
+            if row.get("venue") == race.get("venue")
+            and target_distance is not None
+            and number(row.get("distance")) is not None
+            and abs(number(row.get("distance")) - target_distance) <= 200
+            and number(row.get("time_per_km")) is not None
+        ]
+        time_form = 0.5
+        if len(comparable) >= 3:
+            recent_times = [number(row["time_per_km"]) for row in comparable[-2:]]
+            baseline_times = [number(row["time_per_km"]) for row in comparable[:-2]]
+            if baseline_times:
+                improvement = (sum(baseline_times)/len(baseline_times)
+                               - sum(recent_times)/len(recent_times)) / max(sum(baseline_times)/len(baseline_times), 1.0)
+                time_form = min(1.0, max(0.0, 0.5 + improvement * 8.0))
+        cached_performance = (margin_form, closing_form, time_form, going_form)
+        if performance_cache is not None:
+            performance_cache[performance_key] = cached_performance
+    margin_form, closing_form, time_form, going_form = cached_performance
     base_weight = max(0.0, 1.0 - margin_weight - closing_weight - time_weight - going_weight)
     score = (base_score * base_weight + margin_form * margin_weight
              + closing_form * closing_weight + time_form * time_weight
@@ -2251,6 +2259,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
         winners={numbers[0] for numbers, _ in payout.get("win", [])}
         if not winners: continue
         race_feature_cache = {}
+        race_performance_cache = {}
         # Pace profiles depend on the race and strictly prior history, not on
         # model weights. Calculate once and reuse across all challenger models.
         _, _, race_pace_delta = pace_adjustments(field, history)
@@ -2260,7 +2269,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                 relative_parts = {
                     h["no"]: score_runner(h,history,sire_stats,jockey_stats,race,weights,
                                           include_recent_history=include_recent_history,
-                                          parts_cache=race_feature_cache)[1]
+                                          parts_cache=race_feature_cache, performance_cache=race_performance_cache)[1]
                     for h in field
                 }
                 relative_scores = race_relative_scores(relative_parts, weights)
@@ -2272,20 +2281,20 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                     (score_runner_performance(
                         h, history, sire_stats, jockey_stats, race, reduced_weights,
                         0.10, 0.10, 0.10, include_recent_history, going_weight=0.10,
-                        parts_cache=race_feature_cache)[0], h)
+                        parts_cache=race_feature_cache, performance_cache=race_performance_cache)[0], h)
                     for h in field
                 ]
             elif model_name in ("B_condition", "trained_with_conditions", "trained_with_conditions_and_pace"):
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
                             0.0,0.0,0.0,include_recent_history,going_weight=0.10,
-                            parts_cache=race_feature_cache)[0],h) for h in field]
+                            parts_cache=race_feature_cache, performance_cache=race_performance_cache)[0],h) for h in field]
             elif model_name in ("C_performance_pace", "C_performance_pace_no_frame") or model_name in FEATURE_WEIGHT_NAMES:
                 scored=[]
                 for h in field:
                     performance_score = score_runner_performance(
                         h, history, sire_stats, jockey_stats, race, weights,
                         0.10, 0.10, 0.10, include_recent_history, going_weight=0.10,
-                        parts_cache=race_feature_cache)[0]
+                        parts_cache=race_feature_cache, performance_cache=race_performance_cache)[0]
                     if model_name == "C_performance_pace" or model_name in FEATURE_WEIGHT_NAMES:
                         performance_score = blend_frame_score(
                             performance_score, race, h, frame_stats)
@@ -2294,11 +2303,11 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                 margin_weight, closing_weight, time_weight = performance_blends[model_name]
                 scored=[(score_runner_performance(h,history,sire_stats,jockey_stats,race,weights,
                             margin_weight,closing_weight,time_weight,include_recent_history,
-                            parts_cache=race_feature_cache)[0],h) for h in field]
+                            parts_cache=race_feature_cache, performance_cache=race_performance_cache)[0],h) for h in field]
             else:
                 scored=[(score_runner(h,history,sire_stats,jockey_stats,race,weights,
                             include_recent_history=include_recent_history,
-                            parts_cache=race_feature_cache)[0],h) for h in field]
+                            parts_cache=race_feature_cache, performance_cache=race_performance_cache)[0],h) for h in field]
             if model_name in ("C_performance_pace", "C_performance_pace_no_frame", "trained_with_pace", "trained_performance_with_pace", "trained_with_conditions_and_pace") or model_name.startswith("ablate_") or model_name in FEATURE_WEIGHT_NAMES:
                 scored = [(score + race_pace_delta.get(h["no"], 0.0), h) for score, h in scored]
             if model_name == "trained":
