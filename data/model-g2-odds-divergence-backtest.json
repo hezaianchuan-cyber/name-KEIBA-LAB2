@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-05T09:26:33.321889+00:00",
+  "generated_at": "2026-11-05T09:29:29.744890+00:00",
   "feature": "G2_improved_skip_decision_development_tuned",
   "status": "no_eligible_development_strategy",
   "g1_temperature": 0.115,
@@ -345,6 +345,37 @@
       "races": 3351,
       "log_loss": 1.543801,
       "brier_winner_mass": 0.533296
+    }
+  },
+  "market_rank_comparison": {
+    "development": {
+      "races": 7334,
+      "model_top1_market_rank_mean": 2.235,
+      "market_top1_model_rank_mean": 2.46,
+      "top3_overlap_mean": 1.946,
+      "mean_absolute_rank_difference": 1.699,
+      "model_winner_top3_rate": 61.07,
+      "market_winner_top3_rate": 76.42,
+      "model_winner_top1_rate": 29.92,
+      "market_winner_top1_rate": 44.23
+    },
+    "untouched_holdout": {
+      "races": 3318,
+      "model_top1_market_rank_mean": 2.318,
+      "market_top1_model_rank_mean": 2.547,
+      "top3_overlap_mean": 1.92,
+      "mean_absolute_rank_difference": 1.784,
+      "model_winner_top3_rate": 60.1,
+      "market_winner_top3_rate": 78.48,
+      "model_winner_top1_rate": 30.2,
+      "market_winner_top1_rate": 45.3
+    },
+    "definitions": {
+      "model_top1_market_rank": "Market odds rank of the model's highest-probability horse; 1 is market favorite.",
+      "market_top1_model_rank": "Model rank of the market's shortest-odds horse; 1 is model top pick.",
+      "top3_overlap_mean": "Average number of shared horses in model and market top-three rankings.",
+      "mean_absolute_rank_difference": "Average absolute rank difference over horses with both model and market ranks.",
+      "winner_top3_rate": "Share of races where at least one actual winner appears in the top three."
     }
   },
   "development_bets": {
