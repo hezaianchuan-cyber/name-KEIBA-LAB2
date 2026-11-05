@@ -72,6 +72,47 @@ def market_favorite(odds):
     ranking=market_ranking(odds)
     return ranking[0] if ranking else None
 
+def market_win_probabilities(odds):
+    """Normalize inverse win odds into a same-snapshot market distribution."""
+    inverse={}
+    for item in odds or []:
+        label=str(item.get("type") or "").replace(" ","")
+        if "単勝" not in label: continue
+        horse=no(item.get("n1"))
+        try: price=float(item.get("odds") or 0)
+        except (TypeError,ValueError): continue
+        if horse and price>0: inverse[horse]=1.0/price
+    total=sum(inverse.values())
+    return {horse:value/total for horse,value in inverse.items()} if total>0 else {}
+
+def trio_fusion_rankings(race, market_weights=(0.25,0.50,0.75), limit=12):
+    """Rank quoted trio combinations by LAB/market joint top-three probability."""
+    market=market_win_probabilities(race.get("odds") or [])
+    candidates=[]
+    for item in race.get("candidate_combinations") or []:
+        if item.get("bet_type")!="trio": continue
+        nums=[no(v) for v in item.get("numbers") or []]
+        if len(nums)!=3 or len(set(nums))!=3: continue
+        try:
+            odds=float(item.get("odds") or 0)
+            lab=float(item.get("probability") or 0)
+        except (TypeError,ValueError): continue
+        if odds<=0 or lab<=0: continue
+        market_prob=nar.combination_probability("trio",nums,market) if all(n in market for n in nums) else 0.0
+        if market_prob<=0: continue
+        candidates.append({"comb":"-".join(sorted(nums,key=int)),"odds":odds,
+            "labProbability":lab,"marketProbability":market_prob,"ev":lab*odds})
+    output={}
+    for weight in market_weights:
+        rows=[]
+        for item in candidates:
+            fused=(1.0-weight)*item["labProbability"]+weight*item["marketProbability"]
+            rows.append({**item,"marketWeight":weight,"fusedProbability":fused})
+        rows.sort(key=lambda x:(-x["fusedProbability"],-x["labProbability"],-x["ev"],x["comb"]))
+        output[f"{weight:.2f}"]=[{"rank":i+1,**{k:round(v,10) if isinstance(v,float) else v for k,v in row.items()}}
+            for i,row in enumerate(rows[:limit])]
+    return output
+
 def base_plan(date,venue,race_no,race_id,predictions,model_version,created_at,odds=None):
     ranked=sorted(predictions or [],key=lambda x:(float(x.get("win_probability") or 0),float(x.get("score") or 0)),reverse=True)
     unique=[];seen=set()
@@ -121,6 +162,18 @@ def make_plan(r,limits):
         odds=float(x.get("odds") or 0);prob=float(x.get("probability") or 0)
         if odds>0 and prob>0:candidates.append({"kind":kind,"type":TYPES[kind],"comb":"-".join(ns),"odds":odds,"probability":prob,"ev":odds*prob})
     plan["oddsMatchedCandidates"]=len(candidates)
+    # Keep a separate research-only 12-ticket ranking even when no validated
+    # EV threshold exists. It never changes decision/tickets/stakes.
+    fusion=trio_fusion_rankings(r, limit=12)
+    plan["trioRanking"]={"selectedMarketWeight":0.50,"method":"linear_blend_of_LAB_and_market_trio_top3_probability",
+        "marketProbabilitySource":"normalized_inverse_win_odds_same_preoff_snapshot",
+        "byMarketWeight":fusion}
+    default_rows=fusion.get("0.50",[])
+    if default_rows:
+        plan["shadowTickets"]=[{"type":"3連複","comb":x["comb"],"stake":100,"basis":"lab_market_fusion_50",
+            "odds":x["odds"],"labProbability":x["labProbability"],
+            "marketProbability":x["marketProbability"],"fusedProbability":x["fusedProbability"],
+            "expectedValue":x["ev"],"rank":x["rank"]} for x in default_rows]
     eligible=[]
     for kind in ("trio",):
         if kind not in limits:continue
