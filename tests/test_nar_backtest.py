@@ -2094,3 +2094,38 @@ class RaceFeatureCacheParityTests(unittest.TestCase):
         nb.score_runner(horse,{}, {}, {}, race, weights, True, cache)
         nb.score_runner(horse,{}, {}, {}, race, weights, False, cache)
         self.assertEqual(len(cache),2)
+
+
+class PerformanceFeatureCacheParityTests(unittest.TestCase):
+    def test_cached_history_features_match_uncached_scores_across_blends(self):
+        horse = {"no":"8","name":"キャッシュ馬","sire":"父","jockey":"騎手","age":5}
+        history = {"キャッシュ馬":[
+            {"finish":3,"field_size":12,"venue":"大井","distance":1600,
+             "margin_quality":0.7,"last3f_rank_score":0.8,"going":"良",
+             "surface":"ダート","going_quality":0.75,"time_per_km":75.0},
+            {"finish":2,"field_size":12,"venue":"大井","distance":1600,
+             "margin_quality":0.8,"last3f_rank_score":0.7,"going":"良",
+             "surface":"ダート","going_quality":0.83,"time_per_km":74.0},
+            {"finish":1,"field_size":12,"venue":"大井","distance":1600,
+             "margin_quality":0.9,"last3f_rank_score":0.9,"going":"良",
+             "surface":"ダート","going_quality":0.92,"time_per_km":73.0},
+        ]}
+        sire_stats = {"父":{"runs":30,"top3":14}}
+        jockey_stats = {"騎手":{"runs":40,"top3":18}}
+        race = {"venue":"大井","distance":1600,"going":"良","surface":"ダート"}
+        weights = {"form":0.55,"venue":0.12,"distance":0.12,
+                   "sire":0.10,"jockey":0.07,"age":0.04}
+        parts_cache, performance_cache = {}, {}
+        variants = [(0.10,0.10,0.10,0.10),(0.05,0.05,0.10,0.0),(0.0,0.0,0.10,0.0)]
+        for margin, closing, time_weight, going in variants:
+            cached = nb.score_runner_performance(
+                horse,history,sire_stats,jockey_stats,race,weights,
+                margin,closing,time_weight,True,going,
+                parts_cache=parts_cache,performance_cache=performance_cache)
+            fresh = nb.score_runner_performance(
+                horse,history,sire_stats,jockey_stats,race,weights,
+                margin,closing,time_weight,True,going)
+            self.assertAlmostEqual(cached[0],fresh[0])
+            self.assertEqual(cached[1],fresh[1])
+        self.assertEqual(len(parts_cache),1)
+        self.assertEqual(len(performance_cache),1)
