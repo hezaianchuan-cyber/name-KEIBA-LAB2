@@ -1816,18 +1816,11 @@ class ProductionShadowPortfolioParityTests(unittest.TestCase):
         ]
         tickets = nb.build_shadow_portfolio_tickets(ranked)
         self.assertEqual(tickets, [
-            {"kind":"win","numbers":["1"]},
-            {"kind":"place","numbers":["1"]},
-            {"kind":"place","numbers":["2"]},
-            {"kind":"wide","numbers":["1","2"]},
             {"kind":"trio","numbers":["1","2","3"]},
         ])
 
     def test_shadow_ticket_set_requires_only_available_ranked_horses(self):
-        self.assertEqual(nb.build_shadow_portfolio_tickets([{"no":"7"}]), [
-            {"kind":"win","numbers":["7"]},
-            {"kind":"place","numbers":["7"]}
-        ])
+        self.assertEqual(nb.build_shadow_portfolio_tickets([{"no":"7"}]), [])
 
 
 class TrioFormation245AllocationTests(unittest.TestCase):
