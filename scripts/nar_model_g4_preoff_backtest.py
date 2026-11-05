@@ -493,6 +493,23 @@ def main():
         if previous is None or row["minutes_to_post"] < previous["minutes_to_post"]:
             latest_by_race[row["race_key"]] = row
     latest_rows = list(latest_by_race.values())
+    daily_rows = {}
+    for row in latest_rows:
+        daily_rows.setdefault(row["date"], []).append(row)
+    daily_results = []
+    for date in sorted(daily_rows):
+        day_rows = daily_rows[date]
+        day_value = [row["value_ticket"] for row in day_rows if row.get("value_ticket")]
+        daily_results.append({
+            "date": date,
+            "unique_races": len(day_rows),
+            "model_top": summarize([row["model_top"] for row in day_rows]),
+            "market_favorite": summarize([row["market_top"] for row in day_rows]),
+            "fixed_50_50_model_market_blend": summarize([row["blend_top"] for row in day_rows]),
+            "value_rule": summarize(day_value),
+            "value_rule_bets": len(day_value),
+            "note": "One closest-to-post captured pre-off snapshot per race; official result joined after the race.",
+        })
     latest_dates = sorted({row["date"] for row in latest_rows})
     if len(latest_dates) >= 2:
         split_index = max(1, min(len(latest_dates) - 1, int(len(latest_dates) * 0.70)))
@@ -520,6 +537,7 @@ def main():
         "g1_temperature": temperature,
         "probability_source": "raw per-horse scores saved at capture time, recalibrated with the validated G1 temperature",
         "evaluation_period": [latest_dates[0], latest_dates[-1]] if latest_dates else None,
+        "daily_results": daily_results,
         "development_period": [latest_dates[0], latest_dev_end] if latest_dates and latest_dev_end else None,
         "holdout_period": [latest_holdout_start, latest_dates[-1]] if latest_holdout_start and latest_dates else None,
         "data_source": "KEIBA LAB timestamped official NAR pre-off odds snapshots from five-minute GitHub capture and one-minute Supabase capture; official final odds are not read.",
