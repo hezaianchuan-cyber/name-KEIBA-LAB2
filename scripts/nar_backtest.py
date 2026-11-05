@@ -767,16 +767,9 @@ def build_shadow_portfolio_tickets(ranked):
             if no not in seen:
                 unique.append(no)
                 seen.add(no)
-    if not unique:
+    if len(unique) < 3:
         return []
-    tickets = [{"kind": "win", "numbers": [unique[0]]}]
-    for no in unique[:2]:
-        tickets.append({"kind": "place", "numbers": [no]})
-    if len(unique) >= 2:
-        tickets.append({"kind": "wide", "numbers": sorted(unique[:2], key=int)})
-    if len(unique) >= 3:
-        tickets.append({"kind": "trio", "numbers": sorted(unique[:3], key=int)})
-    return tickets
+    return [{"kind": "trio", "numbers": sorted(unique[:3], key=int)}]
 
 
 def build_fixed_tickets(ranked):
