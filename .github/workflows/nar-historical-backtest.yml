@@ -6,10 +6,9 @@ on:
     paths:
       - 'scripts/nar_backtest.py'
       - 'tests/test_nar_backtest.py'
-      - '.github/workflows/nar-historical-backtest.yml'
   workflow_dispatch:
   schedule:
-    - cron: "30 18 * * *"
+    - cron: "30 18 * * 0"
 
 permissions:
   contents: write
