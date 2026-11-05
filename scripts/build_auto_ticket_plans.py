@@ -89,6 +89,10 @@ def base_plan(date,venue,race_no,race_id,predictions,model_version,created_at,od
                              "score":float(x.get("score") or 0),
                              "winProbability":float(x.get("win_probability") or 0)}
                             for x in unique],
+        "runnerDraws":[{"horseNo":no(x.get("horse_no")),"name":str(x.get("name") or ""),
+                        "frameNo":x.get("frame_no"),"score":float(x.get("score") or 0),
+                        "winProbability":float(x.get("win_probability") or 0)}
+                       for x in unique],
         "marketFavoriteHorse":market_favorite(odds or []),
         "marketTop3":market_ranking(odds or []),
         "modelLoaded":bool(model_version and len(unique)>=3),"oddsCaptured":bool(odds),
