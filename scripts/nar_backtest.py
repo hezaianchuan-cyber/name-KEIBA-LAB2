@@ -1692,10 +1692,18 @@ def frame_form_score(race, horse, frame_stats):
                          prior_rate=0.5, prior_strength=8.0)
 
 
-def blend_frame_score(base_score, race, horse, frame_stats):
-    # Do not alter live scores during the one-time migration before frame history exists.
+def blend_frame_score(base_score, race, horse, frame_stats, frame_score_cache=None):
+    # Frame suitability depends on race context and prior frame history, not on
+    # the model weight vector. Reuse it across challenger models in this race.
     weight = 0.08 if frame_stats else 0.0
-    return base_score * (1.0 - weight) + frame_form_score(race, horse, frame_stats) * weight
+    horse_no = str(horse.get("no", ""))
+    frame_score = (frame_score_cache.get(horse_no)
+                   if frame_score_cache is not None else None)
+    if frame_score is None:
+        frame_score = frame_form_score(race, horse, frame_stats)
+        if frame_score_cache is not None:
+            frame_score_cache[horse_no] = frame_score
+    return base_score * (1.0 - weight) + frame_score * weight
 
 
 def update_frame_stats(race, field, frame_stats):
@@ -2287,6 +2295,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
         if not winners: continue
         race_feature_cache = {}
         race_performance_cache = {}
+        race_frame_score_cache = {}
         # Pace profiles depend on the race and strictly prior history, not on
         # model weights. Calculate once and reuse across all challenger models.
         _, _, race_pace_delta = pace_adjustments(field, history)
@@ -2324,7 +2333,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                         parts_cache=race_feature_cache, performance_cache=race_performance_cache)[0]
                     if model_name == "C_performance_pace" or model_name in FEATURE_WEIGHT_NAMES:
                         performance_score = blend_frame_score(
-                            performance_score, race, h, frame_stats)
+                            performance_score, race, h, frame_stats,
+                            frame_score_cache=race_frame_score_cache)
                     scored.append((performance_score, h))
             elif model_name in performance_blends:
                 margin_weight, closing_weight, time_weight = performance_blends[model_name]
