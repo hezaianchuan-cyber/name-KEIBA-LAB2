@@ -319,6 +319,7 @@ async function syncCloudPredictions(){
      if(!enriched)return prediction;
      const current=prediction.ticketPlan||{},merged={...current,...enriched};
      if(Array.isArray(current.userTickets))merged.userTickets=current.userTickets;
+     if(current.userTicketsModifiedAt)merged.userTicketsModifiedAt=current.userTicketsModifiedAt;
      if(current.modifiedAt)merged.modifiedAt=current.modifiedAt;
      return {...prediction,ticketPlan:merged};
     });
@@ -957,19 +958,40 @@ async function loadAutoTicketPlans(){
 }
 window.addEventListener('load',loadAutoTicketPlans);
 setInterval(loadAutoTicketPlans,60*1000);
+function mergeLabTicketPlanRecord(previous,item,incomingPlan){
+ const incomingAt=String(item.plan.modifiedAt||item.plan.createdAt||'');
+ const previousAt=String(previous?.plan?.modifiedAt||previous?.plan?.createdAt||'');
+ const incomingWins=!previous||incomingAt>=previousAt;
+ const chosen=incomingWins?item:previous;
+ const mergedPlan={...(incomingWins?incomingPlan:previous.plan)};
+ // Manual tickets are user-owned state. Preserve them independently of which
+ // automatic/model snapshot is newer; an explicit empty array is a valid deletion.
+ const userCandidates=[previous?.plan,item.plan].filter(p=>
+  Array.isArray(p?.userTickets)&&(p.userTicketsModifiedAt||p.modifiedAt||p.userTickets.length>0)
+ );
+ const userPlan=userCandidates.reduce((best,candidate)=>{
+  if(!best)return candidate;
+  const stamp=p=>String(p.userTicketsModifiedAt||p.modifiedAt||p.createdAt||'');
+  return stamp(candidate)>=stamp(best)?candidate:best;
+ },null);
+ if(userPlan){
+  mergedPlan.userTickets=[...userPlan.userTickets];
+  const userStamp=String(userPlan.userTicketsModifiedAt||userPlan.modifiedAt||userPlan.createdAt||'');
+  if(userStamp)mergedPlan.userTicketsModifiedAt=userStamp;
+ }
+ return {...chosen,plan:mergedPlan};
+}
 function loadLabTicketPlans(){
  try{
   const stored=JSON.parse(localStorage.getItem(LAB_TICKET_STORAGE_KEY)||'[]'),map=new Map();
   const add=item=>{
    if(!item||!item.plan||!item.plan.raceId)return;
    const plan=item.plan,key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date),previous=map.get(key);
-   const incomingAt=String(plan.modifiedAt||plan.createdAt||''),previousAt=String(previous?.plan?.modifiedAt||previous?.plan?.createdAt||'');
    let nextPlan={...plan,
-   tickets:(Array.isArray(plan.tickets)?plan.tickets:[]).filter(t=>labLedgerIsTrioType(t?.type)),
-   shadowTickets:(Array.isArray(plan.shadowTickets)?plan.shadowTickets:[]).filter(t=>labLedgerIsTrioType(t?.type))
-  };
-   // Keep market/model comparison fields when a newer local manual-ticket edit
-   // is merged over the enriched, read-only comparison view.
+    tickets:(Array.isArray(plan.tickets)?plan.tickets:[]).filter(t=>labLedgerIsTrioType(t?.type)),
+    shadowTickets:(Array.isArray(plan.shadowTickets)?plan.shadowTickets:[]).filter(t=>labLedgerIsTrioType(t?.type))
+   };
+   // Keep market/model comparison fields when a newer automatic snapshot is merged.
    if(previous?.plan){
     for(const field of ['modelTopHorse','modelTop3','marketFavoriteHorse','marketTop3','marketOddsCapturedAt','marketComparisonAvailable','runnerDraws']){
      const current=nextPlan[field],prior=previous.plan[field];
@@ -978,11 +1000,8 @@ function loadLabTicketPlans(){
      if(empty&&prior!=null&&(!Array.isArray(prior)||prior.length>0))nextPlan[field]=prior;
     }
    }
-   const previousUser=Array.isArray(previous?.plan?.userTickets)?previous.plan.userTickets:null;
-   const incomingUser=Array.isArray(plan.userTickets)?plan.userTickets:null;
-   if(previousUser&&(!incomingUser||(incomingUser.length===0&&previousUser.length>0&&(!plan.modifiedAt||incomingAt<previousAt))))nextPlan.userTickets=previousUser;
-   if(!previous||incomingAt>=previousAt)map.set(key,{...item,plan:nextPlan});
-   else if(previousUser&&nextPlan.userTickets!==plan.userTickets)map.set(key,{...previous,plan:{...previous.plan,userTickets:previousUser}});
+   const incoming={...item,plan:nextPlan};
+   map.set(key,mergeLabTicketPlanRecord(previous,incoming,nextPlan));
   };
   for(const item of remoteLabTicketPlans)add(item);
   for(const item of Array.isArray(stored)?stored:[])add(item);
@@ -1273,7 +1292,7 @@ function saveInsufficientTicketPlan(raceId,reason,code){
  const race=[...(db.races||[]),...(oddsRaceIndex||[]),...(minuteOddsRaceIndex||[])].find(r=>String(r.id)===String(raceId))||{};
  const date=String(race.date||$('raceDate')?.value||'');
  const previousPlan=loadLabTicketPlans().find(x=>String(x.plan?.raceId)===String(raceId)&&labLedgerDateKey(x.plan?.date)===labLedgerDateKey(date))?.plan;
- const snapshot={version:2,createdAt:new Date().toISOString(),modifiedAt:new Date().toISOString(),userTickets:Array.isArray(previousPlan?.userTickets)?previousPlan.userTickets:[],date,raceId:String(raceId),venue:String(race.venue||$('venue')?.value||''),raceNo:String(race.race||''),decision:'SKIP',skipReason:reason,skipReasonCode:code,totalStake:0,tickets:[],shadowTickets:[],runnerDraws:[],modelLoaded:!!learnedModelLoaded,oddsCaptured:false,oddsRows:0,oddsMatchedCandidates:0,validatedBetTypes:0,dataStatus:'INSUFFICIENT_DATA'};
+ const snapshot={version:2,createdAt:new Date().toISOString(),modifiedAt:new Date().toISOString(),userTickets:Array.isArray(previousPlan?.userTickets)?previousPlan.userTickets:[],userTicketsModifiedAt:previousPlan?.userTicketsModifiedAt||previousPlan?.modifiedAt||null,date,raceId:String(raceId),venue:String(race.venue||$('venue')?.value||''),raceNo:String(race.race||''),decision:'SKIP',skipReason:reason,skipReasonCode:code,totalStake:0,tickets:[],shadowTickets:[],runnerDraws:[],modelLoaded:!!learnedModelLoaded,oddsCaptured:false,oddsRows:0,oddsMatchedCandidates:0,validatedBetTypes:0,dataStatus:'INSUFFICIENT_DATA'};
  const prediction={id:String(raceId),date:normDate(date),at:snapshot.createdAt,top:[],runners:[],learned:false,ticketPlan:snapshot,venue:snapshot.venue,race:snapshot.raceNo};
  if(!Array.isArray(db.predictions))db.predictions=[];
  const existing=db.predictions.find(p=>String(p.id)===String(raceId)&&normDate(p.date)===normDate(date)&&!p.learned);
@@ -1324,7 +1343,7 @@ function updateManualTicketPlan(mutator){
  if(!item)return false;
  const plan={...item.plan,userTickets:[...(Array.isArray(item.plan.userTickets)?item.plan.userTickets:[])]};
  mutator(plan.userTickets);
- plan.modifiedAt=new Date().toISOString();
+ plan.modifiedAt=new Date().toISOString();plan.userTicketsModifiedAt=plan.modifiedAt;
  const prediction=(db.predictions||[]).find(p=>String(p.id)===manualTicketCurrentRaceId&&labLedgerDateKey(p.date)===labLedgerDateKey(plan.date))||{id:manualTicketCurrentRaceId,date:labLedgerDateKey(plan.date),top:[],runners:[],learned:false};
  prediction.ticketPlan=plan;prediction.at=plan.modifiedAt;
  if(!Array.isArray(db.predictions))db.predictions=[];
@@ -1502,7 +1521,7 @@ function generateTickets(){
    const race=[...(db.races||[]),...(oddsRaceIndex||[]),...(minuteOddsRaceIndex||[])].find(r=>String(r.id)===String(raceId))||{};
    const previousPlan=loadLabTicketPlans().find(x=>String(x.plan?.raceId)===String(raceId)&&labLedgerDateKey(x.plan?.date)===labLedgerDateKey(race.date||$('raceDate')?.value))?.plan;
    const snapshot={
-     version:2,createdAt:new Date().toISOString(),modifiedAt:new Date().toISOString(),userTickets:Array.isArray(previousPlan?.userTickets)?previousPlan.userTickets:[],date:String(race.date||$('raceDate')?.value||''),
+     version:2,createdAt:new Date().toISOString(),modifiedAt:new Date().toISOString(),userTickets:Array.isArray(previousPlan?.userTickets)?previousPlan.userTickets:[],userTicketsModifiedAt:previousPlan?.userTicketsModifiedAt||previousPlan?.modifiedAt||null,date:String(race.date||$('raceDate')?.value||''),
      raceId:String(raceId),venue:String(race.venue||''),raceNo:String(race.race||''),
      decision:selectedType&&allocation.length?'BET':'SKIP',
      skipReason:selectedType&&allocation.length?'':skipReason,
