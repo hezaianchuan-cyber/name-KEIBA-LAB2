@@ -52,6 +52,8 @@ class PublishModelSnapshotsTests(unittest.TestCase):
         self.assertEqual(row["model_version"], "nar-chronological-v9")
         self.assertEqual(len(row["predictions"]), 3)
         self.assertEqual(row["prediction_lock"]["digest"], record["prediction_lock"]["digest"])
+        self.assertEqual(row["locked_payload"]["odds"], record["odds"])
+        self.assertEqual(row["locked_payload"]["predictions"], record["predictions"])
 
     def test_modified_prediction_is_rejected_by_lock(self):
         record = valid_record()
