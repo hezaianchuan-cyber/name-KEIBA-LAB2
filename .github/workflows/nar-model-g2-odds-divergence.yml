@@ -8,10 +8,9 @@ on:
       - 'scripts/nar_model_g1_calibration_backtest.py'
       - 'scripts/nar_model_g2_odds_divergence_backtest.py'
       - 'data/model-g1-calibration-backtest.json'
-      - '.github/workflows/nar-model-g2-odds-divergence.yml'
   workflow_dispatch:
   schedule:
-    - cron: "5 20 * * *"
+    - cron: "5 20 * * 0"
 
 permissions:
   contents: write
