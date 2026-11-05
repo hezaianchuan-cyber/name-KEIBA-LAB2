@@ -2064,7 +2064,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                     performance_score = score_runner_performance(
                         h, history, sire_stats, jockey_stats, race, weights,
                         0.10, 0.10, 0.10, include_recent_history, going_weight=0.10)[0]
-                    if model_name == "C_performance_pace":
+                    if model_name == "C_performance_pace" or model_name in FEATURE_WEIGHT_VARIANTS:
                         performance_score = blend_frame_score(
                             performance_score, race, h, frame_stats)
                     scored.append((performance_score, h))
@@ -3835,6 +3835,7 @@ def main():
         "ticket_policy": result["method"]["ticket_generation"],
         "stake_per_ticket_jpy": 100,
         "bet_types": (recent_models.get("C_performance_pace") or {}).get("bet_types", {}),
+        "trio_formation_comparison": (recent_models.get("C_performance_pace") or {}).get("trio_diagnostics", {}),
         "production_shadow_portfolio": (recent_models.get("C_performance_pace") or {}).get("shadow_portfolio", {}),
         "race_budget_auto_strategy": result.get("race_budget_auto_strategy_backtest", {}),
         "all_model_bet_type_comparison": {
