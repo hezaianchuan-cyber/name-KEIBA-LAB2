@@ -74,6 +74,16 @@ class TrioCombinationProbabilityTests(unittest.TestCase):
             self.assertEqual(sum(units), 19)
             self.assertTrue(all(unit >= 1 for unit in units))
 
+    def test_existing_245_rank_sum_baseline_is_preserved(self):
+        tickets = [
+            ("1", "4", "5"),
+            ("1", "2", "6"),
+            ("2", "3", "7"),
+        ]
+        ranked = combo.rank_existing_tickets(tickets, ["1", "2", "3", "4", "5", "6", "7"])
+        self.assertEqual(ranked[0]["combo"], ["1", "2", "6"])
+        self.assertIsNone(ranked[0]["probability"])
+
     def test_invalid_trio_is_rejected(self):
         with self.assertRaises(ValueError):
             combo.plackett_luce_trio_probability({"1": 0.5, "2": 0.3, "3": 0.2}, ("1", "1", "2"))
