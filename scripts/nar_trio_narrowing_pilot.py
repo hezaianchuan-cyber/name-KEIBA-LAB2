@@ -7,6 +7,7 @@ it does not tune thresholds or change the live model.
 """
 from __future__ import annotations
 
+import gzip
 import json
 import math
 import sys
@@ -256,9 +257,61 @@ def evaluate_strategy(races, strategy_name, ticket_selector):
     }
 
 
+def load_github_snapshots():
+    rows = []
+    diagnostics = {
+        "source": "archived five-minute GitHub pre-off snapshots only",
+        "files": 0,
+        "lines": 0,
+        "invalid_json": 0,
+        "outside_window": 0,
+        "missing_predictions": 0,
+        "missing_odds": 0,
+    }
+    snapshot_dir = DATA / "odds-snapshots"
+    for path in sorted(snapshot_dir.glob("*.jsonl.gz")):
+        diagnostics["files"] += 1
+        with gzip.open(path, "rt", encoding="utf-8") as stream:
+            for line in stream:
+                diagnostics["lines"] += 1
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError:
+                    diagnostics["invalid_json"] += 1
+                    continue
+                key = g4.race_key(record.get("race_key"))
+                date = key.split("|")[1] if key else ""
+                if date not in PILOT_DATES:
+                    continue
+                try:
+                    minutes = float(record.get("minutes_to_post"))
+                except (TypeError, ValueError):
+                    continue
+                if not 2.0 <= minutes <= 30.0:
+                    diagnostics["outside_window"] += 1
+                    continue
+                predictions = record.get("predictions") or []
+                odds = record.get("odds") or []
+                if len(predictions) < 3:
+                    diagnostics["missing_predictions"] += 1
+                    continue
+                if not odds:
+                    diagnostics["missing_odds"] += 1
+                    continue
+                rows.append({
+                    "race_key": key,
+                    "date": date,
+                    "captured_at": record.get("captured_at"),
+                    "minutes_to_post": minutes,
+                    "predictions": predictions,
+                    "odds": odds,
+                })
+    return rows, diagnostics
+
+
 def main():
     outcomes = load_trio_outcomes()
-    snapshots, loader_diagnostics = g4.load_snapshots()
+    snapshots, loader_diagnostics = load_github_snapshots()
     selected, selection_diagnostics = select_latest_snapshots(snapshots)
 
     races = []
@@ -317,6 +370,7 @@ def main():
         "period": ["2026-11-03", "2026-11-05"],
         "method": {
             "prediction_source": "timestamped raw model scores saved before race start",
+            "snapshot_archive": "GitHub five-minute pre-off archive only; Supabase one-minute rows excluded for reproducibility",
             "market_source": "win odds and explicit popularity from the same pre-off snapshot",
             "snapshot_window_minutes_to_post": [2, 30],
             "snapshot_selection": "one closest-to-post valid snapshot per race; no post-off odds",
