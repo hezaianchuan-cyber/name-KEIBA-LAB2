@@ -1740,6 +1740,36 @@ class DailyOnlineLearningRegressionTests(unittest.TestCase):
         self.assertAlmostEqual(sum(weights.values()), 1.0, places=8)
         self.assertTrue(all(0.01 <= value <= 0.8 for value in weights.values()))
 
+    def test_update_model_uses_actual_prediction_scores_and_base_gradient_scale(self):
+        initial = {"form": 0.55, "venue": 0.12, "distance": 0.12,
+                   "sire": 0.10, "jockey": 0.07, "age": 0.04}
+        field = self._field()
+        base_parts = {
+            "1": {"form": 0.9, "venue": 0.8, "distance": 0.8,
+                  "sire": 0.9, "jockey": 0.9, "age": 0.7},
+            "2": {"form": 0.4, "venue": 0.4, "distance": 0.4,
+                  "sire": 0.4, "jockey": 0.4, "age": 0.4},
+            "3": {"form": 0.2, "venue": 0.2, "distance": 0.2,
+                  "sire": 0.2, "jockey": 0.2, "age": 0.2},
+        }
+        legacy_weights = dict(initial)
+        aligned_weights = dict(initial)
+        aligned_parts = {
+            no: {
+                **parts,
+                "__prediction_score": score,
+                "__model_gradient_scale": 0.60 * 0.92,
+            }
+            for (no, parts), score in zip(
+                base_parts.items(), (0.25, 0.85, 0.45)
+            )
+        }
+
+        self.assertTrue(nb.update_model(field, base_parts, legacy_weights))
+        self.assertTrue(nb.update_model(field, aligned_parts, aligned_weights))
+        self.assertNotEqual(legacy_weights, aligned_weights)
+        self.assertAlmostEqual(sum(aligned_weights.values()), 1.0, places=8)
+        self.assertTrue(all(0.01 <= value <= 0.8 for value in aligned_weights.values()))
 
 
 class FrameGateTests(unittest.TestCase):
