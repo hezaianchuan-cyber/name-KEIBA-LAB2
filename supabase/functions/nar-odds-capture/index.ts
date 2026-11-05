@@ -138,7 +138,13 @@ async function archiveModelSnapshots(snapshots:any[],serviceUrl:string,serviceKe
   const valid=snapshots.filter((item:any)=>{
     if(!item||typeof item.race_id!=="string"||typeof item.race_date!=="string"||
        typeof item.model_version!=="string"||!Array.isArray(item.predictions)||item.predictions.length<3||
-       !item.prediction_lock||!/^[a-f0-9]{64}$/i.test(String(item.prediction_lock.digest||"")))return false;
+       !item.prediction_lock||!/^[a-f0-9]{64}$/i.test(String(item.prediction_lock.digest||""))||
+       !item.locked_payload||typeof item.locked_payload!=="object"||Array.isArray(item.locked_payload)||
+       item.locked_payload.race_key!==item.race_id||item.locked_payload.captured_at!==item.captured_at||
+       item.locked_payload.scheduled_post_time!==item.scheduled_post_time||
+       item.locked_payload.model_version!==item.model_version||
+       !Array.isArray(item.locked_payload.predictions)||item.locked_payload.predictions.length!==item.predictions.length||
+       !Array.isArray(item.locked_payload.odds))return false;
     const captured=new Date(item.captured_at).getTime(),post=new Date(item.scheduled_post_time).getTime();
     const minutes=(post-captured)/60000;
     return Number.isFinite(captured)&&Number.isFinite(post)&&minutes>=2&&minutes<=30&&
