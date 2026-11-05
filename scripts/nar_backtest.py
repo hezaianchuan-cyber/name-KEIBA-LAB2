@@ -465,8 +465,14 @@ def score_runner_performance(h, history, sire_stats, jockey_stats, race, model_w
     parts_cache is scoped to one race. Feature values depend on prior history,
     not on the candidate weight vector, so challengers can reuse them safely.
     """
-    base_score, parts = score_runner(h, history, sire_stats, jockey_stats, race,
-                                     model_weights, include_recent_history, parts_cache)
+    if parts_cache is None:
+        # Preserve the legacy call shape for wrappers and test instrumentation.
+        base_score, parts = score_runner(h, history, sire_stats, jockey_stats, race,
+                                         model_weights, include_recent_history)
+    else:
+        base_score, parts = score_runner(
+            h, history, sire_stats, jockey_stats, race, model_weights,
+            include_recent_history, parts_cache=parts_cache)
     past = history.get(h["name"], [])[-5:] if include_recent_history else []
     def recent_average(key):
         values = [number(row.get(key)) for row in past]
