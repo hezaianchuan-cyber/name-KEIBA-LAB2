@@ -22,15 +22,23 @@ class TrioNarrowingPilotTests(unittest.TestCase):
         self.assertEqual(len(tickets), 19)
         self.assertEqual(len(set(tickets)), 19)
 
-    def test_narrowing_selects_ten_existing_tickets(self):
+    def test_narrowing_selects_twelve_existing_tickets_by_default(self):
         ranked = ["1", "2", "3", "4", "5", "6", "7"]
         tickets = pilot.build_245(ranked)
         narrow = pilot.narrow_by_rank_sum(tickets, ranked)
+        self.assertEqual(len(narrow), 12)
+        self.assertTrue(set(narrow).issubset(set(tickets)))
+        self.assertEqual(len(set(narrow)), 12)
+
+    def test_ten_ticket_secondary_comparison_remains_available(self):
+        ranked = ["1", "2", "3", "4", "5", "6", "7"]
+        tickets = pilot.build_245(ranked)
+        narrow = pilot.narrow_by_rank_sum(tickets, ranked, count=10)
         self.assertEqual(len(narrow), 10)
         self.assertTrue(set(narrow).issubset(set(tickets)))
 
     def test_equal_budget_is_exactly_1900_yen(self):
-        for count in (10, 19):
+        for count in (10, 12, 19):
             units = pilot.allocate_units(count)
             self.assertEqual(sum(units), 19)
             self.assertTrue(all(unit >= 1 for unit in units))
