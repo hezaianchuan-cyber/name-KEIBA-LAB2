@@ -35,3 +35,11 @@ jobs:
 
       - name: Run historical trio combination evaluator
         run: python3 scripts/nar_trio_combination_probability.py
+
+      - name: Upload auditable 3連複 backtest report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trio-combination-probability-backtest
+          path: data/trio-combination-probability-backtest.json
+          if-no-files-found: error
+          retention-days: 14
