@@ -106,6 +106,9 @@ def load_outcomes():
 
 
 def load_supabase_snapshots(model_rows):
+    # The GitHub gzip archive remains a safe fallback during rollout. Once the
+    # immutable Supabase table is populated, use it as the authoritative model
+    # snapshot source so the odds collector and evaluator share the same rows.
     models_by_race = {}
     for row in model_rows:
         captured = parse_time(row.get("captured_at"))
@@ -114,7 +117,7 @@ def load_supabase_snapshots(model_rows):
     for values in models_by_race.values():
         values.sort(key=lambda item: item[0])
 
-    diagnostics = {"supabase_query_rows": 0, "supabase_snapshots_joined": 0, "supabase_model_races": len(models_by_race), "supabase_race_key_matches": 0, "supabase_no_prior_model": 0, "supabase_model_too_old": 0, "supabase_empty_odds": 0, "supabase_model_dates": sorted({row.get("date") for row in model_rows if row.get("date")}), "supabase_model_key_samples": sorted(models_by_race.keys())[:8], "supabase_odds_key_samples": [], "supabase_odds_dates": [], "supabase_model_venues": sorted({key.split("|")[0] for key in models_by_race}), "supabase_odds_venues": [], "supabase_common_venues": []}
+    diagnostics = {"supabase_query_rows": 0, "supabase_snapshots_joined": 0, "supabase_model_races": len(models_by_race), "supabase_race_key_matches": 0, "supabase_no_prior_model": 0, "supabase_model_too_old": 0, "supabase_empty_odds": 0, "supabase_model_dates": sorted({row.get("date") for row in model_rows if row.get("date")}), "supabase_model_key_samples": sorted(models_by_race.keys())[:8], "supabase_odds_key_samples": [], "supabase_odds_dates": [], "supabase_model_venues": sorted({key.split("|")[0] for key in models_by_race}), "supabase_odds_venues": [], "supabase_common_venues": [], "model_snapshot_table_rows": 0, "model_snapshot_table_status": "github_fallback"}
     if not SUPABASE_URL or not SUPABASE_KEY:
         diagnostics["supabase_status"] = "credentials_unavailable"
         return [], diagnostics
@@ -132,6 +135,65 @@ def load_supabase_snapshots(model_rows):
     # (race_date, captured_at DESC, id DESC) index to avoid API timeouts.
     page_size = 100
     try:
+        model_table_rows = []
+        model_offset = 0
+        model_page_size = 100
+        try:
+            while True:
+                model_query = urllib.parse.urlencode([
+                    ("select", "race_id,race_date,captured_at,model_temperature,model_version,predictions,candidate_combinations"),
+                    ("race_date", "gte." + start_date),
+                    ("race_date", "lte." + end_date),
+                    ("order", "race_date.asc,captured_at.asc"),
+                    ("limit", str(model_page_size)),
+                    ("offset", str(model_offset)),
+                ])
+                model_request = urllib.request.Request(
+                    SUPABASE_URL + "/rest/v1/model_prediction_snapshots?" + model_query,
+                    headers={
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": "Bearer " + SUPABASE_KEY,
+                        "Accept": "application/json",
+                        "User-Agent": "KEIBA-LAB-G4/1.0",
+                    },
+                )
+                with urllib.request.urlopen(model_request, timeout=30) as model_response:
+                    model_page = json.loads(model_response.read().decode("utf-8"))
+                if not isinstance(model_page, list):
+                    raise RuntimeError("Supabase model_prediction_snapshots response was not a JSON array")
+                model_table_rows.extend(model_page)
+                if len(model_page) < model_page_size:
+                    break
+                model_offset += model_page_size
+            for item in model_table_rows:
+                key = race_key(item.get("race_id"))
+                captured = parse_time(item.get("captured_at"))
+                if not key or captured is None:
+                    continue
+                date = "".join(ch for ch in str(item.get("race_date") or "") if ch.isdigit())
+                model = {
+                    "race_key": key,
+                    "date": date,
+                    "model_temperature": item.get("model_temperature"),
+                    "model_version": item.get("model_version"),
+                    "predictions": item.get("predictions") or [],
+                    "candidate_combinations": item.get("candidate_combinations") or [],
+                }
+                models_by_race.setdefault(key, []).append((captured, model))
+            if model_table_rows:
+                diagnostics["model_snapshot_table_status"] = "loaded"
+                diagnostics["model_snapshot_table_rows"] = len(model_table_rows)
+            else:
+                diagnostics["model_snapshot_table_status"] = "empty_using_github_fallback"
+        except Exception as model_exc:
+            diagnostics["model_snapshot_table_status"] = "unavailable_using_github_fallback"
+            diagnostics["model_snapshot_table_error"] = str(model_exc)[:300]
+        for values in models_by_race.values():
+            values.sort(key=lambda item: item[0])
+        diagnostics["supabase_model_races"] = len(models_by_race)
+        diagnostics["supabase_model_key_samples"] = sorted(models_by_race.keys())[:8]
+        diagnostics["supabase_model_venues"] = sorted({key.split("|")[0] for key in models_by_race})
+
         while True:
             query = urllib.parse.urlencode([
                 ("select", "id,race_id,race_date,captured_at,odds_data"),
