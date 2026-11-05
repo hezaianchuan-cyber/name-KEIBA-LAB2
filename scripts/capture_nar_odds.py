@@ -506,9 +506,20 @@ def verify_prediction_lock(record: dict) -> bool:
     expected = lock.get("digest")
     if not isinstance(expected, str) or len(expected) != 64:
         return False
+    required = ("race_key", "scheduled_post_time", "captured_at", "model_version",
+                "predictions", "odds")
+    if any(not record.get(key) for key in required):
+        return False
+    if lock.get("locked_at") != record.get("captured_at"):
+        return False
     try:
+        captured = dt.datetime.fromisoformat(str(record["captured_at"]))
+        scheduled = dt.datetime.fromisoformat(str(record["scheduled_post_time"]))
+        minutes_before_post = (scheduled - captured).total_seconds() / 60
+        if not (STOP_BEFORE_POST_MINUTES <= minutes_before_post <= CAPTURE_WINDOW_MINUTES):
+            return False
         return expected == prediction_lock_digest(record)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return False
 
 
