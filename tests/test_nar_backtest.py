@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import nar_backtest as nb
 import nar_model_g2_odds_divergence_backtest as g2
 import nar_model_g3_risk_gated_backtest as g3
+import nar_model_g4_preoff_backtest as g4
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import capture_nar_odds as capture
 
@@ -2344,3 +2345,41 @@ class MarketRankComparisonTests(unittest.TestCase):
         self.assertEqual(summary["top3_overlap_mean"], 2.5)
         self.assertEqual(summary["model_winner_top3_rate"], 50.0)
         self.assertEqual(summary["market_winner_top3_rate"], 100.0)
+
+
+class G4ModelMarketBlendTests(unittest.TestCase):
+    def test_fixed_blend_compares_model_and_market_on_same_covered_field(self):
+        snapshot = {
+            "race_key": "大井|20261105|1", "date": "20261105",
+            "minutes_to_post": 5.0, "captured_at": "2026-11-05T10:55:00+09:00",
+            "predictions": [
+                {"horse_no": "1", "score": 3.0},
+                {"horse_no": "2", "score": 2.0},
+                {"horse_no": "3", "score": 1.0},
+            ],
+            "odds": [
+                {"type": "単勝", "n1": "1", "odds": 2.0},
+                {"type": "単勝", "n1": "2", "odds": 4.0},
+                {"type": "単勝", "n1": "3", "odds": 8.0},
+            ],
+        }
+        outcome = {"winners": {"1"}, "payout_by_horse": {"1": 200}}
+        row, reason = g4.build_race_evaluation(snapshot, outcome, 0.5)
+        self.assertIsNone(reason)
+        self.assertEqual(row["model_top"]["horse_no"], "1")
+        self.assertEqual(row["market_top"]["horse_no"], "1")
+        self.assertEqual(row["blend_top"]["horse_no"], "1")
+        self.assertEqual(row["blend_market_weight"], 0.5)
+        self.assertEqual(row["blend_top"]["hit"], 1)
+
+    def test_blend_is_not_emitted_when_odds_coverage_is_insufficient(self):
+        snapshot = {
+            "race_key": "大井|20261105|1", "date": "20261105",
+            "minutes_to_post": 5.0, "captured_at": "2026-11-05T10:55:00+09:00",
+            "predictions": [{"horse_no": str(i), "score": 4-i} for i in range(1, 6)],
+            "odds": [{"type": "単勝", "n1": "1", "odds": 2.0}],
+        }
+        outcome = {"winners": {"1"}, "payout_by_horse": {"1": 200}}
+        row, reason = g4.build_race_evaluation(snapshot, outcome, 0.5)
+        self.assertIsNone(row)
+        self.assertEqual(reason, "insufficient_odds_coverage")
