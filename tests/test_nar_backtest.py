@@ -144,6 +144,33 @@ class MarketRankDiagnosticsTests(unittest.TestCase):
         self.assertIsNone(nb.select_feature_weight_candidate(
             {"accuracy_only": candidates["accuracy_only"]}, 62.0, 60.0))
 
+    def test_feature_weight_candidate_must_improve_each_development_fold(self):
+        candidate = {
+            "balanced": {
+                "development_winner_top3_rate": 63.5,
+                "development_winner_top1_rate": 32.5,
+                "development_trio_roi": 60.0,
+                "development_folds": [
+                    {"fold": "previous_year_2", "winner_top3_rate": 64.0, "trio_roi": 61.0},
+                    {"fold": "previous_year_1", "winner_top3_rate": 63.0, "trio_roi": 59.0},
+                ],
+            }
+        }
+        baseline_folds = [
+            {"fold": "previous_year_2", "winner_top3_rate": 63.0, "trio_roi": 60.5},
+            {"fold": "previous_year_1", "winner_top3_rate": 62.0, "trio_roi": 59.5},
+        ]
+        self.assertEqual(
+            nb.select_feature_weight_candidate(candidate, 62.5, 60.0,
+                                                baseline_development_folds=baseline_folds),
+            "balanced",
+        )
+        candidate["balanced"]["development_folds"][1]["winner_top3_rate"] = 61.9
+        self.assertIsNone(
+            nb.select_feature_weight_candidate(candidate, 62.5, 60.0,
+                                                baseline_development_folds=baseline_folds),
+        )
+
 
 class RecentHistoryAblationTests(unittest.TestCase):
     def test_recent_history_is_an_explicit_optional_prediction_input(self):
