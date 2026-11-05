@@ -1920,7 +1920,12 @@ class TrioFormation245AllocationTests(unittest.TestCase):
         stakes = {policy: values["stake"] for policy, values in result.items()}
         self.assertEqual(len(set(stakes.values())), 1)
         self.assertEqual(stakes["equal"], 1900)
+        # payout_for returns the official payout per 100-yen unit; allocation
+        # units must multiply that payout directly, not by another 100.
+        self.assertEqual(result["equal"]["return"], 5000)
+        self.assertEqual(result["equal"]["roi"], 263.16)
         self.assertGreater(result["rank_weighted_mild"]["return"], 0)
+        self.assertLess(result["rank_weighted_mild"]["return"], 500000)
 
 
 class TrioFormation245Tests(unittest.TestCase):
