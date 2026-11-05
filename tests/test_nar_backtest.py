@@ -131,6 +131,20 @@ class MarketRankDiagnosticsTests(unittest.TestCase):
         self.assertEqual(result["rank_gap_bands"]["market_upgrade_3_4"]["horses"], 1)
         self.assertEqual(result["top_k_selection"]["lab"]["3"]["finish_top3_precision_pct"], 100.0)
 
+    def test_all_top_three_coverage_uses_only_matched_market_horses(self):
+        report = nb.new_market_rank_diagnostics()
+        field = [
+            {"no":"1","finish":2}, {"no":"2","finish":3},
+            {"no":"3","finish":4}, {"no":"4","finish":7},
+            {"no":"5","finish":1},
+        ]
+        lab = field[:4]
+        odds = {"1":1.0,"2":2.0,"3":3.0,"4":4.0}
+        nb.update_market_rank_diagnostics(report, lab, field, odds)
+        result = nb.summarize_market_rank_diagnostics(report)
+        self.assertEqual(result["top_k_selection"]["lab"]["3"]["races_with_all_top3"], 1)
+        self.assertEqual(result["top_k_selection"]["market"]["3"]["races_with_all_top3"], 1)
+
     def test_feature_weight_selection_obeys_roi_guardrail(self):
         candidates = {
             "accuracy_only": {"development_winner_top3_rate": 64.0,
@@ -2020,4 +2034,8 @@ class TrioNarrow12Tests(unittest.TestCase):
         self.assertEqual(narrow["tickets"], 12)
         self.assertEqual(narrow["stake"], 1900)
         self.assertEqual(narrow["budget_per_race_jpy"], 1900)
+        narrow10 = report["formation_2_4_5_narrowed"]["10"]
+        self.assertEqual(narrow10["tickets"], 10)
+        self.assertEqual(narrow10["stake"], 1900)
+        self.assertEqual(narrow10["budget_per_race_jpy"], 1900)
 
