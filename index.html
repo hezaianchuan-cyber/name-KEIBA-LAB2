@@ -675,7 +675,7 @@ function labLedgerRecordsForDate(plans,date){
   const race=matches.length===1?matches[0]:null,decision=String(plan.decision||'').toUpperCase();
   const labTickets=(Array.isArray(plan.tickets)?plan.tickets:[]).filter(t=>labLedgerIsTrioType(t?.type));
   const userTickets=Array.isArray(plan.userTickets)?plan.userTickets:[];
-  const isSkip=decision==='SKIP'&&!userTickets.some(t=>t&&Number(t.stake)>0);
+  const isSkip=(decision==='SKIP'||validLabTickets.length===0)&&!userTickets.some(t=>t&&Number(t.stake)>0);
   const validLabTickets=labTickets.filter(t=>t&&Number(t.stake)>0&&labLedgerComb(t.comb,t.type)).map(t=>({...t,owner:'LAB'}));
   const validUserTickets=userTickets.filter(t=>t&&Number(t.stake)>0&&labLedgerComb(t.comb,t.type)).map(t=>({...t,owner:'USER'}));
   const validTickets=[...validLabTickets,...validUserTickets];
