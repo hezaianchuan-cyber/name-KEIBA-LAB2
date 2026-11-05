@@ -1,0 +1,71 @@
+name: KEIBA LAB daily performance review
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 00:05 JST, after the 23:30 JST official payout refresh.
+    - cron: "5 15 * * *"
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/nar_daily_review.py'
+      - '.github/workflows/nar-daily-review.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nar-daily-review
+  cancel-in-progress: false
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile daily review
+        run: python3 -m py_compile scripts/nar_daily_review.py
+      - name: Build daily performance review
+        run: python3 scripts/nar_daily_review.py
+      - name: Validate report
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("data/daily-review.json").read_text(encoding="utf-8"))
+          required = ("generated_at", "as_of_date_jst", "daily_official_results",
+                      "prospective_preoff_evaluation_G4", "weight_research", "warnings")
+          missing = [key for key in required if key not in report]
+          if missing:
+              raise SystemExit("Daily review schema missing: " + ", ".join(missing))
+          print("Daily review validated:", report["status"], report["as_of_date_jst"])
+          PY
+      - name: Publish daily review
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp data/daily-review.json /tmp/daily-review.json
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/daily-review.json data/daily-review.json
+            git add data/daily-review.json
+            if git diff --cached --quiet; then
+              echo "Daily review is already current."
+              exit 0
+            fi
+            git commit -m "Publish KEIBA LAB daily performance review"
+            if git push origin HEAD:main; then exit 0; fi
+            echo "Concurrent update; retrying (attempt $attempt)"
+            sleep 2
+          done
+          echo "Could not publish daily review after five attempts."
+          exit 1
