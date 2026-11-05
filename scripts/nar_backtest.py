@@ -1137,6 +1137,23 @@ def build_trio_tickets(ranked, candidate_count=5):
     return [list(combo) for combo in itertools.combinations(nos, 3)] if len(nos) >= 3 else []
 
 
+def narrow_trio_by_rank_sum(tickets, ranked, count):
+    """Select a fixed number of existing 2-4-5 tickets by the LAB rank sum."""
+    rank = {}
+    for index, horse in enumerate(ranked or [], start=1):
+        raw = re.sub(r"\\D", "", str(horse.get("no") or ""))
+        if raw:
+            rank.setdefault(str(int(raw)), index)
+    ordered = sorted(
+        tickets or [],
+        key=lambda ticket: (
+            sum(rank.get(str(no), len(rank) + 1) for no in ticket),
+            tuple(sorted((str(no) for no in ticket), key=int)),
+        ),
+    )
+    return ordered[:max(0, min(int(count), len(ordered)))]
+
+
 def build_trio_formation_2_4_5(ranked):
     """2-4-5 trio formation over seven ranked horses: top2 / top4 / ranks3-7.
 
@@ -1176,8 +1193,8 @@ FORMATION_ALLOCATION_STRENGTHS = {
 }
 
 
-def allocate_formation_units(tickets, ranked, policy):
-    """Allocate the same 100-yen units per race, prioritizing stronger model ranks.
+def allocate_formation_units(tickets, ranked, policy, budget_units=None):
+    """Allocate 100-yen units; optionally preserve a fixed race budget when tickets are narrowed.
 
     This is deliberately rank-only: historical pre-off trio combination odds are
     not available for the full four-year holdout, so it is not an EV/Kelly model.
@@ -1186,8 +1203,10 @@ def allocate_formation_units(tickets, ranked, policy):
         raise ValueError(f"unknown formation allocation policy: {policy}")
     if not tickets:
         return []
+    total_units = len(tickets) if budget_units is None else max(0, int(budget_units))
     if policy == "equal":
-        return [1] * len(tickets)
+        base, remainder = divmod(total_units, len(tickets))
+        return [base + (1 if index < remainder else 0) for index in range(len(tickets))]
     rank_by_no = {}
     for index, horse in enumerate(ranked or [], start=1):
         raw = re.sub(r"\D", "", str(horse.get("no") or ""))
@@ -1202,7 +1221,7 @@ def allocate_formation_units(tickets, ranked, policy):
     # budget remains exactly equal to the equal-stake baseline; zero-unit
     # candidates are intentionally left unbet under concentrated policies.
     units = [0] * len(tickets)
-    for _ in range(len(tickets)):
+    for _ in range(total_units):
         chosen = max(range(len(tickets)), key=lambda i: (weights[i] / (units[i] + 1), -i))
         units[chosen] += 1
     return units
@@ -1221,6 +1240,11 @@ def new_trio_diagnostics():
         "formation_2_4_5": {"races": 0, "tickets": 0, "hits": 0, "hit_races": 0,
                             "stake": 0, "return": 0, "sum_return_sq": 0,
                             "sum_stake_sq": 0, "sum_stake_return": 0},
+        "formation_2_4_5_narrowed": {
+            count: {"races": 0, "tickets": 0, "funded_tickets": 0,
+                    "hits": 0, "hit_races": 0, "stake": 0, "return": 0}
+            for count in (12, 10)
+        },
         "formation_2_4_5_allocations": {
             policy: {"races": 0, "tickets": 0, "funded_tickets": 0,
                      "winning_candidates": 0, "hits": 0, "hit_races": 0,
@@ -1278,6 +1302,18 @@ def update_trio_diagnostics(bucket, ranked, field, payout):
         formation["sum_stake_return"] += race_stake * returned
 
         ticket_returns = [payout_for("trio", ticket, payout) or 0 for ticket in tickets]
+        for count, narrowed in bucket["formation_2_4_5_narrowed"].items():
+            selected = narrow_trio_by_rank_sum(tickets, ranked, count)
+            units = allocate_formation_units(selected, ranked, "equal", budget_units=19)
+            selected_returns = [payout_for("trio", ticket, payout) or 0 for ticket in selected]
+            funded_hits = sum(1 for unit, pay in zip(units, selected_returns) if unit > 0 and pay > 0)
+            narrowed["races"] += 1
+            narrowed["tickets"] += len(selected)
+            narrowed["funded_tickets"] += sum(1 for unit in units if unit > 0)
+            narrowed["hits"] += funded_hits
+            narrowed["hit_races"] += int(funded_hits > 0)
+            narrowed["stake"] += 1900 if selected else 0
+            narrowed["return"] += sum(100 * unit * pay for unit, pay in zip(units, selected))
         for policy in FORMATION_ALLOCATION_STRENGTHS:
             allocation = bucket["formation_2_4_5_allocations"][policy]
             units = allocate_formation_units(tickets, ranked, policy)
@@ -1365,12 +1401,30 @@ def summarize_trio_diagnostics(bucket):
             "budget_per_race_matches_equal_policy": True,
         }
     output["formation_2_4_5"]["allocation_policies"] = allocation_summary
+    narrowed_summary = {}
+    for count, narrowed in bucket["formation_2_4_5_narrowed"].items():
+        stake = narrowed["stake"]
+        narrowed_summary[str(count)] = {
+            **narrowed,
+            "ticket_hit_rate": round(100 * narrowed["hits"] / narrowed["funded_tickets"], 4)
+                if narrowed["funded_tickets"] else None,
+            "race_hit_rate": round(100 * narrowed["hit_races"] / narrowed["races"], 2)
+                if narrowed["races"] else None,
+            "roi": round(100 * narrowed["return"] / stake, 2) if stake else None,
+            "profit": narrowed["return"] - stake,
+            "tickets_per_race": round(narrowed["tickets"] / narrowed["races"], 2)
+                if narrowed["races"] else None,
+            "budget_per_race_jpy": 1900,
+            "selection": "lowest sum of the three LAB horse ranks among the original 19 unique 2-4-5 combinations",
+            "allocation": "19 equal 100-yen units distributed across the selected tickets",
+        }
+    output["formation_2_4_5_narrowed"] = narrowed_summary
     output["formation_2_4_5"]["allocation_method"] = (
         "Exploratory rank-weighted allocation with the same total stake per race as "
         "100-yen equal staking. Historical pre-off trio combination odds are unavailable, "
         "so these policies are not expected-value or Kelly staking."
     )
-    output["interpretation"] = "Trio tickets are unordered combinations. hit_rate is winning tickets divided by tickets; race_hit_rate is races with at least one winning ticket divided by races. ROI confidence intervals use a race-level normal ratio approximation and are diagnostic, not a promotion guarantee. Top5 is the unchanged fixed baseline. formation_2_4_5 is top2 / top4 / ranks3-7 with duplicate unordered combinations removed. Allocation policies keep the same race-level stake and reweight 100-yen units by model rank; they are exploratory, not EV staking."
+    output["interpretation"] = "Trio tickets are unordered combinations. hit_rate is winning tickets divided by tickets; race_hit_rate is races with at least one winning ticket divided by races. ROI confidence intervals use a race-level normal ratio approximation and are diagnostic, not a promotion guarantee. Top5 is the unchanged fixed baseline. formation_2_4_5 is top2 / top4 / ranks3-7 with duplicate unordered combinations removed. The 12- and 10-ticket subsets are selected from those same 19 combinations by the lowest sum of LAB ranks; each keeps the same 1,900-yen race budget by distributing 19 equal 100-yen units. These are research comparisons, not live betting rules."
     return output
 
 
