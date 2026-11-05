@@ -307,6 +307,23 @@ async function syncCloudPredictions(){
    if(raceInfo&&raceInfo.id&&!(db.races||[]).some(r=>r.id===raceInfo.id))db.races.push(raceInfo);
   }
   db.predictions=[...byId.values()];
+  // Enrich saved predictions with the latest official pre-off market ranking
+  // without rewriting the user's original prediction timestamp or tickets.
+  try{
+   const {data:comparisonRows,error:comparisonError}=await keibaSupabase
+    .from('latest_prediction_market_comparisons').select('race_id,ticket_plan');
+   if(!comparisonError&&Array.isArray(comparisonRows)){
+    const comparisonMap=new Map(comparisonRows.map(row=>[String(row.race_id),row.ticket_plan||{}]));
+    db.predictions=db.predictions.map(prediction=>{
+     const enriched=comparisonMap.get(String(prediction.id));
+     if(!enriched)return prediction;
+     const current=prediction.ticketPlan||{},merged={...current,...enriched};
+     if(Array.isArray(current.userTickets))merged.userTickets=current.userTickets;
+     if(current.modifiedAt)merged.modifiedAt=current.modifiedAt;
+     return {...prediction,ticketPlan:merged};
+    });
+   }else if(comparisonError)console.warn('予測・市場比較ビューを読み込めません',comparisonError);
+  }catch(comparisonError){console.warn('予測・市場比較ビューを読み込めません',comparisonError);}
   try{localStorage.setItem('keibaLabLocalDB',JSON.stringify(db));}catch(e){}
   updateHistory();
   if(typeof renderLabVirtualLedger==='function')renderLabVirtualLedger();
@@ -940,6 +957,15 @@ function loadLabTicketPlans(){
    tickets:(Array.isArray(plan.tickets)?plan.tickets:[]).filter(t=>labLedgerIsTrioType(t?.type)),
    shadowTickets:(Array.isArray(plan.shadowTickets)?plan.shadowTickets:[]).filter(t=>labLedgerIsTrioType(t?.type))
   };
+   // Keep market/model comparison fields when a newer local manual-ticket edit
+   // is merged over the enriched, read-only comparison view.
+   if(previous?.plan){
+    for(const field of ['modelTopHorse','modelTop3','marketFavoriteHorse','marketTop3','marketOddsCapturedAt','marketComparisonAvailable','runnerDraws']){
+     const current=nextPlan[field],prior=previous.plan[field];
+     const empty=current==null||(Array.isArray(current)&&current.length===0);
+     if(empty&&prior!=null&&(!Array.isArray(prior)||prior.length>0))nextPlan[field]=prior;
+    }
+   }
    const previousUser=Array.isArray(previous?.plan?.userTickets)?previous.plan.userTickets:null;
    const incomingUser=Array.isArray(plan.userTickets)?plan.userTickets:null;
    if(previousUser&&(!incomingUser||(incomingUser.length===0&&previousUser.length>0&&(!plan.modifiedAt||incomingAt<previousAt))))nextPlan.userTickets=previousUser;
