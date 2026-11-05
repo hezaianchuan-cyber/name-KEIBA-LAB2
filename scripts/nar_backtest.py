@@ -683,8 +683,12 @@ def update_market_rank_diagnostics(report, lab_ranked, field, odds_by_no):
             top3_count = sum(1 for h in selected
                              if number(h.get("finish")) is not None and number(h.get("finish")) <= 3)
             winner_count = sum(1 for h in selected if number(h.get("finish")) == 1)
-            actual_top3 = sum(1 for h in field_by_no.values()
-                              if number(h.get("finish")) is not None and number(h.get("finish")) <= 3)
+            # Compare coverage only against actual top-three finishers in
+            # the matched horse set; horses without valid market odds are
+            # excluded from both LAB and market rankings.
+            actual_top3 = sum(1 for no in market_set
+                              if number(field_by_no[no].get("finish")) is not None
+                              and number(field_by_no[no].get("finish")) <= 3)
             bucket["selected"] += len(selected)
             bucket["finish_top3"] += top3_count
             bucket["winner"] += winner_count
