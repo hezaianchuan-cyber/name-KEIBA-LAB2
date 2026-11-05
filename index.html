@@ -123,9 +123,9 @@ a{color:inherit}
   </section>
   <section id="tickets" class="panel">
     <div class="card"><h2>保存買い目</h2><p class="sub">レース分析で生成した買い目を、分析時点の内容で保存します。ここで保存内容と公式払戻の照合結果を確認できます。</p></div>
-    <div class="card" id="labTodaySummary"><h2>今日のLAB収支</h2><p class="sub" id="labTodayDate">今日の保存買い目を集計しています。</p><div class="kpis"><div class="kpi"><span>今日の購入額</span><b id="labTodayStake">—</b></div><div class="kpi"><span>確定払戻</span><b id="labTodayReturn">—</b></div><div class="kpi"><span>確定収支</span><b id="labTodayProfit">—</b></div><div class="kpi"><span>未確定購入額</span><b id="labTodayPending">—</b></div></div><p class="sub" id="labTodayStatus" style="margin-top:10px">今日の買い目と公式結果を照合します。</p></div>
+    <div class="card" id="labTodaySummary"><h2>今日の買い目収支（LAB／自分）</h2><p class="sub" id="labTodayDate">今日の保存買い目を集計しています。</p><div class="kpis"><div class="kpi"><span>今日の購入額</span><b id="labTodayStake">—</b></div><div class="kpi"><span>確定払戻</span><b id="labTodayReturn">—</b></div><div class="kpi"><span>確定収支</span><b id="labTodayProfit">—</b></div><div class="kpi"><span>未確定購入額</span><b id="labTodayPending">—</b></div></div><p class="sub" id="labTodayStatus" style="margin-top:10px">今日の買い目と公式結果を照合します。</p></div>
     <div class="card" id="labVirtualLedger">
-      <h2>LAB仮想収支</h2>
+      <h2>保存買い目の収支（LAB／自分）</h2>
       <p class="sub">保存時点の買い目を固定し、NAR公式の確定払戻と照合します。外れは払戻0円、見送りは購入額0円。払戻未掲載レースは未確定として集計から除外します。</p>
       <div class="grid"><div><label for="labLedgerDate">対象日</label><select id="labLedgerDate"><option value="">保存履歴を確認中…</option></select></div><div><label>照合状況</label><div id="labLedgerStatus" class="sub" style="padding:11px 0">確認中…</div></div></div>
       <div class="kpis" style="margin-top:12px">
@@ -135,7 +135,10 @@ a{color:inherit}
         <div class="kpi"><span>予想レース</span><b id="labLedgerRaces">—</b></div><div class="kpi"><span>購入／見送り</span><b id="labLedgerBetSkip">—</b></div><div class="kpi"><span>的中率（確定購入R）</span><b id="labLedgerHitRate">—</b></div><div class="kpi"><span>未確定購入R</span><b id="labLedgerPending">—</b></div>
       </div>
       <div class="kpis" style="margin-top:8px">
-        <div class="kpi"><span>LAB購入額</span><b id="labLedgerLabStake">—</b></div><div class="kpi"><span>LAB払戻</span><b id="labLedgerLabReturn">—</b></div><div class="kpi"><span>自分の購入額</span><b id="labLedgerUserStake">—</b></div><div class="kpi"><span>自分の払戻</span><b id="labLedgerUserReturn">—</b></div>
+        <div class="kpi"><span>LAB購入額</span><b id="labLedgerLabStake">—</b></div><div class="kpi"><span>LAB払戻</span><b id="labLedgerLabReturn">—</b></div><div class="kpi"><span>LAB回収率</span><b id="labLedgerLabRoi">—</b></div><div class="kpi"><span>自分の購入額</span><b id="labLedgerUserStake">—</b></div>
+      </div>
+      <div class="kpis" style="margin-top:8px">
+        <div class="kpi"><span>自分の払戻</span><b id="labLedgerUserReturn">—</b></div><div class="kpi"><span>自分の回収率</span><b id="labLedgerUserRoi">—</b></div>
       </div>
       <div id="labLedgerRows" class="sub" style="margin-top:14px">保存済みの買い目を読み込んでいます。</div>
     </div>
@@ -805,7 +808,7 @@ function loadLabTicketPlans(){
    let nextPlan={...plan};
    const previousUser=Array.isArray(previous?.plan?.userTickets)?previous.plan.userTickets:null;
    const incomingUser=Array.isArray(plan.userTickets)?plan.userTickets:null;
-   if(previousUser&&(!incomingUser||(incomingUser.length===0&&previousUser.length>0&&incomingAt<previousAt)))nextPlan.userTickets=previousUser;
+   if(previousUser&&(!incomingUser||(incomingUser.length===0&&previousUser.length>0&&(!plan.modifiedAt||incomingAt<previousAt))))nextPlan.userTickets=previousUser;
    if(!previous||incomingAt>=previousAt)map.set(key,{...item,plan:nextPlan});
    else if(previousUser&&nextPlan.userTickets!==plan.userTickets)map.set(key,{...previous,plan:{...previous.plan,userTickets:previousUser}});
   };
@@ -853,6 +856,8 @@ function renderLabVirtualLedger(){
  const userStakeTotal=settled.reduce((a,x)=>a+(Number(x.userStake)||0),0),userReturnTotal=settled.reduce((a,x)=>a+(Number(x.userReturned)||0),0);
  $('labLedgerLabStake').textContent=labStakeTotal.toLocaleString()+'円';$('labLedgerLabReturn').textContent=labReturnTotal.toLocaleString()+'円';
  $('labLedgerUserStake').textContent=userStakeTotal.toLocaleString()+'円';$('labLedgerUserReturn').textContent=userReturnTotal.toLocaleString()+'円';
+ $('labLedgerLabRoi').textContent=labStakeTotal?(labReturnTotal/labStakeTotal*100).toFixed(1)+'%':'—';
+ $('labLedgerUserRoi').textContent=userStakeTotal?(userReturnTotal/userStakeTotal*100).toFixed(1)+'%':'—';
  $('labLedgerStatus').textContent='公式払戻照合：確定 '+settled.length+'R ／ 未確定 '+pending.length+'R（保存買い目との完全一致のみ的中）';
  const winnerOf=x=>(x.officialResults||[]).find(r=>r.type==='単勝')?.comb||'';
  const comparable=records.filter(x=>x.modelResultSettled&&winnerOf(x)&&x.plan.modelTopHorse&&x.plan.marketFavoriteHorse);
