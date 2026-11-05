@@ -1149,7 +1149,7 @@ function renderManualTicketEditor(plan,field){
  const lookupManualOdds=(type,nums)=>{
   if(nums.some(x=>!/^[0-9]+$/.test(String(x||''))))return null;
   const unordered=['複勝','ワイド','馬連','3連複'].includes(type);
-  const normalize=x=>String(x??'').replace(/\D/g,'').replace(/^0+(?=\\d)/,'');
+  const normalize=x=>String(x??'').replace(/\D/g,'').replace(/^0+(?=\d)/,'');
   const wanted=(unordered?nums.map(normalize).sort((a,b)=>Number(a)-Number(b)):nums.map(normalize)).join('-');
   const matches=[...(minuteOddsRows||[]),...(db.odds||[])].filter(o=>String(o.id)===String(plan.raceId)&&Number(o.odds)>0&&(()=>{
    const label=norm(o.type),match=type==='単勝'?label.includes(norm('単勝')):type==='馬単'?label.includes(norm('馬単')):type==='3連単'?(label.includes(norm('3連単'))||label.includes(norm('三連単'))):false;
