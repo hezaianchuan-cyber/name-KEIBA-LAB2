@@ -1910,3 +1910,42 @@ class OddsDivergenceAlignmentTests(unittest.TestCase):
         self.assertEqual(rows[0]["race_key"], "|".join(key))
         self.assertIsNotNone(rows[0]["g3"])
         self.assertEqual(rows[0]["g1_top"]["return"], 200)
+
+class FeatureWeightChallengerTests(unittest.TestCase):
+    def test_scaled_feature_weights_are_normalized_and_only_change_target_ratio(self):
+        baseline = {"form": 0.55, "venue": 0.12, "distance": 0.12,
+                    "sire": 0.10, "jockey": 0.07, "age": 0.04}
+        adjusted = nb.scaled_model_weights(baseline, "jockey", 1.5)
+        self.assertAlmostEqual(sum(adjusted.values()), 1.0)
+        self.assertGreater(adjusted["jockey"], baseline["jockey"])
+        self.assertAlmostEqual(adjusted["form"] / adjusted["venue"],
+                               baseline["form"] / baseline["venue"])
+        self.assertEqual(baseline["jockey"], 0.07)
+
+
+class TrioNarrow12Tests(unittest.TestCase):
+    def test_twelve_ticket_subset_is_unique_and_keeps_1900_yen_budget(self):
+        ranked = [{"no": str(i)} for i in range(1, 8)]
+        tickets = nb.build_trio_formation_2_4_5(ranked)
+        selected = nb.narrow_trio_by_rank_sum(tickets, ranked, 12)
+        units = nb.allocate_formation_units(selected, ranked, "equal", budget_units=19)
+        self.assertEqual(len(tickets), 19)
+        self.assertEqual(len(selected), 12)
+        self.assertTrue(set(map(tuple, selected)).issubset(set(map(tuple, tickets))))
+        self.assertEqual(len(set(map(tuple, selected))), 12)
+        self.assertEqual(sum(units), 19)
+        self.assertTrue(all(unit >= 1 for unit in units))
+
+    def test_narrowed_12_is_reported_on_same_race_budget(self):
+        ranked = [{"no": str(i)} for i in range(1, 8)]
+        field = [{"no": str(i), "finish": i} for i in range(1, 8)]
+        payout = {"trio": [(["1", "2", "3"], 5000)]}
+        stats = nb.new_trio_diagnostics()
+        nb.update_trio_diagnostics(stats, ranked, field, payout)
+        report = nb.summarize_trio_diagnostics(stats)
+        narrow = report["formation_2_4_5_narrowed"]["12"]
+        self.assertEqual(narrow["races"], 1)
+        self.assertEqual(narrow["tickets"], 12)
+        self.assertEqual(narrow["stake"], 1900)
+        self.assertEqual(narrow["budget_per_race_jpy"], 1900)
+
