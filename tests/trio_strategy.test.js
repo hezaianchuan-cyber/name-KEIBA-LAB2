@@ -58,6 +58,20 @@ test("adaptive pool generates C(n,3) trio candidates and matches official odds",
   }
 });
 
+test("balanced selector chooses no more than 12 and may choose fewer", () => {
+  const candidates = Array.from({ length: 35 }, (_, i) => ({
+    comb: String(i + 1),
+    probability: 0.20 - i * 0.003,
+    ev: 1.8 - i * 0.015
+  }));
+  const selected = strategy.selectTickets(candidates, 12, 0.5, 1.0);
+  assert.equal(selected.length, 12);
+  assert.ok(selected.every(x => x.ev >= 1.0));
+  assert.ok(selected.every(x => Number.isFinite(x.selectionScore)));
+  assert.equal(strategy.selectTickets(candidates.slice(0, 5), 12, 0.5, 1.0).length, 5);
+  assert.equal(strategy.selectTickets(candidates.map(x => ({ ...x, ev: 0.99 })), 12, 0.5, 1.0).length, 0);
+});
+
 test("Web and Supabase both load the same shared strategy implementation", () => {
   const root = path.resolve(__dirname, "..");
   const web = fs.readFileSync(path.join(root, "index.html"), "utf8");
@@ -67,7 +81,9 @@ test("Web and Supabase both load the same shared strategy implementation", () =>
   assert.ok(web.includes("adaptivePoolSize"));
   assert.ok(edge.includes("adaptivePoolSize"));
   assert.ok(web.includes("window.KEIBALAB_TRIO_STRATEGY.trioProbability"));
+  assert.ok(web.includes("strategy.selectTickets(rows,12,0.5,Math.max(1.05,threshold))"));
   assert.ok(edge.includes("strategy.build(modelRows,oddsRows,0.5,0.60)"));
+  assert.ok(edge.includes("KEIBALAB_TRIO_STRATEGY.selectTickets(candidates.filter(x=>x.kind===kind),12,0.5,Math.max(1.05,threshold))"));
   assert.ok(edge.includes("const shadowTickets=candidates.map("));
   assert.ok(web.includes("shadowTickets:ranked('3連複').map("));
 });
