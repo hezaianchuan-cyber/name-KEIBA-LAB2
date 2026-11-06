@@ -66,4 +66,6 @@ test("Web and Supabase both load the same shared strategy implementation", () =>
   assert.ok(edge.includes('import "./_shared/trio_strategy.js"'));
   assert.ok(web.includes("adaptivePoolSize"));
   assert.ok(edge.includes("adaptivePoolSize"));
+  assert.ok(web.includes("window.KEIBALAB_TRIO_STRATEGY.trioProbability"));
+  assert.ok(edge.includes("strategy.build(modelRows,oddsRows,0.5,0.60)"));
 });
