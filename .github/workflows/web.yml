@@ -6,6 +6,8 @@ on:
     branches: [main]
     paths:
       - 'index.html'
+      - 'supabase/functions/nar-odds-capture/_shared/trio_strategy.js'
+      - 'tests/trio_strategy.test.js'
       - 'data/daily-payouts.json'
       - 'data/model-g4-preoff-backtest.json'
       - 'data/daily-review.json'
@@ -42,6 +44,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Node for strategy tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Test shared prediction strategy
+        run: node --test tests/trio_strategy.test.js
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
