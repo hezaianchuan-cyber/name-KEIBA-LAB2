@@ -1194,6 +1194,54 @@ class TrioDiagnosticTests(unittest.TestCase):
         self.assertEqual(result["structures"]["top4"]["roi"], 250.0)
         self.assertEqual(result["structures"]["top5"]["roi"], 100.0)
 
+    def test_top7_reports_distribution_of_podium_horses_captured(self):
+        ranked = [{"no": str(i)} for i in range(1, 8)]
+        field = [
+            {"no": "1", "finish": 1}, {"no": "2", "finish": 2},
+            {"no": "8", "finish": 3}, {"no": "3", "finish": 4},
+            {"no": "4", "finish": 5}, {"no": "5", "finish": 6},
+            {"no": "6", "finish": 7}, {"no": "7", "finish": 8},
+        ]
+        stats = nb.new_trio_diagnostics()
+        scores = [(0.9 - i * 0.05, {"no": str(i + 1)}) for i in range(7)]
+        nb.update_trio_diagnostics(stats, ranked, field, {"trio": []}, scores)
+        result = nb.summarize_trio_diagnostics(stats)
+        self.assertEqual(result["podium_count_top7"]["counts"]["2"], 1)
+        self.assertEqual(result["podium_count_top7"]["average_podium_horses_captured"], 2.0)
+
+    def test_adaptive_trio_pool_uses_only_pre_race_score_gaps(self):
+        ranked = [{"no": str(i)} for i in range(1, 8)]
+        top4_gap = [(score, {"no": str(i + 1)}) for i, score in enumerate(
+            [0.95, 0.85, 0.75, 0.65, 0.30, 0.20, 0.10])]
+        top5_gap = [(score, {"no": str(i + 1)}) for i, score in enumerate(
+            [0.95, 0.85, 0.75, 0.65, 0.60, 0.20, 0.10])]
+        diffuse = [(score, {"no": str(i + 1)}) for i, score in enumerate(
+            [0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60])]
+        self.assertEqual(nb.adaptive_trio_pool_size(ranked, top4_gap), 4)
+        self.assertEqual(nb.adaptive_trio_pool_size(ranked, top5_gap), 5)
+        self.assertEqual(nb.adaptive_trio_pool_size(ranked, diffuse), 7)
+
+    def test_adaptive_trio_pool_records_variable_ticket_count_and_settlement(self):
+        ranked = [{"no": str(i)} for i in range(1, 8)]
+        scores = [(score, {"no": str(i + 1)}) for i, score in enumerate(
+            [0.95, 0.85, 0.75, 0.65, 0.30, 0.20, 0.10])]
+        field = [
+            {"no": "1", "finish": 1}, {"no": "2", "finish": 2},
+            {"no": "3", "finish": 3}, {"no": "4", "finish": 4},
+            {"no": "5", "finish": 5}, {"no": "6", "finish": 6},
+            {"no": "7", "finish": 7},
+        ]
+        stats = nb.new_trio_diagnostics()
+        nb.update_trio_diagnostics(
+            stats, ranked, field, {"trio": [(["1", "2", "3"], 1000)]}, scores)
+        adaptive = nb.summarize_trio_diagnostics(stats)["adaptive_pool"]
+        self.assertEqual(adaptive["selected_top_n"]["4"], 1)
+        self.assertEqual(adaptive["tickets"], 4)
+        self.assertEqual(adaptive["hits"], 1)
+        self.assertEqual(adaptive["stake"], 400)
+        self.assertEqual(adaptive["return"], 1000)
+        self.assertEqual(adaptive["roi"], 250.0)
+
     def test_trio_diagnostics_skip_incomplete_podium_results(self):
         ranked = [{"no": str(i)} for i in range(1, 6)]
         field = [{"no": "1", "finish": 1}, {"no": "2", "finish": 2},
