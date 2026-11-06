@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-06T04:45:45.122257+00:00",
+  "generated_at": "2026-11-06T07:50:29.337017+00:00",
   "period": {
     "start": "2022-11-06",
     "end": "2026-11-05"
@@ -2706,7 +2706,7 @@
       {
         "fold": 1,
         "period_label": "previous_year_2",
-        "runtime_seconds": 1014.587,
+        "runtime_seconds": 1765.319,
         "train_start": "2022-11-05",
         "train_end": "2023-11-06",
         "test_start": "2023-11-07",
@@ -108549,7 +108549,7 @@
       {
         "fold": 2,
         "period_label": "previous_year_1",
-        "runtime_seconds": 1023.363,
+        "runtime_seconds": 1761.289,
         "train_start": "2022-11-05",
         "train_end": "2024-11-05",
         "test_start": "2024-11-06",
@@ -213740,7 +213740,7 @@
       {
         "fold": 3,
         "period_label": "recent_year",
-        "runtime_seconds": 1064.545,
+        "runtime_seconds": 1822.772,
         "train_start": "2022-11-05",
         "train_end": "2025-11-05",
         "test_start": "2025-11-06",
@@ -321676,9 +321676,9 @@
       }
     ],
     "fold_runtime_seconds": {
-      "previous_year_2": 1014.587,
-      "previous_year_1": 1023.363,
-      "recent_year": 1064.545
+      "previous_year_2": 1765.319,
+      "previous_year_1": 1761.289,
+      "recent_year": 1822.772
     },
     "recent_year_validation": {
       "status": "evaluated",
@@ -329469,7 +329469,7 @@
       "fold": {
         "fold": 3,
         "period_label": "recent_year",
-        "runtime_seconds": 1064.545,
+        "runtime_seconds": 1822.772,
         "train_start": "2022-11-05",
         "train_end": "2025-11-05",
         "test_start": "2025-11-06",
@@ -460802,7 +460802,7 @@
         "fold": {
           "fold": 3,
           "period_label": "recent_year",
-          "runtime_seconds": 1064.545,
+          "runtime_seconds": 1822.772,
           "train_start": "2022-11-05",
           "train_end": "2025-11-05",
           "test_start": "2025-11-06",
@@ -577812,13 +577812,13 @@
   },
   "odds_snapshot_archive": {
     "snapshot_files": 4,
-    "snapshot_records": 104,
-    "races": 76,
-    "predicted_races": 76,
-    "odds_rows": 95426,
+    "snapshot_records": 112,
+    "races": 84,
+    "predicted_races": 84,
+    "odds_rows": 102607,
     "first_date": "20261103",
     "last_date": "20261106",
-    "last_captured_at": "2026-11-06T12:02:26.906528+09:00",
+    "last_captured_at": "2026-11-06T14:39:38.166088+09:00",
     "model_versions": [
       "nar-chronological-v7-fieldsize-calibrated",
       "nar-chronological-v8-abcd-C-preoff",
@@ -577828,7 +577828,7 @@
   },
   "preoff_value_backtest": {
     "status": "ok",
-    "snapshot_races": 76,
+    "snapshot_races": 84,
     "settled_evaluated_races": 70,
     "date_count": 3,
     "development_date_count": 0,
@@ -579446,16 +579446,16 @@
   },
   "performance_profile": {
     "stage_seconds": {
-      "load_archives": 4.744,
-      "chronological_run_backtest": 42.021,
-      "production_calibration": 12.345,
-      "final_odds_archive_load": 13.844,
-      "walk_forward_holdout_validation": 3121.037,
-      "preoff_ticket_type_backtest": 0.599,
-      "race_budget_strategy_backtest": 0.59,
-      "preoff_ranking_strategy_backtest": 0.871
+      "load_archives": 5.628,
+      "chronological_run_backtest": 65.699,
+      "production_calibration": 17.967,
+      "final_odds_archive_load": 18.349,
+      "walk_forward_holdout_validation": 5369.288,
+      "preoff_ticket_type_backtest": 0.942,
+      "race_budget_strategy_backtest": 1.252,
+      "preoff_ranking_strategy_backtest": 1.167
     },
-    "total_seconds_before_report_serialization": 3199.25,
+    "total_seconds_before_report_serialization": 5484.525,
     "note": "Wall-clock stage timings for identifying the next safe optimization target; timings do not affect model scores or selection."
   },
   "online_learning": {
