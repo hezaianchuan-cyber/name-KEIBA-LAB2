@@ -349,6 +349,18 @@ def build_matched_races(snapshot_rows, payouts):
     return matched
 
 
+
+def assess_readiness(races):
+    """Require both a meaningful race count and 14 distinct result days."""
+    matched_days = sorted({row["race_key"].split("|")[1] for row in races})
+    decision_ready = (
+        len(races) >= MIN_MATCHED_RACES_FOR_DECISION
+        and len(matched_days) >= MIN_MATCHED_RACE_DAYS_FOR_DECISION
+    )
+    status = "ready_for_review" if decision_ready else ("collecting_sample" if races else "not_ready")
+    return status, decision_ready, matched_days
+
+
 def run_backtest(snapshot_dir=SNAPSHOT_DIR, payouts_file=PAYOUTS_FILE, output_file=OUT):
     snapshots, diagnostics = load_snapshots(snapshot_dir)
     payout_error = None
@@ -358,13 +370,8 @@ def run_backtest(snapshot_dir=SNAPSHOT_DIR, payouts_file=PAYOUTS_FILE, output_fi
         payouts = {}
         payout_error = str(exc)
     races = build_matched_races(snapshots, payouts)
-    matched_race_days = sorted({row["race_key"].split("|")[1] for row in races})
+    status, decision_ready, matched_race_days = assess_readiness(races)
     has_data = bool(races)
-    decision_ready = (
-        len(races) >= MIN_MATCHED_RACES_FOR_DECISION
-        and len(matched_race_days) >= MIN_MATCHED_RACE_DAYS_FOR_DECISION
-    )
-    status = "ready_for_review" if decision_ready else ("collecting_sample" if has_data else "not_ready")
     report = {
         "generated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
         "status": status,
