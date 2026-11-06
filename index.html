@@ -1470,7 +1470,7 @@ function generateTickets(){
  const strategy=window.KEIBALAB_TRIO_STRATEGY;
  let fusion;if(autoPlanSourceUsed&&!exactSnapshotOdds.length){fusion={runners:field.map(h=>({horseNo:String(h.horseNo),probability:h.modelProb,marketProbability:h.marketProb})),marketBlendApplied:!!autoPlan.marketBlendApplied,marketCoverage:Number(autoPlan.marketCoverage)||0};}else{fusion=strategy?strategy.fuse(field.map(h=>({horseNo:h.horseNo,score:h.score,modelProbability:h.modelProb})),oddsRows,0.5):{runners:field.map(h=>({horseNo:String(h.horseNo),probability:h.modelProb,marketProbability:null})),marketBlendApplied:false,marketCoverage:0};}
  const fusedByNo=new Map(fusion.runners.map(h=>[String(h.horseNo),h]));
- field=field.map(h=>{const f=fusedByNo.get(String(h.horseNo));return {...h,labProb:h.modelProb,marketProb:f?.marketProbability??null,modelProb:f?.probability??h.modelProb,marketBlendApplied:!!fusion.marketBlendApplied};});
+ field=field.map(h=>{const f=fusedByNo.get(String(h.horseNo));return {...h,labProb:h.labProb??h.modelProb,marketProb:f?.marketProbability??null,modelProb:f?.probability??h.modelProb,marketBlendApplied:!!fusion.marketBlendApplied};});
  field.sort((a,b)=>b.modelProb-a.modelProb||b.score-a.score);
  top=field.slice(0,Math.min(7,field.length));
  byNo.clear();field.forEach(h=>byNo.set(String(h.horseNo),h.modelProb));
