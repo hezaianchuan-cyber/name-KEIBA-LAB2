@@ -23,7 +23,7 @@ function validSnapshot(item: any): boolean {
   const captured = new Date(item.captured_at).getTime();
   const post = new Date(item.scheduled_post_time).getTime();
   const minutes = (post - captured) / 60000;
-  return Number.isFinite(captured) && Number.isFinite(post) && minutes >= 2 && minutes <= 30;
+  return Number.isFinite(captured) && Number.isFinite(post) && minutes >= 2 && minutes <= 60;
 }
 
 Deno.serve(async (request: Request) => {
