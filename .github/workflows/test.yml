@@ -41,6 +41,8 @@ jobs:
           Path("/tmp/keiba-lab.js").write_text("\n".join(scripts), encoding="utf-8")
           PY
           node --check /tmp/keiba-lab.js
+      - name: Run shared trio strategy tests
+        run: node --test tests/trio_strategy.test.js
       - name: Run pipeline static safety audit
         run: python scripts/nar_pipeline_audit.py
       - name: Run regression tests
