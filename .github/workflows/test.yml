@@ -1,6 +1,7 @@
 name: Validate KEIBA LAB backtest
 
 on:
+  pull_request:
   push:
     branches: [main]
     paths:
@@ -23,6 +24,11 @@ jobs:
           python-version: "3.12"
       - name: Compile backtest
         run: python -m py_compile scripts/*.py
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check isolated model snapshot archive function
+        run: deno check supabase/functions/nar-model-snapshot-archive/index.ts
       - name: Check embedded app JavaScript syntax
         run: |
           python - <<'PY'

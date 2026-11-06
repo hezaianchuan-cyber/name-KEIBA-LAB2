@@ -2368,12 +2368,72 @@ class G4SupabasePaginationTests(unittest.TestCase):
 
         self.assertEqual(rows, [])
         self.assertEqual(diagnostics["supabase_status"], "loaded")
-        self.assertEqual(len(requests), 1)
+        self.assertEqual(len(requests), 2)
         from urllib.parse import parse_qs, urlparse
-        query = parse_qs(urlparse(requests[0].full_url).query)
-        self.assertEqual(query["race_date"], ["gte.2026-11-04", "lte.2026-11-04"])
-        self.assertEqual(query["order"], ["race_date.asc,captured_at.desc,id.desc"])
-        self.assertEqual(query["limit"], ["100"])
+        model_url = urlparse(requests[0].full_url)
+        odds_url = urlparse(requests[1].full_url)
+        self.assertTrue(model_url.path.endswith("/model_prediction_snapshots"))
+        self.assertTrue(odds_url.path.endswith("/odds_snapshots"))
+        model_query = parse_qs(model_url.query)
+        odds_query = parse_qs(odds_url.query)
+        self.assertEqual(model_query["race_date"], ["gte.2026-11-04", "lte.2026-11-04"])
+        self.assertEqual(model_query["order"], ["race_date.asc,captured_at.desc"])
+        self.assertEqual(odds_query["race_date"], ["gte.2026-11-04", "lte.2026-11-04"])
+        self.assertEqual(odds_query["order"], ["race_date.asc,captured_at.desc,id.desc"])
+        self.assertEqual(odds_query["limit"], ["100"])
+
+    def test_g4_prefers_persisted_supabase_model_snapshot(self):
+        model_rows = [{
+            "race_key": "大井|20261104|1",
+            "date": "20261104",
+            "captured_at": "2026-11-04T09:00:00+09:00",
+            "model_temperature": 0.18,
+            "predictions": [{"horse_no": "9", "win_probability": 0.99}],
+        }]
+        persisted_predictions = [
+            {"horse_no": "1", "win_probability": 0.55},
+            {"horse_no": "2", "win_probability": 0.30},
+            {"horse_no": "3", "win_probability": 0.15},
+        ]
+        model_page = [{
+            "race_id": "大井|20261104|1",
+            "race_date": "2026-11-04",
+            "captured_at": "2026-11-04T10:00:00+09:00",
+            "model_temperature": 0.22,
+            "model_version": "nar-chronological-v9",
+            "predictions": persisted_predictions,
+            "candidate_combinations": [],
+        }]
+        odds_page = [{
+            "id": 1,
+            "race_id": "大井|20261104|1",
+            "race_date": "2026-11-04",
+            "captured_at": "2026-11-04T10:05:00+09:00",
+            "odds_data": {
+                "scheduled_post_time": "2026-11-04T10:10:00+09:00",
+                "minutes_to_post": 5,
+                "odds": [{"type": "単勝", "n1": "1", "odds": 2.0}],
+            },
+        }]
+
+        def fake_urlopen(request, timeout=30):
+            if request.full_url.split("?")[0].endswith("/model_prediction_snapshots"):
+                return io.BytesIO(json.dumps(model_page).encode("utf-8"))
+            return io.BytesIO(json.dumps(odds_page).encode("utf-8"))
+
+        with (
+            mock.patch.object(g4, "SUPABASE_URL", "https://example.supabase.co"),
+            mock.patch.object(g4, "SUPABASE_KEY", "test-key"),
+            mock.patch.object(g4.urllib.request, "urlopen", side_effect=fake_urlopen),
+        ):
+            rows, diagnostics = g4.load_supabase_snapshots(model_rows)
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["predictions"], persisted_predictions)
+        self.assertEqual(rows[0]["model_temperature"], 0.22)
+        self.assertEqual(diagnostics["model_snapshot_table_status"], "loaded")
+        self.assertEqual(diagnostics["model_snapshot_table_rows"], 1)
+        self.assertEqual(diagnostics["supabase_snapshots_joined"], 1)
 
 
 class G4ModelMarketBlendTests(unittest.TestCase):
