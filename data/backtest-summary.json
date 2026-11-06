@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-06T02:06:48.519375+00:00",
+  "generated_at": "2026-11-06T03:30:59.687482+00:00",
   "period": {
     "start": "2022-11-06",
     "end": "2026-11-05"
@@ -2706,7 +2706,7 @@
       {
         "fold": 1,
         "period_label": "previous_year_2",
-        "runtime_seconds": 1296.272,
+        "runtime_seconds": 1606.556,
         "train_start": "2022-11-05",
         "train_end": "2023-11-06",
         "test_start": "2023-11-07",
@@ -107253,7 +107253,7 @@
       {
         "fold": 2,
         "period_label": "previous_year_1",
-        "runtime_seconds": 1286.426,
+        "runtime_seconds": 1610.772,
         "train_start": "2022-11-05",
         "train_end": "2024-11-05",
         "test_start": "2024-11-06",
@@ -211148,7 +211148,7 @@
       {
         "fold": 3,
         "period_label": "recent_year",
-        "runtime_seconds": 1325.337,
+        "runtime_seconds": 1657.209,
         "train_start": "2022-11-05",
         "train_end": "2025-11-05",
         "test_start": "2025-11-06",
@@ -317788,9 +317788,9 @@
       }
     ],
     "fold_runtime_seconds": {
-      "previous_year_2": 1296.272,
-      "previous_year_1": 1286.426,
-      "recent_year": 1325.337
+      "previous_year_2": 1606.556,
+      "previous_year_1": 1610.772,
+      "recent_year": 1657.209
     },
     "recent_year_validation": {
       "status": "evaluated",
@@ -325581,7 +325581,7 @@
       "fold": {
         "fold": 3,
         "period_label": "recent_year",
-        "runtime_seconds": 1325.337,
+        "runtime_seconds": 1657.209,
         "train_start": "2022-11-05",
         "train_end": "2025-11-05",
         "test_start": "2025-11-06",
@@ -455618,7 +455618,7 @@
         "fold": {
           "fold": 3,
           "period_label": "recent_year",
-          "runtime_seconds": 1325.337,
+          "runtime_seconds": 1657.209,
           "train_start": "2022-11-05",
           "train_end": "2025-11-05",
           "test_start": "2025-11-06",
@@ -571331,14 +571331,14 @@
     "comparison_policy": "A-E are reported separately. D is marked unevaluable until enough genuine pre-off snapshots exist. No strategy is declared profitable unless sample minimums are met and the 95% race-cluster ROI lower bound exceeds 100%."
   },
   "odds_snapshot_archive": {
-    "snapshot_files": 3,
-    "snapshot_records": 95,
-    "races": 70,
-    "predicted_races": 70,
-    "odds_rows": 91154,
+    "snapshot_files": 4,
+    "snapshot_records": 100,
+    "races": 72,
+    "predicted_races": 72,
+    "odds_rows": 92087,
     "first_date": "20261103",
-    "last_date": "20261105",
-    "last_captured_at": "2026-11-05T20:33:04.964701+09:00",
+    "last_date": "20261106",
+    "last_captured_at": "2026-11-06T10:11:22.285901+09:00",
     "model_versions": [
       "nar-chronological-v7-fieldsize-calibrated",
       "nar-chronological-v8-abcd-C-preoff",
@@ -571348,7 +571348,7 @@
   },
   "preoff_value_backtest": {
     "status": "ok",
-    "snapshot_races": 70,
+    "snapshot_races": 72,
     "settled_evaluated_races": 70,
     "date_count": 3,
     "development_date_count": 0,
@@ -572868,16 +572868,16 @@
   },
   "performance_profile": {
     "stage_seconds": {
-      "load_archives": 4.502,
-      "chronological_run_backtest": 49.82,
-      "production_calibration": 15.243,
-      "final_odds_archive_load": 16.624,
-      "walk_forward_holdout_validation": 3929.065,
-      "preoff_ticket_type_backtest": 0.629,
-      "race_budget_strategy_backtest": 0.637,
-      "preoff_ranking_strategy_backtest": 0.886
+      "load_archives": 5.523,
+      "chronological_run_backtest": 61.966,
+      "production_calibration": 17.207,
+      "final_odds_archive_load": 15.988,
+      "walk_forward_holdout_validation": 4894.855,
+      "preoff_ticket_type_backtest": 0.728,
+      "race_budget_strategy_backtest": 0.953,
+      "preoff_ranking_strategy_backtest": 0.951
     },
-    "total_seconds_before_report_serialization": 4020.794,
+    "total_seconds_before_report_serialization": 5001.33,
     "note": "Wall-clock stage timings for identifying the next safe optimization target; timings do not affect model scores or selection."
   },
   "online_learning": {
