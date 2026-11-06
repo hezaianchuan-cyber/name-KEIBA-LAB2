@@ -576,6 +576,29 @@ class PerBetTypeProbabilityTests(unittest.TestCase):
 
 
 
+class BalancedTrioSelectionTests(unittest.TestCase):
+    def test_selector_balances_probability_and_ev_ranks(self):
+        candidates = [
+            {"bet_type":"trio","numbers":["1","2","3"],"probability":0.30,"expected_value":1.10},
+            {"bet_type":"trio","numbers":["1","2","4"],"probability":0.10,"expected_value":2.00},
+            {"bet_type":"trio","numbers":["1","2","5"],"probability":0.20,"expected_value":1.50},
+        ]
+        selected = nb.select_balanced_trio_tickets(candidates, 1, 0.5, 1.05)
+        self.assertEqual(len(selected), 1)
+        self.assertEqual(selected[0]["numbers"], ["1","2","5"])
+
+    def test_selector_caps_at_12_and_allows_fewer_or_zero(self):
+        candidates = [
+            {"bet_type":"trio","numbers":[str(i),str(i+1),str(i+2)],
+             "probability":0.20-i*0.002,"expected_value":1.80-i*0.01}
+            for i in range(1,36)
+        ]
+        self.assertEqual(len(nb.select_balanced_trio_tickets(candidates, 12, 0.5, 1.05)), 12)
+        self.assertEqual(len(nb.select_balanced_trio_tickets(candidates[:5], 12, 0.5, 1.05)), 5)
+        below = [{**ticket,"expected_value":1.04} for ticket in candidates]
+        self.assertEqual(len(nb.select_balanced_trio_tickets(below, 12, 0.5, 1.05)), 0)
+
+
 class IndependentBetTypeBacktestTests(unittest.TestCase):
     def test_each_bet_type_has_its_own_stake_return_and_roi(self):
         record = {
