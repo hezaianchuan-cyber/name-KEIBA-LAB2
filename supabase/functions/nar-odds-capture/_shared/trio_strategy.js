@@ -45,6 +45,18 @@
     const total=runners.reduce((s,r)=>s+r.probability,0);
     return Math.min(1,permutations(numbers).reduce((sum,order)=>{let rem=total,v=1;for(const raw of order){const n=no(raw),x=p.get(n);if(x==null||rem<=0)return sum;v*=x/rem;rem-=x;}return sum+v;},0));
   }
+  function selectTickets(candidates,maxTickets=12,probabilityWeight=0.5,minEv=1.0){
+    const rows=(candidates||[]).filter(x=>Number.isFinite(Number(x.probability))&&Number(x.probability)>0&&Number.isFinite(Number(x.ev))&&Number(x.ev)>=minEv);
+    const count=rows.length;
+    if(!count)return [];
+    const rank=(key,descending)=>new Map([...rows].sort((a,b)=>descending?Number(b[key])-Number(a[key]):Number(a[key])-Number(b[key])).map((x,i)=>[x,i]));
+    const pRank=rank("probability",true),evRank=rank("ev",true),w=Math.max(0,Math.min(1,num(probabilityWeight)??0.5));
+    return rows.map(x=>{
+      const probabilityRank=count===1?1:1-pRank.get(x)/(count-1);
+      const evRankScore=count===1?1:1-evRank.get(x)/(count-1);
+      return {...x,probabilityRank,evRank:evRankScore,selectionScore:w*probabilityRank+(1-w)*evRankScore};
+    }).sort((a,b)=>b.selectionScore-a.selectionScore||b.probability-a.probability||b.ev-a.ev).slice(0,Math.max(0,Math.min(12,Math.floor(Number(maxTickets)||12))));
+  }
   function build(modelRows,oddsRows,weight=0.5,threshold=0.60){
     const f=fuse(modelRows,oddsRows,weight),top7=f.runners.slice(0,7),poolSize=adaptivePoolSize(top7,threshold),pool=top7.slice(0,poolSize),prices=new Map();
     for(const o of oddsRows||[]){const l=label(o.type);if(!l.includes("3連複")&&!l.includes("三連複"))continue;const a=[o.n1,o.n2,o.n3].filter(v=>no(v));if(a.length!==3||new Set(a.map(no)).size!==3)continue;const price=num(o.odds);if(price>0)prices.set(comboKey(a),price);}
@@ -56,5 +68,5 @@
     candidates.sort((a,b)=>b.probability-a.probability||(b.ev??-1)-(a.ev??-1));
     return {...f,top7,poolSize,pool,candidates,gapZThreshold:threshold};
   }
-  g.KEIBALAB_TRIO_STRATEGY={fuse,adaptivePoolSize,trioProbability,build};
+  g.KEIBALAB_TRIO_STRATEGY={fuse,adaptivePoolSize,trioProbability,selectTickets,build};
 })(globalThis);
