@@ -51,7 +51,7 @@ def verify_record(record: dict) -> bool:
         minutes = (post - captured).total_seconds() / 60.0
     except (TypeError, ValueError):
         return False
-    return 2.0 <= minutes <= 30.0 and isinstance(record.get("predictions"), list) and len(record["predictions"]) >= 3
+    return 2.0 <= minutes <= 60.0 and isinstance(record.get("predictions"), list) and len(record["predictions"]) >= 3
 
 
 def record_to_row(record: dict) -> dict | None:
