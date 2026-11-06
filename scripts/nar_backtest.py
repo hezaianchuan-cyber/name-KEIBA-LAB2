@@ -1628,9 +1628,41 @@ def allocate_formation_units(tickets, ranked, policy, budget_units=None):
     return units
 
 
+def adaptive_trio_pool_size(ranked, scored, gap_z_threshold=0.60):
+    """Choose top-4/5/6/7 pool from pre-race score separation only.
+
+    A pronounced score gap at the 4/5, 5/6, or 6/7 boundary narrows the pool.
+    Otherwise the pool expands to seven. The threshold is fixed before holdout;
+    finish positions and payouts are never inputs to this decision.
+    """
+    available = min(len(ranked or []), 7)
+    if available <= 3:
+        return available
+    score_by_no = {str(horse.get("no")): number(score)
+                   for score, horse in (scored or [])}
+    values = [score_by_no.get(str(horse.get("no"))) for horse in ranked[:available]]
+    if any(value is None for value in values):
+        return available
+    mean = sum(values) / len(values)
+    variance = sum((value - mean) ** 2 for value in values) / len(values)
+    scale = math.sqrt(variance)
+    if scale <= 1e-12:
+        return available
+    for boundary in (4, 5, 6):
+        if available > boundary:
+            gap_z = (values[boundary - 1] - values[boundary]) / scale
+            if gap_z >= gap_z_threshold:
+                return boundary
+    return available
+
+
 def new_trio_diagnostics():
     return {
         "races": 0,
+        "podium_count_top7": {"0": 0, "1": 0, "2": 0, "3": 0},
+        "adaptive_pool": {"races": 0, "tickets": 0, "hits": 0, "hit_races": 0,
+                          "stake": 0, "return": 0, "selected_top_n": {
+                              str(n): 0 for n in (4, 5, 6, 7)}},
         "all_podium_top4": 0, "all_podium_top5": 0,
         "all_podium_top6": 0, "all_podium_top7": 0,
         "structures": {
@@ -1655,16 +1687,36 @@ def new_trio_diagnostics():
     }
 
 
-def update_trio_diagnostics(bucket, ranked, field, payout):
-    """Compare unordered top-N trio combinations without changing the fixed baseline."""
+def update_trio_diagnostics(bucket, ranked, field, payout, scored=None):
+    """Compare fixed and score-gap-adaptive unordered trio combinations."""
     if not ranked:
         return
     podium = {str(h["no"]) for h in field if h.get("finish") in (1, 2, 3)}
     rank = {str(h["no"]): i + 1 for i, h in enumerate(ranked)}
     if len(podium) == 3:
         bucket["races"] += 1
+        captured_top7 = sum(1 for no in podium if rank.get(no, 10**9) <= 7)
+        bucket["podium_count_top7"][str(captured_top7)] += 1
         for pool in (4, 5, 6, 7):
             bucket[f"all_podium_top{pool}"] += int(all(rank.get(no, 10**9) <= pool for no in podium))
+
+    # Variable ticket count is selected using only the model's pre-race score gaps.
+    adaptive_n = adaptive_trio_pool_size(ranked, scored)
+    adaptive_tickets = build_trio_tickets(ranked, adaptive_n)
+    if adaptive_tickets:
+        adaptive = bucket["adaptive_pool"]
+        race_return = sum(payout_for("trio", ticket, payout) or 0
+                          for ticket in adaptive_tickets)
+        race_hits = sum(1 for ticket in adaptive_tickets
+                        if payout_for("trio", ticket, payout))
+        adaptive["races"] += 1
+        adaptive["tickets"] += len(adaptive_tickets)
+        adaptive["hits"] += race_hits
+        adaptive["hit_races"] += int(race_hits > 0)
+        adaptive["stake"] += 100 * len(adaptive_tickets)
+        adaptive["return"] += race_return
+        adaptive["selected_top_n"][str(adaptive_n)] += 1
+
     # Ticket ROI is evaluated even when the finish-position fields are incomplete.
     for pool in (4, 5, 6, 7):
         stats = bucket["structures"][pool]
@@ -1735,6 +1787,24 @@ def summarize_trio_diagnostics(bucket):
     keys = ("all_podium_top4", "all_podium_top5", "all_podium_top6", "all_podium_top7")
     output = {key: bucket[key] for key in ("races", *keys)}
     output["rates"] = {key: round(100 * bucket[key] / n, 2) if n else None for key in keys}
+    output["podium_count_top7"] = {
+        "counts": dict(bucket["podium_count_top7"]),
+        "rates": {key: round(100 * value / n, 2) if n else None
+                  for key, value in bucket["podium_count_top7"].items()},
+        "average_podium_horses_captured": round(
+            sum(int(key) * value for key, value in bucket["podium_count_top7"].items()) / n, 3
+        ) if n else None,
+    }
+    adaptive = bucket["adaptive_pool"]
+    adaptive_stake = adaptive["stake"]
+    adaptive["hit_rate"] = round(100 * adaptive["hits"] / adaptive["tickets"], 4) if adaptive["tickets"] else None
+    adaptive["race_hit_rate"] = round(100 * adaptive["hit_races"] / adaptive["races"], 2) if adaptive["races"] else None
+    adaptive["roi"] = round(100 * adaptive["return"] / adaptive_stake, 2) if adaptive_stake else None
+    adaptive["profit"] = adaptive["return"] - adaptive_stake
+    adaptive["tickets_per_race"] = round(adaptive["tickets"] / adaptive["races"], 2) if adaptive["races"] else None
+    adaptive["stake_per_ticket_yen"] = 100
+    adaptive["selection_rule"] = "Choose top-4/5/6 when the adjacent score gap at ranks 4/5, 5/6, or 6/7 is at least 0.60 population standard deviations; otherwise top-7. Uses only pre-race scores."
+    output["adaptive_pool"] = adaptive
     structures = {}
     for pool, stats in bucket["structures"].items():
         n = stats["races"]
@@ -2610,7 +2680,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             role_rankings_for_positions = role_rankings_cache["0.10"]
             update_finish_position_diagnostics(
                 m["finish_position_diagnostics"], ranked, role_rankings_for_positions, field)
-            update_trio_diagnostics(m["trio_diagnostics"], ranked, field, payout)
+            update_trio_diagnostics(m["trio_diagnostics"], ranked, field, payout, scored)
             if model_name == "trained":
                 role_segment_rankings = role_rankings_cache["0.10"]
                 for dimension, label in race_segment_labels(race).items():
