@@ -1656,6 +1656,38 @@ def adaptive_trio_pool_size(ranked, scored, gap_z_threshold=0.60):
     return available
 
 
+def select_balanced_trio_tickets(candidates, max_tickets=12, probability_weight=0.5, min_ev=1.05):
+    """Mirror the Web/Supabase 50:50 probability-rank and EV-rank selector."""
+    rows = []
+    for ticket in candidates or []:
+        probability = number(ticket.get("probability"))
+        ev = number(ticket.get("expected_value", ticket.get("ev")))
+        if probability is None or probability <= 0 or ev is None or ev < min_ev:
+            continue
+        rows.append((ticket, probability, ev))
+    count = len(rows)
+    if not count:
+        return []
+    probability_order = sorted(range(count), key=lambda i: -rows[i][1])
+    ev_order = sorted(range(count), key=lambda i: -rows[i][2])
+    probability_rank = {index: rank for rank, index in enumerate(probability_order)}
+    ev_rank = {index: rank for rank, index in enumerate(ev_order)}
+    weight = min(1.0, max(0.0, number(probability_weight) or 0.0))
+    scored = []
+    for index, (ticket, probability, ev) in enumerate(rows):
+        probability_score = 1.0 if count == 1 else 1.0 - probability_rank[index] / (count - 1)
+        ev_score = 1.0 if count == 1 else 1.0 - ev_rank[index] / (count - 1)
+        scored.append(({
+            **ticket,
+            "probability_rank_score": probability_score,
+            "ev_rank_score": ev_score,
+            "selection_score": weight * probability_score + (1.0 - weight) * ev_score,
+        }, probability, ev, index))
+    scored.sort(key=lambda item: (-item[0]["selection_score"], -item[1], -item[2], item[3]))
+    limit = max(0, min(12, int(max_tickets)))
+    return [item[0] for item in scored[:limit]]
+
+
 def new_trio_diagnostics():
     return {
         "races": 0,
@@ -3127,12 +3159,20 @@ def preoff_ticket_type_backtest(payouts):
             race_results = []
             for _, tickets, payout in subset:
                 race_stake = race_return = race_count = 0
-                for ticket in tickets:
-                    if ticket.get("bet_type") != kind:
-                        continue
+                candidates = [ticket for ticket in tickets if ticket.get("bet_type") == kind]
+                if kind == "trio":
+                    selected_tickets = select_balanced_trio_tickets(
+                        candidates, 12, 0.5, max(1.05, threshold))
+                else:
+                    selected_tickets = [
+                        ticket for ticket in candidates
+                        if number(ticket.get("expected_value")) is not None
+                        and number(ticket.get("expected_value")) >= threshold
+                    ]
+                for ticket in selected_tickets:
                     ev = number(ticket.get("expected_value"))
                     numbers = [str(x) for x in ticket.get("numbers") or []]
-                    if ev is None or ev < threshold or not numbers:
+                    if ev is None or not numbers:
                         continue
                     race_count += 1
                     race_stake += 100
@@ -3208,7 +3248,7 @@ def preoff_ticket_type_backtest(payouts):
         "legacy_snapshot_races_excluded":legacy_snapshot_races_excluded,
         "required_model_version":expected_model_version,
         "development_date_count":len(dev_dates),"holdout_date_count":len(dates)-len(dev_dates),
-        "selection_policy":"Each bet type is evaluated and selected independently. Threshold selection uses only the first 70% of dates; the final 30% is untouched holdout. Candidate pass requires at least 100 races, 300 tickets, and a race-cluster bootstrap 95% lower ROI bound above 100%.",
+        "selection_policy":"Each bet type is evaluated independently. Trio first filters EV at max(1.05, threshold), then ranks eligible candidates by 50% probability percentile + 50% EV percentile and selects at most 12; fewer or zero are allowed. Other bet types retain threshold-only selection. Threshold selection uses only the first 70% of dates; the final 30% is untouched holdout. Candidate pass requires at least 100 races, 300 tickets, and a race-cluster bootstrap 95% lower ROI bound above 100%.",
         "probability_model":"Plackett-Luce top-three finish probabilities derived from calibrated win probabilities; combination odds are taken from the same timestamped official pre-off snapshot.",
         "bet_types":by_type,
     }
