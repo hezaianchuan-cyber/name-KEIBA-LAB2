@@ -42,24 +42,36 @@ def load_today_payouts(today):
                 raise RuntimeError("official daily race response is not a ZIP archive")
             today_key = today.strftime("%Y%m%d")
             payouts = {}
+            payout_files_seen = []
+            payout_rows_seen = 0
+            payout_rows_today = 0
             with zipfile.ZipFile(io.BytesIO(blob)) as archive:
                 for info in archive.infolist():
                     if info.is_dir() or nb.classify(info.filename) != "payouts":
                         continue
+                    payout_files_seen.append(info.filename)
                     for row in nb.rows_from_bytes(archive.read(info)):
+                        payout_rows_seen += 1
                         if len(row) <= 52:
                             continue
                         key = nb.race_key(row[0], row[1], row[2])
                         if not key or key[1] != today_key:
                             continue
+                        payout_rows_today += 1
                         nb.merge_payout_row(payouts, key, row)
-            return payouts, len(blob), None
+            diagnostics = {
+                "payout_files_seen": payout_files_seen,
+                "payout_rows_seen": payout_rows_seen,
+                "payout_rows_today": payout_rows_today,
+                "today_payout_races": len(payouts),
+            }
+            return payouts, len(blob), None, diagnostics
         except Exception as exc:
             last_error = str(exc)
             if attempt < 2:
                 import time
                 time.sleep(2 * (attempt + 1))
-    return {}, 0, last_error
+    return {}, 0, last_error, {"payout_files_seen": [], "payout_rows_seen": 0, "payout_rows_today": 0, "today_payout_races": 0}
 
 
 def main():
@@ -68,7 +80,7 @@ def main():
     # The official daily archive is the primary source for today's results.
     # Fetch it first so a delayed or unavailable monthly archive cannot prevent
     # same-day payouts from being published.
-    today_payouts, daily_archive_bytes, daily_archive_error = load_today_payouts(today)
+    today_payouts, daily_archive_bytes, daily_archive_error, daily_archive_diagnostics = load_today_payouts(today)
 
     # Monthly archives are useful for the rolling history, but may lag or be
     # temporarily unavailable. Treat them as best-effort and never discard a
@@ -125,16 +137,32 @@ def main():
             len(items) for race in day["races"] for items in race["payouts"].values()
         )
 
+    trio_race_count = sum(1 for day in days.values() for race in day["races"] if (race.get("payouts") or {}).get("trio"))
+    trio_entry_count = sum(len((race.get("payouts") or {}).get("trio") or []) for day in days.values() for race in day["races"])
+    if trio_race_count == 0 or trio_entry_count == 0:
+        raise RuntimeError(
+            "No official 3連複 payout rows were parsed; refusing to publish an empty/incomplete backtest source. "
+            + json.dumps({
+                "daily_archive": daily_archive_diagnostics,
+                "daily_archive_error": daily_archive_error,
+                "monthly_archive_error": monthly_archive_error,
+                "monthly_months_loaded": len(downloaded),
+                "parsed_payout_races": len(payouts),
+            }, ensure_ascii=False)
+        )
+
     output = {
         "generated_at": dt.datetime.now(JST).isoformat(),
         "source": "NAR official monthly race and payout archives",
         "period": {"start": start.isoformat(), "end": today.isoformat()},
         "days": [days[k] for k in sorted(days, reverse=True)],
         "downloaded_months": downloaded,
+        "payout_coverage": {"trio_races": trio_race_count, "trio_entries": trio_entry_count},
         "daily_archive": {
             "available": daily_archive_bytes > 0,
             "bytes": daily_archive_bytes,
             "today_payout_races": len(today_payouts),
+            **daily_archive_diagnostics,
             "error": daily_archive_error,
         },
         "monthly_archive": {
@@ -152,6 +180,9 @@ def main():
         "payout_entries": sum(day["payout_entry_count"] for day in output["days"]),
         "output_bytes": OUT.stat().st_size,
         "today_payout_races": len(today_payouts),
+        "trio_races": trio_race_count,
+        "trio_entries": trio_entry_count,
+        "daily_archive_diagnostics": daily_archive_diagnostics,
         "daily_archive_error": daily_archive_error,
         "monthly_archive_error": monthly_archive_error,
     }, ensure_ascii=False), flush=True)
