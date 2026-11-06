@@ -144,7 +144,7 @@ def main() -> None:
     if not rows:
         print(json.dumps({"ok": True, **stats, "published": 0}, ensure_ascii=False), flush=True)
         return
-    published = publish(rows, url + "/functions/v1/nar-odds-capture", token)
+    published = publish(rows, url + "/functions/v1/nar-model-snapshot-archive", token)
     print(json.dumps({"ok": True, **stats, "published": published}, ensure_ascii=False), flush=True)
 
 
