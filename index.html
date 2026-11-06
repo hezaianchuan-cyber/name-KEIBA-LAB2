@@ -133,7 +133,7 @@ a{color:inherit}
         <div class="kpi"><span>実購入額</span><b id="labLedgerStake">—</b></div><div class="kpi"><span>実払戻</span><b id="labLedgerReturn">—</b></div><div class="kpi"><span>実損益</span><b id="labLedgerProfit">—</b></div><div class="kpi"><span>実回収率</span><b id="labLedgerRoi">—</b></div>
       </div>
       <div class="kpis" style="margin-top:8px">
-        <div class="kpi"><span>見送り仮想購入額</span><b id="labLedgerVirtualStake">—</b></div><div class="kpi"><span>見送り仮想払戻</span><b id="labLedgerVirtualReturn">—</b></div><div class="kpi"><span>見送り仮想損益</span><b id="labLedgerVirtualProfit">—</b></div><div class="kpi"><span>見送り仮想回収率</span><b id="labLedgerVirtualRoi">—</b></div>
+        <div class="kpi"><span>見送り仮想購入額（確定分）</span><b id="labLedgerVirtualStake">—</b></div><div class="kpi"><span>見送り仮想払戻</span><b id="labLedgerVirtualReturn">—</b></div><div class="kpi"><span>見送り仮想損益</span><b id="labLedgerVirtualProfit">—</b></div><div class="kpi"><span>見送り仮想回収率</span><b id="labLedgerVirtualRoi">—</b></div>
       </div>
       <div class="kpis" style="margin-top:8px">
         <div class="kpi"><span>予想レース</span><b id="labLedgerRaces">—</b></div><div class="kpi"><span>購入／見送り</span><b id="labLedgerBetSkip">—</b></div><div class="kpi"><span>的中率（確定購入R）</span><b id="labLedgerHitRate">—</b></div><div class="kpi"><span>未確定購入R</span><b id="labLedgerPending">—</b></div>
@@ -1024,7 +1024,8 @@ function renderLabVirtualLedger(){
  const visibleRecords=records;
  const purchasedRecords=records.filter(x=>!x.isSkip);
  const settled=purchasedRecords.filter(x=>x.settled),pending=purchasedRecords.filter(x=>!x.settled);
- const virtualSettled=records.filter(x=>x.isSkip&&x.shadowSettled);
+ const virtualSettled=records.filter(x=>x.isSkip&&x.shadowSettled&&(x.shadowTickets||[]).length>0);
+ const virtualPending=records.filter(x=>x.isSkip&&!x.shadowSettled&&(x.shadowTickets||[]).length>0);
  const virtualStake=virtualSettled.reduce((sum,x)=>sum+(x.shadowTickets||[]).reduce((v,t)=>v+Math.max(0,Number(t.stake)||100),0),0);
  const virtualReturn=virtualSettled.reduce((sum,x)=>sum+(x.shadowMatchedTickets||[]).reduce((v,m)=>{const ticket=(x.shadowTickets||[]).find(t=>t.type===m.type&&labLedgerComb(t.comb,t.type)===m.comb);return v+(Number(m.pay100)||0)*(Math.max(0,Number(ticket?.stake)||100)/100);},0),0);
  const virtualProfit=virtualReturn-virtualStake;
@@ -1040,7 +1041,7 @@ function renderLabVirtualLedger(){
  $('labLedgerUserStake').textContent=userStakeTotal.toLocaleString()+'円';$('labLedgerUserReturn').textContent=userReturnTotal.toLocaleString()+'円';
  $('labLedgerLabRoi').textContent=labStakeTotal?(labReturnTotal/labStakeTotal*100).toFixed(1)+'%':'—';
  $('labLedgerUserRoi').textContent=userStakeTotal?(userReturnTotal/userStakeTotal*100).toFixed(1)+'%':'—';
- $('labLedgerStatus').textContent='公式払戻照合：確定 '+settled.length+'R ／ 未確定 '+pending.length+'R（保存買い目との完全一致のみ的中）';
+ $('labLedgerStatus').textContent='実購入：確定 '+settled.length+'R ／ 未確定 '+pending.length+'R ／ 見送り仮想検証：確定 '+virtualSettled.length+'R ／ 未確定 '+virtualPending.length+'R（公式払戻との完全一致のみ的中）';
  const winnerOf=x=>(x.officialResults||[]).find(r=>r.type==='単勝')?.comb||'';
  const comparable=records.filter(x=>x.modelResultSettled&&winnerOf(x)&&x.plan.modelTopHorse&&x.plan.marketFavoriteHorse);
  const modelTopHits=comparable.filter(x=>winnerOf(x)===String(x.plan.modelTopHorse)).length;
@@ -1061,17 +1062,18 @@ function renderLabVirtualLedger(){
  const meanLogLoss=probabilityRows.length?probabilityRows.reduce((s,x)=>s+x.logLoss,0)/probabilityRows.length:null;
  $('labLedgerStatus').textContent+=' ／ モデル1位 '+(comparable.length?(modelTopHits+'/'+comparable.length+'R・'+(modelTopHits/comparable.length*100).toFixed(1)+'%'):'比較待ち')+' ／ 市場1番人気 '+(comparable.length?(marketHits+'/'+comparable.length+'R・'+(marketHits/comparable.length*100).toFixed(1)+'%'):'比較待ち')+' ／ モデル上位3頭 '+(top3Comparable.length?(top3Hits+'/'+top3Comparable.length+'R・'+(top3Hits/top3Comparable.length*100).toFixed(1)+'%'):'比較待ち')+' ／ 市場上位3頭 '+(marketTop3Comparable.length?(marketTop3Hits+'/'+marketTop3Comparable.length+'R・'+(marketTop3Hits/marketTop3Comparable.length*100).toFixed(1)+'%'):'比較待ち')+' ／ Brier '+(meanBrier==null?'—':meanBrier.toFixed(4))+' ／ Log Loss '+(meanLogLoss==null?'—':meanLogLoss.toFixed(4))+'（確定 '+probabilityRows.length+'R・小さいほど良い）';
  const rows=visibleRecords.map(x=>{
-  const label=x.isSkip?(!x.shadowSettled?'見送り・検証待ち':x.shadowHit?'見送り・仮想的中':'見送り・仮想不的中'):!x.settled?'未確定':x.hit?'的中':'不的中';
-  const details=x.isSkip?'【検証用】'+(x.shadowTickets||[]).filter(t=>labLedgerIsTrioType(t?.type)).map(t=>t.type+' '+t.comb+'（仮想100円）').join('<br>'):'【LAB自動3連複】'+(x.plan.tickets||[]).filter(t=>labLedgerIsTrioType(t?.type)).map(t=>t.type+' '+t.comb+' '+Number(t.stake||0).toLocaleString()+'円').join('<br>')+'<br>【自分で追加】'+(x.plan.userTickets||[]).map(t=>t.type+' '+t.comb+' '+Number(t.stake||0).toLocaleString()+'円').join('<br>');
-  const hitDetails=x.isSkip?(!x.shadowSettled?'結果待ち':x.shadowHit?x.shadowMatchedTickets.map(t=>t.type+' '+t.comb+'（払戻 '+t.pay100.toLocaleString()+'円/100円）').join('<br>'):'検証用買い目に的中なし'):!x.settled?'結果待ち':x.hit?x.matchedTickets.map(t=>(t.owner==='USER'?'【自分】':'【LAB】')+' '+t.type+' '+t.comb+'（'+t.returned.toLocaleString()+'円）').join('<br>'):'該当買い目なし';
+  const hasVirtualTickets=x.isSkip&&(x.shadowTickets||[]).length>0;
+  const label=x.isSkip?(!hasVirtualTickets?'見送り・データ不足':!x.shadowSettled?'見送り・検証待ち':x.shadowHit?'見送り・仮想的中':'見送り・仮想不的中'):!x.settled?'未確定':x.hit?'的中':'不的中';
+  const details=x.isSkip?(hasVirtualTickets?'【仮想購入】'+(x.shadowTickets||[]).filter(t=>labLedgerIsTrioType(t?.type)).map(t=>t.type+' '+t.comb+'（仮想100円）').join('<br>'):'仮想買い目なし（予測データ不足）'):'【LAB自動3連複】'+(x.plan.tickets||[]).filter(t=>labLedgerIsTrioType(t?.type)).map(t=>t.type+' '+t.comb+' '+Number(t.stake||0).toLocaleString()+'円').join('<br>')+'<br>【自分で追加】'+(x.plan.userTickets||[]).map(t=>t.type+' '+t.comb+' '+Number(t.stake||0).toLocaleString()+'円').join('<br>');
+  const hitDetails=x.isSkip?(!hasVirtualTickets?'検証対象外（買い目なし）':!x.shadowSettled?'結果待ち':x.shadowHit?x.shadowMatchedTickets.map(t=>t.type+' '+t.comb+'（払戻 '+t.pay100.toLocaleString()+'円/100円）').join('<br>'):'仮想買い目に的中なし'):!x.settled?'結果待ち':x.hit?x.matchedTickets.map(t=>(t.owner==='USER'?'【自分】':'【LAB】')+' '+t.type+' '+t.comb+'（'+t.returned.toLocaleString()+'円）').join('<br>'):'該当買い目なし';
   const officialDetails=!x.settled&&!x.shadowSettled?'結果待ち':x.officialResults.map(r=>r.type+' '+r.comb).join('<br>')||'払戻組合せなし';
   const virtualStakeRow=x.isSkip?(x.shadowTickets||[]).reduce((sum,t)=>sum+Math.max(0,Number(t.stake)||100),0):0;
   const virtualReturnRow=x.isSkip?(x.shadowMatchedTickets||[]).reduce((sum,m)=>{const ticket=(x.shadowTickets||[]).find(t=>t.type===m.type&&labLedgerComb(t.comb,t.type)===m.comb);return sum+(Number(m.pay100)||0)*(Math.max(0,Number(ticket?.stake)||100)/100);},0):0;
   const rowStake=x.isSkip?virtualStakeRow:x.stake,rowReturn=x.isSkip?virtualReturnRow:x.returned,rowSettled=x.isSkip?x.shadowSettled:x.settled;
-  const stake=x.isSkip?'仮想 '+virtualStakeRow.toLocaleString()+'円':x.stake.toLocaleString()+'円';
-  const returned=!rowSettled?'未確定':(x.isSkip?'仮想 ':'')+rowReturn.toLocaleString()+'円';
+  const stake=x.isSkip?(hasVirtualTickets?'仮想 '+virtualStakeRow.toLocaleString()+'円':'—'):x.stake.toLocaleString()+'円';
+  const returned=!hasVirtualTickets&&x.isSkip?'—':!rowSettled?'未確定':(x.isSkip?'仮想 ':'')+rowReturn.toLocaleString()+'円';
   const profit=rowReturn-rowStake;
-  return '<tr><td>'+esc(x.plan.venue||'')+' '+esc(x.plan.raceNo||'')+'R</td><td>'+label+'</td><td>'+details+'</td><td>'+officialDetails+'</td><td>'+hitDetails+'</td><td>'+stake+'</td><td>'+returned+'</td><td>'+(!rowSettled?'—':(profit>0?'+':'')+profit.toLocaleString()+'円'+(x.isSkip?'（仮想）':''))+'</td></tr>';
+  return '<tr><td>'+esc(x.plan.venue||'')+' '+esc(x.plan.raceNo||'')+'R</td><td>'+label+'</td><td>'+details+'</td><td>'+officialDetails+'</td><td>'+hitDetails+'</td><td>'+stake+'</td><td>'+returned+'</td><td>'+(!hasVirtualTickets&&x.isSkip?'—':!rowSettled?'—':(profit>0?'+':'')+profit.toLocaleString()+'円'+(x.isSkip?'（仮想）':''))+'</td></tr>;
  });
  $('labLedgerRows').innerHTML=rows.length?'<div class="tablewrap"><table style="min-width:760px"><thead><tr><th>レース</th><th>判定</th><th>保存買い目</th><th>公式的中組合せ</th><th>的中買い目（LAB／自分）</th><th>購入額／仮想額</th><th>払戻／仮想払戻</th><th>損益／仮想損益</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>':'この日の購入履歴はありません。';
  select.onchange=()=>{labLedgerManualDateSelection=true;renderLabVirtualLedger();};
