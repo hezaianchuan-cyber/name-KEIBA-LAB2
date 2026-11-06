@@ -32,7 +32,12 @@ from publish_model_snapshots import verify_record  # noqa: E402
 
 
 def norm(value):
-    return unicodedata.normalize("NFKC", str(value or "")).strip()
+    normalized = unicodedata.normalize("NFKC", str(value or "")).strip()
+    repairs = {
+        "髢\u0080蛻・": "門別",
+        "驥第イ「": "金沢",
+    }
+    return repairs.get(normalized, normalized)
 
 
 def horse_no(value):
@@ -266,12 +271,13 @@ def allocate_for_race(candidates, mode):
     if mode == "ev_only":
         weights = [max(0.0, row["expected_value"] - 1.0) for row in candidates]
         return allocate_weighted_units(weights, max_share=0.30)
-    if mode == "balanced":
+    if mode in ("balanced_20", "balanced_30", "balanced_40"):
+        max_share = int(mode.rsplit("_", 1)[1]) / 100.0
         weights = [
             max(0.0, row["expected_value"] - 1.0) * math.sqrt(row["fused_probability"])
             for row in candidates
         ]
-        return allocate_weighted_units(weights, max_share=B_MAX_STAKE_SHARE)
+        return allocate_weighted_units(weights, max_share=max_share)
     raise ValueError(f"Unknown allocation mode: {mode}")
 
 
@@ -359,7 +365,7 @@ def run_backtest(snapshot_dir=SNAPSHOT_DIR, payouts_file=PAYOUTS_FILE, output_fi
         "budget_per_race_jpy": BUDGET,
         "unit_jpy": UNIT,
         "balanced_weight_formula": "max(fused_probability * preoff_trio_odds - 1, 0) * sqrt(fused_probability)",
-        "balanced_max_ticket_share": B_MAX_STAKE_SHARE,
+        "balanced_max_ticket_shares_tested": [0.20, 0.30, 0.40],
         "diagnostics": {
             **diagnostics,
             "official_payout_races": len(payouts),
@@ -371,7 +377,9 @@ def run_backtest(snapshot_dir=SNAPSHOT_DIR, payouts_file=PAYOUTS_FILE, output_fi
         "strategies": ([
             evaluate_races(races, "equal"),
             evaluate_races(races, "ev_only"),
-            evaluate_races(races, "balanced"),
+            evaluate_races(races, "balanced_20"),
+            evaluate_races(races, "balanced_30"),
+            evaluate_races(races, "balanced_40"),
         ] if ready else []),
         "note": "Research only. A and B use the same selected tickets; variable ticket count and model weight tuning are separate experiments. Stakes are capped at JPY 1,900 per race in 100-yen units; unused budget is not forced into negative-edge tickets. A not_ready report contains no performance metrics.",
     }
