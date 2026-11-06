@@ -35,6 +35,8 @@ jobs:
         run: python3 -m py_compile scripts/nar_model_g4_preoff_backtest.py
       - name: Test pre-off market blend diagnostics
         run: python3 -m unittest discover -s tests -p 'test_g4_market_blends.py' -v
+      - name: Test bounded per-day Supabase pagination
+        run: python3 -m unittest discover -s tests -p 'test_g4_supabase_pagination.py' -v
       - name: Run G4 with captured pre-off odds only
         run: python3 scripts/nar_model_g4_preoff_backtest.py
       - name: Validate market comparison diagnostics
