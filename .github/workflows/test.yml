@@ -29,6 +29,8 @@ jobs:
           deno-version: v2.x
       - name: Type-check isolated model snapshot archive function
         run: deno check supabase/functions/nar-model-snapshot-archive/index.ts
+      - name: Type-check one-minute odds capture function
+        run: deno check supabase/functions/nar-odds-capture/index.ts
       - name: Check embedded app JavaScript syntax
         run: |
           python - <<'PY'
