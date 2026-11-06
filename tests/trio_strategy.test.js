@@ -72,6 +72,22 @@ test("balanced selector chooses no more than 12 and may choose fewer", () => {
   assert.equal(strategy.selectTickets(candidates.map(x => ({ ...x, ev: 0.99 })), 12, 0.5, 1.0).length, 0);
 });
 
+
+test("50/50 ticket ranking combines trio probability rank and EV rank", () => {
+  const candidates = [
+    { comb: "1-2-3", probability: 0.90, ev: 3.0 },
+    { comb: "1-2-4", probability: 0.80, ev: 4.0 },
+    { comb: "1-3-4", probability: 0.70, ev: 2.0 },
+    { comb: "2-3-4", probability: 0.60, ev: 1.0 }
+  ];
+  const ranked = strategy.selectTickets(candidates, 12, 0.5, 0);
+  assert.equal(ranked.length, 4);
+  assert.ok(Math.abs(ranked[0].selectionScore - (5 / 6)) < 1e-10);
+  assert.ok(Math.abs(ranked[1].selectionScore - (5 / 6)) < 1e-10);
+  assert.ok(ranked[0].probabilityRank > ranked[1].probabilityRank);
+  assert.ok(ranked.every(row => Number.isFinite(row.probabilityRank) && Number.isFinite(row.evRank)));
+});
+
 test("Web and Supabase both load the same shared strategy implementation", () => {
   const root = path.resolve(__dirname, "..");
   const web = fs.readFileSync(path.join(root, "index.html"), "utf8");

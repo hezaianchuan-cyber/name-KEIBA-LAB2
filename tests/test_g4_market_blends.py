@@ -117,5 +117,58 @@ class PreoffMarketBlendComparisonTests(unittest.TestCase):
         self.assertTrue(all(item["top3_coverage_pct"] is None for item in report.values()))
 
 
+
+class ModelSnapshotSourceMergeTests(unittest.TestCase):
+    def test_partial_supabase_table_does_not_drop_github_only_races(self):
+        github_rows = [
+            {
+                "race_key": "園田|20261106|1",
+                "date": "20261106",
+                "captured_at": "2026-11-06T10:00:00+09:00",
+                "model_version": "github-archive",
+                "predictions": [{"horse_no": "1", "score": 50}],
+            },
+            {
+                "race_key": "船橋|20261106|2",
+                "date": "20261106",
+                "captured_at": "2026-11-06T10:01:00+09:00",
+                "model_version": "github-archive",
+                "predictions": [{"horse_no": "2", "score": 45}],
+            },
+        ]
+        supabase_rows = [
+            {
+                "race_id": "園田|20261106|1",
+                "race_date": "2026-11-06",
+                "captured_at": "2026-11-06T10:00:00+09:00",
+                "model_version": "supabase-authoritative",
+                "predictions": [{"horse_no": "1", "score": 55}],
+            }
+        ]
+
+        merged = g4.merge_model_snapshot_sources(github_rows, supabase_rows)
+
+        self.assertEqual(set(merged), {"園田|20261106|1", "船橋|20261106|2"})
+        self.assertEqual(len(merged["園田|20261106|1"]), 1)
+        self.assertEqual(
+            merged["園田|20261106|1"][0][1]["model_version"],
+            "supabase-authoritative",
+        )
+        self.assertEqual(
+            merged["船橋|20261106|2"][0][1]["model_version"],
+            "github-archive",
+        )
+
+    def test_same_race_different_capture_times_are_preserved(self):
+        github_rows = [
+            {"race_key": "笠松|20261106|3", "captured_at": "2026-11-06T10:00:00+09:00", "date": "20261106"},
+        ]
+        supabase_rows = [
+            {"race_id": "笠松|20261106|3", "captured_at": "2026-11-06T10:01:00+09:00", "race_date": "2026-11-06"},
+        ]
+        merged = g4.merge_model_snapshot_sources(github_rows, supabase_rows)
+        self.assertEqual(len(merged["笠松|20261106|3"]), 2)
+
+
 if __name__ == "__main__":
     unittest.main()

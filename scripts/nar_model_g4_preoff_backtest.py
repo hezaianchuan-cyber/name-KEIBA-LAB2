@@ -105,17 +105,36 @@ def load_outcomes():
     return outcomes
 
 
+def merge_model_snapshot_sources(github_rows, supabase_rows):
+    """Merge snapshot sources by race and capture time; Supabase wins exact duplicates."""
+    merged = {}
+    for source_rows in (github_rows or [], supabase_rows or []):
+        for source in source_rows:
+            key = race_key(source.get("race_key") or source.get("race_id"))
+            captured = parse_time(source.get("captured_at"))
+            if not key or captured is None:
+                continue
+            row = dict(source)
+            row["race_key"] = key
+            date = "".join(ch for ch in str(row.get("date") or row.get("race_date") or "") if ch.isdigit())
+            if date:
+                row["date"] = date
+            merged[(key, captured)] = row
+    by_race = {}
+    for (key, captured), row in merged.items():
+        by_race.setdefault(key, []).append((captured, row))
+    for values in by_race.values():
+        values.sort(key=lambda item: item[0])
+    return by_race
+
+
 def load_supabase_snapshots(model_rows):
     # The GitHub gzip archive remains a safe fallback during rollout. Once the
     # immutable Supabase table is populated, use it as the authoritative model
     # snapshot source so the odds collector and evaluator share the same rows.
-    models_by_race = {}
-    for row in model_rows:
-        captured = parse_time(row.get("captured_at"))
-        if captured is not None:
-            models_by_race.setdefault(row["race_key"], []).append((captured, row))
-    for values in models_by_race.values():
-        values.sort(key=lambda item: item[0])
+    models_by_race = merge_model_snapshot_sources(model_rows, [])
+    github_model_keys = set(models_by_race)
+    github_model_rows = sum(len(values) for values in models_by_race.values())
 
     diagnostics = {"supabase_query_rows": 0, "supabase_snapshots_joined": 0, "supabase_model_races": len(models_by_race), "supabase_race_key_matches": 0, "supabase_no_prior_model": 0, "supabase_model_too_old": 0, "supabase_empty_odds": 0, "supabase_model_dates": sorted({row.get("date") for row in model_rows if row.get("date")}), "supabase_model_key_samples": sorted(models_by_race.keys())[:8], "supabase_odds_key_samples": [], "supabase_odds_dates": [], "supabase_model_venues": sorted({key.split("|")[0] for key in models_by_race}), "supabase_odds_venues": [], "supabase_common_venues": [], "model_snapshot_table_rows": 0, "model_snapshot_table_status": "github_fallback"}
     if not SUPABASE_URL or not SUPABASE_KEY:
@@ -165,25 +184,37 @@ def load_supabase_snapshots(model_rows):
                 if len(model_page) < model_page_size:
                     break
                 model_offset += model_page_size
-            if model_table_rows:
-                models_by_race = {}
+            supabase_model_rows = []
             for item in model_table_rows:
                 key = race_key(item.get("race_id"))
                 captured = parse_time(item.get("captured_at"))
                 if not key or captured is None:
                     continue
                 date = "".join(ch for ch in str(item.get("race_date") or "") if ch.isdigit())
-                model = {
+                supabase_model_rows.append({
                     "race_key": key,
                     "date": date,
+                    "captured_at": item.get("captured_at"),
                     "model_temperature": item.get("model_temperature"),
                     "model_version": item.get("model_version"),
                     "predictions": item.get("predictions") or [],
                     "candidate_combinations": item.get("candidate_combinations") or [],
-                }
-                models_by_race.setdefault(key, []).append((captured, model))
+                })
+            # Supabase is authoritative for an identical (race, capture time),
+            # but must not erase GitHub archive-only races. During rollout the
+            # database can be only partially populated, including newcomer races.
+            models_by_race = merge_model_snapshot_sources(model_rows, supabase_model_rows)
+            supabase_model_keys = {
+                key for key in (race_key(row.get("race_key")) for row in supabase_model_rows) if key
+            }
+            diagnostics["github_model_snapshot_rows"] = github_model_rows
+            diagnostics["github_model_snapshot_races"] = len(github_model_keys)
+            diagnostics["supabase_model_snapshot_rows"] = len(supabase_model_rows)
+            diagnostics["supabase_model_snapshot_races"] = len(supabase_model_keys)
+            diagnostics["github_fallback_only_races"] = len(github_model_keys - supabase_model_keys)
+            diagnostics["merged_model_snapshot_rows"] = sum(len(values) for values in models_by_race.values())
             if model_table_rows:
-                diagnostics["model_snapshot_table_status"] = "loaded"
+                diagnostics["model_snapshot_table_status"] = "loaded_merged_with_github_fallback"
                 diagnostics["model_snapshot_table_rows"] = len(model_table_rows)
             else:
                 diagnostics["model_snapshot_table_status"] = "empty_using_github_fallback"

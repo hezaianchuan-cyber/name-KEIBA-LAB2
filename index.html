@@ -1496,8 +1496,10 @@ function generateTickets(){
    if(type!=="3連複")return;
    const numbers=comb.map(h=>String(h.horseNo)).sort((a,b)=>Number(normNo(a))-Number(normNo(b)));
    const probability=Math.max(0,Math.min(1,comboProbability(type,numbers)));
+   const labProbability=strategy?strategy.trioProbability(numbers,field.map(h=>({horseNo:String(h.horseNo),probability:Number(h.labProb)||0}))):null;
+   const marketProbability=fusion.marketBlendApplied&&strategy?strategy.trioProbability(numbers,field.map(h=>({horseNo:String(h.horseNo),probability:Number(h.marketProb)||0}))):null;
    const odds=findOdds(type,numbers);
-   candidates.push({type,comb:numbers.join('-'),probability,odds,ev:odds&&odds>0?probability*odds:null});
+   candidates.push({type,comb:numbers.join('-'),labProbability,marketProbability,probability,odds,ev:odds&&odds>0?probability*odds:null});
  };
  // Adaptive trio pool: use the same top-4/5/6/7 score-gap rule as backtest and Supabase.
  const selectedPool=field.slice(0,adaptivePoolSize);
@@ -1508,7 +1510,12 @@ function generateTickets(){
  const typeKeys={'3連複':'trio'};
  const thresholdFor=type=>{const v=Number(verifiedTicketThresholds[typeKeys[type]]);return Number.isFinite(v)&&v>0?v:null;};
  const decision=x=>{if(x.ev==null)return 'オッズ待ち';const t=thresholdFor(x.type);if(t==null)return '検証基準未成立・購入対象外';return x.ev>=Math.max(1.05,t)?'検証済みEV基準通過':x.ev>=0.85?'EV基準未達（控えめ）':'EV基準未達（低め）';};
- const ranked=type=>candidates.filter(x=>x.type===type).sort((a,b)=>{const p=b.probability-a.probability;if(Math.abs(p)>1e-9)return p;return (b.ev??-1)-(a.ev??-1);});
+ const ranked=type=>{
+   const rows=candidates.filter(x=>x.type===type);
+   const priced=rows.filter(x=>Number.isFinite(Number(x.ev))&&Number(x.ev)>0);
+   if(strategy&&priced.length)return strategy.selectTickets(priced,12,0.5,0);
+   return rows.sort((a,b)=>b.probability-a.probability||(b.ev??-1)-(a.ev??-1)).slice(0,12).map(x=>({...x,probabilityRank:null,evRank:null,selectionScore:null}));
+ };
  const formatPct=v=>(v*100).toFixed(2)+'%',formatOdds=v=>v==null?'未取得':v.toFixed(1)+'倍',formatEv=v=>v==null?'—':v.toFixed(3);
  const main=ranked('3連複');
  // Evidence-based explanations: display only factors actually present in scoreRunner().
@@ -1551,10 +1558,10 @@ function generateTickets(){
  const skipReason=!learnedModelLoaded&&!autoPlanSourceUsed?'①校正済み学習モデル未読込。モデル読込が完了するまで購入判定を停止。':oddsRows.length===0?'②選択レースの実オッズが0件。公式オッズ取得後に再分析。':oddsMatchedCount===0?'③候補買い目と一致する券種別オッズが0件。馬番・券種・組番の照合が必要。':validatedTypeCount===0?'④券種別の検証済み基準が未成立。現状は回収率100％超を未証明のため、全券種を見送り。':'⑤検証済みEV基準を満たす候補がない。EVが基準値未満。';
  const roiContextHtml='<details style="margin:10px 0"><summary>回収率の検証状況を見る</summary><p class="sub">11月3〜4日の旧モデルv7/v8による探索的バックテスト（45レース・同一予算1,900円/レース）：LAB 19点 52.30%、LAB 10点 71.59%、市場10点 84.68%。すべて100%未満です。この数字は現行v9の成績ではありません。現行v9は別集計で検証中であり、少数レースの暫定結果を実購入の根拠にはしません。</p><p class="sub">EVは「推定的中確率×現在オッズ」の理論値です。回収率は実際の確定払戻を累積した結果で、別の指標です。EVが高くても回収率100%超を保証しません。</p></details>';
  const selectedHtml=selectedType&&allocation.length
-   ? '<h3>このレースの自動選択：'+selectedType+'</h3><p>検証済みの3連複EV基準を満たす候補に、購入上限2,000円の範囲で配分します。</p><p class="sub">選択理由：推定確率と実オッズから算出したEVが、事前検証で合格した券種別基準を超えています。回収率の保証ではありません。</p><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>EV</th><th>配分額</th></tr></thead><tbody>'+allocation.map(x=>'<tr><td><b>'+selectedType+' '+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+x.stake.toLocaleString()+'円</td></tr>').join('')+'</tbody></table></div><p><b>推奨購入額：'+allocated.toLocaleString()+'円／上限2,000円</b></p>'
+   ? '<h3>このレースの自動選択：'+selectedType+'</h3><p>検証済みの3連複EV基準を満たす候補に、購入上限2,000円の範囲で配分します。</p><p class="sub">選択理由：推定確率と実オッズから算出したEVが、事前検証で合格した券種別基準を超えています。回収率の保証ではありません。</p><div class="tablewrap"><table><thead><tr><th>買い目</th><th>LAB確率</th><th>市場確率</th><th>融合確率</th><th>オッズ</th><th>EV</th><th>配分額</th></tr></thead><tbody>'+allocation.map(x=>'<tr><td><b>'+selectedType+' '+x.comb+'</b></td><td>'+formatPct(x.labProbability??x.probability)+'</td><td>'+(x.marketProbability==null?'—':formatPct(x.marketProbability))+'</td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+x.stake.toLocaleString()+'円</td></tr>').join('')+'</tbody></table></div><p><b>推奨購入額：'+allocated.toLocaleString()+'円／上限2,000円</b></p>'
    : '<h3>このレースは見送り</h3><p><b>今回の理由：</b>'+esc(skipReason)+'</p><details open><summary>見送り基準の詳細</summary><ol><li>校正済みモデルが読み込まれていること</li><li>選択レースの実オッズが取得できていること</li><li>候補買い目と券種・組番が一致するオッズがあること</li><li>券種別の検証基準が成立していること（未使用期間で購入対象100レース以上・300点以上、回収率100％超、回収率95％信頼区間の下限も100％超）</li><li>候補EVが1.05以上かつ、その券種で検証済みのEV閾値以上であること</li></ol><p>現在は券種別の検証済み閾値が成立していないため、EVが高く見えてもBETにはしません。見送りは検証未達を示すもので、馬の能力が低いという意味ではありません。</p></details>';
  const pct=v=>(v*100).toFixed(2)+'%',odds=v=>v==null?'未取得':v.toFixed(1)+'倍',ev=v=>v==null?'—':v.toFixed(3);
- const mainHtml='<h3>'+(fusion.marketBlendApplied?'LAB×市場50%融合':'LAB単独')+'・可変式3連複候補（上位'+adaptivePoolSize+'頭）</h3><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+main.map(x=>'<tr><td><b>3連複 '+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';
+ const mainHtml='<h3>3連複候補・最大12点（確率順位50%＋EV順位50%）</h3><p class="sub">'+(fusion.marketBlendApplied?'馬ごとのLAB勝率と市場推定勝率を50:50で融合。':'単勝オッズの取得率が70%未満のため、馬の確率はLAB単独。')+'買い目は3連複的中確率順位とEV順位を50:50で合成。オッズ未取得の組合せはEV順位の対象外です。</p><div class="tablewrap"><table><thead><tr><th>融合順位</th><th>買い目</th><th>LAB的中確率</th><th>市場的中確率</th><th>融合的中確率</th><th>3連複オッズ</th><th>EV</th><th>確率順位スコア</th><th>EV順位スコア</th><th>判定</th></tr></thead><tbody>'+main.map((x,i)=>'<tr><td>'+(i+1)+'</td><td><b>3連複 '+x.comb+'</b></td><td>'+formatPct(x.labProbability??x.probability)+'</td><td>'+(x.marketProbability==null?'—':formatPct(x.marketProbability))+'</td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+(x.probabilityRank==null?'—':x.probabilityRank.toFixed(3))+'</td><td>'+(x.evRank==null?'—':x.evRank.toFixed(3))+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';
  const horseHtml='<h3>予想上位馬</h3><div class="tablewrap"><table><thead><tr><th>順位</th><th>馬番・馬名</th><th>評価点</th><th>'+(fusion.marketBlendApplied?'市場融合推定勝率':(learnedModelLoaded?'LAB推定勝率':'参考スコア比率'))+'</th><th>単勝オッズ</th></tr></thead><tbody>'+top.map((h,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(h.horseNo+'番 '+(h.name||''))+'</td><td>'+(Number(h.score)||0).toFixed(1)+'</td><td>'+formatPct(h.modelProb)+'</td><td>'+formatOdds(Number(h.odds)>0?Number(h.odds):null)+'</td></tr>').join('')+'</tbody></table></div>';
  const allHtml='<h3>3連複候補一覧（'+main.length+'点）</h3><div class="tablewrap"><table><thead><tr><th>買い目</th><th>推定確率</th><th>オッズ</th><th>暫定EV</th><th>判定</th></tr></thead><tbody>'+main.map(x=>'<tr><td><b>'+x.comb+'</b></td><td>'+formatPct(x.probability)+'</td><td>'+formatOdds(x.odds)+'</td><td>'+formatEv(x.ev)+'</td><td>'+decision(x)+'</td></tr>').join('')+'</tbody></table></div>';
  // Freeze the exact recommendation at prediction time. Never recalculate this snapshot after odds/results change.
@@ -1568,8 +1575,8 @@ function generateTickets(){
      decision:selectedType&&allocation.length?'BET':'SKIP',
      skipReason:selectedType&&allocation.length?'':skipReason,
      skipReasonCode:selectedType&&allocation.length?'BET':(!learnedModelLoaded&&!autoPlanSourceUsed?'MODEL_NOT_READY':oddsRows.length===0?'ODDS_NOT_CAPTURED':oddsMatchedCount===0?'TICKET_ODDS_NOT_MATCHED':validatedTypeCount===0?'NO_VALIDATED_TICKET_THRESHOLD':'EV_BELOW_VALIDATED_THRESHOLD'),
-     totalStake:allocated||0,tickets:allocation.map(x=>({type:x.type,comb:x.comb,stake:x.stake,odds:x.odds,probability:x.probability,ev:x.ev})),
-     shadowTickets:ranked('3連複').map(x=>({type:'3連複',comb:x.comb,odds:x.odds,probability:x.probability,ev:x.ev,virtualStake:100})),
+     totalStake:allocated||0,tickets:allocation.map(x=>({type:x.type,comb:x.comb,stake:x.stake,odds:x.odds,labProbability:x.labProbability,marketProbability:x.marketProbability,probability:x.probability,probabilityRank:x.probabilityRank,evRank:x.evRank,selectionScore:x.selectionScore,ev:x.ev})),
+     shadowTickets:ranked('3連複').map(x=>({type:'3連複',comb:x.comb,odds:x.odds,labProbability:x.labProbability,marketProbability:x.marketProbability,probability:x.probability,probabilityRank:x.probabilityRank,evRank:x.evRank,selectionScore:x.selectionScore,ev:x.ev,virtualStake:100})),
      modelTopHorse:String(field[0]?.horseNo||'')||null,
      modelTop3:field.slice(0,3).map(h=>String(h.horseNo)),
      labTop3:[...field].sort((a,b)=>b.labProb-a.labProb).slice(0,3).map(h=>String(h.horseNo)),

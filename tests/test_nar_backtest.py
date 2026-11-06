@@ -2530,7 +2530,7 @@ class G4SupabasePaginationTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["predictions"], persisted_predictions)
         self.assertEqual(rows[0]["model_temperature"], 0.22)
-        self.assertEqual(diagnostics["model_snapshot_table_status"], "loaded")
+        self.assertEqual(diagnostics["model_snapshot_table_status"], "loaded_merged_with_github_fallback")
         self.assertEqual(diagnostics["model_snapshot_table_rows"], 1)
         self.assertEqual(diagnostics["supabase_snapshots_joined"], 1)
 

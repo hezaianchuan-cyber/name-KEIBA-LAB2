@@ -41,7 +41,31 @@ jobs:
           Path("/tmp/keiba-lab.js").write_text("\n".join(scripts), encoding="utf-8")
           PY
           node --check /tmp/keiba-lab.js
+      - name: Run shared trio strategy tests
+        run: node --test tests/trio_strategy.test.js
       - name: Run pipeline static safety audit
         run: python scripts/nar_pipeline_audit.py
       - name: Run regression tests
         run: python -m unittest discover -s tests -v
+      - name: Run G4 with merged pre-off model snapshot sources
+        run: python scripts/nar_model_g4_preoff_backtest.py
+      - name: Validate merged model snapshot coverage
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("data/model-g4-preoff-backtest.json").read_text(encoding="utf-8"))
+          diagnostics = report.get("diagnostics", {})
+          status = diagnostics.get("model_snapshot_table_status")
+          if status == "loaded_merged_with_github_fallback":
+              github_rows = diagnostics.get("github_model_snapshot_rows", 0)
+              merged_rows = diagnostics.get("merged_model_snapshot_rows", 0)
+              if merged_rows < github_rows:
+                  raise SystemExit("Merged model snapshots dropped GitHub archive rows")
+              print("G4 merged snapshot rows:", merged_rows,
+                    "GitHub fallback-only races:", diagnostics.get("github_fallback_only_races", 0))
+          elif status not in ("empty_using_github_fallback", "unavailable_using_github_fallback"):
+              raise SystemExit("Unexpected model snapshot source status: " + str(status))
+          else:
+              print("G4 is using the available GitHub fallback:", status)
+          PY
