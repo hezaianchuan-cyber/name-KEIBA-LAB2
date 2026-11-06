@@ -579,13 +579,16 @@ class PerBetTypeProbabilityTests(unittest.TestCase):
 class BalancedTrioSelectionTests(unittest.TestCase):
     def test_selector_balances_probability_and_ev_ranks(self):
         candidates = [
-            {"bet_type":"trio","numbers":["1","2","3"],"probability":0.30,"expected_value":1.10},
-            {"bet_type":"trio","numbers":["1","2","4"],"probability":0.10,"expected_value":2.00},
-            {"bet_type":"trio","numbers":["1","2","5"],"probability":0.20,"expected_value":1.50},
+            {"bet_type":"trio","numbers":["1","2","3"],"probability":0.50,"expected_value":1.10},
+            {"bet_type":"trio","numbers":["1","2","4"],"probability":0.40,"expected_value":1.80},
+            {"bet_type":"trio","numbers":["1","2","5"],"probability":0.30,"expected_value":2.00},
+            {"bet_type":"trio","numbers":["1","2","6"],"probability":0.20,"expected_value":1.40},
+            {"bet_type":"trio","numbers":["1","2","7"],"probability":0.10,"expected_value":1.60},
         ]
         selected = nb.select_balanced_trio_tickets(candidates, 1, 0.5, 1.05)
         self.assertEqual(len(selected), 1)
-        self.assertEqual(selected[0]["numbers"], ["1","2","5"])
+        # Candidate 2 is second by probability and second by EV; it wins the 50:50 blend.
+        self.assertEqual(selected[0]["numbers"], ["1","2","4"])
 
     def test_selector_caps_at_12_and_allows_fewer_or_zero(self):
         candidates = [
