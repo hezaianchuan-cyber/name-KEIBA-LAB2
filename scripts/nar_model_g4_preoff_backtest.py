@@ -229,56 +229,56 @@ def load_supabase_snapshots(model_rows):
                     raise RuntimeError("Supabase odds_snapshots response was not a JSON array")
                 diagnostics["supabase_query_rows"] += len(page)
                 for item in page:
-                key = race_key(item.get("race_id"))
-                captured = parse_time(item.get("captured_at"))
-                if not key or captured is None:
-                    continue
-                if len(diagnostics["supabase_odds_key_samples"]) < 8 and key not in diagnostics["supabase_odds_key_samples"]:
-                    diagnostics["supabase_odds_key_samples"].append(key)
-                if len(diagnostics["supabase_odds_dates"]) < 10 and key.split("|")[1] not in diagnostics["supabase_odds_dates"]:
-                    diagnostics["supabase_odds_dates"].append(key.split("|")[1])
-                venue = key.split("|")[0]
-                if venue not in diagnostics["supabase_odds_venues"]:
-                    diagnostics["supabase_odds_venues"].append(venue)
-                model_candidates = models_by_race.get(key, [])
-                if model_candidates:
-                    diagnostics["supabase_race_key_matches"] += 1
-                prior = [pair for pair in model_candidates if pair[0] <= captured]
-                if not prior:
-                    diagnostics["supabase_no_prior_model"] += 1
-                    continue
-                model_time, model = prior[-1]
-                age_minutes = (captured - model_time).total_seconds() / 60.0
-                if age_minutes < 0 or age_minutes > MAX_MODEL_AGE_MINUTES:
-                    diagnostics["supabase_model_too_old"] += 1
-                    continue
-                odds_data = item.get("odds_data") or {}
-                odds = odds_data.get("odds") or []
-                if not odds:
-                    diagnostics["supabase_empty_odds"] += 1
-                    continue
-                minutes = odds_data.get("minutes_to_post")
-                try:
-                    minutes = float(minutes)
-                except (TypeError, ValueError):
-                    post = parse_time(odds_data.get("scheduled_post_time"))
-                    minutes = ((post - captured).total_seconds() / 60.0) if post else None
-                if minutes is None:
-                    continue
-                output.append({
-                    "race_key": key,
-                    "date": key.split("|")[1],
-                    "venue": key.split("|")[0],
-                    "captured_at": captured.isoformat(),
-                    "scheduled_post_time": odds_data.get("scheduled_post_time"),
-                    "minutes_to_post": minutes,
-                    "model_temperature": model.get("model_temperature"),
-                    "predictions": model.get("predictions") or [],
-                    "odds": odds,
-                    "capture_source": "supabase_one_minute",
-                    "prediction_age_minutes": round(age_minutes, 3),
-                })
-                diagnostics["supabase_snapshots_joined"] += 1
+                    key = race_key(item.get("race_id"))
+                    captured = parse_time(item.get("captured_at"))
+                    if not key or captured is None:
+                        continue
+                    if len(diagnostics["supabase_odds_key_samples"]) < 8 and key not in diagnostics["supabase_odds_key_samples"]:
+                        diagnostics["supabase_odds_key_samples"].append(key)
+                    if len(diagnostics["supabase_odds_dates"]) < 10 and key.split("|")[1] not in diagnostics["supabase_odds_dates"]:
+                        diagnostics["supabase_odds_dates"].append(key.split("|")[1])
+                    venue = key.split("|")[0]
+                    if venue not in diagnostics["supabase_odds_venues"]:
+                        diagnostics["supabase_odds_venues"].append(venue)
+                    model_candidates = models_by_race.get(key, [])
+                    if model_candidates:
+                        diagnostics["supabase_race_key_matches"] += 1
+                    prior = [pair for pair in model_candidates if pair[0] <= captured]
+                    if not prior:
+                        diagnostics["supabase_no_prior_model"] += 1
+                        continue
+                    model_time, model = prior[-1]
+                    age_minutes = (captured - model_time).total_seconds() / 60.0
+                    if age_minutes < 0 or age_minutes > MAX_MODEL_AGE_MINUTES:
+                        diagnostics["supabase_model_too_old"] += 1
+                        continue
+                    odds_data = item.get("odds_data") or {}
+                    odds = odds_data.get("odds") or []
+                    if not odds:
+                        diagnostics["supabase_empty_odds"] += 1
+                        continue
+                    minutes = odds_data.get("minutes_to_post")
+                    try:
+                        minutes = float(minutes)
+                    except (TypeError, ValueError):
+                        post = parse_time(odds_data.get("scheduled_post_time"))
+                        minutes = ((post - captured).total_seconds() / 60.0) if post else None
+                    if minutes is None:
+                        continue
+                    output.append({
+                        "race_key": key,
+                        "date": key.split("|")[1],
+                        "venue": key.split("|")[0],
+                        "captured_at": captured.isoformat(),
+                        "scheduled_post_time": odds_data.get("scheduled_post_time"),
+                        "minutes_to_post": minutes,
+                        "model_temperature": model.get("model_temperature"),
+                        "predictions": model.get("predictions") or [],
+                        "odds": odds,
+                        "capture_source": "supabase_one_minute",
+                        "prediction_age_minutes": round(age_minutes, 3),
+                    })
+                    diagnostics["supabase_snapshots_joined"] += 1
                 if len(page) < page_size:
                     break
                 offset += page_size
