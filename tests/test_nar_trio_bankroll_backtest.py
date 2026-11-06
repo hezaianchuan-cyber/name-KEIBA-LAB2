@@ -109,10 +109,10 @@ class TrioBankrollAllocationTests(unittest.TestCase):
             payouts.write_text(json.dumps({"days": []}), encoding="utf-8")
             output = root / "report.json"
             report = run_backtest(snapshot_dir, payouts, output)
+            self.assertTrue(output.is_file())
         self.assertEqual(report["status"], "not_ready")
         self.assertEqual(report["matched_races"], 0)
         self.assertEqual(report["strategies"], [])
-        self.assertTrue(output.is_file())
 
 
 if __name__ == "__main__":
