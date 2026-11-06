@@ -90,7 +90,7 @@ class TrioBankrollAllocationTests(unittest.TestCase):
         self.assertEqual(balanced["hit_races"], 1)
         self.assertLessEqual(balanced["stake_jpy"], 1900)
         self.assertEqual(race_key("園田|20261106|01"), "園田|20261106|1")
-        self.assertEqual(race_key("髢\\u0080蛻・|20261106|01"), "門別|20261106|1")
+        self.assertEqual(race_key("髢\u0080蛻・|20261106|01"), "門別|20261106|1")
 
     def test_snapshot_loader_rejects_unverified_lock(self):
         with tempfile.TemporaryDirectory() as temp:
