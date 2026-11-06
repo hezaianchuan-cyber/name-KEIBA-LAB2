@@ -1569,7 +1569,7 @@ function generateTickets(){
      skipReason:selectedType&&allocation.length?'':skipReason,
      skipReasonCode:selectedType&&allocation.length?'BET':(!learnedModelLoaded&&!autoPlanSourceUsed?'MODEL_NOT_READY':oddsRows.length===0?'ODDS_NOT_CAPTURED':oddsMatchedCount===0?'TICKET_ODDS_NOT_MATCHED':validatedTypeCount===0?'NO_VALIDATED_TICKET_THRESHOLD':'EV_BELOW_VALIDATED_THRESHOLD'),
      totalStake:allocated||0,tickets:allocation.map(x=>({type:x.type,comb:x.comb,stake:x.stake,odds:x.odds,probability:x.probability,ev:x.ev})),
-     shadowTickets:(selectedType&&allocation.length?allocation:ranked('3連複').slice(0,3)).map(x=>({type:'3連複',comb:x.comb,odds:x.odds,probability:x.probability,ev:x.ev,virtualStake:100})),
+     shadowTickets:ranked('3連複').map(x=>({type:'3連複',comb:x.comb,odds:x.odds,probability:x.probability,ev:x.ev,virtualStake:100})),
      modelTopHorse:String(field[0]?.horseNo||'')||null,
      modelTop3:field.slice(0,3).map(h=>String(h.horseNo)),
      labTop3:[...field].sort((a,b)=>b.labProb-a.labProb).slice(0,3).map(h=>String(h.horseNo)),
