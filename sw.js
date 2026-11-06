@@ -1,5 +1,5 @@
-const CACHE_NAME = "keiba-lab-web-v30";
-const CORE = ["./", "./index.html", "./manifest.webmanifest"];
+const CACHE_NAME = "keiba-lab-web-v31";
+const CORE = ["./", "./index.html", "./manifest.webmanifest", "./supabase/functions/nar-odds-capture/_shared/trio_strategy.js"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
 });
