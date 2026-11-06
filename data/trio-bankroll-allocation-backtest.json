@@ -1,0 +1,106 @@
+{
+  "generated_at": "2026-11-06T01:17:40.295488+00:00",
+  "status": "ready",
+  "source": "SHA-256-verified NAR pre-off model snapshots + official NAR trio payouts",
+  "market_weight": 0.5,
+  "ticket_selection": "same top 12 by fused probability for every allocation strategy; selection held fixed to isolate stake allocation",
+  "budget_per_race_jpy": 1900,
+  "unit_jpy": 100,
+  "balanced_weight_formula": "max(fused_probability * preoff_trio_odds - 1, 0) * sqrt(fused_probability)",
+  "balanced_max_ticket_shares_tested": [
+    0.2,
+    0.3,
+    0.4
+  ],
+  "diagnostics": {
+    "files": 4,
+    "lines": 100,
+    "valid_locked_preoff": 16,
+    "invalid_lock_or_shape": 84,
+    "missing_trio_candidates_or_odds": 0,
+    "official_payout_races": 5327,
+    "official_payout_error": null
+  },
+  "matched_races": 6,
+  "model_versions": {
+    "nar-chronological-v9-D-frame-preoff": 6
+  },
+  "strategies": [
+    {
+      "strategy": "equal",
+      "races": 6,
+      "hit_races": 5,
+      "race_hit_rate_pct": 83.33,
+      "staked_tickets": 72,
+      "stake_jpy": 11400,
+      "return_jpy": 15000,
+      "profit_jpy": 3600,
+      "roi_pct": 131.58,
+      "average_stake_per_race_jpy": 1900.0,
+      "max_drawdown_jpy": 3460,
+      "max_losing_streak": 3,
+      "unspent_races": 0
+    },
+    {
+      "strategy": "ev_only",
+      "races": 6,
+      "hit_races": 0,
+      "race_hit_rate_pct": 0.0,
+      "staked_tickets": 14,
+      "stake_jpy": 6800,
+      "return_jpy": 0,
+      "profit_jpy": -6800,
+      "roi_pct": 0.0,
+      "average_stake_per_race_jpy": 1133.33,
+      "max_drawdown_jpy": 6800,
+      "max_losing_streak": 4,
+      "unspent_races": 2
+    },
+    {
+      "strategy": "balanced_20",
+      "races": 6,
+      "hit_races": 0,
+      "race_hit_rate_pct": 0.0,
+      "staked_tickets": 14,
+      "stake_jpy": 4200,
+      "return_jpy": 0,
+      "profit_jpy": -4200,
+      "roi_pct": 0.0,
+      "average_stake_per_race_jpy": 700.0,
+      "max_drawdown_jpy": 4200,
+      "max_losing_streak": 4,
+      "unspent_races": 2
+    },
+    {
+      "strategy": "balanced_30",
+      "races": 6,
+      "hit_races": 0,
+      "race_hit_rate_pct": 0.0,
+      "staked_tickets": 14,
+      "stake_jpy": 6800,
+      "return_jpy": 0,
+      "profit_jpy": -6800,
+      "roi_pct": 0.0,
+      "average_stake_per_race_jpy": 1133.33,
+      "max_drawdown_jpy": 6800,
+      "max_losing_streak": 4,
+      "unspent_races": 2
+    },
+    {
+      "strategy": "balanced_40",
+      "races": 6,
+      "hit_races": 0,
+      "race_hit_rate_pct": 0.0,
+      "staked_tickets": 14,
+      "stake_jpy": 7600,
+      "return_jpy": 0,
+      "profit_jpy": -7600,
+      "roi_pct": 0.0,
+      "average_stake_per_race_jpy": 1266.67,
+      "max_drawdown_jpy": 7600,
+      "max_losing_streak": 4,
+      "unspent_races": 2
+    }
+  ],
+  "note": "Research only. A and B use the same selected tickets; variable ticket count and model weight tuning are separate experiments. Stakes are capped at JPY 1,900 per race in 100-yen units; unused budget is not forced into negative-edge tickets. A not_ready report contains no performance metrics."
+}
