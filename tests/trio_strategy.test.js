@@ -1,5 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 require("../supabase/functions/nar-odds-capture/_shared/trio_strategy.js");
 const strategy = globalThis.KEIBALAB_TRIO_STRATEGY;
 
@@ -54,4 +56,14 @@ test("adaptive pool generates C(n,3) trio candidates and matches official odds",
     assert.ok(result.candidates.every(ticket => ticket.probability > 0));
     assert.equal(result.candidates.find(ticket => ticket.comb === "1-2-3").odds, 12.5);
   }
+});
+
+test("Web and Supabase both load the same shared strategy implementation", () => {
+  const root = path.resolve(__dirname, "..");
+  const web = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const edge = fs.readFileSync(path.join(root, "supabase/functions/nar-odds-capture/index.ts"), "utf8");
+  assert.ok(web.includes("./supabase/functions/nar-odds-capture/_shared/trio_strategy.js"));
+  assert.ok(edge.includes('import "./_shared/trio_strategy.js"'));
+  assert.ok(web.includes("adaptivePoolSize"));
+  assert.ok(edge.includes("adaptivePoolSize"));
 });
