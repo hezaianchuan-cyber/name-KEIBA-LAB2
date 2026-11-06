@@ -3156,6 +3156,7 @@ def preoff_ticket_type_backtest(payouts):
         output = {}
         for threshold in thresholds:
             races_with_bets = tickets_count = hits = stake = returned = 0
+            max_tickets_per_race = 0
             race_results = []
             for _, tickets, payout in subset:
                 race_stake = race_return = race_count = 0
@@ -3182,6 +3183,7 @@ def preoff_ticket_type_backtest(payouts):
                         race_return += pay
                 if race_count:
                     races_with_bets += 1
+                    max_tickets_per_race = max(max_tickets_per_race, race_count)
                     tickets_count += race_count
                     stake += race_stake
                     returned += race_return
@@ -3204,6 +3206,8 @@ def preoff_ticket_type_backtest(payouts):
             enough = races_with_bets >= 100 and tickets_count >= 300
             output[f"{threshold:.2f}"] = {
                 "races_with_bets":races_with_bets,"tickets":tickets_count,"hits":hits,
+                "max_tickets_per_race":max_tickets_per_race,
+                "average_tickets_per_bet_race":round(tickets_count/races_with_bets,2) if races_with_bets else None,
                 "stake":stake,"return":returned,
                 "hit_rate":round(100*hits/tickets_count,2) if tickets_count else None,
                 "roi":round(100*returned/stake,2) if stake else None,
