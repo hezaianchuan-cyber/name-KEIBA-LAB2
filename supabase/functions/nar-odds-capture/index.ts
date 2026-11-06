@@ -1,4 +1,4 @@
-import { unzipSync } from "npm:fflate@0.8.2";
+import { unzipSync, gunzipSync } from "npm:fflate@0.8.2";
 
 const RACE_URL = "https://www.keiba.go.jp/KeibaWeb/DataDownload/RaceDataDownload?type=daily";
 const ODDS_URL = "https://www.keiba.go.jp/KeibaWeb/DataDownload/OddsDataDownload?type=daily";
@@ -106,63 +106,22 @@ async function fetchJson(url:string):Promise<any>{
   const r=await fetch(url,{headers:{"Cache-Control":"no-cache"},signal:AbortSignal.timeout(20000)});
   if(!r.ok)throw new Error("HTTP "+r.status+" for "+url); return await r.json();
 }
-
-async function loadModelSnapshot(raceId:string,raceDate:string,capturedAt:string,serviceUrl:string,serviceKey:string):Promise<any|null>{
-  const cutoffMs=new Date(capturedAt).getTime()-15*60*1000;
-  if(!Number.isFinite(cutoffMs))return null;
-  const params=new URLSearchParams();
-  params.set("select","race_id,race_date,captured_at,scheduled_post_time,model_version,model_temperature,predictions,candidate_combinations,model_g_version,model_g_predictions,model_g_candidate_combinations");
-  params.set("race_id","eq."+raceId);
-  params.set("race_date","eq."+raceDate);
-  params.append("captured_at","gte."+new Date(cutoffMs).toISOString());
-  params.append("captured_at","lte."+capturedAt);
-  params.set("order","captured_at.desc");
-  params.set("limit","1");
-  const response=await fetch(serviceUrl+"/rest/v1/model_prediction_snapshots?"+params.toString(),{
-    headers:{"apikey":serviceKey,"Authorization":"Bearer "+serviceKey,"Accept":"application/json","Cache-Control":"no-cache"},
-    signal:AbortSignal.timeout(12000),
-  });
-  if(!response.ok)throw new Error("Model snapshot lookup HTTP "+response.status+": "+(await response.text()).slice(0,300));
-  const rows=await response.json();
-  if(!Array.isArray(rows)||!rows.length)return null;
-  const model=rows[0];
-  const modelAt=new Date(model.captured_at).getTime();
-  const postAt=new Date(model.scheduled_post_time).getTime();
-  const oddsAt=new Date(capturedAt).getTime();
-  if(!Number.isFinite(modelAt)||!Number.isFinite(postAt)||modelAt>oddsAt||postAt<=modelAt||oddsAt-modelAt>15*60*1000)return null;
-  return model;
+async function loadModelSnapshot(raceId:string,raceDate:string,capturedAt:string):Promise<any|null>{
+  const day=raceDate.replace(/-/g,""); if(!/^\d{8}$/.test(day))return null;
+  const archiveUrl=REPO_RAW+"/data/odds-snapshots/"+day.slice(0,4)+"-"+day.slice(4,6)+"-"+day.slice(6,8)+".jsonl.gz";
+  const response=await fetch(archiveUrl,{headers:{"Cache-Control":"no-cache"},signal:AbortSignal.timeout(20000)});
+  if(!response.ok)return null;
+  const raw=new Uint8Array(await response.arrayBuffer());
+  const text=new TextDecoder().decode(gunzipSync(raw));
+  const cutoff=new Date(capturedAt).getTime(); let selected:any=null,selectedTime=-Infinity;
+  for(const line of text.split(/\r?\n/)){if(!line)continue;try{
+    const row=JSON.parse(line); if(row.race_key!==raceId||!row.captured_at||!Array.isArray(row.predictions))continue;
+    const time=new Date(row.captured_at).getTime();
+    if(!Number.isFinite(time)||time>cutoff||cutoff-time>15*60*1000)continue;
+    if(time>selectedTime){selected=row;selectedTime=time;}
+  }catch{/* ignore malformed archive line */}}
+  return selected;
 }
-
-async function archiveModelSnapshots(snapshots:any[],serviceUrl:string,serviceKey:string):Promise<any>{
-  if(!Array.isArray(snapshots))throw new Error("snapshots must be an array");
-  const valid=snapshots.filter((item:any)=>{
-    if(!item||typeof item.race_id!=="string"||typeof item.race_date!=="string"||
-       typeof item.model_version!=="string"||!Array.isArray(item.predictions)||item.predictions.length<3||
-       !item.prediction_lock||!/^[a-f0-9]{64}$/i.test(String(item.prediction_lock.digest||""))||
-       !item.locked_payload||typeof item.locked_payload!=="object"||Array.isArray(item.locked_payload)||
-       item.locked_payload.race_key!==item.race_id||item.locked_payload.captured_at!==item.captured_at||
-       item.locked_payload.scheduled_post_time!==item.scheduled_post_time||
-       item.locked_payload.model_version!==item.model_version||
-       !Array.isArray(item.locked_payload.predictions)||item.locked_payload.predictions.length!==item.predictions.length||
-       !Array.isArray(item.locked_payload.odds))return false;
-    const captured=new Date(item.captured_at).getTime(),post=new Date(item.scheduled_post_time).getTime();
-    const minutes=(post-captured)/60000;
-    return Number.isFinite(captured)&&Number.isFinite(post)&&minutes>=2&&minutes<=30&&
-      item.prediction_lock.locked_at===item.captured_at;
-  });
-  if(!valid.length)return {ok:true,received:snapshots.length,upserted:0,rejected:snapshots.length};
-  const response=await fetch(serviceUrl+"/rest/v1/model_prediction_snapshots?on_conflict=race_id,captured_at",{
-    method:"POST",
-    headers:{"apikey":serviceKey,"Authorization":"Bearer "+serviceKey,"Content-Type":"application/json",
-      "Prefer":"resolution=ignore-duplicates,return=representation"},
-    body:JSON.stringify(valid),
-    signal:AbortSignal.timeout(20000),
-  });
-  if(!response.ok)throw new Error("Model snapshot archive HTTP "+response.status+": "+(await response.text()).slice(0,500));
-  const saved=await response.json();
-  return {ok:true,received:snapshots.length,upserted:Array.isArray(saved)?saved.length:valid.length,rejected:snapshots.length-valid.length};
-}
-
 async function loadValidatedThresholds():Promise<Record<string,number>>{
   try{
     const report=await fetchJson(REPO_RAW+"/data/backtest-summary.json");
@@ -175,14 +134,15 @@ async function loadValidatedThresholds():Promise<Record<string,number>>{
     return out;
   }catch{return {};}
 }
-async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>,serviceUrl:string,serviceKey:string):Promise<any>{
+async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>):Promise<any>{
   const raceId=String(row.race_id||""),raceDate=String(row.race_date||""),capturedAt=String(row.captured_at||new Date().toISOString());
   const base={version:2,createdAt:capturedAt,date:raceDate.replace(/-/g,""),raceId,venue:String(row.venue||""),raceNo:String(row.race_number||""),autoGenerated:true,source:"supabase_one_minute_odds",oddsCapturedAt:capturedAt,modelCapturedAt:null};
-  const model=await loadModelSnapshot(raceId,raceDate,capturedAt,serviceUrl,serviceKey).catch((error)=>{console.error("Model snapshot lookup failed:",error);return null;});
+  const model=await loadModelSnapshot(raceId,raceDate,capturedAt).catch(()=>null);
   const oddsRows=Array.isArray(row.odds_data?.odds)?row.odds_data.odds:[];
   if(!model)return {...base,decision:"SKIP",skipReason:"15分以内の予測スナップショットがありません",skipReasonCode:"MODEL_SNAPSHOT_NOT_AVAILABLE",totalStake:0,tickets:[],validatedBetTypes:Object.keys(thresholds).length};
   const predictions=[...(model.predictions||[])].sort((a:any,b:any)=>(Number(b.win_probability)||0)-(Number(a.win_probability)||0));
   const top=predictions.slice(0,5),topNumbers=new Set(top.map((x:any)=>horseNo(x.horse_no)));
+  const firstNumbers=new Set(predictions.slice(0,2).map((x:any)=>horseNo(x.horse_no)));
   const oddsLookup=new Map<string,number>();
   for(const item of oddsRows){
     const kind=betKind(item.type);if(!kind)continue;
@@ -195,6 +155,7 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>,serv
     const kind=String(item.bet_type||"");if(kind!=="trio"||!(kind in REQUIRED)||!(kind in thresholds))continue;
     const nums=(item.numbers||[]).map(horseNo);
     if(nums.length!==REQUIRED[kind]||new Set(nums).size!==nums.length||nums.some((n:string)=>!topNumbers.has(n)))continue;
+    if((kind==="exacta"||kind==="trifecta")&&!firstNumbers.has(nums[0]))continue;
     const price=oddsLookup.get(kind+"|"+combinationKey(kind,nums)),prob=Number(item.probability);
     if(!(price&&price>0&&prob>0))continue;
     candidates.push({kind,type:BET_TYPES[kind],comb:nums.join("-"),odds:price,probability:prob,ev:price*prob});
@@ -202,9 +163,9 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>,serv
   const eligible:any[]=[];
   for(const [kind,threshold] of Object.entries(thresholds)){
     if(kind!=="trio")continue;
-    const rows:any[]=candidates.filter((x:any)=>x.kind===kind&&x.ev>=Math.max(1.05,threshold))
-      .sort((a:any,b:any)=>(b.probability-a.probability)||(b.ev-a.ev)).slice(0,20);
-    if(rows.length)eligible.push({kind,rows,avg:rows.slice(0,5).reduce((s:number,x:any)=>s+x.ev,0)/Math.min(5,rows.length),best:rows[0]});
+    const rows=candidates.filter(x=>x.kind===kind&&x.ev>=Math.max(1.05,threshold))
+      .sort((a,b)=>(b.probability-a.probability)||(b.ev-a.ev)).slice(0,20);
+    if(rows.length)eligible.push({kind,rows,avg:rows.slice(0,5).reduce((s,x)=>s+x.ev,0)/Math.min(5,rows.length),best:rows[0]});
   }
   eligible.sort((a,b)=>(b.avg-a.avg)||(b.best.probability-a.best.probability));
   const selected=eligible[0];
@@ -213,22 +174,22 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>,serv
     const code=!oddsRows.length?"ODDS_NOT_CAPTURED":!Object.keys(thresholds).length?"NO_VALIDATED_TICKET_THRESHOLD":"EV_BELOW_VALIDATED_THRESHOLD";
     return {...base,decision:"SKIP",skipReason:reason,skipReasonCode:code,totalStake:0,tickets:[],modelCapturedAt:model.captured_at,modelVersion:model.model_version,oddsRows:oddsRows.length,validatedBetTypes:Object.keys(thresholds).length};
   }
-  const rows:any[]=selected.rows,target=Math.min(2000,selected.rows.length*100);
-  const weights=rows.map((x:any)=>Math.max(0.0001,(x.ev-1)*Math.sqrt(Math.max(x.probability,0.000001))));
-  const total=weights.reduce((a:number,b:number)=>a+b,0);
-  const tickets=rows.map((x:any,i:number)=>({...x,stake:total?Math.floor((target*weights[i]/total)/100)*100:0})).filter((x:any)=>x.stake>=100);
-  let allocated=tickets.reduce((s:number,x:any)=>s+x.stake,0),index=0;
+  const rows=selected.rows,target=Math.min(2000,rows.length*100);
+  const weights=rows.map(x=>Math.max(0.0001,(x.ev-1)*Math.sqrt(Math.max(x.probability,0.000001))));
+  const total=weights.reduce((a,b)=>a+b,0);
+  const tickets=rows.map((x,i)=>({...x,stake:total?Math.floor((target*weights[i]/total)/100)*100:0})).filter(x=>x.stake>=100);
+  let allocated=tickets.reduce((s,x)=>s+x.stake,0),index=0;
   while(tickets.length&&allocated+100<=target){tickets[index].stake+=100;allocated+=100;index=(index+1)%tickets.length;}
   return {...base,decision:tickets.length?"BET":"SKIP",skipReason:"",skipReasonCode:"BET",selectedType:selected.kind,totalStake:allocated,
-    tickets:tickets.map((x:any)=>({type:x.type,comb:x.comb,stake:x.stake,odds:x.odds,probability:x.probability,ev:x.ev})),
+    tickets:tickets.map(x=>({type:x.type,comb:x.comb,stake:x.stake,odds:x.odds,probability:x.probability,ev:x.ev})),
     modelCapturedAt:model.captured_at,modelVersion:model.model_version,oddsRows:oddsRows.length,oddsMatchedCandidates:candidates.length,validatedBetTypes:Object.keys(thresholds).length};
 }
 
 Deno.serve(async (request) => {
   if (request.method !== "POST") return new Response("Method not allowed", { status: 405 });
-  const serviceUrl = Deno.env.get("SUPABASE_URL") || "";
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  const expectedToken = Deno.env.get("NAR_CAPTURE_TOKEN") || "";
+  const serviceUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const expectedToken = Deno.env.get("NAR_CAPTURE_TOKEN");
   if (!serviceUrl || !serviceKey || !expectedToken) {
     return Response.json({ ok: false, error: "Required function secrets are missing" }, { status: 500 });
   }
@@ -245,18 +206,6 @@ Deno.serve(async (request) => {
         expected_token_length: expectedToken.length,
       },
     }, { status: 401 });
-  }
-
-  let requestPayload:any={};
-  try { requestPayload=await request.json(); } catch { requestPayload={}; }
-  if(requestPayload?.action==="archive_model_snapshots"){
-    try{
-      const result=await archiveModelSnapshots(requestPayload.snapshots||[],serviceUrl,serviceKey);
-      return Response.json(result);
-    }catch(error){
-      console.error("Model snapshot archive failed:",error);
-      return Response.json({ok:false,error:String(error)}, {status:502});
-    }
   }
 
   const runStartedAt = Date.now();
@@ -370,7 +319,7 @@ Deno.serve(async (request) => {
       inserted = Array.isArray(insertedRows) ? insertedRows.length : inserts.length;
       const thresholds = await loadValidatedThresholds();
       for (const savedRow of Array.isArray(insertedRows) ? insertedRows : []) {
-        const plan = await buildAutoTicketPlan(savedRow, thresholds, serviceUrl, serviceKey);
+        const plan = await buildAutoTicketPlan(savedRow, thresholds);
         const update = await fetch(serviceUrl + "/rest/v1/odds_snapshots?id=eq." + encodeURIComponent(String(savedRow.id)), {
           method: "PATCH",
           headers: {
