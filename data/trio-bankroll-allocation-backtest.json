@@ -1,6 +1,14 @@
 {
-  "generated_at": "2026-11-06T01:17:40.295488+00:00",
-  "status": "ready",
+  "generated_at": "2026-11-06T01:19:54.397507+00:00",
+  "status": "collecting_sample",
+  "decision_ready": false,
+  "matched_race_days": [
+    "20261105"
+  ],
+  "decision_thresholds": {
+    "minimum_matched_races": 100,
+    "minimum_matched_race_days": 14
+  },
   "source": "SHA-256-verified NAR pre-off model snapshots + official NAR trio payouts",
   "market_weight": 0.5,
   "ticket_selection": "same top 12 by fused probability for every allocation strategy; selection held fixed to isolate stake allocation",
@@ -39,7 +47,63 @@
       "average_stake_per_race_jpy": 1900.0,
       "max_drawdown_jpy": 3460,
       "max_losing_streak": 3,
-      "unspent_races": 0
+      "unspent_races": 0,
+      "per_race": [
+        {
+          "race_key": "船橋|20261105|8",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 720,
+          "profit": -1180
+        },
+        {
+          "race_key": "門別|20261105|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "船橋|20261105|9",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 4240,
+          "profit": 2340
+        },
+        {
+          "race_key": "門別|20261105|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1320,
+          "profit": -580
+        },
+        {
+          "race_key": "船橋|20261105|12",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 7800,
+          "profit": 5900
+        },
+        {
+          "race_key": "門別|20261105|12",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 920,
+          "profit": -980
+        }
+      ]
     },
     {
       "strategy": "ev_only",
@@ -54,7 +118,63 @@
       "average_stake_per_race_jpy": 1133.33,
       "max_drawdown_jpy": 6800,
       "max_losing_streak": 4,
-      "unspent_races": 2
+      "unspent_races": 2,
+      "per_race": [
+        {
+          "race_key": "船橋|20261105|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "門別|20261105|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "船橋|20261105|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261105|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "船橋|20261105|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "門別|20261105|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        }
+      ]
     },
     {
       "strategy": "balanced_20",
@@ -69,7 +189,63 @@
       "average_stake_per_race_jpy": 700.0,
       "max_drawdown_jpy": 4200,
       "max_losing_streak": 4,
-      "unspent_races": 2
+      "unspent_races": 2,
+      "per_race": [
+        {
+          "race_key": "船橋|20261105|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "門別|20261105|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 900,
+          "return": 0,
+          "profit": -900
+        },
+        {
+          "race_key": "船橋|20261105|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1200,
+          "return": 0,
+          "profit": -1200
+        },
+        {
+          "race_key": "門別|20261105|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 900,
+          "return": 0,
+          "profit": -900
+        },
+        {
+          "race_key": "船橋|20261105|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "門別|20261105|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1200,
+          "return": 0,
+          "profit": -1200
+        }
+      ]
     },
     {
       "strategy": "balanced_30",
@@ -84,7 +260,63 @@
       "average_stake_per_race_jpy": 1133.33,
       "max_drawdown_jpy": 6800,
       "max_losing_streak": 4,
-      "unspent_races": 2
+      "unspent_races": 2,
+      "per_race": [
+        {
+          "race_key": "船橋|20261105|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "門別|20261105|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "船橋|20261105|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261105|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "船橋|20261105|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "門別|20261105|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        }
+      ]
     },
     {
       "strategy": "balanced_40",
@@ -99,8 +331,64 @@
       "average_stake_per_race_jpy": 1266.67,
       "max_drawdown_jpy": 7600,
       "max_losing_streak": 4,
-      "unspent_races": 2
+      "unspent_races": 2,
+      "per_race": [
+        {
+          "race_key": "船橋|20261105|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "門別|20261105|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "船橋|20261105|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261105|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "船橋|20261105|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "門別|20261105|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        }
+      ]
     }
   ],
-  "note": "Research only. A and B use the same selected tickets; variable ticket count and model weight tuning are separate experiments. Stakes are capped at JPY 1,900 per race in 100-yen units; unused budget is not forced into negative-edge tickets. A not_ready report contains no performance metrics."
+  "note": "Research only. A and B use the same selected tickets; variable ticket count and model weight tuning are separate experiments. Stakes are capped at JPY 1,900 per race in 100-yen units; unused budget is not forced into negative-edge tickets. Strategy metrics are preliminary until both the matched-race and matched-race-day thresholds are met; no production strategy is changed by this report."
 }
