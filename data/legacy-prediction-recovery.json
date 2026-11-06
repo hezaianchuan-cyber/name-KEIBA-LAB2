@@ -1,0 +1,3046 @@
+{
+  "generated_at": "2026-11-06T08:25:30.505Z",
+  "title": "Legacy prediction recovery — supplementary only",
+  "source": "Supabase predictions + pre-off odds_snapshots + official NAR daily payouts",
+  "scope": "2026-11-05 only; predictions saved before scheduled post time; at least 7 runners; closest odds snapshot captured after prediction and before post with minutes_to_post >= 2.",
+  "status": "supplementary_exploratory_not_g4",
+  "strict_g4_note": "Only 1 of 40 races had prediction-to-odds age <=15 minutes. This report must not be merged into the official G4 prospective evaluation or used to change the live model.",
+  "blend_method": "Per-horse model probabilities normalized to sum 1 and market probabilities derived from inverse win odds normalized to sum 1; ranking score = 50% model + 50% market. Exploratory only.",
+  "summary": {
+    "candidate_races": 40,
+    "official_result_matched": 40,
+    "odds_matched": 40,
+    "model_age_le_15m": 1,
+    "model_age_gt_60m": 37,
+    "average_model_age_minutes": 264.8,
+    "average_minutes_to_post": 2.98,
+    "full_trio_coverage_top7": {
+      "model": 22,
+      "market": 30,
+      "blend_50_50": 34
+    },
+    "mean_podium_horses_top7": {
+      "model": 2.4,
+      "market": 2.73,
+      "blend_50_50": 2.83
+    },
+    "top1_winner_hits": {
+      "model": 11,
+      "market_favorite": 18,
+      "blend_50_50": 19
+    },
+    "shadow_trio": {
+      "races": 40,
+      "tickets": 120,
+      "hits": 2,
+      "hit_races": 2,
+      "stake_yen": 12000,
+      "return_yen": 2460,
+      "profit_yen": -9540,
+      "roi_pct": 20.5,
+      "race_hit_rate_pct": 5
+    }
+  },
+  "races": [
+    {
+      "race_id": "園田|20261105|10",
+      "scheduled_at": "2026-11-05T06:25:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:19.383+00:00",
+      "odds_captured_at": "2026-11-05T06:22:01.328334+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 215.7,
+      "model_loaded": true,
+      "model_top1": "6",
+      "market_favorite": "6",
+      "model_top7": [
+        "6",
+        "4",
+        "7",
+        "3",
+        "5",
+        "8",
+        "10"
+      ],
+      "market_top7": [
+        "6",
+        "5",
+        "10",
+        "8",
+        "4",
+        "3",
+        "1"
+      ],
+      "blend50_top7": [
+        "6",
+        "5",
+        "10",
+        "4",
+        "8",
+        "3",
+        "7"
+      ],
+      "actual_trio": [
+        "5",
+        "8",
+        "10"
+      ],
+      "actual_winners": [
+        "10"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 1,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "6-4-7",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "6-4-3",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "6-4-5",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "園田|20261105|11",
+      "scheduled_at": "2026-11-05T07:00:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:19.675+00:00",
+      "odds_captured_at": "2026-11-05T06:57:01.827306+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 250.7,
+      "model_loaded": true,
+      "model_top1": "3",
+      "market_favorite": "1",
+      "model_top7": [
+        "3",
+        "1",
+        "7",
+        "2",
+        "6",
+        "9",
+        "4"
+      ],
+      "market_top7": [
+        "1",
+        "4",
+        "9",
+        "7",
+        "10",
+        "3",
+        "11"
+      ],
+      "blend50_top7": [
+        "1",
+        "7",
+        "3",
+        "4",
+        "9",
+        "2",
+        "10"
+      ],
+      "actual_trio": [
+        "2",
+        "4",
+        "9"
+      ],
+      "actual_winners": [
+        "9"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 2,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 1,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "3-1-7",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "3-1-2",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "3-1-6",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "園田|20261105|12",
+      "scheduled_at": "2026-11-05T07:40:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:19.973+00:00",
+      "odds_captured_at": "2026-11-05T07:37:01.537988+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 290.7,
+      "model_loaded": true,
+      "model_top1": "8",
+      "market_favorite": "8",
+      "model_top7": [
+        "8",
+        "6",
+        "11",
+        "10",
+        "7",
+        "4",
+        "5"
+      ],
+      "market_top7": [
+        "8",
+        "6",
+        "11",
+        "3",
+        "10",
+        "4",
+        "7"
+      ],
+      "blend50_top7": [
+        "8",
+        "6",
+        "11",
+        "10",
+        "3",
+        "4",
+        "7"
+      ],
+      "actual_trio": [
+        "6",
+        "10",
+        "11"
+      ],
+      "actual_winners": [
+        "11"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 3,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "8-6-11",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "8-6-10",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "8-11-10",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "園田|20261105|5",
+      "scheduled_at": "2026-11-05T03:40:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:17.922+00:00",
+      "odds_captured_at": "2026-11-05T03:37:01.328491+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 50.7,
+      "model_loaded": true,
+      "model_top1": "2",
+      "market_favorite": "10",
+      "model_top7": [
+        "2",
+        "6",
+        "3",
+        "10",
+        "8",
+        "9",
+        "12"
+      ],
+      "market_top7": [
+        "10",
+        "8",
+        "12",
+        "5",
+        "11",
+        "9",
+        "1"
+      ],
+      "blend50_top7": [
+        "10",
+        "8",
+        "12",
+        "2",
+        "6",
+        "5",
+        "3"
+      ],
+      "actual_trio": [
+        "8",
+        "10",
+        "11"
+      ],
+      "actual_winners": [
+        "10"
+      ],
+      "model_top7_podium_count": 2,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 2,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "2-6-3",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "2-6-10",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "2-6-8",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "園田|20261105|6",
+      "scheduled_at": "2026-11-05T04:10:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:18.206+00:00",
+      "odds_captured_at": "2026-11-05T04:07:01.213233+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 80.7,
+      "model_loaded": true,
+      "model_top1": "1",
+      "market_favorite": "1",
+      "model_top7": [
+        "1",
+        "4",
+        "9",
+        "10",
+        "8",
+        "3",
+        "5"
+      ],
+      "market_top7": [
+        "1",
+        "4",
+        "9",
+        "6",
+        "5",
+        "8",
+        "7"
+      ],
+      "blend50_top7": [
+        "1",
+        "4",
+        "9",
+        "10",
+        "8",
+        "5",
+        "6"
+      ],
+      "actual_trio": [
+        "1",
+        "6",
+        "9"
+      ],
+      "actual_winners": [
+        "1"
+      ],
+      "model_top7_podium_count": 2,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": true,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "1-4-9",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "1-4-10",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "1-4-8",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "園田|20261105|7",
+      "scheduled_at": "2026-11-05T04:40:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:18.498+00:00",
+      "odds_captured_at": "2026-11-05T04:37:02.200901+00:00",
+      "minutes_to_post": 2.97,
+      "model_age_minutes": 110.7,
+      "model_loaded": true,
+      "model_top1": "4",
+      "market_favorite": "1",
+      "model_top7": [
+        "4",
+        "9",
+        "1",
+        "3",
+        "10",
+        "5",
+        "2"
+      ],
+      "market_top7": [
+        "1",
+        "9",
+        "4",
+        "10",
+        "3",
+        "5",
+        "2"
+      ],
+      "blend50_top7": [
+        "1",
+        "9",
+        "4",
+        "10",
+        "3",
+        "5",
+        "2"
+      ],
+      "actual_trio": [
+        "3",
+        "4",
+        "9"
+      ],
+      "actual_winners": [
+        "4"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 3,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": true,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "4-9-1",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "4-9-3",
+          "stake": 100,
+          "hit": true,
+          "return_yen": 2250
+        },
+        {
+          "comb": "4-1-3",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "園田|20261105|8",
+      "scheduled_at": "2026-11-05T05:15:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:18.785+00:00",
+      "odds_captured_at": "2026-11-05T05:12:03.569645+00:00",
+      "minutes_to_post": 2.95,
+      "model_age_minutes": 145.7,
+      "model_loaded": true,
+      "model_top1": "3",
+      "market_favorite": "5",
+      "model_top7": [
+        "3",
+        "5",
+        "1",
+        "6",
+        "4",
+        "10",
+        "8"
+      ],
+      "market_top7": [
+        "5",
+        "3",
+        "1",
+        "9",
+        "6",
+        "4",
+        "2"
+      ],
+      "blend50_top7": [
+        "5",
+        "3",
+        "1",
+        "6",
+        "4",
+        "9",
+        "10"
+      ],
+      "actual_trio": [
+        "1",
+        "3",
+        "5"
+      ],
+      "actual_winners": [
+        "3"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 3,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": true,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "3-5-1",
+          "stake": 100,
+          "hit": true,
+          "return_yen": 210
+        },
+        {
+          "comb": "3-5-6",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "3-5-4",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "園田|20261105|9",
+      "scheduled_at": "2026-11-05T05:55:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:19.084+00:00",
+      "odds_captured_at": "2026-11-05T05:52:02.021717+00:00",
+      "minutes_to_post": 2.97,
+      "model_age_minutes": 185.7,
+      "model_loaded": true,
+      "model_top1": "5",
+      "market_favorite": "5",
+      "model_top7": [
+        "5",
+        "8",
+        "1",
+        "7",
+        "6",
+        "10",
+        "2"
+      ],
+      "market_top7": [
+        "5",
+        "1",
+        "10",
+        "8",
+        "2",
+        "6",
+        "3"
+      ],
+      "blend50_top7": [
+        "5",
+        "8",
+        "1",
+        "10",
+        "2",
+        "6",
+        "7"
+      ],
+      "actual_trio": [
+        "1",
+        "2",
+        "10"
+      ],
+      "actual_winners": [
+        "2"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 1,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "5-8-1",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-8-7",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-8-6",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "笠松|20261105|10",
+      "scheduled_at": "2026-11-05T06:05:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:23.014+00:00",
+      "odds_captured_at": "2026-11-05T06:02:01.778687+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 195.6,
+      "model_loaded": true,
+      "model_top1": "7",
+      "market_favorite": "9",
+      "model_top7": [
+        "7",
+        "9",
+        "1",
+        "8",
+        "10",
+        "2",
+        "4"
+      ],
+      "market_top7": [
+        "9",
+        "8",
+        "4",
+        "7",
+        "2",
+        "1",
+        "5"
+      ],
+      "blend50_top7": [
+        "9",
+        "8",
+        "7",
+        "4",
+        "1",
+        "2",
+        "10"
+      ],
+      "actual_trio": [
+        "8",
+        "9",
+        "10"
+      ],
+      "actual_winners": [
+        "9"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 2,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 3,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "7-9-1",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "7-9-8",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "7-9-10",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "笠松|20261105|11",
+      "scheduled_at": "2026-11-05T06:40:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:23.316+00:00",
+      "odds_captured_at": "2026-11-05T06:37:02.10394+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 230.6,
+      "model_loaded": true,
+      "model_top1": "4",
+      "market_favorite": "2",
+      "model_top7": [
+        "4",
+        "7",
+        "2",
+        "6",
+        "9",
+        "8",
+        "3"
+      ],
+      "market_top7": [
+        "2",
+        "5",
+        "4",
+        "6",
+        "9",
+        "1",
+        "7"
+      ],
+      "blend50_top7": [
+        "2",
+        "4",
+        "6",
+        "5",
+        "9",
+        "7",
+        "1"
+      ],
+      "actual_trio": [
+        "2",
+        "5",
+        "9"
+      ],
+      "actual_winners": [
+        "2"
+      ],
+      "model_top7_podium_count": 2,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "4-7-2",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "4-7-6",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "4-2-6",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "笠松|20261105|12",
+      "scheduled_at": "2026-11-05T07:15:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:23.63+00:00",
+      "odds_captured_at": "2026-11-05T07:12:01.811622+00:00",
+      "minutes_to_post": 2.97,
+      "model_age_minutes": 265.6,
+      "model_loaded": true,
+      "model_top1": "3",
+      "market_favorite": "3",
+      "model_top7": [
+        "3",
+        "9",
+        "7",
+        "10",
+        "1",
+        "6",
+        "8"
+      ],
+      "market_top7": [
+        "3",
+        "9",
+        "7",
+        "10",
+        "1",
+        "6",
+        "2"
+      ],
+      "blend50_top7": [
+        "3",
+        "9",
+        "7",
+        "10",
+        "1",
+        "6",
+        "8"
+      ],
+      "actual_trio": [
+        "3",
+        "7",
+        "10"
+      ],
+      "actual_winners": [
+        "10"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 3,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "3-9-7",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "3-9-10",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "3-9-1",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "笠松|20261105|4",
+      "scheduled_at": "2026-11-05T02:55:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:21.181+00:00",
+      "odds_captured_at": "2026-11-05T02:52:02.871218+00:00",
+      "minutes_to_post": 2.96,
+      "model_age_minutes": 5.7,
+      "model_loaded": true,
+      "model_top1": "6",
+      "market_favorite": "7",
+      "model_top7": [
+        "6",
+        "7",
+        "9",
+        "1",
+        "5",
+        "2",
+        "4"
+      ],
+      "market_top7": [
+        "7",
+        "2",
+        "5",
+        "9",
+        "1",
+        "3",
+        "4"
+      ],
+      "blend50_top7": [
+        "7",
+        "2",
+        "9",
+        "5",
+        "6",
+        "1",
+        "4"
+      ],
+      "actual_trio": [
+        "2",
+        "5",
+        "7"
+      ],
+      "actual_winners": [
+        "7"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "6-7-9",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "6-7-1",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "6-7-5",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "笠松|20261105|5",
+      "scheduled_at": "2026-11-05T03:30:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:21.488+00:00",
+      "odds_captured_at": "2026-11-05T03:27:01.267021+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 40.7,
+      "model_loaded": true,
+      "model_top1": "5",
+      "market_favorite": "5",
+      "model_top7": [
+        "5",
+        "8",
+        "7",
+        "3",
+        "9",
+        "2",
+        "4"
+      ],
+      "market_top7": [
+        "5",
+        "1",
+        "10",
+        "2",
+        "4",
+        "6",
+        "7"
+      ],
+      "blend50_top7": [
+        "5",
+        "10",
+        "2",
+        "1",
+        "7",
+        "4",
+        "8"
+      ],
+      "actual_trio": [
+        "1",
+        "2",
+        "10"
+      ],
+      "actual_winners": [
+        "1"
+      ],
+      "model_top7_podium_count": 1,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 0,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "5-8-7",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-8-3",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-8-9",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "笠松|20261105|6",
+      "scheduled_at": "2026-11-05T04:00:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:21.796+00:00",
+      "odds_captured_at": "2026-11-05T03:57:01.174716+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 70.7,
+      "model_loaded": true,
+      "model_top1": "7",
+      "market_favorite": "2",
+      "model_top7": [
+        "7",
+        "6",
+        "1",
+        "10",
+        "5",
+        "4",
+        "9"
+      ],
+      "market_top7": [
+        "2",
+        "6",
+        "8",
+        "9",
+        "1",
+        "5",
+        "7"
+      ],
+      "blend50_top7": [
+        "2",
+        "6",
+        "8",
+        "7",
+        "1",
+        "9",
+        "5"
+      ],
+      "actual_trio": [
+        "2",
+        "5",
+        "6"
+      ],
+      "actual_winners": [
+        "2"
+      ],
+      "model_top7_podium_count": 2,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "7-6-1",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "7-6-10",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "7-1-10",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "笠松|20261105|7",
+      "scheduled_at": "2026-11-05T04:30:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:22.104+00:00",
+      "odds_captured_at": "2026-11-05T04:27:01.336754+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 100.7,
+      "model_loaded": true,
+      "model_top1": "4",
+      "market_favorite": "4",
+      "model_top7": [
+        "4",
+        "9",
+        "10",
+        "6",
+        "8",
+        "2",
+        "5"
+      ],
+      "market_top7": [
+        "4",
+        "8",
+        "6",
+        "9",
+        "2",
+        "7",
+        "10"
+      ],
+      "blend50_top7": [
+        "4",
+        "8",
+        "6",
+        "9",
+        "10",
+        "2",
+        "5"
+      ],
+      "actual_trio": [
+        "4",
+        "5",
+        "8"
+      ],
+      "actual_winners": [
+        "4"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 2,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": true,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "4-9-10",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "4-9-6",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "4-9-8",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "笠松|20261105|8",
+      "scheduled_at": "2026-11-05T05:05:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:22.411+00:00",
+      "odds_captured_at": "2026-11-05T05:02:03.287192+00:00",
+      "minutes_to_post": 2.96,
+      "model_age_minutes": 135.7,
+      "model_loaded": true,
+      "model_top1": "6",
+      "market_favorite": "6",
+      "model_top7": [
+        "6",
+        "3",
+        "2",
+        "8",
+        "7",
+        "5",
+        "10"
+      ],
+      "market_top7": [
+        "6",
+        "8",
+        "2",
+        "10",
+        "4",
+        "1",
+        "3"
+      ],
+      "blend50_top7": [
+        "6",
+        "8",
+        "2",
+        "10",
+        "3",
+        "4",
+        "7"
+      ],
+      "actual_trio": [
+        "2",
+        "6",
+        "9"
+      ],
+      "actual_winners": [
+        "6"
+      ],
+      "model_top7_podium_count": 2,
+      "market_top7_podium_count": 2,
+      "blend50_top7_podium_count": 2,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": true,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "6-3-2",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "6-3-8",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "6-3-7",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "笠松|20261105|9",
+      "scheduled_at": "2026-11-05T05:35:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:22.705+00:00",
+      "odds_captured_at": "2026-11-05T05:32:01.153413+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 165.6,
+      "model_loaded": true,
+      "model_top1": "3",
+      "market_favorite": "3",
+      "model_top7": [
+        "3",
+        "5",
+        "2",
+        "4",
+        "8",
+        "7",
+        "6"
+      ],
+      "market_top7": [
+        "3",
+        "2",
+        "5",
+        "1",
+        "6",
+        "8",
+        "4"
+      ],
+      "blend50_top7": [
+        "3",
+        "2",
+        "5",
+        "1",
+        "6",
+        "4",
+        "8"
+      ],
+      "actual_trio": [
+        "3",
+        "5",
+        "8"
+      ],
+      "actual_winners": [
+        "3"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 3,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": true,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "3-5-2",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "3-5-4",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "3-2-4",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "船橋|20261105|1",
+      "scheduled_at": "2026-11-05T05:45:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:23.929+00:00",
+      "odds_captured_at": "2026-11-05T05:42:01.037027+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 175.6,
+      "model_loaded": true,
+      "model_top1": "4",
+      "market_favorite": "10",
+      "model_top7": [
+        "4",
+        "11",
+        "5",
+        "10",
+        "3",
+        "7",
+        "12"
+      ],
+      "market_top7": [
+        "10",
+        "9",
+        "11",
+        "12",
+        "3",
+        "4",
+        "2"
+      ],
+      "blend50_top7": [
+        "10",
+        "9",
+        "11",
+        "4",
+        "12",
+        "3",
+        "7"
+      ],
+      "actual_trio": [
+        "7",
+        "11",
+        "12"
+      ],
+      "actual_winners": [
+        "12"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 2,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 1,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "4-11-5",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "4-11-10",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "4-11-3",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "船橋|20261105|10",
+      "scheduled_at": "2026-11-05T10:40:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:26.546+00:00",
+      "odds_captured_at": "2026-11-05T10:37:01.282644+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 470.6,
+      "model_loaded": true,
+      "model_top1": "10",
+      "market_favorite": "6",
+      "model_top7": [
+        "10",
+        "2",
+        "6",
+        "12",
+        "8",
+        "1",
+        "14"
+      ],
+      "market_top7": [
+        "6",
+        "10",
+        "12",
+        "14",
+        "5",
+        "8",
+        "2"
+      ],
+      "blend50_top7": [
+        "6",
+        "10",
+        "12",
+        "14",
+        "2",
+        "8",
+        "5"
+      ],
+      "actual_trio": [
+        "6",
+        "9",
+        "13"
+      ],
+      "actual_winners": [
+        "6"
+      ],
+      "model_top7_podium_count": 1,
+      "market_top7_podium_count": 1,
+      "blend50_top7_podium_count": 1,
+      "model_top5_podium_count": 1,
+      "market_top5_podium_count": 1,
+      "blend50_top5_podium_count": 1,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "10-2-6",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "10-2-12",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "10-2-8",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "船橋|20261105|11",
+      "scheduled_at": "2026-11-05T11:15:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:26.849+00:00",
+      "odds_captured_at": "2026-11-05T11:12:01.109879+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 505.6,
+      "model_loaded": true,
+      "model_top1": "2",
+      "market_favorite": "2",
+      "model_top7": [
+        "2",
+        "14",
+        "4",
+        "13",
+        "11",
+        "5",
+        "12"
+      ],
+      "market_top7": [
+        "2",
+        "4",
+        "11",
+        "14",
+        "6",
+        "7",
+        "5"
+      ],
+      "blend50_top7": [
+        "2",
+        "14",
+        "4",
+        "11",
+        "6",
+        "7",
+        "5"
+      ],
+      "actual_trio": [
+        "6",
+        "10",
+        "14"
+      ],
+      "actual_winners": [
+        "14"
+      ],
+      "model_top7_podium_count": 1,
+      "market_top7_podium_count": 2,
+      "blend50_top7_podium_count": 2,
+      "model_top5_podium_count": 1,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "2-14-4",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "2-14-13",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "2-14-11",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "船橋|20261105|12",
+      "scheduled_at": "2026-11-05T11:50:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:27.149+00:00",
+      "odds_captured_at": "2026-11-05T11:47:01.199103+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 540.6,
+      "model_loaded": true,
+      "model_top1": "11",
+      "market_favorite": "11",
+      "model_top7": [
+        "11",
+        "5",
+        "13",
+        "4",
+        "3",
+        "2",
+        "6"
+      ],
+      "market_top7": [
+        "11",
+        "4",
+        "13",
+        "10",
+        "2",
+        "5",
+        "6"
+      ],
+      "blend50_top7": [
+        "11",
+        "13",
+        "4",
+        "2",
+        "10",
+        "5",
+        "3"
+      ],
+      "actual_trio": [
+        "3",
+        "10",
+        "11"
+      ],
+      "actual_winners": [
+        "10"
+      ],
+      "model_top7_podium_count": 2,
+      "market_top7_podium_count": 2,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "11-5-13",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "11-5-4",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "11-13-4",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "船橋|20261105|2",
+      "scheduled_at": "2026-11-05T06:15:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:24.225+00:00",
+      "odds_captured_at": "2026-11-05T06:12:01.259801+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 205.6,
+      "model_loaded": true,
+      "model_top1": "8",
+      "market_favorite": "2",
+      "model_top7": [
+        "8",
+        "5",
+        "4",
+        "10",
+        "3",
+        "11",
+        "6"
+      ],
+      "market_top7": [
+        "2",
+        "8",
+        "9",
+        "4",
+        "6",
+        "10",
+        "11"
+      ],
+      "blend50_top7": [
+        "8",
+        "4",
+        "2",
+        "9",
+        "6",
+        "10",
+        "11"
+      ],
+      "actual_trio": [
+        "2",
+        "4",
+        "9"
+      ],
+      "actual_winners": [
+        "4"
+      ],
+      "model_top7_podium_count": 1,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 1,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "8-5-4",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "8-5-10",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "8-5-3",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "船橋|20261105|4",
+      "scheduled_at": "2026-11-05T07:20:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:24.814+00:00",
+      "odds_captured_at": "2026-11-05T07:17:02.307261+00:00",
+      "minutes_to_post": 2.97,
+      "model_age_minutes": 270.6,
+      "model_loaded": true,
+      "model_top1": "6",
+      "market_favorite": "9",
+      "model_top7": [
+        "6",
+        "9",
+        "3",
+        "11",
+        "5",
+        "12",
+        "1"
+      ],
+      "market_top7": [
+        "9",
+        "7",
+        "1",
+        "3",
+        "12",
+        "6",
+        "11"
+      ],
+      "blend50_top7": [
+        "9",
+        "7",
+        "1",
+        "6",
+        "3",
+        "12",
+        "11"
+      ],
+      "actual_trio": [
+        "6",
+        "9",
+        "12"
+      ],
+      "actual_winners": [
+        "12"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "6-9-3",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "6-9-11",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "6-9-5",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "船橋|20261105|5",
+      "scheduled_at": "2026-11-05T07:50:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:25.101+00:00",
+      "odds_captured_at": "2026-11-05T07:47:02.090502+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 300.6,
+      "model_loaded": true,
+      "model_top1": "5",
+      "market_favorite": "3",
+      "model_top7": [
+        "5",
+        "2",
+        "7",
+        "6",
+        "1",
+        "3",
+        "4"
+      ],
+      "market_top7": [
+        "3",
+        "5",
+        "4",
+        "6",
+        "2",
+        "1",
+        "7"
+      ],
+      "blend50_top7": [
+        "5",
+        "3",
+        "6",
+        "2",
+        "4",
+        "7",
+        "1"
+      ],
+      "actual_trio": [
+        "3",
+        "5",
+        "6"
+      ],
+      "actual_winners": [
+        "5"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": true,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "5-2-7",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-2-6",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-7-6",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "船橋|20261105|6",
+      "scheduled_at": "2026-11-05T08:20:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:25.39+00:00",
+      "odds_captured_at": "2026-11-05T08:17:02.382237+00:00",
+      "minutes_to_post": 2.97,
+      "model_age_minutes": 330.6,
+      "model_loaded": true,
+      "model_top1": "6",
+      "market_favorite": "6",
+      "model_top7": [
+        "6",
+        "3",
+        "7",
+        "2",
+        "8",
+        "9",
+        "4"
+      ],
+      "market_top7": [
+        "6",
+        "4",
+        "8",
+        "3",
+        "7",
+        "2",
+        "9"
+      ],
+      "blend50_top7": [
+        "6",
+        "4",
+        "3",
+        "8",
+        "7",
+        "2",
+        "9"
+      ],
+      "actual_trio": [
+        "2",
+        "6",
+        "7"
+      ],
+      "actual_winners": [
+        "2"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 3,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "6-3-7",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "6-3-2",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "6-3-8",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "船橋|20261105|7",
+      "scheduled_at": "2026-11-05T08:55:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:25.679+00:00",
+      "odds_captured_at": "2026-11-05T08:52:01.213884+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 365.6,
+      "model_loaded": true,
+      "model_top1": "5",
+      "market_favorite": "6",
+      "model_top7": [
+        "5",
+        "8",
+        "3",
+        "4",
+        "12",
+        "9",
+        "7"
+      ],
+      "market_top7": [
+        "6",
+        "12",
+        "5",
+        "9",
+        "3",
+        "7",
+        "4"
+      ],
+      "blend50_top7": [
+        "6",
+        "5",
+        "12",
+        "9",
+        "3",
+        "7",
+        "4"
+      ],
+      "actual_trio": [
+        "4",
+        "5",
+        "6"
+      ],
+      "actual_winners": [
+        "5"
+      ],
+      "model_top7_podium_count": 2,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": true,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "5-8-3",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-8-4",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-8-12",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "船橋|20261105|8",
+      "scheduled_at": "2026-11-05T09:30:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:25.969+00:00",
+      "odds_captured_at": "2026-11-05T09:27:01.846348+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 400.6,
+      "model_loaded": true,
+      "model_top1": "11",
+      "market_favorite": "11",
+      "model_top7": [
+        "11",
+        "3",
+        "2",
+        "12",
+        "7",
+        "10",
+        "9"
+      ],
+      "market_top7": [
+        "11",
+        "7",
+        "12",
+        "10",
+        "8",
+        "5",
+        "1"
+      ],
+      "blend50_top7": [
+        "11",
+        "12",
+        "7",
+        "10",
+        "3",
+        "2",
+        "8"
+      ],
+      "actual_trio": [
+        "7",
+        "11",
+        "12"
+      ],
+      "actual_winners": [
+        "11"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 3,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": true,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "11-3-2",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "11-3-12",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "11-3-7",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "船橋|20261105|9",
+      "scheduled_at": "2026-11-05T10:05:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:26.254+00:00",
+      "odds_captured_at": "2026-11-05T10:02:02.005172+00:00",
+      "minutes_to_post": 2.97,
+      "model_age_minutes": 435.6,
+      "model_loaded": true,
+      "model_top1": "5",
+      "market_favorite": "5",
+      "model_top7": [
+        "5",
+        "8",
+        "2",
+        "7",
+        "10",
+        "6",
+        "4"
+      ],
+      "market_top7": [
+        "5",
+        "7",
+        "9",
+        "8",
+        "2",
+        "10",
+        "1"
+      ],
+      "blend50_top7": [
+        "5",
+        "7",
+        "8",
+        "9",
+        "2",
+        "10",
+        "6"
+      ],
+      "actual_trio": [
+        "5",
+        "7",
+        "10"
+      ],
+      "actual_winners": [
+        "5"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 3,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": true,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "5-8-2",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-8-7",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-8-10",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "門別|20261105|1",
+      "scheduled_at": "2026-11-05T05:30:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:27.58+00:00",
+      "odds_captured_at": "2026-11-05T05:27:02.33453+00:00",
+      "minutes_to_post": 2.97,
+      "model_age_minutes": 160.6,
+      "model_loaded": true,
+      "model_top1": "6",
+      "market_favorite": "6",
+      "model_top7": [
+        "6",
+        "11",
+        "7",
+        "3",
+        "8",
+        "2",
+        "4"
+      ],
+      "market_top7": [
+        "6",
+        "3",
+        "5",
+        "8",
+        "9",
+        "10",
+        "4"
+      ],
+      "blend50_top7": [
+        "6",
+        "3",
+        "8",
+        "5",
+        "11",
+        "9",
+        "7"
+      ],
+      "actual_trio": [
+        "3",
+        "5",
+        "10"
+      ],
+      "actual_winners": [
+        "5"
+      ],
+      "model_top7_podium_count": 1,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 2,
+      "model_top5_podium_count": 1,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "6-11-7",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "6-11-3",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "6-11-8",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "門別|20261105|10",
+      "scheduled_at": "2026-11-05T10:25:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:30.3+00:00",
+      "odds_captured_at": "2026-11-05T10:22:02.341567+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 455.5,
+      "model_loaded": true,
+      "model_top1": "1",
+      "market_favorite": "10",
+      "model_top7": [
+        "1",
+        "10",
+        "5",
+        "7",
+        "9",
+        "6",
+        "3"
+      ],
+      "market_top7": [
+        "10",
+        "9",
+        "8",
+        "7",
+        "5",
+        "1",
+        "6"
+      ],
+      "blend50_top7": [
+        "10",
+        "9",
+        "1",
+        "8",
+        "7",
+        "5",
+        "6"
+      ],
+      "actual_trio": [
+        "8",
+        "9",
+        "10"
+      ],
+      "actual_winners": [
+        "9"
+      ],
+      "model_top7_podium_count": 2,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "1-10-5",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "1-10-7",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "1-10-9",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "門別|20261105|11",
+      "scheduled_at": "2026-11-05T11:00:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:30.598+00:00",
+      "odds_captured_at": "2026-11-05T10:57:01.653104+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 490.5,
+      "model_loaded": true,
+      "model_top1": "5",
+      "market_favorite": "6",
+      "model_top7": [
+        "5",
+        "6",
+        "1",
+        "8",
+        "2",
+        "4",
+        "3"
+      ],
+      "market_top7": [
+        "6",
+        "3",
+        "8",
+        "7",
+        "1",
+        "5",
+        "4"
+      ],
+      "blend50_top7": [
+        "6",
+        "5",
+        "3",
+        "8",
+        "1",
+        "7",
+        "2"
+      ],
+      "actual_trio": [
+        "3",
+        "6",
+        "7"
+      ],
+      "actual_winners": [
+        "6"
+      ],
+      "model_top7_podium_count": 2,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 1,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "5-6-1",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-6-8",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-6-2",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "門別|20261105|12",
+      "scheduled_at": "2026-11-05T11:35:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:54:28.399+00:00",
+      "odds_captured_at": "2026-11-05T11:32:01.722115+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 517.6,
+      "model_loaded": false,
+      "model_top1": "8",
+      "market_favorite": "10",
+      "model_top7": [
+        "8",
+        "1",
+        "2",
+        "3",
+        "4",
+        "6",
+        "7"
+      ],
+      "market_top7": [
+        "10",
+        "5",
+        "8",
+        "4",
+        "6",
+        "3",
+        "2"
+      ],
+      "blend50_top7": [
+        "10",
+        "8",
+        "5",
+        "4",
+        "6",
+        "1",
+        "3"
+      ],
+      "actual_trio": [
+        "4",
+        "8",
+        "10"
+      ],
+      "actual_winners": [
+        "10"
+      ],
+      "model_top7_podium_count": 2,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "8-1-2",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "8-1-3",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "8-1-4",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "門別|20261105|2",
+      "scheduled_at": "2026-11-05T06:00:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:27.912+00:00",
+      "odds_captured_at": "2026-11-05T05:57:01.452739+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 190.6,
+      "model_loaded": true,
+      "model_top1": "1",
+      "market_favorite": "8",
+      "model_top7": [
+        "1",
+        "8",
+        "3",
+        "10",
+        "7",
+        "2",
+        "5"
+      ],
+      "market_top7": [
+        "8",
+        "12",
+        "11",
+        "10",
+        "7",
+        "1",
+        "2"
+      ],
+      "blend50_top7": [
+        "8",
+        "12",
+        "1",
+        "10",
+        "11",
+        "7",
+        "3"
+      ],
+      "actual_trio": [
+        "8",
+        "11",
+        "12"
+      ],
+      "actual_winners": [
+        "11"
+      ],
+      "model_top7_podium_count": 1,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 1,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "1-8-3",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "1-8-10",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "1-3-10",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "門別|20261105|3",
+      "scheduled_at": "2026-11-05T06:30:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:28.212+00:00",
+      "odds_captured_at": "2026-11-05T06:27:01.818078+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 220.6,
+      "model_loaded": true,
+      "model_top1": "3",
+      "market_favorite": "7",
+      "model_top7": [
+        "3",
+        "7",
+        "5",
+        "9",
+        "1",
+        "4",
+        "8"
+      ],
+      "market_top7": [
+        "7",
+        "4",
+        "5",
+        "9",
+        "1",
+        "2",
+        "3"
+      ],
+      "blend50_top7": [
+        "7",
+        "3",
+        "4",
+        "5",
+        "9",
+        "1",
+        "2"
+      ],
+      "actual_trio": [
+        "4",
+        "5",
+        "7"
+      ],
+      "actual_winners": [
+        "7"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "3-7-5",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "3-7-9",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "3-7-1",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "門別|20261105|4",
+      "scheduled_at": "2026-11-05T07:05:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:28.509+00:00",
+      "odds_captured_at": "2026-11-05T07:02:01.142412+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 255.5,
+      "model_loaded": true,
+      "model_top1": "3",
+      "market_favorite": "6",
+      "model_top7": [
+        "3",
+        "6",
+        "8",
+        "5",
+        "1",
+        "9",
+        "7"
+      ],
+      "market_top7": [
+        "6",
+        "3",
+        "1",
+        "4",
+        "7",
+        "5",
+        "9"
+      ],
+      "blend50_top7": [
+        "6",
+        "3",
+        "1",
+        "5",
+        "4",
+        "7",
+        "9"
+      ],
+      "actual_trio": [
+        "1",
+        "6",
+        "7"
+      ],
+      "actual_winners": [
+        "1"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 3,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "3-6-8",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "3-6-5",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "3-6-1",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "門別|20261105|5",
+      "scheduled_at": "2026-11-05T07:35:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:28.808+00:00",
+      "odds_captured_at": "2026-11-05T07:32:02.302427+00:00",
+      "minutes_to_post": 2.97,
+      "model_age_minutes": 285.6,
+      "model_loaded": true,
+      "model_top1": "5",
+      "market_favorite": "3",
+      "model_top7": [
+        "5",
+        "7",
+        "10",
+        "6",
+        "3",
+        "8",
+        "2"
+      ],
+      "market_top7": [
+        "3",
+        "6",
+        "5",
+        "10",
+        "8",
+        "11",
+        "1"
+      ],
+      "blend50_top7": [
+        "3",
+        "6",
+        "5",
+        "10",
+        "7",
+        "8",
+        "11"
+      ],
+      "actual_trio": [
+        "3",
+        "4",
+        "6"
+      ],
+      "actual_winners": [
+        "3"
+      ],
+      "model_top7_podium_count": 2,
+      "market_top7_podium_count": 2,
+      "blend50_top7_podium_count": 2,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "5-7-10",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-7-6",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-10-6",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "門別|20261105|6",
+      "scheduled_at": "2026-11-05T08:05:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:29.11+00:00",
+      "odds_captured_at": "2026-11-05T08:02:01.719941+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 315.5,
+      "model_loaded": true,
+      "model_top1": "2",
+      "market_favorite": "8",
+      "model_top7": [
+        "2",
+        "6",
+        "9",
+        "8",
+        "1",
+        "4",
+        "12"
+      ],
+      "market_top7": [
+        "8",
+        "2",
+        "1",
+        "9",
+        "12",
+        "6",
+        "7"
+      ],
+      "blend50_top7": [
+        "8",
+        "2",
+        "6",
+        "1",
+        "9",
+        "12",
+        "7"
+      ],
+      "actual_trio": [
+        "7",
+        "9",
+        "12"
+      ],
+      "actual_winners": [
+        "12"
+      ],
+      "model_top7_podium_count": 2,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 1,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 1,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "2-6-9",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "2-6-8",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "2-6-1",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "門別|20261105|7",
+      "scheduled_at": "2026-11-05T08:40:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:29.412+00:00",
+      "odds_captured_at": "2026-11-05T08:37:02.046903+00:00",
+      "minutes_to_post": 2.97,
+      "model_age_minutes": 350.5,
+      "model_loaded": true,
+      "model_top1": "2",
+      "market_favorite": "2",
+      "model_top7": [
+        "2",
+        "10",
+        "1",
+        "6",
+        "3",
+        "12",
+        "4"
+      ],
+      "market_top7": [
+        "2",
+        "7",
+        "10",
+        "3",
+        "4",
+        "6",
+        "11"
+      ],
+      "blend50_top7": [
+        "2",
+        "10",
+        "7",
+        "3",
+        "4",
+        "6",
+        "12"
+      ],
+      "actual_trio": [
+        "2",
+        "4",
+        "6"
+      ],
+      "actual_winners": [
+        "2"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": true,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "2-10-1",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "2-10-6",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "2-10-3",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "門別|20261105|8",
+      "scheduled_at": "2026-11-05T09:15:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:29.707+00:00",
+      "odds_captured_at": "2026-11-05T09:12:01.677601+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 385.5,
+      "model_loaded": true,
+      "model_top1": "6",
+      "market_favorite": "8",
+      "model_top7": [
+        "6",
+        "9",
+        "2",
+        "8",
+        "3",
+        "5",
+        "1"
+      ],
+      "market_top7": [
+        "8",
+        "5",
+        "3",
+        "7",
+        "9",
+        "6",
+        "4"
+      ],
+      "blend50_top7": [
+        "8",
+        "5",
+        "3",
+        "6",
+        "9",
+        "7",
+        "2"
+      ],
+      "actual_trio": [
+        "5",
+        "6",
+        "8"
+      ],
+      "actual_winners": [
+        "8"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 3,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 2,
+      "blend50_top5_podium_count": 3,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": true,
+      "blend50_top1_winner_hit": true,
+      "shadow_trio_tickets": [
+        {
+          "comb": "6-9-2",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "6-9-8",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "6-9-3",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    },
+    {
+      "race_id": "門別|20261105|9",
+      "scheduled_at": "2026-11-05T09:50:00+00:00",
+      "prediction_saved_at": "2026-11-05T02:46:30.001+00:00",
+      "odds_captured_at": "2026-11-05T09:47:01.393068+00:00",
+      "minutes_to_post": 2.98,
+      "model_age_minutes": 420.5,
+      "model_loaded": true,
+      "model_top1": "5",
+      "market_favorite": "5",
+      "model_top7": [
+        "5",
+        "2",
+        "4",
+        "1",
+        "8",
+        "6",
+        "7"
+      ],
+      "market_top7": [
+        "5",
+        "2",
+        "8",
+        "1",
+        "3",
+        "4",
+        "7"
+      ],
+      "blend50_top7": [
+        "5",
+        "2",
+        "8",
+        "1",
+        "4",
+        "3",
+        "6"
+      ],
+      "actual_trio": [
+        "4",
+        "5",
+        "6"
+      ],
+      "actual_winners": [
+        "6"
+      ],
+      "model_top7_podium_count": 3,
+      "market_top7_podium_count": 2,
+      "blend50_top7_podium_count": 3,
+      "model_top5_podium_count": 2,
+      "market_top5_podium_count": 1,
+      "blend50_top5_podium_count": 2,
+      "model_top1_winner_hit": false,
+      "market_favorite_winner_hit": false,
+      "blend50_top1_winner_hit": false,
+      "shadow_trio_tickets": [
+        {
+          "comb": "5-2-4",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-2-1",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        },
+        {
+          "comb": "5-2-8",
+          "stake": 100,
+          "hit": false,
+          "return_yen": 0
+        }
+      ]
+    }
+  ]
+}
