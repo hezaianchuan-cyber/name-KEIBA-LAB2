@@ -111,7 +111,7 @@ def load_rows() -> tuple[list[dict], dict]:
     return list(rows_by_key.values()), stats
 
 
-def publish(rows: list[dict], endpoint: str, token: str, batch_size: int = 40) -> int:
+def publish(rows: list[dict], endpoint: str, token: str, anon_key: str, batch_size: int = 5) -> int:
     published = 0
     for start in range(0, len(rows), batch_size):
         batch = rows[start:start + batch_size]
@@ -121,6 +121,7 @@ def publish(rows: list[dict], endpoint: str, token: str, batch_size: int = 40) -
                             ensure_ascii=False, separators=(",", ":")).encode("utf-8"),
             headers={
                 "Authorization": "Bearer " + token,
+                "apikey": anon_key,
                 "Content-Type": "application/json",
                 "Accept": "application/json",
             },
@@ -138,13 +139,16 @@ def publish(rows: list[dict], endpoint: str, token: str, batch_size: int = 40) -
 def main() -> None:
     url = os.environ.get("SUPABASE_URL", "https://mwiinzmnoludksnfnjaa.supabase.co").rstrip("/")
     token = os.environ.get("NAR_CAPTURE_TOKEN", "").strip()
+    anon_key = os.environ.get("SUPABASE_ANON_KEY", "").strip()
     if not token:
         raise RuntimeError("NAR_CAPTURE_TOKEN is required to publish model snapshots")
+    if not anon_key:
+        raise RuntimeError("SUPABASE_ANON_KEY is required to publish model snapshots")
     rows, stats = load_rows()
     if not rows:
         print(json.dumps({"ok": True, **stats, "published": 0}, ensure_ascii=False), flush=True)
         return
-    published = publish(rows, url + "/functions/v1/nar-model-snapshot-archive", token)
+    published = publish(rows, url + "/functions/v1/nar-model-snapshot-archive", token, anon_key)
     print(json.dumps({"ok": True, **stats, "published": published}, ensure_ascii=False), flush=True)
 
 
