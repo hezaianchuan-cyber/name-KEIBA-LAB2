@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from nar_trio_bankroll_backtest import (
     allocate_equal_units,
     allocate_weighted_units,
+    assess_readiness,
     build_candidates,
     build_matched_races,
     evaluate_races,
@@ -100,6 +101,44 @@ class TrioBankrollAllocationTests(unittest.TestCase):
             rows, diagnostics = load_snapshots(Path(temp))
         self.assertEqual(rows, [])
         self.assertEqual(diagnostics["invalid_lock_or_shape"], 1)
+
+
+    def test_small_real_sample_is_collecting_not_decision_ready(self):
+        races = [
+            {"race_key": f"園田|2026110{day}|{race}"}
+            for day in (3, 4, 5)
+            for race in (1, 2)
+        ]
+        status, decision_ready, matched_days = assess_readiness(races)
+        self.assertEqual(status, "collecting_sample")
+        self.assertFalse(decision_ready)
+        self.assertEqual(len(matched_days), 3)
+
+    def test_decision_gate_requires_100_races_across_14_days(self):
+        races = [
+            {"race_key": f"園田|202610{day:02d}|{race}"}
+            for day in range(1, 15)
+            for race in range(1, 8)
+        ]
+        status, decision_ready, matched_days = assess_readiness(races)
+        self.assertEqual(len(races), 98)
+        self.assertEqual(len(matched_days), 14)
+        self.assertEqual(status, "collecting_sample")
+        self.assertFalse(decision_ready)
+
+        races.append({"race_key": "園田|20261014|8"})
+        status, decision_ready, matched_days = assess_readiness(races)
+        self.assertEqual(len(races), 99)
+        self.assertEqual(len(matched_days), 14)
+        self.assertEqual(status, "collecting_sample")
+        self.assertFalse(decision_ready)
+
+        races.append({"race_key": "園田|20261014|9"})
+        status, decision_ready, matched_days = assess_readiness(races)
+        self.assertEqual(len(races), 100)
+        self.assertEqual(len(matched_days), 14)
+        self.assertEqual(status, "ready_for_review")
+        self.assertTrue(decision_ready)
 
     def test_empty_inputs_report_not_ready_without_fake_metrics(self):
         with tempfile.TemporaryDirectory() as temp:
