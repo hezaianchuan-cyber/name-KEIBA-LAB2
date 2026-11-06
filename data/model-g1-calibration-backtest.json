@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-11-05T09:25:20.315693+00:00",
+  "generated_at": "2026-11-06T02:10:37.852569+00:00",
   "feature": "G1_probability_calibration",
   "status": "G1_improved_on_untouched_holdout",
   "model_scope": "Existing chronological C-model scores; E model and live model code are unchanged.",
   "evaluation_period_start": "2026-03-01",
-  "evaluation_period_end": "2026-11-04",
-  "eligible_races": 10960,
-  "eligible_dates": 249,
+  "evaluation_period_end": "2026-11-05",
+  "eligible_races": 11008,
+  "eligible_dates": 250,
   "official_archive_months": [
     {
       "month": "2022-11",
@@ -250,7 +250,7 @@
     },
     {
       "month": "2026-11",
-      "bytes": 296346,
+      "bytes": 324385,
       "parsed_cache": "current_month_refresh"
     }
   ],
@@ -264,24 +264,24 @@
   "profitable_claim": false,
   "development_period": [
     "2026-03-01",
-    "2026-08-21"
+    "2026-08-22"
   ],
   "holdout_period": [
-    "2026-08-22",
-    "2026-11-04"
+    "2026-08-23",
+    "2026-11-05"
   ],
-  "development_races": 7550,
-  "holdout_races": 3410,
+  "development_races": 7572,
+  "holdout_races": 3436,
   "selected_temperature": 0.115,
   "temperature_search": "0.02 to 0.50 inclusive, step 0.005; minimum development winner-mass log loss.",
   "development_metrics": {
     "baseline": {
-      "races": 7550,
+      "races": 7572,
       "temperature": 0.18,
-      "log_loss": 2.01708,
-      "brier": 0.83186,
-      "top1_accuracy": 29.54,
-      "ece": 0.08399,
+      "log_loss": 2.01726,
+      "brier": 0.83187,
+      "top1_accuracy": 29.57,
+      "ece": 0.08439,
       "confidence_buckets": [
         {
           "range": "0-10%",
@@ -292,24 +292,24 @@
         },
         {
           "range": "10-20%",
-          "races": 3725,
+          "races": 3742,
           "mean_confidence_pct": 16.64,
-          "hit_rate_pct": 21.18,
-          "calibration_gap_pp": 4.54
+          "hit_rate_pct": 21.25,
+          "calibration_gap_pp": 4.61
         },
         {
           "range": "20-30%",
-          "races": 3196,
+          "races": 3199,
           "mean_confidence_pct": 23.8,
           "hit_rate_pct": 35.2,
           "calibration_gap_pp": 11.4
         },
         {
           "range": "30-40%",
-          "races": 541,
-          "mean_confidence_pct": 33.48,
-          "hit_rate_pct": 49.17,
-          "calibration_gap_pp": 15.69
+          "races": 543,
+          "mean_confidence_pct": 33.46,
+          "hit_rate_pct": 49.36,
+          "calibration_gap_pp": 15.89
         },
         {
           "range": "40-50%",
@@ -356,12 +356,12 @@
       ]
     },
     "G1_calibrated": {
-      "races": 7550,
+      "races": 7572,
       "temperature": 0.115,
-      "log_loss": 1.97792,
-      "brier": 0.8201,
-      "top1_accuracy": 29.54,
-      "ece": 0.012,
+      "log_loss": 1.97808,
+      "brier": 0.82005,
+      "top1_accuracy": 29.57,
+      "ece": 0.01228,
       "confidence_buckets": [
         {
           "range": "0-10%",
@@ -372,43 +372,43 @@
         },
         {
           "range": "10-20%",
-          "races": 1367,
+          "races": 1375,
           "mean_confidence_pct": 17.19,
-          "hit_rate_pct": 16.9,
-          "calibration_gap_pp": -0.29
+          "hit_rate_pct": 16.95,
+          "calibration_gap_pp": -0.24
         },
         {
           "range": "20-30%",
-          "races": 3465,
+          "races": 3474,
           "mean_confidence_pct": 24.82,
-          "hit_rate_pct": 25.54,
-          "calibration_gap_pp": 0.72
+          "hit_rate_pct": 25.56,
+          "calibration_gap_pp": 0.74
         },
         {
           "range": "30-40%",
-          "races": 1769,
+          "races": 1770,
           "mean_confidence_pct": 34.25,
-          "hit_rate_pct": 36.24,
-          "calibration_gap_pp": 1.98
+          "hit_rate_pct": 36.33,
+          "calibration_gap_pp": 2.08
         },
         {
           "range": "40-50%",
-          "races": 659,
-          "mean_confidence_pct": 44.01,
-          "hit_rate_pct": 46.74,
-          "calibration_gap_pp": 2.73
+          "races": 663,
+          "mean_confidence_pct": 44.0,
+          "hit_rate_pct": 46.76,
+          "calibration_gap_pp": 2.75
         },
         {
           "range": "50-60%",
           "races": 222,
-          "mean_confidence_pct": 54.1,
+          "mean_confidence_pct": 54.11,
           "hit_rate_pct": 56.31,
           "calibration_gap_pp": 2.2
         },
         {
           "range": "60-70%",
           "races": 51,
-          "mean_confidence_pct": 63.69,
+          "mean_confidence_pct": 63.7,
           "hit_rate_pct": 58.82,
           "calibration_gap_pp": -4.87
         },
@@ -438,12 +438,12 @@
   },
   "holdout_metrics": {
     "baseline": {
-      "races": 3410,
+      "races": 3436,
       "temperature": 0.18,
-      "log_loss": 2.03769,
-      "brier": 0.83445,
-      "top1_accuracy": 29.82,
-      "ece": 0.09191,
+      "log_loss": 2.03664,
+      "brier": 0.83423,
+      "top1_accuracy": 29.83,
+      "ece": 0.09174,
       "confidence_buckets": [
         {
           "range": "0-10%",
@@ -454,24 +454,24 @@
         },
         {
           "range": "10-20%",
-          "races": 1845,
+          "races": 1849,
           "mean_confidence_pct": 16.69,
-          "hit_rate_pct": 22.01,
-          "calibration_gap_pp": 5.32
+          "hit_rate_pct": 21.9,
+          "calibration_gap_pp": 5.21
         },
         {
           "range": "20-30%",
-          "races": 1326,
-          "mean_confidence_pct": 23.69,
-          "hit_rate_pct": 35.75,
-          "calibration_gap_pp": 12.05
+          "races": 1347,
+          "mean_confidence_pct": 23.7,
+          "hit_rate_pct": 35.86,
+          "calibration_gap_pp": 12.16
         },
         {
           "range": "30-40%",
-          "races": 210,
-          "mean_confidence_pct": 33.3,
-          "hit_rate_pct": 56.19,
-          "calibration_gap_pp": 22.89
+          "races": 211,
+          "mean_confidence_pct": 33.32,
+          "hit_rate_pct": 55.92,
+          "calibration_gap_pp": 22.61
         },
         {
           "range": "40-50%",
@@ -518,12 +518,12 @@
       ]
     },
     "G1_calibrated": {
-      "races": 3410,
+      "races": 3436,
       "temperature": 0.115,
-      "log_loss": 1.9952,
-      "brier": 0.82026,
-      "top1_accuracy": 29.82,
-      "ece": 0.02167,
+      "log_loss": 1.99387,
+      "brier": 0.82003,
+      "top1_accuracy": 29.83,
+      "ece": 0.02122,
       "confidence_buckets": [
         {
           "range": "0-10%",
@@ -534,38 +534,38 @@
         },
         {
           "range": "10-20%",
-          "races": 649,
+          "races": 648,
           "mean_confidence_pct": 17.41,
-          "hit_rate_pct": 16.95,
-          "calibration_gap_pp": -0.46
+          "hit_rate_pct": 16.98,
+          "calibration_gap_pp": -0.44
         },
         {
           "range": "20-30%",
-          "races": 1655,
-          "mean_confidence_pct": 24.75,
-          "hit_rate_pct": 25.26,
-          "calibration_gap_pp": 0.51
+          "races": 1666,
+          "mean_confidence_pct": 24.76,
+          "hit_rate_pct": 25.21,
+          "calibration_gap_pp": 0.45
         },
         {
           "range": "30-40%",
-          "races": 735,
-          "mean_confidence_pct": 34.28,
-          "hit_rate_pct": 38.91,
-          "calibration_gap_pp": 4.63
+          "races": 746,
+          "mean_confidence_pct": 34.27,
+          "hit_rate_pct": 38.74,
+          "calibration_gap_pp": 4.47
         },
         {
           "range": "40-50%",
-          "races": 270,
-          "mean_confidence_pct": 43.89,
-          "hit_rate_pct": 52.59,
+          "races": 274,
+          "mean_confidence_pct": 43.85,
+          "hit_rate_pct": 52.55,
           "calibration_gap_pp": 8.7
         },
         {
           "range": "50-60%",
-          "races": 83,
-          "mean_confidence_pct": 54.51,
-          "hit_rate_pct": 55.42,
-          "calibration_gap_pp": 0.91
+          "races": 84,
+          "mean_confidence_pct": 54.45,
+          "hit_rate_pct": 55.95,
+          "calibration_gap_pp": 1.5
         },
         {
           "range": "60-70%",
@@ -601,23 +601,23 @@
       "method": "paired race-level bootstrap; calibrated minus baseline; lower is better",
       "replicates": 2000,
       "log_loss_delta_95ci": [
-        -0.05155,
-        -0.03334
+        -0.05175,
+        -0.03419
       ],
       "brier_delta_95ci": [
-        -0.01715,
-        -0.01116
+        -0.01716,
+        -0.01142
       ],
       "ece_delta_95ci": [
-        -0.07285,
-        -0.04957
+        -0.07301,
+        -0.0505
       ]
     }
   },
   "holdout_changes": {
-    "log_loss_delta": -0.04249,
-    "brier_delta": -0.01419,
-    "ece_delta": -0.07024,
+    "log_loss_delta": -0.04277,
+    "brier_delta": -0.0142,
+    "ece_delta": -0.07052,
     "top1_accuracy_delta_percentage_points": 0.0
   },
   "interpretation": "G1 passes this experiment only when the untouched holdout has at least 100 races, both log-loss and Brier 95% delta upper bounds are below zero, and ECE does not show a statistically clear deterioration. This is not evidence of profitable betting or live pre-off performance.",
