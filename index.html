@@ -1447,7 +1447,7 @@ function generateTickets(){
    if(type==='ワイド')return wideProbability(n[0],n[1]);
    if(type==='馬連')return perms(n).reduce((sum,x)=>sum+orderedProbability(x),0);
    if(type==='馬単')return orderedProbability(n);
-   if(type==='3連複')return perms(n).reduce((sum,x)=>sum+orderedProbability(x),0);
+   if(type==='3連複')return window.KEIBALAB_TRIO_STRATEGY?window.KEIBALAB_TRIO_STRATEGY.trioProbability(n,field.map(h=>({horseNo:String(h.horseNo),probability:Number(h.modelProb)||0}))):perms(n).reduce((sum,x)=>sum+orderedProbability(x),0);
    if(type==='3連単')return orderedProbability(n);
    return 0;
  };
@@ -1481,7 +1481,7 @@ function generateTickets(){
  let fusion;if(autoPlanSourceUsed&&!exactSnapshotOdds.length){fusion={runners:field.map(h=>({horseNo:String(h.horseNo),probability:h.modelProb,marketProbability:h.marketProb})),marketBlendApplied:!!autoPlan.marketBlendApplied,marketCoverage:Number(autoPlan.marketCoverage)||0};}else{fusion=strategy?strategy.fuse(field.map(h=>({horseNo:h.horseNo,score:h.score,modelProbability:h.modelProb})),oddsRows,0.5):{runners:field.map(h=>({horseNo:String(h.horseNo),probability:h.modelProb,marketProbability:null})),marketBlendApplied:false,marketCoverage:0};}
  const fusedByNo=new Map(fusion.runners.map(h=>[String(h.horseNo),h]));
  field=field.map(h=>{const f=fusedByNo.get(String(h.horseNo));return {...h,labProb:h.labProb??h.modelProb,marketProb:f?.marketProbability??null,modelProb:f?.probability??h.modelProb,marketBlendApplied:!!fusion.marketBlendApplied};});
- field.sort((a,b)=>b.modelProb-a.modelProb||b.score-a.score);
+ field.sort((a,b)=>b.modelProb-a.modelProb||b.score-a.score||Number(normNo(a.horseNo))-Number(normNo(b.horseNo)));
  top=field.slice(0,Math.min(7,field.length));
  byNo.clear();field.forEach(h=>byNo.set(String(h.horseNo),h.modelProb));
  const computedAdaptivePoolSize=strategy?strategy.adaptivePoolSize(field,0.60):Math.min(7,field.length);const adaptivePoolSize=autoPlanSourceUsed&&Number(autoPlan.adaptivePoolSize)>0?Number(autoPlan.adaptivePoolSize):computedAdaptivePoolSize;
