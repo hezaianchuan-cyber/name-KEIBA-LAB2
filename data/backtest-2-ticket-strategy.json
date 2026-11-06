@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-06T03:30:59.687482+00:00",
+  "generated_at": "2026-11-06T04:45:45.122257+00:00",
   "holdout_period": {
     "start": "2025-11-06",
     "end": "2026-11-05"
@@ -189,6 +189,42 @@
       "all_podium_top5": 35.8,
       "all_podium_top6": 51.27,
       "all_podium_top7": 65.66
+    },
+    "podium_count_top7": {
+      "counts": {
+        "0": 29,
+        "1": 666,
+        "2": 4587,
+        "3": 10099
+      },
+      "rates": {
+        "0": 0.19,
+        "1": 4.33,
+        "2": 29.82,
+        "3": 65.66
+      },
+      "average_podium_horses_captured": 2.61
+    },
+    "adaptive_pool": {
+      "races": 15401,
+      "tickets": 295094,
+      "hits": 7143,
+      "hit_races": 7138,
+      "stake": 29509400,
+      "return": 16253960.0,
+      "selected_top_n": {
+        "4": 3821,
+        "5": 3372,
+        "6": 2746,
+        "7": 5462
+      },
+      "hit_rate": 2.4206,
+      "race_hit_rate": 46.35,
+      "roi": 55.08,
+      "profit": -13255440.0,
+      "tickets_per_race": 19.16,
+      "stake_per_ticket_yen": 100,
+      "selection_rule": "Choose top-4/5/6 when the adjacent score gap at ranks 4/5, 5/6, or 6/7 is at least 0.60 population standard deviations; otherwise top-7. Uses only pre-race scores."
     },
     "structures": {
       "top4": {
