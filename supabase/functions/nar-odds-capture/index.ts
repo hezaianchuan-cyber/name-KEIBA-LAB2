@@ -1,4 +1,5 @@
 import { unzipSync, gunzipSync } from "npm:fflate@0.8.2";
+import "./_shared/trio_strategy.js";
 
 const RACE_URL = "https://www.keiba.go.jp/KeibaWeb/DataDownload/RaceDataDownload?type=daily";
 const ODDS_URL = "https://www.keiba.go.jp/KeibaWeb/DataDownload/OddsDataDownload?type=daily";
@@ -188,31 +189,41 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>):Pro
   base.marketTop3=marketRows.slice(0,3).map((item:any)=>item.no);
   base.marketOddsCapturedAt=capturedAt;
   if(!model)return {...base,decision:"SKIP",skipReason:"時刻条件内のモデル予測スナップショットがありません",skipReasonCode:"MODEL_SNAPSHOT_NOT_AVAILABLE",totalStake:0,tickets:[],validatedBetTypes:Object.keys(thresholds).length};
-  const predictions=[...(model.predictions||[])].sort((a:any,b:any)=>(Number(b.win_probability)||0)-(Number(a.win_probability)||0));
-  const top=predictions.slice(0,5),topNumbers=new Set(top.map((x:any)=>horseNo(x.horse_no)));
-  base.modelTopHorse=top[0]?.horse_no?horseNo(top[0].horse_no):null;
-  base.modelTop3=top.slice(0,3).map((x:any)=>horseNo(x.horse_no));
+  const modelRows=(model.predictions||[]).map((item:any)=>({
+    horseNo:horseNo(item.horse_no),
+    name:String(item.name||""),
+    score:Number(item.score)||0,
+    modelProbability:Number(item.win_probability)||0,
+  })).filter((item:any)=>item.horseNo&&item.modelProbability>0);
+  const strategy=(globalThis as any).KEIBALAB_TRIO_STRATEGY;
+  if(!strategy)throw new Error("Shared trio strategy module is not loaded");
+  const raceStrategy=strategy.build(modelRows,oddsRows,0.5,0.60);
+  const predictions=raceStrategy.runners;
+  const top=predictions.slice(0,7);
+  const labRanked=[...predictions].sort((a:any,b:any)=>b.modelProbability-a.modelProbability);
+  base.labTop3=labRanked.slice(0,3).map((x:any)=>horseNo(x.horseNo));
+  base.modelTopHorse=top[0]?.horseNo||null;
+  base.modelTop3=top.slice(0,3).map((x:any)=>horseNo(x.horseNo));
+  base.marketBlendWeight=raceStrategy.marketBlendApplied?0.5:0;
+  base.marketBlendApplied=!!raceStrategy.marketBlendApplied;
+  base.marketCoverage=Number(raceStrategy.marketCoverage)||0;
+  base.adaptivePoolSize=raceStrategy.poolSize;
+  base.top7=top.map((x:any)=>horseNo(x.horseNo));
   base.modelCapturedAt=model.captured_at||null;
   base.modelVersion=model.model_version||base.modelVersion||null;
   base.snapshotSource=model.snapshot_source||"timestamped_preoff_archive";
-  const firstNumbers=new Set(predictions.slice(0,2).map((x:any)=>horseNo(x.horse_no)));
-  const oddsLookup=new Map<string,number>();
-  for(const item of oddsRows){
-    const kind=betKind(item.type);if(!kind)continue;
-    const nums=[item.n1,item.n2,item.n3].filter((x:any)=>digitsOnly(x)).map(horseNo);
-    if(nums.length!==REQUIRED[kind]||new Set(nums).size!==nums.length)continue;
-    const price=Number(item.odds);if(Number.isFinite(price)&&price>0)oddsLookup.set(kind+"|"+combinationKey(kind,nums),price);
-  }
-  const candidates:any[]=[];
-  for(const item of model.candidate_combinations||[]){
-    const kind=String(item.bet_type||"");if(kind!=="trio"||!(kind in REQUIRED)||!(kind in thresholds))continue;
-    const nums=(item.numbers||[]).map(horseNo);
-    if(nums.length!==REQUIRED[kind]||new Set(nums).size!==nums.length||nums.some((n:string)=>!topNumbers.has(n)))continue;
-    if((kind==="exacta"||kind==="trifecta")&&!firstNumbers.has(nums[0]))continue;
-    const price=oddsLookup.get(kind+"|"+combinationKey(kind,nums)),prob=Number(item.probability);
-    if(!(price&&price>0&&prob>0))continue;
-    candidates.push({kind,type:BET_TYPES[kind],comb:nums.join("-"),odds:price,probability:prob,ev:price*prob});
-  }
+  base.runnerDraws=predictions.map((x:any)=>({
+    horseNo:horseNo(x.horseNo),name:String(x.name||""),score:Number(x.score)||0,
+    winProbability:Number(x.probability)||0,labWinProbability:Number(x.modelProbability)||0,
+    marketWinProbability:x.marketProbability==null?null:Number(x.marketProbability),
+  }));
+  const candidates=(raceStrategy.candidates||[]).map((item:any)=>({
+    kind:"trio",type:"3連複",comb:item.comb,odds:item.odds,
+    probability:Number(item.probability)||0,ev:item.ev==null?null:Number(item.ev),
+  }));
+  const shadowTickets=candidates.slice(0,3).map((x:any)=>({
+    type:"3連複",comb:x.comb,odds:x.odds,probability:x.probability,ev:x.ev,virtualStake:100,
+  }));
   const eligible:any[]=[];
   for(const [kind,threshold] of Object.entries(thresholds)){
     if(kind!=="trio")continue;
@@ -225,7 +236,7 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>):Pro
   if(!selected){
     const reason=!oddsRows.length?"1分オッズが未取得":!Object.keys(thresholds).length?"券種別の検証済みEV基準が未成立":"検証済みEV基準を満たす候補なし";
     const code=!oddsRows.length?"ODDS_NOT_CAPTURED":!Object.keys(thresholds).length?"NO_VALIDATED_TICKET_THRESHOLD":"EV_BELOW_VALIDATED_THRESHOLD";
-    return {...base,decision:"SKIP",skipReason:reason,skipReasonCode:code,totalStake:0,tickets:[],modelCapturedAt:model.captured_at,modelVersion:model.model_version,oddsRows:oddsRows.length,validatedBetTypes:Object.keys(thresholds).length};
+    return {...base,decision:"SKIP",skipReason:reason,skipReasonCode:code,totalStake:0,tickets:[],shadowTickets,modelCapturedAt:model.captured_at,modelVersion:model.model_version,oddsRows:oddsRows.length,oddsMatchedCandidates:candidates.filter((x:any)=>x.ev!=null).length,validatedBetTypes:Object.keys(thresholds).length};
   }
   const rows=selected.rows,target=Math.min(2000,rows.length*100);
   const weights=rows.map(x=>Math.max(0.0001,(x.ev-1)*Math.sqrt(Math.max(x.probability,0.000001))));
@@ -235,6 +246,7 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>):Pro
   while(tickets.length&&allocated+100<=target){tickets[index].stake+=100;allocated+=100;index=(index+1)%tickets.length;}
   return {...base,decision:tickets.length?"BET":"SKIP",skipReason:"",skipReasonCode:"BET",selectedType:selected.kind,totalStake:allocated,
     tickets:tickets.map(x=>({type:x.type,comb:x.comb,stake:x.stake,odds:x.odds,probability:x.probability,ev:x.ev})),
+    shadowTickets,
     modelCapturedAt:model.captured_at,modelVersion:model.model_version,oddsRows:oddsRows.length,oddsMatchedCandidates:candidates.length,validatedBetTypes:Object.keys(thresholds).length};
 }
 
