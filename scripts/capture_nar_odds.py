@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 SNAPSHOT_DIR = DATA / "odds-snapshots"
 JST = ZoneInfo("Asia/Tokyo")
-CAPTURE_WINDOW_MINUTES = 30
+CAPTURE_WINDOW_MINUTES = 60
 STOP_BEFORE_POST_MINUTES = 2
 
 

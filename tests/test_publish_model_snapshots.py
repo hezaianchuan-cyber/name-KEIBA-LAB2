@@ -13,9 +13,9 @@ def valid_record():
         "date": "20261106",
         "race": "1",
         "scheduled_post_time": "2026-11-06T10:30:00+09:00",
-        "captured_at": "2026-11-06T10:00:00+09:00",
-        "minutes_to_post": 30.0,
-        "capture_policy": {"window_start_minutes": 30, "stop_before_post_minutes": 2},
+        "captured_at": "2026-11-06T09:30:00+09:00",
+        "minutes_to_post": 60.0,
+        "capture_policy": {"window_start_minutes": 60, "stop_before_post_minutes": 2},
         "model_version": "nar-chronological-v9",
         "model_temperature": 0.18,
         "predictions": [

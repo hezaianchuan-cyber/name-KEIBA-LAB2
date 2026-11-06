@@ -3,7 +3,7 @@ import "./_shared/trio_strategy.js";
 
 const RACE_URL = "https://www.keiba.go.jp/KeibaWeb/DataDownload/RaceDataDownload?type=daily";
 const ODDS_URL = "https://www.keiba.go.jp/KeibaWeb/DataDownload/OddsDataDownload?type=daily";
-const WINDOW_START_MIN = 30;
+const WINDOW_START_MIN = 60;
 const WINDOW_END_MIN = 2;
 
 function decodeCsv(bytes: Uint8Array): string {
