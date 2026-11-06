@@ -8,13 +8,14 @@ on:
     branches: [main]
     paths:
       - "scripts/nar_trio_bankroll_backtest.py"
+      - "tests/test_nar_trio_bankroll_backtest.py"
       - "scripts/publish_model_snapshots.py"
       - "data/odds-snapshots/**"
       - "data/daily-payouts.json"
       - ".github/workflows/nar-trio-bankroll-backtest.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: nar-trio-bankroll-backtest
@@ -33,6 +34,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Test trio allocation and official payout matching
+        run: python3 -m unittest discover -s tests -p 'test_nar_trio_bankroll_backtest.py' -v
+
       - name: Run research-only allocation comparison
         run: python3 scripts/nar_trio_bankroll_backtest.py
 
@@ -44,3 +48,29 @@ jobs:
           path: data/trio-bankroll-allocation-backtest.json
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Publish research report for web inspection
+        if: success()
+        shell: bash
+        run: |
+          set -e
+          test -s data/trio-bankroll-allocation-backtest.json
+          cp data/trio-bankroll-allocation-backtest.json /tmp/trio-bankroll-allocation-backtest.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/trio-bankroll-allocation-backtest.json data/trio-bankroll-allocation-backtest.json
+            git add data/trio-bankroll-allocation-backtest.json
+            if git diff --cached --quiet; then
+              echo "Trio bankroll research report is already current."
+              exit 0
+            fi
+            git commit -m "Publish trio bankroll allocation research report"
+            if git push origin HEAD:main; then exit 0; fi
+            echo "Concurrent update detected; retrying from latest main (attempt $attempt)"
+            sleep 2
+          done
+          echo "Could not publish trio bankroll research report after five attempts."
+          exit 1
