@@ -1,0 +1,46 @@
+name: Research 3連複 bankroll allocation backtest
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "45 12 * * *" # 21:45 JST, after the official payout refresh
+  push:
+    branches: [main]
+    paths:
+      - "scripts/nar_trio_bankroll_backtest.py"
+      - "scripts/publish_model_snapshots.py"
+      - "data/odds-snapshots/**"
+      - "data/daily-payouts.json"
+      - ".github/workflows/nar-trio-bankroll-backtest.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nar-trio-bankroll-backtest
+  cancel-in-progress: false
+
+jobs:
+  research-backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run research-only allocation comparison
+        run: python3 scripts/nar_trio_bankroll_backtest.py
+
+      - name: Preserve readiness or backtest report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trio-bankroll-allocation-report
+          path: data/trio-bankroll-allocation-backtest.json
+          if-no-files-found: warn
+          retention-days: 30
