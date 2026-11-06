@@ -53,7 +53,7 @@ class PredictionLockTests(unittest.TestCase):
 
     def test_lock_rejects_capture_outside_preoff_window(self):
         record = self.sample()
-        record["captured_at"] = "2026-11-05T17:20:00+09:00"
+        record["captured_at"] = "2026-11-05T16:50:00+09:00"
         capture.attach_prediction_lock(record)
         self.assertFalse(capture.verify_prediction_lock(record))
 
