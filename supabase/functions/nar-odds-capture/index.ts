@@ -221,7 +221,7 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>):Pro
     kind:"trio",type:"3連複",comb:item.comb,odds:item.odds,
     probability:Number(item.probability)||0,ev:item.ev==null?null:Number(item.ev),
   }));
-  const shadowTickets=candidates.slice(0,3).map((x:any)=>({
+  const shadowTickets=candidates.map((x:any)=>({
     type:"3連複",comb:x.comb,odds:x.odds,probability:x.probability,ev:x.ev,virtualStake:100,
   }));
   const eligible:any[]=[];
