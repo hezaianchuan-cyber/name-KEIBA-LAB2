@@ -227,8 +227,7 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>):Pro
   const eligible:any[]=[];
   for(const [kind,threshold] of Object.entries(thresholds)){
     if(kind!=="trio")continue;
-    const rows=candidates.filter(x=>x.kind===kind&&x.ev>=Math.max(1.05,threshold))
-      .sort((a,b)=>(b.probability-a.probability)||(b.ev-a.ev)).slice(0,20);
+    const rows=(globalThis as any).KEIBALAB_TRIO_STRATEGY.selectTickets(candidates.filter(x=>x.kind===kind),12,0.5,Math.max(1.05,threshold));
     if(rows.length)eligible.push({kind,rows,avg:rows.slice(0,5).reduce((s,x)=>s+x.ev,0)/Math.min(5,rows.length),best:rows[0]});
   }
   eligible.sort((a,b)=>(b.avg-a.avg)||(b.best.probability-a.best.probability));
