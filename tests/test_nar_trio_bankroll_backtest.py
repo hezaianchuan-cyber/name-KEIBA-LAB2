@@ -15,6 +15,7 @@ from nar_trio_bankroll_backtest import (
     load_payouts,
     load_snapshots,
     race_key,
+    run_backtest,
 )
 
 
@@ -98,6 +99,20 @@ class TrioBankrollAllocationTests(unittest.TestCase):
             rows, diagnostics = load_snapshots(Path(temp))
         self.assertEqual(rows, [])
         self.assertEqual(diagnostics["invalid_lock_or_shape"], 1)
+
+    def test_empty_inputs_report_not_ready_without_fake_metrics(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            snapshot_dir = root / "snapshots"
+            snapshot_dir.mkdir()
+            payouts = root / "payouts.json"
+            payouts.write_text(json.dumps({"days": []}), encoding="utf-8")
+            output = root / "report.json"
+            report = run_backtest(snapshot_dir, payouts, output)
+        self.assertEqual(report["status"], "not_ready")
+        self.assertEqual(report["matched_races"], 0)
+        self.assertEqual(report["strategies"], [])
+        self.assertTrue(output.is_file())
 
 
 if __name__ == "__main__":
