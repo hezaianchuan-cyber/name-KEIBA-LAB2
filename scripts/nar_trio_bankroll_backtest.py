@@ -342,15 +342,17 @@ def build_matched_races(snapshot_rows, payouts):
 
 def run_backtest(snapshot_dir=SNAPSHOT_DIR, payouts_file=PAYOUTS_FILE, output_file=OUT):
     snapshots, diagnostics = load_snapshots(snapshot_dir)
-    payouts = load_payouts(payouts_file)
+    payout_error = None
+    try:
+        payouts = load_payouts(payouts_file)
+    except (OSError, ValueError, json.JSONDecodeError, RuntimeError) as exc:
+        payouts = {}
+        payout_error = str(exc)
     races = build_matched_races(snapshots, payouts)
-    if not races:
-        raise RuntimeError(
-            "No races have both a verified pre-off model snapshot with 3連複 candidates "
-            "and an official 3連複 payout. Do not report a performance result."
-        )
+    ready = bool(races)
     report = {
         "generated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+        "status": "ready" if ready else "not_ready",
         "source": "SHA-256-verified NAR pre-off model snapshots + official NAR trio payouts",
         "market_weight": MARKET_WEIGHT,
         "ticket_selection": "same top 12 by fused probability for every allocation strategy; selection held fixed to isolate stake allocation",
@@ -358,16 +360,20 @@ def run_backtest(snapshot_dir=SNAPSHOT_DIR, payouts_file=PAYOUTS_FILE, output_fi
         "unit_jpy": UNIT,
         "balanced_weight_formula": "max(fused_probability * preoff_trio_odds - 1, 0) * sqrt(fused_probability)",
         "balanced_max_ticket_share": B_MAX_STAKE_SHARE,
-        "diagnostics": diagnostics,
+        "diagnostics": {
+            **diagnostics,
+            "official_payout_races": len(payouts),
+            "official_payout_error": payout_error,
+        },
         "matched_races": len(races),
         "model_versions": dict(sorted((version, sum(1 for row in races if row["model_version"] == version))
                                       for version in {row["model_version"] for row in races})),
-        "strategies": [
+        "strategies": ([
             evaluate_races(races, "equal"),
             evaluate_races(races, "ev_only"),
             evaluate_races(races, "balanced"),
-        ],
-        "note": "Research only. A and B use the same selected tickets; variable ticket count and model weight tuning are separate experiments. Stakes are capped at JPY 1,900 per race in 100-yen units; unused budget is not forced into negative-edge tickets.",
+        ] if ready else []),
+        "note": "Research only. A and B use the same selected tickets; variable ticket count and model weight tuning are separate experiments. Stakes are capped at JPY 1,900 per race in 100-yen units; unused budget is not forced into negative-edge tickets. A not_ready report contains no performance metrics.",
     }
     output_file.parent.mkdir(parents=True, exist_ok=True)
     output_file.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
