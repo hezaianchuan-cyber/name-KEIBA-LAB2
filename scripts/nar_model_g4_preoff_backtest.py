@@ -133,7 +133,7 @@ def load_supabase_snapshots(model_rows):
     offset = 0
     # Keep JSONB response pages small and match the composite
     # (race_date, captured_at DESC, id DESC) index to avoid API timeouts.
-    page_size = 100
+    page_size = 20
     try:
         model_table_rows = []
         model_offset = 0
@@ -196,30 +196,39 @@ def load_supabase_snapshots(model_rows):
         diagnostics["supabase_model_key_samples"] = sorted(models_by_race.keys())[:8]
         diagnostics["supabase_model_venues"] = sorted({key.split("|")[0] for key in models_by_race})
 
-        while True:
-            query = urllib.parse.urlencode([
-                ("select", "id,race_id,race_date,captured_at,odds_data"),
-                ("race_date", "gte." + start_date),
-                ("race_date", "lte." + end_date),
-                ("order", "race_date.asc,captured_at.desc,id.desc"),
-                ("limit", str(page_size)),
-                ("offset", str(offset)),
-            ])
-            request = urllib.request.Request(
-                SUPABASE_URL + "/rest/v1/odds_snapshots?" + query,
-                headers={
-                    "apikey": SUPABASE_KEY,
-                    "Authorization": "Bearer " + SUPABASE_KEY,
-                    "Accept": "application/json",
-                    "User-Agent": "KEIBA-LAB-G4/1.0",
-                },
-            )
-            with urllib.request.urlopen(request, timeout=30) as response:
-                page = json.loads(response.read().decode("utf-8"))
-            if not isinstance(page, list):
-                raise RuntimeError("Supabase odds_snapshots response was not a JSON array")
-            diagnostics["supabase_query_rows"] += len(page)
-            for item in page:
+        # Read one race_date at a time. The JSONB odds_data column is large
+        # (often 100-300KB per row), so multi-day pages of 100 rows can exceed
+        # PostgREST's statement timeout even when the matching index exists.
+        # A small per-day page also lets PostgreSQL use the exact
+        # (race_date, captured_at DESC, id DESC) index without a global sort.
+        day_cursor = dt.date.fromisoformat(start_date)
+        last_day = dt.date.fromisoformat(end_date)
+        while day_cursor <= last_day:
+            day = day_cursor.isoformat()
+            offset = 0
+            while True:
+                query = urllib.parse.urlencode([
+                    ("select", "id,race_id,race_date,captured_at,odds_data"),
+                    ("race_date", "eq." + day),
+                    ("order", "captured_at.desc,id.desc"),
+                    ("limit", str(page_size)),
+                    ("offset", str(offset)),
+                ])
+                request = urllib.request.Request(
+                    SUPABASE_URL + "/rest/v1/odds_snapshots?" + query,
+                    headers={
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": "Bearer " + SUPABASE_KEY,
+                        "Accept": "application/json",
+                        "User-Agent": "KEIBA-LAB-G4/1.0",
+                    },
+                )
+                with urllib.request.urlopen(request, timeout=45) as response:
+                    page = json.loads(response.read().decode("utf-8"))
+                if not isinstance(page, list):
+                    raise RuntimeError("Supabase odds_snapshots response was not a JSON array")
+                diagnostics["supabase_query_rows"] += len(page)
+                for item in page:
                 key = race_key(item.get("race_id"))
                 captured = parse_time(item.get("captured_at"))
                 if not key or captured is None:
@@ -270,9 +279,10 @@ def load_supabase_snapshots(model_rows):
                     "prediction_age_minutes": round(age_minutes, 3),
                 })
                 diagnostics["supabase_snapshots_joined"] += 1
-            if len(page) < page_size:
-                break
-            offset += page_size
+                if len(page) < page_size:
+                    break
+                offset += page_size
+            day_cursor += dt.timedelta(days=1)
         diagnostics["supabase_status"] = "loaded"
     except Exception as exc:
         diagnostics["supabase_status"] = "unavailable"
