@@ -103,7 +103,13 @@ def load_outcomes():
                 payout_by_horse[no] = int(item.get("pay_100") or 0)
             trio_payouts = {}
             for item in payouts.get("trio") or []:
-                nums = [str(int("".join(ch for ch in str(value) if ch.isdigit()))) for value in (item.get("numbers") or [])]
+                nums = []
+                for value in item.get("numbers") or []:
+                    digits = "".join(ch for ch in str(value or "") if ch.isdigit())
+                    if not digits:
+                        nums = []
+                        break
+                    nums.append(str(int(digits)))
                 if len(nums) != 3 or len(set(nums)) != 3:
                     continue
                 try:
