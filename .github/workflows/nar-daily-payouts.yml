@@ -55,10 +55,16 @@ jobs:
           daily = report.get("daily_archive") or {}
           if daily.get("available") is not True:
               raise SystemExit("Official daily archive could not be downloaded; refusing to publish stale or incomplete payout data. Error: " + str(daily.get("error")))
+          coverage = report.get("payout_coverage") or {}
+          if int(coverage.get("trio_races") or 0) < 1 or int(coverage.get("trio_entries") or 0) < 1:
+              raise SystemExit("Official 3連複 payout coverage is empty; refusing to publish an unusable backtest source.")
           print("Validated payout report:", report["generated_at"],
                 "days=", len(report["days"]),
+                "trio_races=", coverage.get("trio_races"),
+                "trio_entries=", coverage.get("trio_entries"),
                 "today_payout_races=", daily.get("today_payout_races"),
-                "daily_archive_bytes=", daily.get("bytes"))
+                "daily_archive_bytes=", daily.get("bytes"),
+                "daily_payout_files=", daily.get("payout_files_seen"))
           PY
       - name: Publish report
         shell: bash
