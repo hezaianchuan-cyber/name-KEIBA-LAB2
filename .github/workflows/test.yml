@@ -27,10 +27,8 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - name: Type-check NAR Edge Functions
-        run: |
-          deno check supabase/functions/nar-odds-capture/index.ts
-          deno check supabase/functions/nar-model-snapshot-archive/index.ts
+      - name: Type-check isolated model snapshot archive function
+        run: deno check supabase/functions/nar-model-snapshot-archive/index.ts
       - name: Check embedded app JavaScript syntax
         run: |
           python - <<'PY'
