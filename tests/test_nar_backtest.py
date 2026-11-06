@@ -639,6 +639,31 @@ class IndependentBetTypeBacktestTests(unittest.TestCase):
             self.assertEqual(bucket["roi"],roi)
             self.assertEqual(bucket["tickets"],1)
 
+    def test_trio_backtest_caps_each_race_at_12_selected_tickets(self):
+        combinations = [
+            {"bet_type":"trio","numbers":[str(i),str(i+1),str(i+2)],
+             "odds":8.0,"probability":0.20-i*0.005,
+             "expected_value":1.50-i*0.01}
+            for i in range(1,16)
+        ]
+        record = {
+            "race_key":"大井|20261103|10",
+            "model_version":"nar-chronological-v9-D-frame-preoff",
+            "date":"20261103",
+            "captured_at":"2026-11-03T15:10:00+09:00",
+            "scheduled_post_time":"2026-11-03T15:30:00+09:00",
+            "minutes_to_post":20,
+            "combination_predictions":combinations,
+        }
+        payout = {"win":[(["1"],250)],"trio":[(["1","2","3"],1200)]}
+        key = ("大井","20261103","10")
+        with mock.patch.object(nb,"load_odds_snapshots",return_value={key:record}):
+            result = nb.preoff_ticket_type_backtest({key:payout})
+        trio = result["bet_types"]["trio"]["overall"]["1.00"]
+        self.assertEqual(trio["tickets"],12)
+        self.assertEqual(trio["max_tickets_per_race"],12)
+        self.assertEqual(trio["average_tickets_per_bet_race"],12.0)
+
     def test_unordered_ticket_matching_is_separate_from_ordered_ticket_matching(self):
         payout = {
             "win":[], "place":[], "wide":[(["1","2"],400)],
