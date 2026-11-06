@@ -26,6 +26,8 @@ BUDGET = 1900
 MAX_TICKETS = 12
 MARKET_WEIGHT = 0.50
 B_MAX_STAKE_SHARE = 0.30
+MIN_MATCHED_RACES_FOR_DECISION = 100
+MIN_MATCHED_RACE_DAYS_FOR_DECISION = 14
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from publish_model_snapshots import verify_record  # noqa: E402
@@ -332,6 +334,7 @@ def evaluate_races(races, mode):
         "max_drawdown_jpy": max_drawdown,
         "max_losing_streak": losing_streak,
         "unspent_races": sum(1 for row in per_race if row["stake"] == 0),
+        "per_race": per_race,
     }
 
 
@@ -355,10 +358,22 @@ def run_backtest(snapshot_dir=SNAPSHOT_DIR, payouts_file=PAYOUTS_FILE, output_fi
         payouts = {}
         payout_error = str(exc)
     races = build_matched_races(snapshots, payouts)
-    ready = bool(races)
+    matched_race_days = sorted({row["race_key"].split("|")[1] for row in races})
+    has_data = bool(races)
+    decision_ready = (
+        len(races) >= MIN_MATCHED_RACES_FOR_DECISION
+        and len(matched_race_days) >= MIN_MATCHED_RACE_DAYS_FOR_DECISION
+    )
+    status = "ready_for_review" if decision_ready else ("collecting_sample" if has_data else "not_ready")
     report = {
         "generated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
-        "status": "ready" if ready else "not_ready",
+        "status": status,
+        "decision_ready": decision_ready,
+        "matched_race_days": matched_race_days,
+        "decision_thresholds": {
+            "minimum_matched_races": MIN_MATCHED_RACES_FOR_DECISION,
+            "minimum_matched_race_days": MIN_MATCHED_RACE_DAYS_FOR_DECISION,
+        },
         "source": "SHA-256-verified NAR pre-off model snapshots + official NAR trio payouts",
         "market_weight": MARKET_WEIGHT,
         "ticket_selection": "same top 12 by fused probability for every allocation strategy; selection held fixed to isolate stake allocation",
@@ -380,8 +395,8 @@ def run_backtest(snapshot_dir=SNAPSHOT_DIR, payouts_file=PAYOUTS_FILE, output_fi
             evaluate_races(races, "balanced_20"),
             evaluate_races(races, "balanced_30"),
             evaluate_races(races, "balanced_40"),
-        ] if ready else []),
-        "note": "Research only. A and B use the same selected tickets; variable ticket count and model weight tuning are separate experiments. Stakes are capped at JPY 1,900 per race in 100-yen units; unused budget is not forced into negative-edge tickets. A not_ready report contains no performance metrics.",
+        ] if has_data else []),
+        "note": "Research only. A and B use the same selected tickets; variable ticket count and model weight tuning are separate experiments. Stakes are capped at JPY 1,900 per race in 100-yen units; unused budget is not forced into negative-edge tickets. Strategy metrics are preliminary until both the matched-race and matched-race-day thresholds are met; no production strategy is changed by this report.",
     }
     output_file.parent.mkdir(parents=True, exist_ok=True)
     output_file.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
