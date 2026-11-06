@@ -90,7 +90,8 @@ def load_outcomes():
             if not venue or number is None:
                 continue
             key = venue + "|" + date + "|" + str(int(number))
-            win_rows = (race.get("payouts") or {}).get("win") or []
+            payouts = race.get("payouts") or {}
+            win_rows = payouts.get("win") or []
             winners = set()
             payout_by_horse = {}
             for item in win_rows:
@@ -100,8 +101,30 @@ def load_outcomes():
                 no = str(nums[0])
                 winners.add(no)
                 payout_by_horse[no] = int(item.get("pay_100") or 0)
+            trio_payouts = {}
+            for item in payouts.get("trio") or []:
+                nums = []
+                for value in item.get("numbers") or []:
+                    digits = "".join(ch for ch in str(value or "") if ch.isdigit())
+                    if not digits:
+                        nums = []
+                        break
+                    nums.append(str(int(digits)))
+                if len(nums) != 3 or len(set(nums)) != 3:
+                    continue
+                try:
+                    pay = int(item.get("pay_100") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if pay > 0:
+                    combo = tuple(sorted(nums, key=int))
+                    trio_payouts["-".join(combo)] = max(pay, trio_payouts.get("-".join(combo), 0))
             if winners:
-                outcomes[key] = {"winners": winners, "payout_by_horse": payout_by_horse}
+                outcomes[key] = {
+                    "winners": winners,
+                    "payout_by_horse": payout_by_horse,
+                    "trio_payouts": trio_payouts,
+                }
     return outcomes
 
 
@@ -305,6 +328,7 @@ def load_supabase_snapshots(model_rows):
                         "minutes_to_post": minutes,
                         "model_temperature": model.get("model_temperature"),
                         "predictions": model.get("predictions") or [],
+                        "candidate_combinations": model.get("candidate_combinations") or [],
                         "odds": odds,
                         "capture_source": "supabase_one_minute",
                         "prediction_age_minutes": round(age_minutes, 3),
@@ -367,6 +391,7 @@ def load_snapshots():
                     "minutes_to_post": minutes,
                     "model_temperature": record.get("model_temperature"),
                     "predictions": predictions,
+                    "candidate_combinations": record.get("candidate_combinations") or [],
                     "odds": odds,
                     "capture_source": "github_five_minute",
                     "prediction_age_minutes": 0.0,
@@ -377,6 +402,248 @@ def load_snapshots():
     diagnostics["snapshots_from_github_five_minute"] = sum(1 for row in rows if row.get("capture_source") == "github_five_minute")
     diagnostics["snapshots_from_supabase_one_minute"] = len(supabase_rows)
     return rows, diagnostics
+
+
+def build_245_tickets(ranked):
+    """Build unique 2-4-5 formation combinations from a ranked horse list."""
+    unique = []
+    seen = set()
+    for value in ranked or []:
+        digits = "".join(ch for ch in str(value or "") if ch.isdigit())
+        if not digits:
+            continue
+        no = str(int(digits))
+        if no not in seen:
+            unique.append(no)
+            seen.add(no)
+    firsts, seconds, thirds = unique[:2], unique[:4], unique[2:7]
+    tickets, seen_tickets = [], set()
+    for first in firsts:
+        for second in seconds:
+            if second == first:
+                continue
+            for third in thirds:
+                if third in (first, second):
+                    continue
+                combo = tuple(sorted((first, second, third), key=int))
+                if combo not in seen_tickets:
+                    seen_tickets.add(combo)
+                    tickets.append(combo)
+    return tickets
+
+
+def narrow_trio_tickets(tickets, ranked, count=12):
+    """Keep the lowest rank-sum combinations, with a deterministic tie-break."""
+    rank = {str(no): i for i, no in enumerate(ranked or [], start=1)}
+    ordered = sorted(
+        tickets,
+        key=lambda combo: (
+            sum(rank.get(str(no), 10_000) for no in combo),
+            tuple(int(no) for no in combo),
+        ),
+    )
+    return ordered[:max(0, min(int(count), len(ordered)))]
+
+
+def summarize_podium_coverage(rows):
+    """Measure whether a ranking contains a complete official 3-horse podium."""
+    def metric(items, hit_key, captured_key):
+        hits = sum(int(row.get(hit_key, 0)) for row in items)
+        captured = [int(row.get(captured_key, 0)) for row in items]
+        return {
+            "races": len(items),
+            "full_podium_hits": hits,
+            "full_podium_coverage_pct": round(100 * hits / len(items), 2) if items else None,
+            "mean_podium_horses_captured": round(sum(captured) / len(captured), 3) if captured else None,
+        }
+
+    report = {
+        "model": metric(rows, "model_top7_podium_hit", "model_top7_podium_captured"),
+        "market": metric(rows, "market_top7_podium_hit", "market_top7_podium_captured"),
+        "blend_candidates": {},
+    }
+    for weight in BLEND_MARKET_WEIGHTS:
+        key = f"{weight:.2f}"
+        items = [row.get("blend_candidates", {}).get(key, {}) for row in rows]
+        hits = sum(int(item.get("top7_podium_hit", 0)) for item in items)
+        captured = [int(item.get("top7_podium_captured", 0)) for item in items]
+        report["blend_candidates"][key] = {
+            "races": len(items),
+            "full_podium_hits": hits,
+            "full_podium_coverage_pct": round(100 * hits / len(items), 2) if items else None,
+            "mean_podium_horses_captured": round(sum(captured) / len(captured), 3) if captured else None,
+        }
+    return report
+
+
+def summarize_trio_ticket_strategies(rows):
+    """Evaluate 3/6/9/12 ticket partial-buy choices against official trio payouts."""
+    report = {}
+    for count in (3, 6, 9, 12):
+        race_count = hit_races = ticket_count = stake = returned = 0
+        for row in rows:
+            ticket_map = row.get("trio_ticket_candidates") or {}
+            tickets = ticket_map.get(str(count)) or []
+            if not tickets:
+                continue
+            race_count += 1
+            payouts = row.get("trio_payouts") or {}
+            hit = False
+            race_return = 0
+            for combo in tickets:
+                key = "-".join(str(no) for no in combo)
+                pay = int(payouts.get(key, 0) or 0)
+                if pay > 0:
+                    hit = True
+                    race_return += pay
+            hit_races += int(hit)
+            ticket_count += len(tickets)
+            stake += len(tickets) * STAKE
+            returned += race_return
+        report[str(count)] = {
+            "races": race_count,
+            "hit_races": hit_races,
+            "race_hit_rate_pct": round(100 * hit_races / race_count, 2) if race_count else None,
+            "tickets": ticket_count,
+            "stake_jpy": stake,
+            "return_jpy": returned,
+            "profit_jpy": returned - stake,
+            "roi_pct": round(100 * returned / stake, 2) if stake else None,
+            "average_tickets_per_race": round(ticket_count / race_count, 2) if race_count else None,
+        }
+    return report
+
+
+def build_trio_combo_candidates(candidate_combinations, odds_rows):
+    """Join saved trio probabilities to the exact captured pre-off trio odds."""
+    def horse_no(value):
+        digits = "".join(ch for ch in str(value or "") if ch.isdigit())
+        return str(int(digits)) if digits else ""
+
+    odds_by_combo = {}
+    for item in odds_rows or []:
+        label = unicodedata.normalize("NFKC", str(item.get("type") or "")).replace(" ", "")
+        if label != "3連複":
+            continue
+        nums = [horse_no(item.get(key)) for key in ("n1", "n2", "n3")]
+        if len(nums) != 3 or not all(nums) or len(set(nums)) != 3:
+            continue
+        try:
+            price = float(item.get("odds"))
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(price) and price > 0:
+            key = "-".join(sorted(nums, key=int))
+            odds_by_combo[key] = price
+
+    by_combo = {}
+    for item in candidate_combinations or []:
+        bet_type = unicodedata.normalize("NFKC", str(item.get("bet_type") or "")).strip().lower()
+        if bet_type not in ("trio", "3連複"):
+            continue
+        nums = [horse_no(value) for value in (item.get("numbers") or [])]
+        if len(nums) != 3 or not all(nums) or len(set(nums)) != 3:
+            continue
+        key = "-".join(sorted(nums, key=int))
+        price = odds_by_combo.get(key)
+        try:
+            probability = float(item.get("probability"))
+        except (TypeError, ValueError):
+            continue
+        if price is None or not math.isfinite(probability) or probability <= 0:
+            continue
+        expected_value = probability * price
+        candidate = {
+            "key": key,
+            "numbers": list(sorted(nums, key=int)),
+            "probability": probability,
+            "captured_odds": price,
+            "expected_value": expected_value,
+        }
+        previous = by_combo.get(key)
+        if previous is None or candidate["probability"] > previous["probability"]:
+            by_combo[key] = candidate
+    return list(by_combo.values())
+
+
+def rank_trio_combo_candidates(candidates):
+    """Create probability, EV, and equal-weight rank-fusion orderings."""
+    probability_order = sorted(
+        candidates,
+        key=lambda row: (-row["probability"], -row["expected_value"], row["key"]),
+    )
+    ev_order = sorted(
+        candidates,
+        key=lambda row: (-row["expected_value"], -row["probability"], row["key"]),
+    )
+    probability_rank = {row["key"]: rank for rank, row in enumerate(probability_order, 1)}
+    ev_rank = {row["key"]: rank for rank, row in enumerate(ev_order, 1)}
+    balanced_order = sorted(
+        candidates,
+        key=lambda row: (
+            probability_rank[row["key"]] + ev_rank[row["key"]],
+            probability_rank[row["key"]],
+            ev_rank[row["key"]],
+            -row["probability"],
+            -row["expected_value"],
+            row["key"],
+        ),
+    )
+    return {
+        "probability": [row["key"] for row in probability_order],
+        "expected_value": [row["key"] for row in ev_order],
+        "balanced_50_50": [row["key"] for row in balanced_order],
+    }
+
+
+def build_trio_candidate_ticket_sets(candidates):
+    rankings = rank_trio_combo_candidates(candidates)
+    return {
+        strategy: {
+            str(count): keys[:count]
+            for count in (3, 6, 9, 12)
+        }
+        for strategy, keys in rankings.items()
+    }
+
+
+def summarize_trio_candidate_strategies(rows):
+    """Evaluate partial buys using saved combo probabilities and captured trio odds."""
+    report = {}
+    for strategy in ("probability", "expected_value", "balanced_50_50"):
+        report[strategy] = {}
+        for count in (3, 6, 9, 12):
+            race_count = hit_races = ticket_count = stake = returned = 0
+            for row in rows:
+                ticket_map = row.get("trio_candidate_ticket_candidates") or {}
+                tickets = (ticket_map.get(strategy) or {}).get(str(count)) or []
+                if not tickets:
+                    continue
+                race_count += 1
+                payouts = row.get("trio_payouts") or {}
+                hit = False
+                race_return = 0
+                for key in tickets:
+                    pay = int(payouts.get(key, 0) or 0)
+                    if pay > 0:
+                        hit = True
+                        race_return += pay
+                hit_races += int(hit)
+                ticket_count += len(tickets)
+                stake += len(tickets) * STAKE
+                returned += race_return
+            report[strategy][str(count)] = {
+                "races": race_count,
+                "hit_races": hit_races,
+                "race_hit_rate_pct": round(100 * hit_races / race_count, 2) if race_count else None,
+                "tickets": ticket_count,
+                "stake_jpy": stake,
+                "return_jpy": returned,
+                "profit_jpy": returned - stake,
+                "roi_pct": round(100 * returned / stake, 2) if stake else None,
+                "average_tickets_per_race": round(ticket_count / race_count, 2) if race_count else None,
+            }
+    return report
 
 
 def build_race_evaluation(snapshot, outcome, expected_temperature):
@@ -487,6 +754,19 @@ def build_race_evaluation(snapshot, outcome, expected_temperature):
         for no in matched
     ]
 
+    trio_payouts = outcome.get("trio_payouts") or {}
+    podium_combos = [tuple(key.split("-")) for key in trio_payouts]
+    def podium_capture(order):
+        top7 = set(order[:7])
+        captured_counts = [len(top7.intersection(combo)) for combo in podium_combos]
+        return (
+            int(any(count == 3 for count in captured_counts)),
+            max(captured_counts, default=0),
+        )
+
+    model_podium_hit, model_podium_captured = podium_capture(model_order)
+    market_podium_hit, market_podium_captured = podium_capture(market_order)
+
     blend_candidates = {}
     for market_weight in BLEND_MARKET_WEIGHTS:
         candidate_probabilities = {
@@ -497,11 +777,27 @@ def build_race_evaluation(snapshot, outcome, expected_temperature):
             matched, key=lambda no: (-candidate_probabilities[no], int(no))
         )
         candidate_top = ticket(candidate_order[0], f"blend_market_{market_weight:.2f}")
+        podium_hit, podium_captured = podium_capture(candidate_order)
         blend_candidates[f"{market_weight:.2f}"] = {
             "top": candidate_top,
             "top3": candidate_order[:3],
             "top3_hit": int(bool(set(candidate_order[:3]).intersection(winners))),
+            "top7_podium_hit": podium_hit,
+            "top7_podium_captured": podium_captured,
         }
+
+    blended_order = sorted(matched, key=lambda no: (-blended[no], int(no)))
+    all_trio_tickets = narrow_trio_tickets(
+        build_245_tickets(blended_order), blended_order, count=1000
+    )
+    trio_ticket_candidates = {
+        str(count): [list(combo) for combo in all_trio_tickets[:count]]
+        for count in (3, 6, 9, 12)
+    }
+    trio_combo_candidates = build_trio_combo_candidates(
+        snapshot.get("candidate_combinations") or [], snapshot.get("odds") or []
+    )
+    trio_candidate_ticket_candidates = build_trio_candidate_ticket_sets(trio_combo_candidates)
 
     return {
         "race_key": snapshot["race_key"],
@@ -520,6 +816,14 @@ def build_race_evaluation(snapshot, outcome, expected_temperature):
         "market_favorite_model_rank": model_rank[market_top],
         "model_top3_hit": int(bool(set(model_order[:3]).intersection(winners))),
         "market_top3_hit": int(bool(set(market_order[:3]).intersection(winners))),
+        "model_top7_podium_hit": model_podium_hit,
+        "model_top7_podium_captured": model_podium_captured,
+        "market_top7_podium_hit": market_podium_hit,
+        "market_top7_podium_captured": market_podium_captured,
+        "trio_payouts": trio_payouts,
+        "trio_ticket_candidates": trio_ticket_candidates,
+        "trio_combo_candidates": trio_combo_candidates,
+        "trio_candidate_ticket_candidates": trio_candidate_ticket_candidates,
         "value_ticket": value_ticket,
     }, None
 
@@ -831,6 +1135,32 @@ def main():
     value_dev = [r["value_ticket"] for r in latest_dev if r.get("value_ticket")]
     value_hold = [r["value_ticket"] for r in latest_hold if r.get("value_ticket")]
     hold_ci = roi_interval(value_hold).get("roi_95ci")
+    trio_rows = [row for row in latest_rows if row.get("trio_payouts")]
+    trio_dev = [row for row in trio_rows if latest_dev_end and row["date"] <= latest_dev_end]
+    trio_hold = [row for row in trio_rows if latest_holdout_start and row["date"] >= latest_holdout_start]
+    trio_evaluation = {
+        "races_with_official_trio_result": len(trio_rows),
+        "candidate_combo_coverage": {
+            "races_with_matched_candidate_odds": sum(bool(row.get("trio_combo_candidates")) for row in trio_rows),
+            "mean_matched_candidates_per_race": round(
+                sum(len(row.get("trio_combo_candidates") or []) for row in trio_rows) / len(trio_rows), 2
+            ) if trio_rows else None,
+        },
+        "development": {
+            "races": len(trio_dev),
+            "top7_podium_coverage": summarize_podium_coverage(trio_dev),
+            "ticket_strategies": summarize_trio_ticket_strategies(trio_dev),
+            "candidate_combo_strategies": summarize_trio_candidate_strategies(trio_dev),
+        },
+        "holdout": {
+            "races": len(trio_hold),
+            "top7_podium_coverage": summarize_podium_coverage(trio_hold),
+            "ticket_strategies": summarize_trio_ticket_strategies(trio_hold),
+            "candidate_combo_strategies": summarize_trio_candidate_strategies(trio_hold),
+        },
+        "method": "Horse-rank 2-4-5 baseline plus saved trio-combination probabilities joined to the exact selected pre-off 3連複 odds. Combo EV is recalculated as saved probability × captured odds. Partial buys of top 3/6/9/12 are compared by probability rank, EV rank, and 50:50 rank fusion; official NAR trio payouts are outcomes only.",
+        "ticket_limit": 12,
+    }
     enough = len(latest_hold) >= 100 and len(value_hold) >= 100
     g4_pass = bool(enough and hold_ci and hold_ci[0] > 100.0)
 
@@ -867,6 +1197,7 @@ def main():
             "holdout": summarize_market_edge_conditions(latest_hold),
         },
         "time_bucket_market_movement": summarize_bucket_movement(joined),
+        "trio_evaluation": trio_evaluation,
         "closest_to_post": {
             "unique_races": len(latest_rows),
             "development_races": len(latest_dev),

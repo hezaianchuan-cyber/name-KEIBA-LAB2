@@ -116,6 +116,78 @@ class PreoffMarketBlendComparisonTests(unittest.TestCase):
         self.assertTrue(all(item["races"] == 0 for item in report.values()))
         self.assertTrue(all(item["top3_coverage_pct"] is None for item in report.values()))
 
+    def test_trio_candidate_probabilities_use_exact_captured_preoff_odds(self):
+        candidates = [
+            {"bet_type": "trio", "numbers": ["1", "2", "3"], "probability": 0.10, "odds": 999, "expected_value": 99.9},
+            {"bet_type": "trio", "numbers": ["1", "2", "4"], "probability": 0.08, "odds": 999, "expected_value": 79.9},
+            {"bet_type": "win", "numbers": ["1"], "probability": 0.5},
+        ]
+        captured_odds = [
+            {"type": "３連複", "n1": "1", "n2": "2", "n3": "3", "odds": 10.0},
+            {"type": "3連複", "n1": "4", "n2": "2", "n3": "1", "odds": 30.0},
+        ]
+        joined = g4.build_trio_combo_candidates(candidates, captured_odds)
+        by_key = {row["key"]: row for row in joined}
+        self.assertEqual(by_key["1-2-3"]["expected_value"], 1.0)
+        self.assertEqual(by_key["1-2-4"]["expected_value"], 2.4)
+        self.assertEqual(len(joined), 2)
+
+    def test_trio_candidate_rankings_compare_probability_ev_and_balanced(self):
+        candidates = [
+            {"key": "1-2-3", "probability": 0.10, "expected_value": 1.0},
+            {"key": "1-2-4", "probability": 0.08, "expected_value": 2.4},
+            {"key": "1-2-5", "probability": 0.05, "expected_value": 1.8},
+        ]
+        rankings = g4.rank_trio_combo_candidates(candidates)
+        self.assertEqual(rankings["probability"][0], "1-2-3")
+        self.assertEqual(rankings["expected_value"][0], "1-2-4")
+        self.assertEqual(rankings["balanced_50_50"][0], "1-2-4")
+        ticket_sets = g4.build_trio_candidate_ticket_sets(candidates)
+        self.assertEqual(len(ticket_sets["balanced_50_50"]["3"]), 3)
+
+    def test_245_ticket_builder_and_rank_sum_narrowing_are_bounded(self):
+        tickets = g4.build_245_tickets(["1", "2", "3", "4", "5", "6", "7", "8"])
+        narrowed = g4.narrow_trio_tickets(tickets, ["1", "2", "3", "4", "5", "6", "7", "8"], 12)
+        self.assertGreaterEqual(len(tickets), 12)
+        self.assertEqual(len(narrowed), 12)
+        self.assertEqual(len(set(narrowed)), 12)
+        self.assertTrue(all(len(combo) == 3 for combo in narrowed))
+
+    def test_top7_full_podium_coverage_is_distinct_from_top3_winner_coverage(self):
+        rows = [{
+            "model_top7_podium_hit": 0,
+            "model_top7_podium_captured": 2,
+            "market_top7_podium_hit": 1,
+            "market_top7_podium_captured": 3,
+            "blend_candidates": {
+                "0.00": {"top7_podium_hit": 0, "top7_podium_captured": 2},
+                "0.25": {"top7_podium_hit": 1, "top7_podium_captured": 3},
+                "0.50": {"top7_podium_hit": 1, "top7_podium_captured": 3},
+                "0.75": {"top7_podium_hit": 0, "top7_podium_captured": 2},
+                "1.00": {"top7_podium_hit": 1, "top7_podium_captured": 3},
+            },
+        }]
+        report = g4.summarize_podium_coverage(rows)
+        self.assertEqual(report["model"]["full_podium_hits"], 0)
+        self.assertEqual(report["market"]["full_podium_coverage_pct"], 100.0)
+        self.assertEqual(report["blend_candidates"]["0.50"]["mean_podium_horses_captured"], 3.0)
+
+    def test_partial_trio_ticket_summary_compares_3_6_9_12_choices(self):
+        row = {
+            "trio_ticket_candidates": {
+                "3": [["1", "2", "3"], ["1", "2", "4"], ["1", "3", "4"]],
+                "6": [["1", "2", "3"], ["1", "2", "4"], ["1", "3", "4"], ["2", "3", "4"], ["1", "2", "5"], ["1", "3", "5"]],
+                "9": [["1", "2", "3"], ["1", "2", "4"], ["1", "3", "4"], ["2", "3", "4"], ["1", "2", "5"], ["1", "3", "5"], ["2", "3", "5"], ["1", "4", "5"], ["2", "4", "5"]],
+                "12": [["1", "2", "3"], ["1", "2", "4"], ["1", "3", "4"], ["2", "3", "4"], ["1", "2", "5"], ["1", "3", "5"], ["2", "3", "5"], ["1", "4", "5"], ["2", "4", "5"], ["1", "2", "6"], ["1", "3", "6"], ["2", "3", "6"]],
+            },
+            "trio_payouts": {"1-2-3": 1500},
+        }
+        report = g4.summarize_trio_ticket_strategies([row])
+        self.assertEqual(report["3"]["hit_races"], 1)
+        self.assertEqual(report["6"]["tickets"], 6)
+        self.assertEqual(report["12"]["tickets"], 12)
+        self.assertEqual(report["12"]["return_jpy"], 1500)
+
 
 
 class ModelSnapshotSourceMergeTests(unittest.TestCase):
