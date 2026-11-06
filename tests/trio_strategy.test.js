@@ -68,4 +68,6 @@ test("Web and Supabase both load the same shared strategy implementation", () =>
   assert.ok(edge.includes("adaptivePoolSize"));
   assert.ok(web.includes("window.KEIBALAB_TRIO_STRATEGY.trioProbability"));
   assert.ok(edge.includes("strategy.build(modelRows,oddsRows,0.5,0.60)"));
+  assert.ok(edge.includes("const shadowTickets=candidates.map("));
+  assert.ok(web.includes("shadowTickets:ranked('3連複').map("));
 });
