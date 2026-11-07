@@ -224,6 +224,13 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>):Pro
   base.top7=top.map((x:any)=>horseNo(x.horseNo));
   base.modelTop7=[...base.top7];
   base.modelCapturedAt=model.captured_at||null;
+  const modelCapturedMs=new Date(String(model.captured_at||"")).getTime();
+  const oddsCapturedMs=new Date(capturedAt).getTime();
+  const modelAgeMinutes=Number.isFinite(modelCapturedMs)&&Number.isFinite(oddsCapturedMs)
+    ? Math.max(0,(oddsCapturedMs-modelCapturedMs)/60000) : null;
+  const modelFresh=modelAgeMinutes!==null&&modelAgeMinutes<=15;
+  base.modelAgeMinutes=modelAgeMinutes===null?null:Math.round(modelAgeMinutes*100)/100;
+  base.modelFresh=modelFresh;
   const readiness=model.race_readiness||null;
   const readinessStatus=String(readiness?.status||"");
   const readinessReasons=Array.isArray(readiness?.reasons)?readiness.reasons:[];
@@ -264,9 +271,12 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>):Pro
   base.shadowTicketSets=Object.fromEntries([3,6,9,12].map((n:number)=>
     [String(n),shadowTickets.slice(0,n).map((x:any)=>x.comb)]));
   const eligible:any[]=[];
-  if(readinessBlocked){
-    return {...base,decision:"SKIP",skipReason:"レース品質条件を満たさないため見送り",
-      skipReasonCode:"RACE_QUALITY_GATE",totalStake:0,tickets:[],shadowTickets,
+  if(readinessBlocked||!modelFresh){
+    const skipReason=readinessBlocked
+      ?"レース品質条件を満たさないため見送り"
+      :"モデル予測が15分以内に更新されていないため見送り";
+    const skipReasonCode=readinessBlocked?"RACE_QUALITY_GATE":"MODEL_SNAPSHOT_STALE";
+    return {...base,decision:"SKIP",skipReason,skipReasonCode,totalStake:0,tickets:[],shadowTickets,
       modelCapturedAt:model.captured_at,modelVersion:model.model_version,
       oddsRows:oddsRows.length,oddsMatchedCandidates:candidates.filter((x:any)=>x.ev!=null).length,
       validatedBetTypes:Object.keys(thresholds).length};
