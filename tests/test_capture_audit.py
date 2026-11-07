@@ -131,6 +131,11 @@ class CaptureAuditTests(unittest.TestCase):
         self.assertNotIn("git add -f data/latest-race.zip data/latest-odds.zip", preoff)
         self.assertIn('cron: "*/15 * * * *"', archive)
 
+    def test_web_race_selector_recognizes_obihiro_ba_venue(self):
+        root = Path(capture.__file__).resolve().parents[1]
+        html = (root / "index.html").read_text(encoding="utf-8")
+        self.assertIn("'帯広ば'", html)
+
     def test_capture_script_has_exactly_one_main_entrypoint(self):
         source = Path(capture.__file__).read_text(encoding="utf-8")
         self.assertEqual(source.count('if __name__ == "__main__":'), 1)
