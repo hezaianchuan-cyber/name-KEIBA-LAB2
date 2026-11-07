@@ -133,11 +133,12 @@ def build_rows(races, horses):
                     "age": float(h.get("age") or 0),
                 }
                 rows.append(row)
-                day_pending.append((h, race))
 
-        # Update all historical state only after every race on this date is scored.
-        for h, race in day_pending:
+        # Update each race exactly once, only after all races on this date are scored.
+        for race in day_races:
             field = horses.get(race["key"], [])
+            if len(field) < 3:
+                continue
             performance = nb.field_performance_features(field)
             for runner in field:
                 if not runner.get("finish"):
@@ -152,21 +153,19 @@ def build_rows(races, horses):
                     jockey_stats[jockey]["runs"] += 1
                     jockey_stats[jockey]["top3"] += int(runner["finish"] <= 3)
                     jockey_stats[jockey]["wins"] += int(runner["finish"] == 1)
-                # Each runner/race is appended once, after all same-day feature rows exist.
-                if runner is h:
-                    history[runner["name"]].append({
-                        **performance.get(runner["no"], {}),
-                        "date": race["date"], "venue": race["venue"],
-                        "distance": race.get("distance"), "going": race.get("going"),
-                        "surface": race.get("surface"), "field_size": race.get("field_size"),
-                        "finish": runner["finish"],
-                        "margin_quality": performance.get(runner["no"], {}).get("margin_quality"),
-                        "last3f_rank_score": performance.get(runner["no"], {}).get("last3f_rank_score"),
-                        "going_quality": (nb.rank_quality(runner["finish"], race.get("field_size")) or 50) / 100.0,
-                        "time_seconds": runner.get("time_seconds"),
-                        "time_per_km": (runner.get("time_seconds") * 1000 / race["distance"]
-                                        if runner.get("time_seconds") and race.get("distance") else None),
-                    })
+                history[runner["name"]].append({
+                    **performance.get(runner["no"], {}),
+                    "date": race["date"], "venue": race["venue"],
+                    "distance": race.get("distance"), "going": race.get("going"),
+                    "surface": race.get("surface"), "field_size": race.get("field_size"),
+                    "finish": runner["finish"],
+                    "margin_quality": performance.get(runner["no"], {}).get("margin_quality"),
+                    "last3f_rank_score": performance.get(runner["no"], {}).get("last3f_rank_score"),
+                    "going_quality": (nb.rank_quality(runner["finish"], race.get("field_size")) or 50) / 100.0,
+                    "time_seconds": runner.get("time_seconds"),
+                    "time_per_km": (runner.get("time_seconds") * 1000 / race["distance"]
+                                    if runner.get("time_seconds") and race.get("distance") else None),
+                })
         if day_index == 1 or day_index % max(1, len(dates)//10) == 0 or day_index == len(dates):
             print(f"ML_DATA_PROGRESS {day_index}/{len(dates)} date={day}", flush=True)
     return rows, dates
@@ -261,7 +260,7 @@ def fit_lambdarank(train_groups, dev_groups, features, category_maps):
     return model
 
 
-def fit_plackett_luce(train_groups, features, category_maps):
+def fit_plackett_luce(train_groups, features, category_maps, train_scale):
     import numpy as np
     from scipy.optimize import minimize
     # Conditional-logit/Plackett-Luce winner likelihood with L2 regularization.
@@ -269,9 +268,7 @@ def fit_plackett_luce(train_groups, features, category_maps):
     for group in train_groups:
         x = np.asarray([[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
                          for k in features] for r in group], dtype=float)
-        scale = np.nanstd(x, axis=0)
-        scale[~np.isfinite(scale) | (scale < 1e-8)] = 1.0
-        x_groups.append((x / scale, scale))
+        x_groups.append((x / train_scale, train_scale))
         winner_idx.append(next(i for i, r in enumerate(group) if r["winner"]))
     dimension = len(features)
     def objective(beta):
@@ -348,7 +345,7 @@ def main():
     scale = np.asarray([[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
                          for k in RAW_FEATURES] for r in train], dtype=float).std(axis=0)
     scale[~np.isfinite(scale) | (scale < 1e-8)] = 1.0
-    pl = fit_plackett_luce(train_groups, RAW_FEATURES, category_maps)
+    pl = fit_plackett_luce(train_groups, RAW_FEATURES, category_maps, scale)
     pl_output = [(g, pl_scores(pl, g, RAW_FEATURES, category_maps, scale)) for g in test_groups]
     models.append(evaluate_scores("PlackettLuce_independent_raw", pl_output))
 
