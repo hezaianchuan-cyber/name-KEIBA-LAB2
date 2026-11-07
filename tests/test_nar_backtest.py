@@ -12,6 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import nar_backtest as nb
+import nar_ml_challenger_backtest as ml
 import nar_model_g2_odds_divergence_backtest as g2
 import nar_model_g3_risk_gated_backtest as g3
 import nar_model_g4_preoff_backtest as g4
@@ -19,6 +20,24 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import capture_nar_odds as capture
 
 
+
+
+class HorseIdentityIsolationTests(unittest.TestCase):
+    def test_composite_identity_separates_same_name_horses(self):
+        first = {"name":"同名馬", "birth_date":"20200101", "sex":"牡",
+                 "sire":"父A", "dam":"母A", "race_key":"race1", "no":"1"}
+        second = {**first, "birth_date":"20210101", "race_key":"race2"}
+        self.assertNotEqual(ml.horse_history_key(first)[0],
+                            ml.horse_history_key(second)[0])
+        self.assertEqual(ml.horse_history_key(first)[1], "strong")
+
+    def test_incomplete_birth_identity_isolated_per_race(self):
+        first = {"name":"同名馬", "birth_date":"", "sex":"牡",
+                 "sire":"父A", "dam":"母A", "race_key":"race1", "no":"1"}
+        second = {**first, "race_key":"race2"}
+        self.assertNotEqual(ml.horse_history_key(first)[0],
+                            ml.horse_history_key(second)[0])
+        self.assertEqual(ml.horse_history_key(first)[1], "isolated")
 
 
 class TrainingOnlyBacktestTests(unittest.TestCase):
