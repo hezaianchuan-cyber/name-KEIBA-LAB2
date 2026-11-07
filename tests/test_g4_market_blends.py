@@ -172,6 +172,37 @@ class PreoffMarketBlendComparisonTests(unittest.TestCase):
         self.assertEqual(report["market"]["full_podium_coverage_pct"], 100.0)
         self.assertEqual(report["blend_candidates"]["0.50"]["mean_podium_horses_captured"], 3.0)
 
+    def test_trio_ticket_blend_summary_compares_same_budget_across_market_weights(self):
+        row = {
+            "trio_payouts": {"1-2-3": 1200},
+            "trio_ticket_candidates_by_blend_0.00": {
+                "3": [["1", "2", "3"]], "6": [["1", "2", "3"]],
+                "9": [["1", "2", "3"]], "12": [["1", "2", "3"]],
+            },
+            "trio_ticket_candidates_by_blend_0.25": {
+                "3": [["1", "2", "4"]], "6": [["1", "2", "4"]],
+                "9": [["1", "2", "4"]], "12": [["1", "2", "4"]],
+            },
+            "trio_ticket_candidates_by_blend_0.50": {
+                "3": [["1", "2", "4"]], "6": [["1", "2", "4"]],
+                "9": [["1", "2", "4"]], "12": [["1", "2", "4"]],
+            },
+            "trio_ticket_candidates_by_blend_0.75": {
+                "3": [["1", "2", "3"]], "6": [["1", "2", "3"]],
+                "9": [["1", "2", "3"]], "12": [["1", "2", "3"]],
+            },
+            "trio_ticket_candidates_by_blend_1.00": {
+                "3": [["1", "2", "4"]], "6": [["1", "2", "4"]],
+                "9": [["1", "2", "4"]], "12": [["1", "2", "4"]],
+            },
+        }
+        report = g4.summarize_trio_ticket_strategies_by_blend([row])
+        self.assertEqual(report["0.00"]["3"]["hit_races"], 1)
+        self.assertEqual(report["0.25"]["3"]["hit_races"], 0)
+        self.assertEqual(report["0.75"]["3"]["roi_pct"], 1200.0)
+        self.assertEqual(report["1.00"]["12"]["tickets"], 1)
+
+
     def test_partial_trio_ticket_summary_compares_3_6_9_12_choices(self):
         row = {
             "trio_ticket_candidates": {
