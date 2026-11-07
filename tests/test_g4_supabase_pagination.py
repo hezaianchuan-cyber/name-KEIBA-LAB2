@@ -1,6 +1,7 @@
 import json
 import sys
 import tempfile
+import urllib.error
 import urllib.parse
 import unittest
 from pathlib import Path
@@ -73,6 +74,23 @@ class G4SupabasePaginationTests(unittest.TestCase):
             self.assertEqual(requested[0][0], "/rest/v1/nar_race_results")
             self.assertEqual(requested[0][1]["race_date"], ["eq.2026-11-07"])
 
+
+    def test_transient_supabase_502_is_retried(self):
+        failure = urllib.error.HTTPError(
+            "https://example.supabase.co/rest/v1/odds_snapshots",
+            502, "Bad Gateway", hdrs=None, fp=None,
+        )
+        responses = [failure, _Response()]
+        request = g4.urllib.request.Request("https://example.supabase.co/rest/v1/odds_snapshots")
+
+        with (
+            patch.object(g4.urllib.request, "urlopen", side_effect=responses) as urlopen,
+            patch.object(g4.time, "sleep", return_value=None),
+        ):
+            result = g4.fetch_json_with_retry(request, timeout=1, attempts=2)
+
+        self.assertEqual(result, [])
+        self.assertEqual(urlopen.call_count, 2)
 
     def test_odds_snapshots_are_fetched_per_day_in_small_indexed_pages(self):
         requested = []
