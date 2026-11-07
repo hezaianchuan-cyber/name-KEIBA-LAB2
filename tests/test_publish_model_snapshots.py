@@ -79,7 +79,7 @@ class PublishModelSnapshotsTests(unittest.TestCase):
         self.assertEqual(len(pending), 1)
         self.assertEqual(pending[0]["captured_at"], "2026-11-06T09:35:00+09:00")
 
-    def test_publish_uses_small_two_row_batches(self):
+    def test_publish_uses_single_row_batches(self):
         import json
         from unittest.mock import patch
 
@@ -109,7 +109,7 @@ class PublishModelSnapshotsTests(unittest.TestCase):
         with patch("publish_model_snapshots.urllib.request.urlopen", side_effect=fake_urlopen):
             published = publish(rows, "https://example.supabase.co/functions/v1/archive", "token", "anon")
 
-        self.assertEqual(batches, [2, 2, 1])
+        self.assertEqual(batches, [1, 1, 1, 1, 1])
         self.assertEqual(published, 5)
 
     def test_existing_key_lookup_reads_only_race_and_capture_columns(self):
