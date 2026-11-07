@@ -136,6 +136,35 @@ def publish(rows: list[dict], endpoint: str, token: str, anon_key: str, batch_si
     return published
 
 
+def record_publish_status(status: str, stats: dict, published: int = 0, error: str | None = None) -> None:
+    """Persist Supabase archive outcome beside the per-race capture audit."""
+    path = ROOT / "data" / "odds-capture-status.json"
+    try:
+        report = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        report = {}
+    race_ids = set()
+    try:
+        race_ids = {str(row.get("race_id")) for row in load_rows()[0]}
+    except Exception:
+        race_ids = set()
+    audit = report.get("race_audit") or []
+    for item in audit:
+        if item.get("race_id") in race_ids and status == "success":
+            item["supabase_saved"] = True
+        elif status == "failed":
+            item["supabase_saved"] = None
+    report["supabase_publish"] = {
+        "attempted_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "status": status,
+        "valid_snapshot_rows": int(stats.get("valid", 0)),
+        "published_rows": int(published),
+        "race_count_in_archive": len(race_ids),
+        "error": (error or "")[:500] if error else None,
+    }
+    path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
 def main() -> None:
     url = os.environ.get("SUPABASE_URL", "https://mwiinzmnoludksnfnjaa.supabase.co").rstrip("/")
     token = os.environ.get("NAR_CAPTURE_TOKEN", "").strip()
@@ -146,9 +175,15 @@ def main() -> None:
         raise RuntimeError("SUPABASE_ANON_KEY is required to publish model snapshots")
     rows, stats = load_rows()
     if not rows:
+        record_publish_status("success", stats, 0)
         print(json.dumps({"ok": True, **stats, "published": 0}, ensure_ascii=False), flush=True)
         return
-    published = publish(rows, url + "/functions/v1/nar-model-snapshot-archive", token, anon_key)
+    try:
+        published = publish(rows, url + "/functions/v1/nar-model-snapshot-archive", token, anon_key)
+    except Exception as exc:
+        record_publish_status("failed", stats, 0, str(exc))
+        raise
+    record_publish_status("success", stats, published)
     print(json.dumps({"ok": True, **stats, "published": published}, ensure_ascii=False), flush=True)
 
 
