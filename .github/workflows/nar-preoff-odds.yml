@@ -61,12 +61,6 @@ jobs:
           wait "$race_pid" || true
           wait "$odds_pid" || true
 
-      - name: Capture timestamped pre-off snapshots
-        run: python3 scripts/capture_nar_odds.py
-
-      - name: Build automatic ticket plans from captured snapshots
-        run: python3 scripts/build_auto_ticket_plans.py
-
       - name: Preserve source archives for race-safe retry
         shell: bash
         run: |
