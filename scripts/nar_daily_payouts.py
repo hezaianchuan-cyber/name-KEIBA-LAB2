@@ -124,6 +124,8 @@ def main():
         if not entries:
             continue
         day["races"].append({
+            # Keep the same canonical race key used by odds, predictions, and tickets.
+            "race_id": "|".join(str(part) for part in key),
             "venue": str(race.get("venue") or key[0]),
             "race": int(key[2]),
             "name": str(race.get("name") or ""),
