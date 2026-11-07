@@ -1266,41 +1266,64 @@ function renderLabVirtualLedger(){
  select.onchange=()=>{labLedgerManualDateSelection=true;renderLabVirtualLedger();};
 }
 async function loadDailyPayouts(){
- // Official payout data is fetched only as the source for checking saved tickets.
+ // Prefer the live NAR official result archive stored by the Supabase capture.
+ // The published JSON remains a historical fallback, not the sole result source.
+ let report=null, resultRows=[];
  try{
   const response=await fetch('./data/daily-payouts.json?v='+Date.now(),{cache:'no-store'});
-  if(!response.ok)throw new Error('公式払戻データはまだ公開されていません');
-  const report=await response.json();
-  if(!report||!report.generated_at||!Array.isArray(report.days))throw new Error('公式払戻データの形式が不正です');
-  dailyPayoutReport=report;
-  const merged=new Map((db.payouts||[]).map(x=>[String(x.id)+'|'+normDate(x.date),x]));
-  for(const day of dailyPayoutReport.days||[]){
-   const date=normDate(day.date);
-   for(const race of day.races||[]){
-    const venue=canonicalVenue(race.venue),raceNo=String(race.race);
-    if(!venue||!date||!raceNo)continue;
-    const p=race.payouts||{},first=kind=>Array.isArray(p[kind])?p[kind][0]:null;
-    const row={id:key(venue,date,raceNo),venue,date,race:raceNo};
-    const w=first('win'),pl=first('place'),q=first('quinella'),ex=first('exacta'),wi=first('wide'),tr=first('trio'),tf=first('trifecta');
-    if(w){row.winNo=(w.numbers||[])[0];row.winPay=Number(w.pay_100)||null;}
-    if(pl){row.place1=(pl.numbers||[])[0];row.placePay1=Number(pl.pay_100)||null;}
-    if(q){row.quinella1=(q.numbers||[])[0];row.quinella2=(q.numbers||[])[1];row.quinellaPay=Number(q.pay_100)||null;}
-    if(ex){row.exacta1=(ex.numbers||[])[0];row.exacta2=(ex.numbers||[])[1];row.exactaPay=Number(ex.pay_100)||null;}
-    if(wi){row.wide1a=(wi.numbers||[])[0];row.wide1b=(wi.numbers||[])[1];row.widePay1=Number(wi.pay_100)||null;}
-    if(tr){row.trio1=(tr.numbers||[])[0];row.trio2=(tr.numbers||[])[1];row.trio3=(tr.numbers||[])[2];row.trioPay=Number(tr.pay_100)||null;}
-    if(tf){row.trifecta1=(tf.numbers||[])[0];row.trifecta2=(tf.numbers||[])[1];row.trifecta3=(tf.numbers||[])[2];row.trifectaPay=Number(tf.pay_100)||null;}
-    const mapKey=row.id+'|'+date;merged.set(mapKey,{...(merged.get(mapKey)||{}),...row});
-   }
+  if(response.ok){
+   const value=await response.json();
+   if(value&&Array.isArray(value.days))report=value;
   }
-  db.payouts=[...merged.values()];save();updateHistory();
-  renderLabVirtualLedger();
- }catch(e){
-  dailyPayoutReport=null;
-  const status=$('labLedgerStatus');
-  if(status)status.textContent='公式結果を取得できず未照合です。後で再確認してください。';
-  const rows=$('labLedgerRows');
-  if(rows)rows.textContent='払戻データの取得待ちです。保存買い目は保持されています。';
+ }catch(error){console.warn('公開払戻アーカイブを取得できません。Supabase公式結果を確認します。',error);}
+ try{
+  const response=await fetch(KEIBA_SUPABASE_URL+'/rest/v1/nar_race_results?select=race_id,race_date,venue,race_number,result_data&order=race_date.desc&limit=5000',{
+   headers:{apikey:KEIBA_SUPABASE_KEY,Authorization:'Bearer '+KEIBA_SUPABASE_KEY,Accept:'application/json'},
+   cache:'no-store'
+  });
+  if(!response.ok)throw new Error('NAR公式結果DB HTTP '+response.status);
+  const rows=await response.json();
+  resultRows=Array.isArray(rows)?rows:[];
+ }catch(error){console.warn('Supabase公式結果を取得できません。公開アーカイブを使用します。',error);}
+ if(!report&&!resultRows.length)throw new Error('公式払戻データとSupabase結果データの両方を取得できません');
+ if(!report)report={generated_at:new Date().toISOString(),days:[]};
+ const dayMap=new Map((report.days||[]).map(day=>[normDate(day.date),{...day,races:[...(day.races||[])]}]));
+ for(const row of resultRows){
+  const date=normDate(row.race_date),venue=canonicalVenue(row.venue)||String(row.venue||''),raceNo=String(row.race_number||'');
+  if(!date||!venue||!raceNo||!row.result_data?.payouts)continue;
+  const day=dayMap.get(date)||{date:date.slice(0,4)+'-'+date.slice(4,6)+'-'+date.slice(6,8),races:[]};
+  const raceId=String(row.race_id||key(venue,date,raceNo));
+  const existing=day.races.find(item=>String(item.race_id||'')===raceId||(canonicalVenue(item.venue)===venue&&normalizeRaceNo(item.race)===normalizeRaceNo(raceNo)));
+  const officialRace={race_id:raceId,venue,date:day.date,race:raceNo,payouts:row.result_data.payouts};
+  if(existing)Object.assign(existing,officialRace);
+  else day.races.push(officialRace);
+  dayMap.set(date,day);
  }
+ report.days=[...dayMap.values()].sort((a,b)=>normDate(b.date).localeCompare(normDate(a.date)));
+ dailyPayoutReport=report;
+ const merged=new Map((db.payouts||[]).map(x=>[String(x.id)+'|'+normDate(x.date),x]));
+ for(const day of dailyPayoutReport.days||[]){
+  const date=normDate(day.date);
+  for(const race of day.races||[]){
+   const venue=canonicalVenue(race.venue),raceNo=String(race.race);
+   if(!venue||!date||!raceNo)continue;
+   const p=race.payouts||{},first=kind=>Array.isArray(p[kind])?p[kind][0]:null;
+   const row={id:key(venue,date,raceNo),venue,date,race:raceNo};
+   const w=first('win'),pl=first('place'),q=first('quinella'),ex=first('exacta'),wi=first('wide'),tr=first('trio'),tf=first('trifecta');
+   if(w){row.winNo=(w.numbers||[])[0];row.winPay=Number(w.pay_100)||null;}
+   if(pl){row.place1=(pl.numbers||[])[0];row.placePay1=Number(pl.pay_100)||null;}
+   if(q){row.quinella1=(q.numbers||[])[0];row.quinella2=(q.numbers||[])[1];row.quinellaPay=Number(q.pay_100)||null;}
+   if(ex){row.exacta1=(ex.numbers||[])[0];row.exacta2=(ex.numbers||[])[1];row.exactaPay=Number(ex.pay_100)||null;}
+   if(wi){row.wide1a=(wi.numbers||[])[0];row.wide1b=(wi.numbers||[])[1];row.widePay1=Number(wi.pay_100)||null;}
+   if(tr){row.trio1=(tr.numbers||[])[0];row.trio2=(tr.numbers||[])[1];row.trio3=(tr.numbers||[])[2];row.trioPay=Number(tr.pay_100)||null;}
+   if(tf){row.trifecta1=(tf.numbers||[])[0];row.trifecta2=(tf.numbers||[])[1];row.trifecta3=(tf.numbers||[])[2];row.trifectaPay=Number(tf.pay_100)||null;}
+   const mapKey=row.id+'|'+date;merged.set(mapKey,{...(merged.get(mapKey)||{}),...row});
+  }
+ }
+ db.payouts=[...merged.values()];save();updateHistory();
+ renderLabVirtualLedger();
+ const status=$('labLedgerStatus');
+ if(status)status.textContent='公式結果 '+resultRows.length+'レースをSupabaseから同期。公開アーカイブ '+(report.days||[]).length+'日分を統合しました。';
 }
 
 async function loadHistoricalBacktest(){
