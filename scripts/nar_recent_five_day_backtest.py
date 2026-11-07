@@ -144,6 +144,7 @@ def main() -> None:
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "evaluated",
+        "diagnostic_version": 2,
         "evaluation_window": {
             "start": start.isoformat(),
             "end": end.isoformat(),
