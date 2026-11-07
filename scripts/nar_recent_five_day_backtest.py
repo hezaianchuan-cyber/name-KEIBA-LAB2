@@ -50,6 +50,13 @@ def compact_model(model: dict) -> dict:
                 "roi", "profit", "budget_per_race_jpy",
             )
         },
+        "trio_pool_structures": {
+            str(pool): {
+                key: value.get(key)
+                for key in ("races", "tickets", "hits", "hit_races", "stake", "return", "roi", "profit")
+            }
+            for pool, value in ((model.get("trio_diagnostics") or {}).get("structures") or {}).items()
+        },
     }
 
 
@@ -120,6 +127,20 @@ def main() -> None:
         ((d4.get("trio_diagnostics") or {}).get("formation_2_4_5_narrowed") or {}).get("12") or {}
     )
 
+    research_names = (
+        "D1_jockey_venue", "D2_jockey_distance", "D3_venue_distance", CANDIDATE,
+        "weight_form_down_0_8", "weight_form_up_1_2",
+        "weight_jockey_down_0_5", "weight_jockey_up_1_5",
+        "weight_distance_down_0_7", "weight_distance_up_1_3",
+        "weight_venue_down_0_7", "weight_venue_up_1_3",
+        "ablate_form", "ablate_venue", "ablate_distance",
+        "ablate_sire", "ablate_jockey", "ablate_age",
+    )
+    research_candidates = {
+        name: compact_model(models[name])
+        for name in research_names if name in models
+    }
+
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "evaluated",
@@ -175,6 +196,14 @@ def main() -> None:
             "baseline_model_top_pick": compact_market(market.get("C_model_top_pick")),
             "D4_model_top_pick": compact_market(market.get(CANDIDATE)),
             "market_favorite": compact_market(market.get("final_odds_favorite")),
+        },
+        "research_candidate_comparison": research_candidates,
+        "diagnostics": {
+            "market_rank_diagnostics": fold.get("market_rank_diagnostics"),
+            "condition_model_segments": fold.get("condition_model_segments"),
+            "condition_model_comparisons": fold.get("condition_model_comparisons"),
+            "condition_finish_position_segments": fold.get("condition_finish_position_segments"),
+            "integrated_strategy_E": fold.get("integrated_strategy_E"),
         },
         "data_quality": {
             "missing_race_field_count": len(test_races) - test_fields,
