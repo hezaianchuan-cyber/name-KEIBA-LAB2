@@ -1,0 +1,70 @@
+name: NAR recent five-day D4 backtest
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/nar_recent_five_day_backtest.py'
+      - '.github/workflows/nar-recent-five-day-backtest.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nar-recent-five-day-d4-backtest
+  cancel-in-progress: true
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore NAR archive caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache/nar-monthly
+            .cache/nar-parsed
+            .cache/nar-odds-monthly
+          key: nar-five-day-v1-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            nar-monthly-v1-${{ runner.os }}-
+            nar-parsed-v1-${{ runner.os }}-
+            nar-odds-monthly-v1-${{ runner.os }}-
+      - name: Run recent five-day D4 backtest
+        env:
+          NAR_CACHE_DIR: .cache/nar-monthly
+          NAR_PARSED_CACHE_DIR: .cache/nar-parsed
+          NAR_ODDS_CACHE_DIR: .cache/nar-odds-monthly
+        run: python3 scripts/nar_recent_five_day_backtest.py
+      - name: Publish five-day report
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp data/nar-recent-five-day-backtest.json /tmp/nar-recent-five-day-backtest.json
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/nar-recent-five-day-backtest.json data/nar-recent-five-day-backtest.json
+            git add data/nar-recent-five-day-backtest.json
+            if git diff --cached --quiet; then
+              echo "Five-day report is already current."
+              exit 0
+            fi
+            git commit -m "Publish recent five-day D4 backtest"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Concurrent update; retrying against latest main (attempt $attempt)"
+            sleep 2
+          done
+          echo "Could not publish five-day report after five attempts."
+          exit 1
