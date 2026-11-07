@@ -451,7 +451,7 @@ Deno.serve(async (request) => {
             if (update.ok) attached = true;
             else {
               lastAttachError = "HTTP " + update.status + " " + (await update.text()).slice(0, 300);
-              if (update.status < 500 && update.status !== 429) throw new Error(lastAttachError);
+              if (update.status < 500 && update.status !== 429) throw new Error("PERMANENT_HTTP_" + update.status + " " + lastAttachError);
             }
           } catch (error) {
             lastAttachError = String(error);
