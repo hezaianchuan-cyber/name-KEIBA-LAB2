@@ -148,14 +148,19 @@ def record_publish_status(status: str, stats: dict, published: int = 0, error: s
         race_ids = {str(row.get("race_id")) for row in load_rows()[0]}
     except Exception:
         race_ids = set()
+    attempted_at = dt.datetime.now(dt.timezone.utc).isoformat()
     audit = report.get("race_audit") or []
     for item in audit:
         if item.get("race_id") in race_ids and status == "success":
             item["supabase_saved"] = True
-        elif status == "failed":
-            item["supabase_saved"] = None
+            item["supabase_saved_at"] = attempted_at
+            item.pop("supabase_error", None)
+        elif status == "failed" and item.get("snapshot_saved"):
+            # A transient failure must not erase a previously confirmed save.
+            item["supabase_saved"] = bool(item.get("supabase_saved"))
+            item["supabase_error"] = (error or "Supabase publish failed")[:500]
     report["supabase_publish"] = {
-        "attempted_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "attempted_at": attempted_at,
         "status": status,
         "valid_snapshot_rows": int(stats.get("valid", 0)),
         "published_rows": int(published),
