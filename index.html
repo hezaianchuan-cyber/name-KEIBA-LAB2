@@ -119,7 +119,21 @@ a{color:inherit}
   <section id="history" class="panel">
     <div class="card" id="cloudAuthCard"><h2>予想履歴のクラウド同期</h2><p class="sub">メールアドレスでログインすると、このアカウントの予想履歴を別の端末でも共有できます。ログイン前のこの端末の予想履歴も、ログイン後にクラウドへ移行します。</p><div class="grid"><div><label for="cloudEmail">メールアドレス</label><input id="cloudEmail" type="email" autocomplete="email" placeholder="メールアドレス"></div><div><label for="cloudPassword">パスワード（8文字以上）</label><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="パスワード"></div></div><div class="actions"><button class="btn primary" id="cloudSignIn">ログイン</button><button class="btn" id="cloudSignUp">新規登録</button><button class="btn" id="cloudSignOut" disabled>ログアウト</button></div><div class="status"><i class="dot" id="cloudDot"></i><span id="cloudStatus">クラウド未接続。ログインすると予想履歴を同期します。</span></div></div>
     <div class="card"><h2>&#x4E88;&#x6E2C;&#x306E;&#x691C;&#x8A3C;</h2><p class="sub">&#x6255;&#x623B;CSV&#x3068;&#x4E88;&#x6E2C;&#x5C65;&#x6B74;&#x3092;&#x7167;&#x5408;&#x3059;&#x308B;&#x305F;&#x3081;&#x306E;&#x96C6;&#x8A08;&#x753B;&#x9762;&#x3067;&#x3059;&#x3002;&#x30C7;&#x30FC;&#x30BF;&#x3092;&#x84C4;&#x7A4D;&#x3059;&#x308B;&#x307B;&#x3069;&#x3001;&#x7AF6;&#x99AC;&#x5834;&#x30FB;&#x8DDD;&#x96E2;&#x30FB;&#x30AF;&#x30E9;&#x30B9;&#x5225;&#x306B;&#x30E2;&#x30C7;&#x30EB;&#x306E;&#x504F;&#x308A;&#x3092;&#x691C;&#x8A3C;&#x3067;&#x304D;&#x307E;&#x3059;&#x3002;</p><div class="kpis"><div class="kpi"><span>&#x4FDD;&#x5B58;&#x30EC;&#x30FC;&#x30B9;&#x6570;</span><b id="hRaces">0</b></div><div class="kpi"><span>&#x4E88;&#x6E2C;&#x8A18;&#x9332;</span><b id="hPred">0</b></div><div class="kpi"><span>&#x6255;&#x623B;&#x30C7;&#x30FC;&#x30BF;</span><b id="hPay">0</b></div></div><div class="kpis" style="margin-top:12px"><div class="kpi"><span>結果確定レース</span><b id="hSettled">0</b></div><div class="kpi"><span>予想1位の勝率</span><b id="hTop1">—</b></div><div class="kpi"><span>上位3頭内の勝馬率</span><b id="hTop3">—</b></div><div class="kpi"><span>予想1位を100円買った仮想回収率</span><b id="hRoi">—</b></div></div><p id="hEvalNote" class="sub">払戻データと予想履歴が一致したレースのみ集計します。仮想回収率は検証用で、実際の購入実績ではありません。</p></div>
-    <div class="card" id="oddsCapturePanel"><h2>発走前オッズの更新状況</h2><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>最新公開データを確認</b><span id="oddsCaptureBadge">確認中</span></div><div id="oddsCaptureDetails" class="sub" style="margin-top:8px">取得状況を読み込んでいます。</div><p class="sub">発走30〜2分前のNAR公式オッズを1分ごとに取得します。下の実行履歴で、処理の成功・失敗と保存件数を確認できます。</p><div id="oddsRunHistory" class="sub" style="margin-top:10px">1分取得処理の実行履歴を確認しています。</div></div><div class="card"><h2>今日の予想結果</h2><p class="sub">今日記録した予想を公式払戻データと照合します。的中率の分母は結果が確定したレースのみです。</p><div class="kpis"><div class="kpi"><span>今日の確定レース</span><b id="hTodaySettled">0</b></div><div class="kpi"><span>予想1位の的中数</span><b id="hTodayHits">0</b></div><div class="kpi"><span>今日の1位的中率</span><b id="hTodayRate">—</b></div><div class="kpi"><span>上位3頭内の勝馬率</span><b id="hTodayTop3">—</b></div></div><div id="todayPredictionRows" class="sub" style="margin-top:12px">今日の予想はまだ保存されていません。レースを分析すると自動で記録します。</div></div>
+    <div class="card" id="oddsCapturePanel"><h2>発走前オッズの更新状況</h2><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>最新公開データを確認</b><span id="oddsCaptureBadge">確認中</span></div><div id="oddsCaptureDetails" class="sub" style="margin-top:8px">取得状況を読み込んでいます。</div><p class="sub">発走30〜2分前のNAR公式オッズを1分ごとに取得します。下の実行履歴で、処理の成功・失敗と保存件数を確認できます。</p><div id="oddsRunHistory" class="sub" style="margin-top:10px">1分取得処理の実行履歴を確認しています。</div></div>
+    <div class="card" id="captureAuditPanel">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2>レース別データ取得監査</h2><button class="btn" id="refreshCaptureAuditBtn" type="button">監査を更新</button></div>
+      <p class="sub">当日の公式出走表を基準に、オッズ取得・予測生成・GitHub保存・Supabase保存をレースごとに確認します。対象時間外は未取得でも異常ではありません。</p>
+      <div class="kpis">
+        <div class="kpi"><span>出走表レース</span><b id="auditRaceCount">—</b></div>
+        <div class="kpi"><span>出走馬確認済み</span><b id="auditFieldCount">—</b></div>
+        <div class="kpi"><span>オッズあり</span><b id="auditOddsCount">—</b></div>
+        <div class="kpi"><span>予測保存済み</span><b id="auditSnapshotCount">—</b></div>
+        <div class="kpi"><span>Supabase保存済み</span><b id="auditSupabaseCount">—</b></div>
+      </div>
+      <div id="captureAuditUpdated" class="sub" style="margin-top:10px">取得監査を読み込んでいます。</div>
+      <div id="captureAuditRows" class="sub" style="margin-top:12px">レース別の状態を読み込んでいます。</div>
+    </div>
+    <div class="card"><h2>今日の予想結果</h2><p class="sub">今日記録した予想を公式払戻データと照合します。的中率の分母は結果が確定したレースのみです。</p><div class="kpis"><div class="kpi"><span>今日の確定レース</span><b id="hTodaySettled">0</b></div><div class="kpi"><span>予想1位の的中数</span><b id="hTodayHits">0</b></div><div class="kpi"><span>今日の1位的中率</span><b id="hTodayRate">—</b></div><div class="kpi"><span>上位3頭内の勝馬率</span><b id="hTodayTop3">—</b></div></div><div id="todayPredictionRows" class="sub" style="margin-top:12px">今日の予想はまだ保存されていません。レースを分析すると自動で記録します。</div></div>
     <div class="card"><h2>&#x6B21;&#x306E;&#x691C;&#x8A3C;&#x3067;&#x898B;&#x308B;&#x6307;&#x6A19;</h2><div class="runner"><div class="number">01</div><div><div class="runner-name">&#x56DE;&#x53CE;&#x7387;</div><div class="runner-meta">&#x4E88;&#x6E2C;&#x78BA;&#x7387;&#x3068;&#x5B9F;&#x969B;&#x306E;&#x6255;&#x623B;&#x306E;&#x4E56;&#x96E2;</div></div><div class="score">ROI</div></div><div class="runner"><div class="number">02</div><div><div class="runner-name">&#x78BA;&#x7387;&#x6821;&#x6B63;</div><div class="runner-meta">&#x52DD;&#x7387;20%&#x3068;&#x8A55;&#x4FA1;&#x3057;&#x305F;&#x99AC;&#x304C;&#x5B9F;&#x969B;&#x306B;&#x7D04;20%&#x52DD;&#x3064;&#x304B;</div></div><div class="score">CAL</div></div><div class="runner"><div class="number">03</div><div><div class="runner-name">&#x6761;&#x4EF6;&#x5225;&#x6210;&#x7E3E;</div><div class="runner-meta">&#x7AF6;&#x99AC;&#x5834;&#x30FB;&#x8DDD;&#x96E2;&#x30FB;&#x99AC;&#x5834;&#x30FB;&#x4EBA;&#x6C17;&#x5E2F;&#x3054;&#x3068;&#x306E;&#x6210;&#x7E3E;</div></div><div class="score">SEG</div></div></div>
     <div class="notice">&#x30B5;&#x30F3;&#x30D7;&#x30EB;&#x30C7;&#x30FC;&#x30BF;&#x306F;&#x5B9F;&#x969B;&#x306E;&#x6210;&#x7E3E;&#x3067;&#x306F;&#x3042;&#x308A;&#x307E;&#x305B;&#x3093;&#x3002;&#x7684;&#x4E2D;&#x7387;&#x30FB;&#x56DE;&#x53CE;&#x7387;&#x3092;&#x8868;&#x793A;&#x3059;&#x308B;&#x5834;&#x5408;&#x306F;&#x3001;&#x5B9F;&#x30C7;&#x30FC;&#x30BF;&#x3067;&#x691C;&#x8A3C;&#x3057;&#x305F;&#x5024;&#x3060;&#x3051;&#x3092;&#x8868;&#x793A;&#x3057;&#x307E;&#x3059;&#x3002;</div>
   </section>
@@ -173,8 +187,9 @@ a{color:inherit}
     if (target === 'tickets') {
       if (typeof loadDailyPayouts === 'function') loadDailyPayouts();
       if (typeof renderLabVirtualLedger === 'function') renderLabVirtualLedger();
-    } else if (target === 'history' && typeof updateHistory === 'function') {
-      updateHistory();
+    } else if (target === 'history') {
+      if (typeof updateHistory === 'function') updateHistory();
+      if (typeof loadCaptureAuditStatus === 'function') loadCaptureAuditStatus();
     } else if (target === 'settings' && typeof renderWeights === 'function') {
       renderWeights();
     }
@@ -528,6 +543,81 @@ async function refreshOddsCaptureStatus(){
   if(details)details.textContent='1分オッズ接続エラー：'+e.message;
  }
 }
+const CAPTURE_AUDIT_URL='./data/odds-capture-status.json';
+const CAPTURE_AUDIT_LABELS={
+ captured:'今回取得済み',
+ duplicate_capture:'重複取得（既存保存あり）',
+ eligible_for_capture:'取得対象・処理待ち',
+ outside_capture_window:'取得時間前',
+ past_capture_cutoff:'取得締切後',
+ missing_field:'出走馬データ不足',
+ missing_positive_odds:'オッズ未公開',
+ model_unavailable:'モデル未準備',
+ prediction_incomplete:'予測データ不足',
+ not_current_race_date:'当日対象外',
+ invalid_race_date:'日付不正',
+ invalid_post_time:'発走時刻不正'
+};
+const CAPTURE_AUDIT_REASONS={
+ more_than_sixty_minutes_to_post:'発走60分より前',
+ less_than_two_minutes_to_post:'発走2分未満',
+ fewer_than_three_runners:'出走馬が3頭未満',
+ no_positive_odds_rows:'有効オッズが未取得',
+ model_context_or_version_missing:'モデル情報を読み込めない',
+ fewer_than_three_predictions:'予測頭数が3頭未満',
+ same_timestamp_snapshot_already_exists:'同一時刻の記録が既に存在',
+ race_date_unparseable:'開催日を解析できない',
+ scheduled_post_time_unparseable:'発走時刻を解析できない',
+ archive_row_not_for_today:'当日以外のレース情報'
+};
+async function loadCaptureAuditStatus(){
+ const host=$('captureAuditRows');
+ if(!host)return;
+ host.textContent='レース別の状態を読み込んでいます。';
+ try{
+  const response=await fetch(CAPTURE_AUDIT_URL+'?v='+Date.now(),{cache:'no-store'});
+  if(!response.ok)throw new Error('HTTP '+response.status);
+  const data=await response.json();
+  const rows=Array.isArray(data.race_audit)?data.race_audit:[];
+  const fields=rows.filter(x=>Number(x.field_size)>=3).length;
+  const odds=rows.filter(x=>Number(x.positive_odds_rows)>0).length;
+  const saved=rows.filter(x=>x.snapshot_saved===true).length;
+  const supabase=rows.filter(x=>x.supabase_saved===true).length;
+  $('auditRaceCount').textContent=String(rows.length);
+  $('auditFieldCount').textContent=String(fields);
+  $('auditOddsCount').textContent=String(odds);
+  $('auditSnapshotCount').textContent=String(saved);
+  $('auditSupabaseCount').textContent=String(supabase);
+  const pub=data.supabase_publish||{};
+  const publishLabel=pub.status==='success'?'成功':pub.status==='failed'?'失敗':'未確認';
+  $('captureAuditUpdated').textContent=
+   '最終更新：'+(data.updated_at?new Date(data.updated_at).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'}):'不明')+
+   ' ／ Supabase保存処理：'+publishLabel+
+   (pub.attempted_at?'（'+new Date(pub.attempted_at).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})+'）':'')+
+   ' ／ 保存済みレコード：'+(Number(pub.published_rows)||0)+'件';
+  if(!rows.length){
+   host.textContent='当日のレース別監査データはまだありません。';
+   return;
+  }
+  const sorted=rows.slice().sort((a,b)=>String(a.venue||'').localeCompare(String(b.venue||''),'ja')||Number(a.race)-Number(b.race));
+  const tableRows=sorted.map(x=>{
+   const state=CAPTURE_AUDIT_LABELS[x.status]||String(x.status||'状態不明');
+   const reason=CAPTURE_AUDIT_REASONS[x.reason]||x.reason||'';
+   const field=Number(x.field_size)>=3?'あり（'+Number(x.field_size)+'頭）':'不足（'+(Number(x.field_size)||0)+'頭）';
+   const oddsText=Number(x.positive_odds_rows)>0?'あり（'+Number(x.positive_odds_rows)+'件）':'なし';
+   const pred=Number(x.prediction_count)>=3?'あり（'+Number(x.prediction_count)+'頭）':'—';
+   const local=x.snapshot_saved===true?'保存済み':'未確認';
+   const cloud=x.supabase_saved===true?'保存済み':x.supabase_saved===false?'未保存':'未確認';
+   const post=x.scheduled_post_time?new Date(x.scheduled_post_time).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'}):'—';
+   const flags=[field,oddsText,pred,'GitHub '+local,'Supabase '+cloud].map(esc).join(' ／ ');
+   return '<tr><td>'+esc(x.venue)+' '+esc(x.race)+'R</td><td>'+post+'</td><td>'+flags+'</td><td><b>'+esc(state)+'</b>'+(reason?'<div class="sub">'+esc(reason)+'</div>':'')+'</td></tr>';
+  }).join('');
+  host.innerHTML='<div class="sub" style="margin-bottom:8px">出走表があるレースを全件表示。オッズ・予測・保存状況は取得時点の記録です。</div><div class="tablewrap" style="overflow-x:auto"><table style="min-width:760px;width:100%"><thead><tr><th>競馬場・レース</th><th>発走</th><th>取得チェック</th><th>最新状態・理由</th></tr></thead><tbody>'+tableRows+'</tbody></table></div>';
+ }catch(e){
+  host.textContent='取得監査を読み込めません：'+(e.message||String(e))+'。データファイルの公開後に再読み込みしてください。';
+ }
+}
+$('refreshCaptureAuditBtn')?.addEventListener('click',loadCaptureAuditStatus);
 function renderOddsTrend(){
  const host=$('oddsTrendRows');if(!host)return;
  const id=$('raceSelect')?.value;if(!id){host.textContent='レースを選択すると、そのレースのオッズ推移を表示します。';return;}
