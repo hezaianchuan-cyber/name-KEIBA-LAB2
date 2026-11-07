@@ -207,7 +207,7 @@ def publish(rows: list[dict], endpoint: str, token: str, anon_key: str, batch_si
         # before the gateway returned its response, so retrying is safe.
         for attempt in range(2):
             try:
-                with urllib.request.urlopen(request, timeout=45) as response:
+                with urllib.request.urlopen(request, timeout=25) as response:
                     payload = json.loads(response.read().decode("utf-8"))
                     if (response.status < 200 or response.status >= 300 or not payload.get("ok")
                             or "upserted" not in payload or "received" not in payload):
@@ -218,7 +218,7 @@ def publish(rows: list[dict], endpoint: str, token: str, anon_key: str, batch_si
                 if exc.code not in (408, 425, 429, 500, 502, 503, 504) or attempt == 1:
                     raise
                 delay = min(2 ** (attempt + 1), 12)
-                print(f"Transient archive HTTP {exc.code}; retrying batch in {delay}s (attempt {attempt + 2}/4)", flush=True)
+                print(f"Transient archive HTTP {exc.code}; retrying batch in {delay}s (attempt {attempt + 2}/2)", flush=True)
                 time.sleep(delay)
             except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
                 if attempt == 1:
