@@ -443,7 +443,12 @@ def parse_month_archive(blob, y, m):
                     horses[key].append({
                         "no": horse_no, "name": name,
                         "frame_no": rank_value(row[4]) if len(row) > 4 else None,
-                        "age": number(row[8]), "sire": norm(row[11]),
+                        "sex": norm(row[7]) if len(row) > 7 else "",
+                        "age": number(row[8]),
+                        "birth_date": re.sub(r"\\D", "", str(row[10] or "")) if len(row) > 10 else "",
+                        "sire": norm(row[11]),
+                        "dam": norm(row[12]) if len(row) > 12 else "",
+                        "damsire": norm(row[13]) if len(row) > 13 else "",
                         "jockey": norm(row[14]), "carried": number(row[16]),
                         "finish": rank_value(row[31]),
                         "time_seconds": parse_race_time(row[32]) if len(row) > 32 else None,
