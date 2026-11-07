@@ -42,16 +42,61 @@ def latest_snapshots():
         except OSError: pass
     return {key:value[1] for key,value in latest.items()}
 
-def shadow_tickets(predictions):
+def shadow_tickets(predictions, odds_rows=None, count=12):
+    """Build up to 12 shadow-only trio tickets from the model's top seven.
+
+    When captured trio odds exist, rank by a transparent 50:50 probability/EV
+    rank fusion. Without odds, retain probability order rather than dropping
+    the race from shadow evaluation.
+    """
+    import itertools
     ranked=sorted(predictions or [],key=lambda x:(float(x.get("win_probability") or 0),float(x.get("score") or 0)),reverse=True)
-    ranked=[x for x in ranked if no(x.get("horse_no"))]
-    nums=list(dict.fromkeys(no(x.get("horse_no")) for x in ranked))
-    if not nums:return []
-    # The LAB shadow ticket is also trio-only; user-added tickets are stored separately.
-    if len(nums)<3:
-        return []
-    trio="-".join(sorted(nums[:3],key=int))
-    return [{"type":"3連複","comb":trio,"stake":100,"basis":"model_top_3"}]
+    unique=[];seen=set()
+    for horse in ranked:
+        horse_no=no(horse.get("horse_no"))
+        if horse_no and horse_no not in seen:
+            unique.append(horse);seen.add(horse_no)
+    pool=unique[:7]
+    numbers=[no(x.get("horse_no")) for x in pool]
+    if len(numbers)<3:return []
+    probabilities={no(x.get("horse_no")):max(0.0,float(x.get("win_probability") or 0)) for x in pool}
+    odds_by_combo={}
+    for item in odds_rows or []:
+        label=str(item.get("type") or "").replace(" ","")
+        if "3連複" not in label and "三連複" not in label:continue
+        nums=[no(item.get(key)) for key in ("n1","n2","n3")]
+        if len(nums)!=3 or not all(nums) or len(set(nums))!=3:continue
+        try:price=float(item.get("odds") or 0)
+        except (TypeError,ValueError):continue
+        if math.isfinite(price) and price>0:
+            odds_by_combo["-".join(sorted(nums,key=int))]=price
+    candidates=[]
+    for combo in itertools.combinations(numbers,3):
+        key="-".join(sorted(combo,key=int))
+        probability=nar.combination_probability("trio",combo,probabilities)
+        price=odds_by_combo.get(key)
+        candidates.append({"key":key,"probability":probability,"odds":price,
+                           "ev":probability*price if price is not None else None})
+    probability_order=sorted(candidates,key=lambda x:(-x["probability"],x["key"]))
+    probability_rank={row["key"]:rank for rank,row in enumerate(probability_order,1)}
+    priced=[row for row in candidates if row["odds"] is not None]
+    if priced:
+        ev_order=sorted(priced,key=lambda x:(-x["ev"],-x["probability"],x["key"]))
+        ev_rank={row["key"]:rank for rank,row in enumerate(ev_order,1)}
+        selected=sorted(priced,key=lambda x:(probability_rank[x["key"]]+ev_rank[x["key"]],
+                                               probability_rank[x["key"]],ev_rank[x["key"]],x["key"]))[:count]
+        selected_keys={row["key"] for row in selected}
+        selected.extend(row for row in probability_order if row["key"] not in selected_keys)
+        basis="probability_ev_rank_fusion"
+    else:
+        selected=probability_order
+        basis="model_probability_only"
+    limit=max(0,min(int(count),12))
+    return [{"type":"3連複","comb":row["key"],"stake":100,"basis":basis,
+             "probability":round(row["probability"],10),
+             "odds":round(row["odds"],4) if row["odds"] is not None else None,
+             "ev":round(row["ev"],6) if row["ev"] is not None else None}
+            for row in selected[:limit]]
 
 def market_ranking(odds):
     rows=[]
@@ -78,13 +123,15 @@ def base_plan(date,venue,race_no,race_id,predictions,model_version,created_at,od
     for h in ranked:
         n=no(h.get("horse_no"))
         if n and n not in seen: unique.append(h);seen.add(n)
-    top=unique[:5]
+    top=unique[:7]
     return {
         "version":2,"createdAt":created_at,"date":date,"raceId":race_id,"venue":venue,"raceNo":str(race_no),
         "decision":"SKIP","skipReason":"仮想買い目は検証専用。購入推奨は締切前オッズと検証済み基準で別判定",
-        "skipReasonCode":"SHADOW_ONLY","totalStake":0,"tickets":[],"shadowTickets":shadow_tickets(unique),
+        "skipReasonCode":"SHADOW_ONLY","totalStake":0,"tickets":[],"shadowTickets":shadow_tickets(unique,odds or []),
         "modelTopHorse":no(top[0].get("horse_no")) if top else None,
         "modelTop3":[no(x.get("horse_no")) for x in top[:3]],
+        "modelTop7":[no(x.get("horse_no")) for x in top[:7]],
+        "shadowTicketSets":{str(n):[x["comb"] for x in shadow_tickets(unique,odds or [])[:n]] for n in (3,6,9,12)},
         "modelPredictions":[{"horseNo":no(x.get("horse_no")),"name":str(x.get("name") or ""),
                              "score":float(x.get("score") or 0),
                              "winProbability":float(x.get("win_probability") or 0)}
@@ -107,7 +154,7 @@ def make_plan(r,limits):
                    r.get("model_version"),r.get("captured_at"),r.get("odds") or [])
     plan.update({"captureTime":r.get("captured_at"),"oddsMatchedCandidates":0,"validatedBetTypes":int("trio" in limits)})
     horses=sorted(predictions,key=lambda x:(float(x.get("win_probability") or 0),float(x.get("score") or 0)),reverse=True)
-    top=horses[:5]; nums=[no(x.get("horse_no")) for x in top]
+    top=horses[:7]; nums=[no(x.get("horse_no")) for x in top]
     if len(set(nums))<3:
         plan["skipReason"]="予測データまたは出走頭数が不足";plan["skipReasonCode"]="MODEL_NOT_READY"
         return plan
@@ -126,7 +173,7 @@ def make_plan(r,limits):
         if kind not in limits:continue
         label=TYPES[kind]
         rows=sorted([x for x in candidates if x["kind"]==kind and x["ev"]>=max(1.05,limits[kind])],key=lambda x:(-x["probability"],-x["ev"]))
-        if rows:eligible.append({"kind":kind,"type":label,"rows":rows[:20],"avg":sum(x["ev"] for x in rows[:5])/min(5,len(rows)),"best":rows[0]})
+        if rows:eligible.append({"kind":kind,"type":label,"rows":rows[:12],"avg":sum(x["ev"] for x in rows[:5])/min(5,len(rows)),"best":rows[0]})
     eligible.sort(key=lambda x:(-x["avg"],-x["best"]["probability"]))
     selected=eligible[0] if eligible else None
     allocation=[];allocated=0
@@ -193,6 +240,8 @@ def main():
         if not old:plans_by_key[key]=p
         else:
             old["shadowTickets"]=p["shadowTickets"]
+            old["shadowTicketSets"]=p.get("shadowTicketSets",old.get("shadowTicketSets",{}))
+            old["modelTop7"]=p.get("modelTop7",old.get("modelTop7",[]))
             old["modelTopHorse"]=p["modelTopHorse"]
             old["modelTop3"]=p["modelTop3"]
             old["marketFavoriteHorse"]=p["marketFavoriteHorse"] or old.get("marketFavoriteHorse")
