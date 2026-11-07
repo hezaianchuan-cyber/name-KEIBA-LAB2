@@ -232,6 +232,12 @@ class MarketRankDiagnosticsTests(unittest.TestCase):
         self.assertEqual(nb.select_feature_weight_candidate(candidates, 62.0, 60.0), "balanced")
         self.assertIsNone(nb.select_feature_weight_candidate(
             {"accuracy_only": candidates["accuracy_only"]}, 62.0, 60.0))
+        # A candidate that raises top-3 coverage but lowers top-1 accuracy is rejected.
+        self.assertIsNone(nb.select_feature_weight_candidate(
+            {"top3_only": {"development_winner_top1_rate": 31.9,
+                           "development_winner_top3_rate": 64.0,
+                           "development_trio_roi": 60.0}},
+            62.0, 60.0, baseline_top1_rate=32.0))
 
     def test_feature_weight_candidate_must_improve_each_development_fold(self):
         candidate = {
@@ -240,18 +246,19 @@ class MarketRankDiagnosticsTests(unittest.TestCase):
                 "development_winner_top1_rate": 32.5,
                 "development_trio_roi": 60.0,
                 "development_folds": [
-                    {"fold": "previous_year_2", "winner_top3_rate": 64.0, "trio_roi": 61.0},
-                    {"fold": "previous_year_1", "winner_top3_rate": 63.0, "trio_roi": 59.0},
+                    {"fold": "previous_year_2", "winner_top1_rate": 33.0, "winner_top3_rate": 64.0, "trio_roi": 61.0},
+                    {"fold": "previous_year_1", "winner_top1_rate": 32.5, "winner_top3_rate": 63.0, "trio_roi": 59.0},
                 ],
             }
         }
         baseline_folds = [
-            {"fold": "previous_year_2", "winner_top3_rate": 63.0, "trio_roi": 60.5},
-            {"fold": "previous_year_1", "winner_top3_rate": 62.0, "trio_roi": 59.5},
+            {"fold": "previous_year_2", "winner_top1_rate": 32.5, "winner_top3_rate": 63.0, "trio_roi": 60.5},
+            {"fold": "previous_year_1", "winner_top1_rate": 32.0, "winner_top3_rate": 62.0, "trio_roi": 59.5},
         ]
         self.assertEqual(
             nb.select_feature_weight_candidate(candidate, 62.5, 60.0,
-                                                baseline_development_folds=baseline_folds),
+                                                baseline_development_folds=baseline_folds,
+                                                baseline_top1_rate=32.0),
             "balanced",
         )
         candidate["balanced"]["development_folds"][1]["winner_top3_rate"] = 61.9
