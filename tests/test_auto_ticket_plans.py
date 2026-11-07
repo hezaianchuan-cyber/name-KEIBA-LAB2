@@ -12,6 +12,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import build_auto_ticket_plans as plans
 import publish_model_snapshots as publisher
+import nar_daily_payouts as daily_payouts
 
 
 class ShadowTicketPlanTests(unittest.TestCase):
@@ -275,6 +276,17 @@ class ModelSnapshotPublishRetryTests(unittest.TestCase):
         self.assertEqual(published, 1)
         self.assertEqual(mocked.call_count, 2)
         sleep.assert_called_once_with(2)
+
+class OfficialPayoutRaceIdTests(unittest.TestCase):
+    def test_payout_records_keep_the_canonical_race_id(self):
+        row = daily_payouts.payout_race_record(
+            ("帯広ば", "20261107", "12"),
+            {"venue": "帯広ば", "name": "テストレース"},
+            {"win": [{"numbers": ["4"], "pay_100": 120}]},
+        )
+        self.assertEqual(row["race_id"], "帯広ば|20261107|12")
+        self.assertEqual(row["venue"], "帯広ば")
+        self.assertEqual(row["race"], 12)
 
 if __name__ == "__main__":
     unittest.main()
