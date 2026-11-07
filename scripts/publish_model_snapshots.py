@@ -165,7 +165,7 @@ def filter_unpublished_rows(rows: list[dict], existing_keys: set[tuple[str, str]
     ]
 
 
-def publish(rows: list[dict], endpoint: str, token: str, anon_key: str, batch_size: int = 2) -> int:
+def publish(rows: list[dict], endpoint: str, token: str, anon_key: str, batch_size: int = 1) -> int:
     published = 0
     for start in range(0, len(rows), batch_size):
         batch = rows[start:start + batch_size]
