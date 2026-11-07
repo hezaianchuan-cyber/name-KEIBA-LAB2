@@ -165,6 +165,17 @@ def filter_unpublished_rows(rows: list[dict], existing_keys: set[tuple[str, str]
     ]
 
 
+
+def limit_pending_rows(rows: list[dict], max_rows: int = 5) -> list[dict]:
+    """Prioritize the newest snapshots; GitHub gzip remains the complete archive."""
+    ordered = sorted(
+        rows,
+        key=lambda row: (str(row.get("captured_at") or ""), str(row.get("race_id") or "")),
+        reverse=True,
+    )
+    return ordered[:max(0, int(max_rows))]
+
+
 def publish(rows: list[dict], endpoint: str, token: str, anon_key: str, batch_size: int = 1) -> int:
     published = 0
     for start in range(0, len(rows), batch_size):
@@ -208,22 +219,23 @@ def publish(rows: list[dict], endpoint: str, token: str, anon_key: str, batch_si
     return published
 
 
-def record_publish_status(status: str, stats: dict, published: int = 0, error: str | None = None) -> None:
+def record_publish_status(status: str, stats: dict, published: int = 0, error: str | None = None, saved_race_ids: set[str] | None = None) -> None:
     """Persist Supabase archive outcome beside the per-race capture audit."""
     path = ROOT / "data" / "odds-capture-status.json"
     try:
         report = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         report = {}
-    race_ids = set()
+    archive_race_ids = set()
     try:
-        race_ids = {str(row.get("race_id")) for row in load_rows()[0]}
+        archive_race_ids = {str(row.get("race_id")) for row in load_rows()[0]}
     except Exception:
-        race_ids = set()
+        archive_race_ids = set()
+    confirmed_race_ids = set(saved_race_ids or []) if status == "success" else set()
     attempted_at = dt.datetime.now(dt.timezone.utc).isoformat()
     audit = report.get("race_audit") or []
     for item in audit:
-        if item.get("race_id") in race_ids and status == "success":
+        if item.get("race_id") in confirmed_race_ids and status == "success":
             item["supabase_saved"] = True
             item["supabase_saved_at"] = attempted_at
             item.pop("supabase_error", None)
@@ -236,7 +248,8 @@ def record_publish_status(status: str, stats: dict, published: int = 0, error: s
         "status": status,
         "valid_snapshot_rows": int(stats.get("valid", 0)),
         "published_rows": int(published),
-        "race_count_in_archive": len(race_ids),
+        "race_count_in_archive": len(archive_race_ids),
+        "race_count_confirmed_saved": len(confirmed_race_ids),
         "error": (error or "")[:500] if error else None,
     }
     path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -252,25 +265,34 @@ def main() -> None:
         raise RuntimeError("SUPABASE_ANON_KEY is required to publish model snapshots")
     rows, stats = load_rows()
     if not rows:
-        record_publish_status("success", stats, 0)
+        record_publish_status("success", stats, 0, saved_race_ids=set())
         print(json.dumps({"ok": True, **stats, "published": 0, "rows_sent": 0}, ensure_ascii=False), flush=True)
         return
     try:
         existing_keys = fetch_existing_keys(rows, url, anon_key)
-        pending_rows = filter_unpublished_rows(rows, existing_keys)
-        stats["already_in_supabase"] = len(rows) - len(pending_rows)
-        stats["pending_publish"] = len(pending_rows)
+        pending_all = filter_unpublished_rows(rows, existing_keys)
+        saved_race_ids = {race_id for race_id, _captured_at in existing_keys}
+        stats["already_in_supabase"] = len(rows) - len(pending_all)
+        stats["pending_publish_total"] = len(pending_all)
         stats["existing_key_lookup"] = "success"
-        print(f"Model snapshot archive delta: total={len(rows)} already_saved={stats['already_in_supabase']} pending={len(pending_rows)}", flush=True)
     except Exception as lookup_exc:
         # Never let a read-side lookup outage block archival. Idempotent upserts
         # remain the safe fallback when the current database key set is unknown.
-        pending_rows = rows
+        pending_all = rows
+        saved_race_ids = set()
         stats["existing_key_lookup"] = "failed_fallback_to_idempotent_upsert"
         stats["existing_key_lookup_error"] = str(lookup_exc)[:300]
-        stats["pending_publish"] = len(pending_rows)
+        stats["pending_publish_total"] = len(pending_all)
+    pending_rows = limit_pending_rows(pending_all, max_rows=5)
+    stats["pending_publish"] = len(pending_rows)
+    stats["pending_publish_deferred"] = max(0, len(pending_all) - len(pending_rows))
+    print(
+        f"Model snapshot archive delta: total={len(rows)} already_saved={stats.get('already_in_supabase', 0)} "
+        f"pending_total={len(pending_all)} sending_now={len(pending_rows)}",
+        flush=True,
+    )
     if not pending_rows:
-        record_publish_status("success", stats, 0)
+        record_publish_status("success", stats, 0, saved_race_ids=saved_race_ids)
         print(json.dumps({"ok": True, **stats, "published": 0, "rows_sent": 0}, ensure_ascii=False), flush=True)
         return
     try:
@@ -278,7 +300,8 @@ def main() -> None:
     except Exception as exc:
         record_publish_status("failed", stats, 0, str(exc))
         raise
-    record_publish_status("success", stats, published)
+    saved_race_ids.update(str(row.get("race_id")) for row in pending_rows if row.get("race_id"))
+    record_publish_status("success", stats, published, saved_race_ids=saved_race_ids)
     print(json.dumps({"ok": True, **stats, "published": published, "rows_sent": len(pending_rows)}, ensure_ascii=False), flush=True)
 
 
