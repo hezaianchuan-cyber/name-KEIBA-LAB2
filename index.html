@@ -579,6 +579,24 @@ async function loadCaptureAuditStatus(){
   if(!response.ok)throw new Error('HTTP '+response.status);
   const data=await response.json();
   const rows=Array.isArray(data.race_audit)?data.race_audit:[];
+  // Add official result state to the same per-race audit, keyed by the canonical race ID.
+  // The payout archive is fetched here as well so the audit works even before the ledger tab is opened.
+  const payoutResponse=await fetch('./data/daily-payouts.json?v='+Date.now(),{cache:'no-store'});
+  if(payoutResponse.ok){
+   const payoutReport=await payoutResponse.json();
+   if(payoutReport&&Array.isArray(payoutReport.days))dailyPayoutReport=payoutReport;
+  }
+  const payoutStateByRace=new Map();
+  for(const day of (dailyPayoutReport?.days||[])){
+   for(const race of (day.races||[])){
+    const key=race.race_id
+     ? labLedgerRaceIdKey(race.race_id)
+     : labLedgerRaceIdKey('',day.date,race.venue,race.race);
+    const payouts=race.payouts||{};
+    const settled=Array.isArray(payouts.win)&&payouts.win.length>0;
+    payoutStateByRace.set(key,{settled,hasPayout:Object.values(payouts).some(items=>Array.isArray(items)&&items.length>0)});
+   }
+  }
   const fields=rows.filter(x=>Number(x.field_size)>=3).length;
   const odds=rows.filter(x=>Number(x.positive_odds_rows)>0).length;
   const saved=rows.filter(x=>x.snapshot_saved===true).length;
@@ -607,12 +625,18 @@ async function loadCaptureAuditStatus(){
    const oddsText=Number(x.positive_odds_rows)>0?'あり（'+Number(x.positive_odds_rows)+'件）':'なし';
    const pred=Number(x.prediction_count)>=3?'あり（'+Number(x.prediction_count)+'頭）':'—';
    const local=x.snapshot_saved===true?'保存済み':'未確認';
-   const cloud=x.supabase_saved===true?'保存済み':x.supabase_saved===false?'未保存':'未確認';
+   const cloud=x.supabase_saved===true
+    ?(x.supabase_error?'保存済み（今回の再送失敗）':'保存済み')
+    :x.supabase_saved===false?'未保存':'未確認';
    const post=x.scheduled_post_time?new Date(x.scheduled_post_time).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'}):'—';
+   const raceKey=labLedgerRaceIdKey(x.race_id,x.date,x.venue,x.race);
+   const result=payoutStateByRace.get(raceKey);
+   const resultText=result?.settled?'確定':result?.hasPayout?'払戻掲載':'未掲載';
    const flags=[field,oddsText,pred,'GitHub '+local,'Supabase '+cloud].map(esc).join(' ／ ');
-   return '<tr><td>'+esc(x.venue)+' '+esc(x.race)+'R</td><td>'+post+'</td><td>'+flags+'</td><td><b>'+esc(state)+'</b>'+(reason?'<div class="sub">'+esc(reason)+'</div>':'')+'</td></tr>';
+   const cloudError=x.supabase_saved===true&&x.supabase_error?'<div class="sub">再送時エラー：'+esc(x.supabase_error)+'</div>':'';
+   return '<tr><td>'+esc(x.venue)+' '+esc(x.race)+'R</td><td>'+post+'</td><td>'+flags+'</td><td>'+esc(resultText)+'</td><td><b>'+esc(state)+'</b>'+(reason?'<div class="sub">'+esc(reason)+'</div>':'')+cloudError+'</td></tr>';
   }).join('');
-  host.innerHTML='<div class="sub" style="margin-bottom:8px">出走表があるレースを全件表示。オッズ・予測・保存状況は取得時点の記録です。</div><div class="tablewrap" style="overflow-x:auto"><table style="min-width:760px;width:100%"><thead><tr><th>競馬場・レース</th><th>発走</th><th>取得チェック</th><th>最新状態・理由</th></tr></thead><tbody>'+tableRows+'</tbody></table></div>';
+  host.innerHTML='<div class="sub" style="margin-bottom:8px">出走表があるレースを全件表示。オッズ・予測・保存状況は取得時点の記録です。</div><div class="tablewrap" style="overflow-x:auto"><table style="min-width:760px;width:100%"><thead><tr><th>競馬場・レース</th><th>発走</th><th>取得チェック</th><th>確定結果</th><th>最新状態・理由</th></tr></thead><tbody>'+tableRows+'</tbody></table></div>';
  }catch(e){
   host.textContent='取得監査を読み込めません：'+(e.message||String(e))+'。データファイルの公開後に再読み込みしてください。';
  }
