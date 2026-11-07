@@ -1501,9 +1501,13 @@ function buildTrioFormations(rows){
 }
 function renderManualTicketEditor(plan,field){
  const editor=$('manualTicketEditor');if(!editor)return;
+ const sameRace=String(manualTicketCurrentRaceId||'')===String(plan?.raceId||'');
+ const editorState={formOpen:!!editor.querySelector('details.manual-ticket-form')?.open,formationOpen:!!editor.querySelector('details.manual-trio-formation')?.open,values:{}};
+ ['manualTicketType','manualTicketStake','manualHorse1','manualHorse2','manualHorse3','manualTrioFirst','manualTrioSecond','manualTrioThird','manualTrioStake'].forEach(id=>{const el=$(id);if(el)editorState.values[id]=el.value;});
+ const focusedId=editor.contains(document.activeElement)?document.activeElement.id:'';
  manualTicketCurrentRaceId=String(plan?.raceId||'');
  const horses=(Array.isArray(field)&&field.length?field:(plan?.runnerDraws||[])).map(h=>({no:String(h.horseNo??h.no??''),name:String(h.name||'')})).filter(h=>/^\d+$/.test(h.no));
- if(!plan?.raceId||!horses.length){editor.innerHTML='<p>出走馬データがそろったレースを分析すると、単勝・馬単・3連単を追加できます。</p>';return;}
+ if(!plan?.raceId||!horses.length){editor.innerHTML='<p>出走馬データがそろったレースを分析すると、買い目を追加できます。</p>';return;}
  const options='<option value="">馬番を選択</option>'+horses.map(h=>'<option value="'+esc(h.no)+'">'+esc(h.no+'番 '+h.name)+'</option>').join('');
  const tickets=Array.isArray(plan.userTickets)?plan.userTickets:[];
  const getManualSelection=()=>{
@@ -1517,17 +1521,16 @@ function renderManualTicketEditor(plan,field){
   const normalize=x=>String(x??'').replace(/\D/g,'').replace(/^0+(?=\d)/,'');
   const wanted=(unordered?nums.map(normalize).sort((a,b)=>Number(a)-Number(b)):nums.map(normalize)).join('-');
   const matches=[...(minuteOddsRows||[]),...(db.odds||[])].filter(o=>String(o.id)===String(plan.raceId)&&Number(o.odds)>0&&(()=>{
-   const label=norm(o.type),match=type==='単勝'?label.includes(norm('単勝')):type==='馬単'?label.includes(norm('馬単')):type==='3連単'?(label.includes(norm('3連単'))||label.includes(norm('三連単'))):false;
+   const label=norm(o.type),match=type==='単勝'?label.includes(norm('単勝')):type==='馬単'?label.includes(norm('馬単')):type==='3連複'?(label.includes(norm('3連複'))||label.includes(norm('三連複'))):type==='3連単'?(label.includes(norm('3連単'))||label.includes(norm('三連単'))):false;
    if(!match)return false;
    const values=[o.n1,o.n2,o.n3].filter(x=>String(x??'').trim()!=='').map(normalize);
    return (unordered?values.sort((a,b)=>Number(a)-Number(b)):values).join('-')===wanted;
   })()).sort((a,b)=>String(b.capturedAt||'').localeCompare(String(a.capturedAt||'')));
   return matches[0]||null;
  };
- editor.innerHTML='<style>.manual-ticket-form{margin:8px 0 12px}.manual-ticket-form summary{cursor:pointer;font-weight:600;padding:10px 12px;border:1px solid var(--line);border-radius:10px}.manual-ticket-form[open] summary{margin-bottom:10px}.manual-ticket-list{display:grid;gap:6px;margin-top:8px}.manual-ticket-row{display:grid;grid-template-columns:58px minmax(72px,1fr) 76px 72px 44px;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:13px}.manual-ticket-row .odds{font-weight:700;text-align:right}.manual-ticket-row .stake{text-align:right;white-space:nowrap}.manual-ticket-row button{padding:5px 7px;min-height:30px;font-size:12px}@media(max-width:520px){.manual-ticket-row{grid-template-columns:48px minmax(58px,1fr) 62px 58px 38px;gap:5px;padding:7px 6px;font-size:12px}.manual-ticket-row button{padding:4px;font-size:11px}}</style><details class="manual-ticket-form"><summary>＋ 買い目を追加する</summary><div class="grid"><div><label>券種</label><select id="manualTicketType"><option value="単勝">単勝</option><option value="馬単">馬単</option><option value="3連単">3連単</option></select></div><div><label>購入額（円）</label><input id="manualTicketStake" type="number" min="100" step="100" value="100"></div><div><label>1着／単勝</label><select id="manualHorse1">'+options+'</select></div><div id="manualHorse2Wrap"><label>2着</label><select id="manualHorse2">'+options+'</select></div><div id="manualHorse3Wrap"><label>3着</label><select id="manualHorse3">'+options+'</select></div></div><div id="manualOddsPreview" class="notice" style="margin-top:8px;padding:8px 10px">馬番を選ぶと取得済みの最新オッズを表示します。</div><div class="actions"><button class="btn accent" id="manualTicketAdd">追加して保存</button></div><p id="manualTicketStatus" class="sub">LABの自動3連複とは別に保存します。</p></details><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px"><b>追加済み '+tickets.length+'点</b><span class="sub">オッズ・購入額</span></div><div class="manual-ticket-list">'+(tickets.length?tickets.map((t,i)=>'<div class="manual-ticket-row"><span>'+esc(t.type)+'</span><b>'+esc(t.comb)+'</b><span class="odds">'+(Number(t.odds)>0?Number(t.odds).toFixed(1)+'倍':'—')+'</span><span class="stake">'+Number(t.stake||0).toLocaleString()+'円</span><button class="btn" data-manual-delete="'+i+'">削除</button></div>').join(''):'<p class="sub">まだ買い目は追加されていません。</p>')+'</div>';
+ editor.innerHTML='<style>.manual-ticket-form{margin:8px 0 12px}.manual-ticket-form summary{cursor:pointer;font-weight:600;padding:10px 12px;border:1px solid var(--line);border-radius:10px}.manual-ticket-form[open] summary{margin-bottom:10px}.manual-ticket-list{display:grid;gap:6px;margin-top:8px}.manual-ticket-row{display:grid;grid-template-columns:58px minmax(72px,1fr) 76px 72px 44px;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:13px}.manual-ticket-row .odds{font-weight:700;text-align:right}.manual-ticket-row .stake{text-align:right;white-space:nowrap}.manual-ticket-row button{padding:5px 7px;min-height:30px;font-size:12px}@media(max-width:520px){.manual-ticket-row{grid-template-columns:48px minmax(58px,1fr) 62px 58px 38px;gap:5px;padding:7px 6px;font-size:12px}.manual-ticket-row button{padding:4px;font-size:11px}}</style><details class="manual-ticket-form"><summary>＋ 買い目を追加する</summary><div class="grid"><div><label>券種</label><select id="manualTicketType"><option value="単勝">単勝</option><option value="馬単">馬単</option><option value="3連複">3連複</option><option value="3連単">3連単</option></select></div><div><label>購入額（円）</label><input id="manualTicketStake" type="number" min="100" step="100" value="100"></div><div><label>1着／単勝</label><select id="manualHorse1">'+options+'</select></div><div id="manualHorse2Wrap"><label>2着</label><select id="manualHorse2">'+options+'</select></div><div id="manualHorse3Wrap"><label>3着</label><select id="manualHorse3">'+options+'</select></div></div><div id="manualOddsPreview" class="notice" style="margin-top:8px;padding:8px 10px">馬番を選ぶと取得済みの最新オッズを表示します。</div><div class="actions"><button class="btn accent" id="manualTicketAdd">追加して保存</button></div><p id="manualTicketStatus" class="sub">LABの自動3連複とは別に保存します。</p></details><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px"><b>追加済み '+tickets.length+'点</b><span class="sub">オッズ・購入額</span></div><div class="manual-ticket-list">'+(tickets.length?tickets.map((t,i)=>'<div class="manual-ticket-row"><span>'+esc(t.type)+'</span><b>'+esc(t.comb)+'</b><span class="odds">'+(Number(t.odds)>0?Number(t.odds).toFixed(1)+'倍':'—')+'</span><span class="stake">'+Number(t.stake||0).toLocaleString()+'円</span><button class="btn" data-manual-delete="'+i+'">削除</button></div>').join(''):'<p class="sub">まだ買い目は追加されていません。</p>')+'</div>';
  
-  const priorFormOpen=editor.querySelector('details.manual-trio-formation')?.open||false;
-  editor.insertAdjacentHTML('beforeend', '<div class="card manual-trio-formation" style="margin-top:12px;padding:12px"><h4>3連複フォーメーション入力</h4><p class="sub">各欄に馬番をカンマ区切りで入力。展開後の点数と最新オッズを確認して一括保存できます。</p><div class="grid"><div><label>1頭目</label><input id="manualTrioFirst" placeholder="例：1"></div><div><label>2頭目</label><input id="manualTrioSecond" placeholder="例：2,3"></div><div><label>3頭目</label><input id="manualTrioThird" placeholder="例：3,4,5"></div><div><label>1点あたり購入額（円）</label><input id="manualTrioStake" type="number" min="100" step="100" value="100"></div></div><div id="manualTrioPreview" class="notice" style="margin-top:8px;padding:8px 10px">馬番を入力すると重複を除いた組み合わせと最新オッズを表示します。</div><div class="actions"><button class="btn accent" id="manualTrioAdd">フォーメーションを一括保存</button></div><p class="sub">保存するのは展開後の各組み合わせです。重複組み合わせは1点にまとめます。最大12点。</p></div>');
+  editor.insertAdjacentHTML('beforeend', '<details class="card manual-trio-formation" open="" style="margin-top:12px;padding:12px"><summary>3連複フォーメーション入力</summary><div class="card manual-trio-formation-inner" style="margin-top:12px;padding:0"> style="margin-top:12px;padding:12px"><h4>3連複フォーメーション入力</h4><p class="sub">各欄に馬番をカンマ区切りで入力。展開後の点数と最新オッズを確認して一括保存できます。</p><div class="grid"><div><label>1頭目</label><input id="manualTrioFirst" placeholder="例：1"></div><div><label>2頭目</label><input id="manualTrioSecond" placeholder="例：2,3"></div><div><label>3頭目</label><input id="manualTrioThird" placeholder="例：3,4,5"></div><div><label>1点あたり購入額（円）</label><input id="manualTrioStake" type="number" min="100" step="100" value="100"></div></div><div id="manualTrioPreview" class="notice" style="margin-top:8px;padding:8px 10px">馬番を入力すると重複を除いた組み合わせと最新オッズを表示します。</div><div class="actions"><button class="btn accent" id="manualTrioAdd">フォーメーションを一括保存</button></div><p class="sub">保存するのは展開後の各組み合わせです。重複組み合わせは1点にまとめます。最大12点。</p></div></details>');
   const updateTrioPreview=()=>{
    const first=parseTrioFormationGroup($('manualTrioFirst')?.value),second=parseTrioFormationGroup($('manualTrioSecond')?.value),third=parseTrioFormationGroup($('manualTrioThird')?.value);
    const combos=expandTrioFormation(first,second,third),stake=Number($('manualTrioStake')?.value),preview=$('manualTrioPreview');
@@ -1540,9 +1543,14 @@ function renderManualTicketEditor(plan,field){
    preview.textContent=combos.length+'点 ／ 合計 '+(Number.isInteger(stake)&&stake>=100?combos.length*stake:0).toLocaleString()+'円 ／ オッズ取得 '+sum+'/'+combos.length+'点。 '+priced.map(x=>x.comb.join('-')+' '+(x.odds?Number(x.odds.odds).toFixed(1)+'倍':'未取得')).join(' ・ ');
   };
   ['manualTrioFirst','manualTrioSecond','manualTrioThird','manualTrioStake'].forEach(id=>$(id)?.addEventListener('input',updateTrioPreview));
-  if(priorFormOpen){const d=editor.querySelector('details.manual-trio-formation');if(d)d.open=true;}
+  if(sameRace){
+   Object.entries(editorState.values).forEach(([id,value])=>{const el=$(id);if(el)el.value=value;});
+   const ticketDetails=editor.querySelector('details.manual-ticket-form');if(ticketDetails)ticketDetails.open=editorState.formOpen;
+   const formationDetails=editor.querySelector('details.manual-trio-formation');if(formationDetails)formationDetails.open=editorState.formationOpen;
+  }
   updateTrioPreview();
-const updateFields=()=>{const type=$('manualTicketType')?.value||'単勝';if($('manualHorse2Wrap'))$('manualHorse2Wrap').classList.toggle('hidden',type==='単勝');if($('manualHorse3Wrap'))$('manualHorse3Wrap').classList.toggle('hidden',type!=='3連単');updateOddsPreview();};
+  if(focusedId){const focused=$(focusedId);if(focused){focused.focus({preventScroll:true});if(typeof focused.setSelectionRange==='function'&&editorState.values[focusedId]!=null){try{focused.setSelectionRange(editorState.values[focusedId].length,editorState.values[focusedId].length);}catch(_){}}}}
+const updateFields=()=>{const type=$('manualTicketType')?.value||'単勝';if($('manualHorse2Wrap'))$('manualHorse2Wrap').classList.toggle('hidden',type==='単勝');if($('manualHorse3Wrap'))$('manualHorse3Wrap').classList.toggle('hidden',type!=='3連単'&&type!=='3連複');updateOddsPreview();};
  const updateOddsPreview=()=>{
   const preview=$('manualOddsPreview');if(!preview)return;
   const {type,nums}=getManualSelection(),row=lookupManualOdds(type,nums);
@@ -1579,7 +1587,7 @@ document.addEventListener('click',event=>{
   const plan=loadLabTicketPlans().find(x=>String(x.plan?.raceId)===manualTicketCurrentRaceId)?.plan;
   if(!plan){if(status)status.textContent='先にレースを分析してLABの記録を作成してください。';return;}
   const id='user-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);
-  const oddsRow=(()=>{const unordered=false,wanted=nums.map(x=>String(x)).join('-');return [...(minuteOddsRows||[]),...(db.odds||[])].filter(o=>String(o.id)===manualTicketCurrentRaceId&&Number(o.odds)>0&&(()=>{const label=norm(o.type),match=type==='単勝'?label.includes(norm('単勝')):type==='馬単'?label.includes(norm('馬単')):(label.includes(norm('3連単'))||label.includes(norm('三連単')));if(!match)return false;return [o.n1,o.n2,o.n3].filter(x=>String(x??'').trim()!=='').map(String).join('-')===wanted;})()).sort((a,b)=>String(b.capturedAt||'').localeCompare(String(a.capturedAt||'')))[0]||null;})();
+  const oddsRow=(()=>{const unordered=false,wanted=nums.map(x=>String(x)).join('-');return [...(minuteOddsRows||[]),...(db.odds||[])].filter(o=>String(o.id)===manualTicketCurrentRaceId&&Number(o.odds)>0&&(()=>{const label=norm(o.type),match=type==='単勝'?label.includes(norm('単勝')):type==='馬単'?label.includes(norm('馬単')):type==='3連複'?(label.includes(norm('3連複'))||label.includes(norm('三連複'))):(label.includes(norm('3連単'))||label.includes(norm('三連単')));if(!match)return false;return [o.n1,o.n2,o.n3].filter(x=>String(x??'').trim()!=='').map(String).join('-')===wanted;})()).sort((a,b)=>String(b.capturedAt||'').localeCompare(String(a.capturedAt||'')))[0]||null;})();
   const ticket={id,type,comb:nums.join('-'),stake,odds:oddsRow?Number(oddsRow.odds):null,oddsCapturedAt:oddsRow?.capturedAt||null,source:'USER',createdAt:new Date().toISOString()};
   const ok=updateManualTicketPlan(list=>list.push(ticket));
   if(status)status.textContent=ok?'追加した買い目を保存しました。':'保存に失敗しました。ブラウザの保存容量を確認してください。';
@@ -1594,6 +1602,29 @@ document.addEventListener('click',event=>{
   const updated=loadLabTicketPlans().find(x=>String(x.plan?.raceId)===manualTicketCurrentRaceId)?.plan;
   if(updated)renderManualTicketEditor(updated,updated.runnerDraws||currentRunners);
  }
+});
+
+document.addEventListener('click',event=>{
+ const add=event.target.closest&&event.target.closest('#manualTrioAdd');
+ if(!add)return;
+ const status=$('manualTrioPreview');
+ const first=parseTrioFormationGroup($('manualTrioFirst')?.value),second=parseTrioFormationGroup($('manualTrioSecond')?.value),third=parseTrioFormationGroup($('manualTrioThird')?.value);
+ const combos=expandTrioFormation(first,second,third),stake=Number($('manualTrioStake')?.value);
+ if(!first.length||!second.length||!third.length){if(status)status.textContent='3つのグループに馬番を入力してください。';return;}
+ if([...first,...second,...third].some(no=>!currentRunners.some(h=>String(h.horseNo??h.no)===no))){if(status)status.textContent='出走馬に存在しない馬番があります。';return;}
+ if(!combos.length){if(status)status.textContent='購入可能な組み合わせがありません。';return;}
+ if(combos.length>12){if(status)status.textContent='12点を超えています。点数を12点以内に調整してください（現在'+combos.length+'点）。';return;}
+ if(!Number.isInteger(stake)||stake<100||stake%100!==0){if(status)status.textContent='1点あたり100円以上、100円単位で入力してください。';return;}
+ const plan=loadLabTicketPlans().find(x=>String(x.plan?.raceId)===manualTicketCurrentRaceId)?.plan;
+ if(!plan){if(status)status.textContent='先にレースを分析して保存記録を作成してください。';return;}
+ const rows=combos.map(comb=>({id:'user-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),type:'3連複',comb:comb.join('-'),stake,odds:(latestTrioOddsFor(manualTicketCurrentRaceId,comb)||{}).odds??null,oddsCapturedAt:(latestTrioOddsFor(manualTicketCurrentRaceId,comb)||{}).capturedAt??null,source:'USER_FORMATION',createdAt:new Date().toISOString()}));
+ const existing=new Set((plan.userTickets||[]).filter(t=>t.type==='3連複').map(t=>String(t.comb).split('-').sort((a,b)=>Number(a)-Number(b)).join('-')));
+ const duplicates=rows.filter(t=>existing.has(t.comb.split('-').sort((a,b)=>Number(a)-Number(b)).join('-')));
+ if(duplicates.length){if(status)status.textContent='既に保存済みの組み合わせが'+duplicates.length+'点あります。重複を避けるため保存しませんでした。';return;}
+ const ok=updateManualTicketPlan(list=>list.push(...rows));
+ if(status)status.textContent=ok?'3連複フォーメーションを'+rows.length+'点保存しました。':'保存に失敗しました。';
+ const updated=loadLabTicketPlans().find(x=>String(x.plan?.raceId)===manualTicketCurrentRaceId)?.plan;
+ if(updated)renderManualTicketEditor(updated,updated.runnerDraws||currentRunners);
 });
 function generateTickets(){
  const out=$('ticketResult');if(!out)return;
