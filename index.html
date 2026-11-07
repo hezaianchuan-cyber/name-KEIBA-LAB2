@@ -1133,33 +1133,49 @@ setInterval(loadAutoTicketPlans,60*1000);
 function loadLabTicketPlans(){
  try{
   const stored=JSON.parse(localStorage.getItem(LAB_TICKET_STORAGE_KEY)||'[]'),map=new Map();
+  const list=(value)=>Array.isArray(value)?value:[];
+  const richness=(plan)=>list(plan?.tickets).length+list(plan?.shadowTickets).length+list(plan?.runnerDraws).length+list(plan?.predictions).length;
+  const stamp=(plan)=>String(plan?.modifiedAt||plan?.createdAt||'');
   const add=item=>{
    if(!item||!item.plan||!item.plan.raceId)return;
-   const plan=item.plan,key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date),previous=map.get(key);
-   const incomingAt=String(plan.modifiedAt||plan.createdAt||''),previousAt=String(previous?.plan?.modifiedAt||previous?.plan?.createdAt||'');
-   let nextPlan={...plan,
-   userTickets:labLedgerNormalizeTicketList(plan.userTickets),
-   tickets:labLedgerNormalizeTicketList(plan.tickets).filter(t=>labLedgerIsTrioType(t?.type)),
-   shadowTickets:labLedgerNormalizeTicketList(plan.shadowTickets).filter(t=>labLedgerIsTrioType(t?.type))
-  };
-   // Keep market/model comparison fields when a newer local manual-ticket edit
-   // is merged over the enriched, read-only comparison view.
-   if(previous?.plan){
-    for(const field of ['modelTopHorse','modelTop3','marketFavoriteHorse','marketTop3','marketOddsCapturedAt','marketComparisonAvailable','runnerDraws']){
-     const current=nextPlan[field],prior=previous.plan[field];
-     const empty=current==null||current===''||(Array.isArray(current)&&current.length===0)
-      ||(field==='marketComparisonAvailable'&&current===false&&prior===true);
-     if(empty&&prior!=null&&(!Array.isArray(prior)||prior.length>0))nextPlan[field]=prior;
-    }
+   const incoming=item.plan,key=String(incoming.raceId)+'|'+labLedgerDateKey(incoming.date),previous=map.get(key);
+   const normalize=plan=>({...plan,
+    userTickets:labLedgerNormalizeTicketList(plan.userTickets),
+    tickets:labLedgerNormalizeTicketList(plan.tickets).filter(t=>labLedgerIsTrioType(t?.type)),
+    shadowTickets:labLedgerNormalizeTicketList(plan.shadowTickets).filter(t=>labLedgerIsTrioType(t?.type))
+   });
+   const next=normalize(incoming);
+   if(!previous){map.set(key,{...item,plan:next});return;}
+   const prior=normalize(previous.plan||{});
+   const nextScore=richness(next),priorScore=richness(prior);
+   // Prefer the record containing the actual generated ticket/runner payload.
+   // A newer local INSUFFICIENT_DATA placeholder must never erase a full cloud plan.
+   const useIncoming=nextScore>priorScore||(nextScore===priorScore&&stamp(next)>=stamp(prior));
+   const base=useIncoming?next:prior,other=useIncoming?prior:next;
+   const merged={...other,...base};
+   for(const field of ['tickets','shadowTickets','runnerDraws','predictions']){
+    if(!list(merged[field]).length&&list(other[field]).length)merged[field]=other[field];
    }
-   const previousUser=Array.isArray(previous?.plan?.userTickets)?labLedgerNormalizeTicketList(previous.plan.userTickets):null;
-   const incomingUser=Array.isArray(plan.userTickets)?labLedgerNormalizeTicketList(plan.userTickets):null;
-   if(previousUser&&(!incomingUser||(incomingUser.length===0&&previousUser.length>0&&(!plan.modifiedAt||incomingAt<previousAt))))nextPlan.userTickets=previousUser;
-   if(!previous||incomingAt>=previousAt)map.set(key,{...item,plan:nextPlan});
-   else if(previousUser&&nextPlan.userTickets!==plan.userTickets)map.set(key,{...previous,plan:{...previous.plan,userTickets:previousUser}});
+   for(const field of ['modelTopHorse','modelTop3','marketFavoriteHorse','marketTop3','marketOddsCapturedAt','marketComparisonAvailable']){
+    const current=merged[field],fallback=other[field];
+    const empty=current==null||current===''||(Array.isArray(current)&&current.length===0)
+     ||(field==='marketComparisonAvailable'&&current===false&&fallback===true);
+    if(empty&&fallback!=null&&(!Array.isArray(fallback)||fallback.length>0))merged[field]=fallback;
+   }
+   // Manual user tickets are independent of LAB-generated and shadow tickets.
+   const priorUser=prior.userTickets,nextUser=next.userTickets;
+   if(nextUser.length)merged.userTickets=(useIncoming||!priorUser.length)?nextUser:priorUser;
+   else merged.userTickets=priorUser;
+   if(merged.dataStatus==='INSUFFICIENT_DATA'&&other.dataStatus!=='INSUFFICIENT_DATA'&&richness(other)>0){
+    merged.dataStatus=other.dataStatus;
+    if(other.decision)merged.decision=other.decision;
+    if(other.skipReason)merged.skipReason=other.skipReason;
+    if(other.skipReasonCode)merged.skipReasonCode=other.skipReasonCode;
+   }
+   map.set(key,{...(useIncoming?item:previous),plan:merged});
   };
   for(const item of remoteLabTicketPlans)add(item);
-  for(const item of Array.isArray(stored)?stored:[])add(item);
+  for(const item of list(stored))add(item);
   for(const p of db.predictions||[])if(p&&p.ticketPlan&&p.ticketPlan.raceId)add({predictionId:p.id,plan:p.ticketPlan});
   return [...map.values()];
  }catch(e){console.warn('保存買い目の読込に失敗',e);return [];}
