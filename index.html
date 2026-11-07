@@ -581,10 +581,12 @@ async function loadCaptureAuditStatus(){
   const rows=Array.isArray(data.race_audit)?data.race_audit:[];
   // Add official result state to the same per-race audit, keyed by the canonical race ID.
   // The payout archive is fetched here as well so the audit works even before the ledger tab is opened.
-  const payoutResponse=await fetch('./data/daily-payouts.json?v='+Date.now(),{cache:'no-store'});
-  if(payoutResponse.ok){
-   const payoutReport=await payoutResponse.json();
-   if(payoutReport&&Array.isArray(payoutReport.days))dailyPayoutReport=payoutReport;
+  if(!dailyPayoutReport){
+   const payoutResponse=await fetch('./data/daily-payouts.json?v='+Date.now(),{cache:'no-store'});
+   if(payoutResponse.ok){
+    const payoutReport=await payoutResponse.json();
+    if(payoutReport&&Array.isArray(payoutReport.days))dailyPayoutReport=payoutReport;
+   }
   }
   const payoutStateByRace=new Map();
   for(const day of (dailyPayoutReport?.days||[])){
