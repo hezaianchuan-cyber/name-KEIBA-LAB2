@@ -65,8 +65,8 @@ class ChallengerBettingReturnTests(unittest.TestCase):
         }
         scores = {
             "LAB": [7, 6, 5, 4, 3, 2, 1],
-            "CatBoost_independent": [7, 6, 5, 4, 3, 2, 1],
-            "LightGBM_independent": [7, 6, 5, 4, 3, 2, 1],
+            "independent_raw_CatBoost": [7, 6, 5, 4, 3, 2, 1],
+            "independent_raw_LightGBM": [7, 6, 5, 4, 3, 2, 1],
             "LambdaRank": [7, 6, 5, 4, 3, 2, 1],
             "Market_favorite": [1, 2, 3, 4, 5, 6, 7],
         }
