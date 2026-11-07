@@ -157,7 +157,10 @@ def make_plan(r,limits):
     predictions=r.get("predictions") or []
     plan=base_plan(r.get("date"),r.get("venue"),r.get("race"),r.get("race_key"),predictions,
                    r.get("model_version"),r.get("captured_at"),r.get("odds") or [])
-    plan.update({"captureTime":r.get("captured_at"),"oddsMatchedCandidates":0,"validatedBetTypes":int("trio" in limits)})
+    readiness=r.get("race_readiness") if isinstance(r.get("race_readiness"),dict) else {}
+    readiness_blocked=bool(readiness.get("status") and readiness.get("status")!="eligible_for_research_evaluation")
+    plan.update({"captureTime":r.get("captured_at"),"oddsMatchedCandidates":0,"validatedBetTypes":int("trio" in limits),
+                 "raceReadinessStatus":readiness.get("status"),"raceReadinessReasons":readiness.get("reasons") or []})
     horses=sorted(predictions,key=lambda x:(float(x.get("win_probability") or 0),float(x.get("score") or 0)),reverse=True)
     top=horses[:7]; nums=[no(x.get("horse_no")) for x in top]
     if len(set(nums))<3:
@@ -191,9 +194,10 @@ def make_plan(r,limits):
             allocation[i]["stake"]+=100;allocated+=100;i=(i+1)%len(allocation)
     odds_rows=r.get("odds") or []
     model_ok=bool(r.get("model_version")) and len(predictions)>=3
-    bet=bool(model_ok and odds_rows and limits and selected and allocation)
+    bet=bool(model_ok and odds_rows and not readiness_blocked and limits and selected and allocation)
     if not model_ok:reason,code="学習モデルまたは予測データ未準備","MODEL_NOT_READY"
     elif not odds_rows:reason,code="締切前オッズ未取得","ODDS_NOT_CAPTURED"
+    elif readiness_blocked:reason,code="レース品質条件を満たさないため見送り","RACE_QUALITY_GATE"
     elif "trio" not in limits:reason,code="3連複の検証済みEV基準が未成立","NO_VALIDATED_TICKET_THRESHOLD"
     elif not candidates:reason,code="候補買い目のオッズ未照合","TICKET_ODDS_NOT_MATCHED"
     else:reason,code="検証済みEV基準を満たす候補なし","EV_BELOW_VALIDATED_THRESHOLD"
