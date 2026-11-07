@@ -121,6 +121,36 @@ def market_favorite(odds):
     ranking=market_ranking(odds)
     return ranking[0] if ranking else None
 
+def market_blended_predictions(predictions, odds, market_weight=0.5):
+    """Research-only 50:50 blend of LAB win probabilities and captured win-odds implied probabilities."""
+    ranked=[]; seen=set()
+    for horse in predictions or []:
+        n=no(horse.get("horse_no"))
+        if not n or n in seen: continue
+        seen.add(n); ranked.append(dict(horse))
+    market_prices={}
+    for item in odds or []:
+        label=str(item.get("type") or "").replace(" ","")
+        if "単勝" not in label: continue
+        n=no(item.get("n1"))
+        try: price=float(item.get("odds") or 0)
+        except (TypeError,ValueError): continue
+        if n and price>0 and math.isfinite(price): market_prices[n]=1.0/price
+    common=[h for h in ranked if no(h.get("horse_no")) in market_prices]
+    if len(common)<3: return [], False
+    lab_total=sum(max(0.0,float(h.get("win_probability") or 0)) for h in common)
+    market_total=sum(market_prices[no(h.get("horse_no"))] for h in common)
+    if lab_total<=0 or market_total<=0: return [], False
+    blended=[]
+    for h in common:
+        n=no(h.get("horse_no"))
+        lab_p=max(0.0,float(h.get("win_probability") or 0))/lab_total
+        market_p=market_prices[n]/market_total
+        h["win_probability"]=(1.0-market_weight)*lab_p+market_weight*market_p
+        h["score"]=h["win_probability"]
+        blended.append(h)
+    return blended, True
+
 def base_plan(date,venue,race_no,race_id,predictions,model_version,created_at,odds=None):
     ranked=sorted(predictions or [],key=lambda x:(float(x.get("win_probability") or 0),float(x.get("score") or 0)),reverse=True)
     unique=[];seen=set()
@@ -129,6 +159,8 @@ def base_plan(date,venue,race_no,race_id,predictions,model_version,created_at,od
         if n and n not in seen: unique.append(h);seen.add(n)
     top=unique[:7]
     shadow=shadow_tickets(unique,odds or [])
+    blended_predictions, market_blend_available=market_blended_predictions(unique,odds or [],market_weight=0.5)
+    market_blend_shadow=shadow_tickets(blended_predictions,odds or []) if market_blend_available else []
     return {
         "version":2,"createdAt":created_at,"date":date,"raceId":race_id,"venue":venue,"raceNo":str(race_no),
         "decision":"SKIP","skipReason":"仮想買い目は検証専用。購入推奨は締切前オッズと検証済み基準で別判定",
@@ -137,6 +169,11 @@ def base_plan(date,venue,race_no,race_id,predictions,model_version,created_at,od
         "modelTop3":[no(x.get("horse_no")) for x in top[:3]],
         "modelTop7":[no(x.get("horse_no")) for x in top[:7]],
         "shadowTicketSets":{str(n):[x["comb"] for x in shadow[:n]] for n in (3,6,9,12)},
+        "marketBlendShadowTickets":market_blend_shadow,
+        "marketBlendTicketSets":{str(n):[x["comb"] for x in market_blend_shadow[:n]] for n in (3,6,9,12)},
+        "marketBlendAvailable":market_blend_available,
+        "marketBlendWeight":0.5,
+        "marketBlendMode":"research_only_equal_weight_lab_market",
         "modelPredictions":[{"horseNo":no(x.get("horse_no")),"name":str(x.get("name") or ""),
                              "score":float(x.get("score") or 0),
                              "winProbability":float(x.get("win_probability") or 0)}
@@ -250,6 +287,11 @@ def main():
         else:
             old["shadowTickets"]=p["shadowTickets"]
             old["shadowTicketSets"]=p.get("shadowTicketSets",old.get("shadowTicketSets",{}))
+            old["marketBlendShadowTickets"]=p.get("marketBlendShadowTickets",old.get("marketBlendShadowTickets",[]))
+            old["marketBlendTicketSets"]=p.get("marketBlendTicketSets",old.get("marketBlendTicketSets",{}))
+            old["marketBlendAvailable"]=p.get("marketBlendAvailable",old.get("marketBlendAvailable",False))
+            old["marketBlendWeight"]=p.get("marketBlendWeight",old.get("marketBlendWeight",0.5))
+            old["marketBlendMode"]=p.get("marketBlendMode",old.get("marketBlendMode","research_only_equal_weight_lab_market"))
             old["modelTop7"]=p.get("modelTop7",old.get("modelTop7",[]))
             old["modelTopHorse"]=p["modelTopHorse"]
             old["modelTop3"]=p["modelTop3"]
