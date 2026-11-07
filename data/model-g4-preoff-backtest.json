@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-11-07T14:48:55.641967+00:00",
+  "generated_at": "2026-11-07T15:25:03.175477+00:00",
   "performance": {
     "stage_seconds": {
       "g1_load_seconds": 0.0,
-      "official_outcomes_load_seconds": 1.914,
-      "snapshots_load_and_supabase_join_seconds": 284.385,
-      "snapshot_outcome_evaluation_seconds": 285.291,
-      "report_aggregation_seconds": 0.285,
-      "total_seconds_before_write": 287.49
+      "official_outcomes_load_seconds": 1.082,
+      "snapshots_load_and_supabase_join_seconds": 269.664,
+      "snapshot_outcome_evaluation_seconds": 270.268,
+      "report_aggregation_seconds": 0.173,
+      "total_seconds_before_write": 271.523
     },
-    "total_seconds": 287.49,
+    "total_seconds": 271.523,
     "optimization": "bisect_right latest-prior model lookup plus single-worker per-day odds retrieval with 20-row JSONB pages and GitHub-archive-primary model snapshots; outputs and selection rules unchanged"
   },
   "feature": "G4_real_preoff_odds_evaluation",
