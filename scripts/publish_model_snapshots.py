@@ -261,6 +261,7 @@ def main() -> None:
         stats["already_in_supabase"] = len(rows) - len(pending_rows)
         stats["pending_publish"] = len(pending_rows)
         stats["existing_key_lookup"] = "success"
+        print(f"Model snapshot archive delta: total={len(rows)} already_saved={stats['already_in_supabase']} pending={len(pending_rows)}", flush=True)
     except Exception as lookup_exc:
         # Never let a read-side lookup outage block archival. Idempotent upserts
         # remain the safe fallback when the current database key set is unknown.
