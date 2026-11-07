@@ -336,15 +336,31 @@ def load_supabase_snapshots(model_rows):
         diagnostics["supabase_model_key_samples"] = sorted(models_by_race.keys())[:8]
         diagnostics["supabase_model_venues"] = sorted({key.split("|")[0] for key in models_by_race})
 
-        # Read one race_date at a time. The JSONB odds_data column is large
-        # (often 100-300KB per row), so multi-day pages of 100 rows can exceed
-        # PostgREST's statement timeout even when the matching index exists.
-        # A small per-day page also lets PostgreSQL use the exact
-        # (race_date, captured_at DESC, id DESC) index without a global sort.
+        # Read one race_date at a time, but fetch independent dates concurrently.
+        # JSONB odds_data is large (often 100-300KB per row), so keep each page
+        # small and each day's pagination sequential. Four date workers reduce
+        # network wait without creating an unbounded request burst or buffering
+        # every raw JSONB page in memory.
         day_cursor = dt.date.fromisoformat(start_date)
         last_day = dt.date.fromisoformat(end_date)
+        day_list = []
         while day_cursor <= last_day:
-            day = day_cursor.isoformat()
+            day_list.append(day_cursor.isoformat())
+            day_cursor += dt.timedelta(days=1)
+
+        def fetch_and_join_day(day):
+            day_output = []
+            day_diagnostics = {
+                "supabase_query_rows": 0,
+                "supabase_snapshots_joined": 0,
+                "supabase_race_key_matches": 0,
+                "supabase_no_prior_model": 0,
+                "supabase_model_too_old": 0,
+                "supabase_empty_odds": 0,
+                "supabase_odds_key_samples": [],
+                "supabase_odds_dates": [],
+                "supabase_odds_venues": [],
+            }
             offset = 0
             while True:
                 query = urllib.parse.urlencode([
@@ -367,44 +383,45 @@ def load_supabase_snapshots(model_rows):
                     page = json.loads(response.read().decode("utf-8"))
                 if not isinstance(page, list):
                     raise RuntimeError("Supabase odds_snapshots response was not a JSON array")
-                diagnostics["supabase_query_rows"] += len(page)
+                day_diagnostics["supabase_query_rows"] += len(page)
                 for item in page:
                     key = race_key(item.get("race_id"))
                     odds_data = item.get("odds_data") or {}
                     captured = supabase_odds_capture_time(item)
                     if not key or captured is None:
                         continue
-                    if len(diagnostics["supabase_odds_key_samples"]) < 8 and key not in diagnostics["supabase_odds_key_samples"]:
-                        diagnostics["supabase_odds_key_samples"].append(key)
-                    if len(diagnostics["supabase_odds_dates"]) < 10 and key.split("|")[1] not in diagnostics["supabase_odds_dates"]:
-                        diagnostics["supabase_odds_dates"].append(key.split("|")[1])
+                    if len(day_diagnostics["supabase_odds_key_samples"]) < 8 and key not in day_diagnostics["supabase_odds_key_samples"]:
+                        day_diagnostics["supabase_odds_key_samples"].append(key)
+                    race_date = key.split("|")[1]
+                    if len(day_diagnostics["supabase_odds_dates"]) < 10 and race_date not in day_diagnostics["supabase_odds_dates"]:
+                        day_diagnostics["supabase_odds_dates"].append(race_date)
                     venue = key.split("|")[0]
-                    if venue not in diagnostics["supabase_odds_venues"]:
-                        diagnostics["supabase_odds_venues"].append(venue)
+                    if venue not in day_diagnostics["supabase_odds_venues"]:
+                        day_diagnostics["supabase_odds_venues"].append(venue)
                     model_candidates = models_by_race.get(key, [])
                     if model_candidates:
-                        diagnostics["supabase_race_key_matches"] += 1
+                        day_diagnostics["supabase_race_key_matches"] += 1
                     model_times = model_times_by_race.get(key, [])
                     prior_index = bisect.bisect_right(model_times, captured) - 1
                     if prior_index < 0:
-                        diagnostics["supabase_no_prior_model"] += 1
+                        day_diagnostics["supabase_no_prior_model"] += 1
                         continue
                     model_time, model = model_candidates[prior_index]
                     age_minutes = (captured - model_time).total_seconds() / 60.0
                     if age_minutes < 0 or age_minutes > MAX_MODEL_AGE_MINUTES:
-                        diagnostics["supabase_model_too_old"] += 1
+                        day_diagnostics["supabase_model_too_old"] += 1
                         continue
                     odds = odds_data.get("odds") or []
                     if not odds:
-                        diagnostics["supabase_empty_odds"] += 1
+                        day_diagnostics["supabase_empty_odds"] += 1
                         continue
                     minutes = supabase_odds_minutes_to_post(item, captured)
                     if minutes is None:
                         continue
-                    output.append({
+                    day_output.append({
                         "race_key": key,
-                        "date": key.split("|")[1],
-                        "venue": key.split("|")[0],
+                        "date": race_date,
+                        "venue": venue,
                         "captured_at": captured.isoformat(),
                         "scheduled_post_time": odds_data.get("scheduled_post_time"),
                         "minutes_to_post": minutes,
@@ -415,11 +432,35 @@ def load_supabase_snapshots(model_rows):
                         "capture_source": "supabase_one_minute",
                         "prediction_age_minutes": round(age_minutes, 3),
                     })
-                    diagnostics["supabase_snapshots_joined"] += 1
+                    day_diagnostics["supabase_snapshots_joined"] += 1
                 if len(page) < page_size:
                     break
                 offset += page_size
-            day_cursor += dt.timedelta(days=1)
+            return day_output, day_diagnostics
+
+        from concurrent.futures import ThreadPoolExecutor
+        worker_count = min(4, max(1, len(day_list)))
+        diagnostics["supabase_odds_days_requested"] = len(day_list)
+        diagnostics["supabase_odds_fetch_parallelism"] = worker_count
+        with ThreadPoolExecutor(max_workers=worker_count) as executor:
+            # executor.map preserves day order, keeping report generation stable.
+            for day_output, day_diagnostics in executor.map(fetch_and_join_day, day_list):
+                output.extend(day_output)
+                for name in (
+                    "supabase_query_rows", "supabase_snapshots_joined",
+                    "supabase_race_key_matches", "supabase_no_prior_model",
+                    "supabase_model_too_old", "supabase_empty_odds",
+                ):
+                    diagnostics[name] += day_diagnostics[name]
+                for name in ("supabase_odds_key_samples", "supabase_odds_dates", "supabase_odds_venues"):
+                    for value in day_diagnostics[name]:
+                        if value not in diagnostics[name] and (
+                            name != "supabase_odds_key_samples" or len(diagnostics[name]) < 8
+                        ) and (
+                            name != "supabase_odds_dates" or len(diagnostics[name]) < 10
+                        ):
+                            diagnostics[name].append(value)
+        output.sort(key=lambda row: (row["captured_at"], row["race_key"]))
         diagnostics["supabase_status"] = "loaded"
     except Exception as exc:
         diagnostics["supabase_status"] = "unavailable"
