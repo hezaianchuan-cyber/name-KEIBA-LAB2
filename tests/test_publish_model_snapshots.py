@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from publish_model_snapshots import (
-    fetch_existing_keys, filter_unpublished_rows, lock_digest, publish, record_to_row, verify_record,
+    fetch_existing_keys, filter_unpublished_rows, limit_pending_rows, lock_digest, publish, record_to_row, verify_record,
 )
 
 
@@ -68,6 +68,18 @@ class PublishModelSnapshotsTests(unittest.TestCase):
         record["scheduled_post_time"] = "2026-11-06T10:31:00+09:00"
         record["prediction_lock"]["digest"] = lock_digest(record)
         self.assertFalse(verify_record(record))
+
+    def test_pending_publish_cap_prioritizes_newest_rows(self):
+        rows = [
+            {"race_id": f"園田|20261106|{i}", "captured_at": f"2026-11-06T09:{i:02d}:00+09:00"}
+            for i in range(1, 9)
+        ]
+        selected = limit_pending_rows(rows, max_rows=5)
+        self.assertEqual(len(selected), 5)
+        self.assertEqual(
+            [row["captured_at"] for row in selected],
+            [f"2026-11-06T09:{i:02d}:00+09:00" for i in range(8, 3, -1)],
+        )
 
     def test_existing_supabase_keys_are_filtered_from_republish(self):
         rows = [
