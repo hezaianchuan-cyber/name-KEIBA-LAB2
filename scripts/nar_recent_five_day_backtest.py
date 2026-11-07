@@ -10,6 +10,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import nar_backtest as nb
 
@@ -65,7 +66,9 @@ def compact_market(row: dict | None) -> dict | None:
 
 
 def main() -> None:
-    end = nb.END
+    # GitHub runners use UTC; NAR race dates and the requested window are Japan-local.
+    # Use yesterday in Asia/Tokyo, not nb.END (which is based on the runner's UTC date).
+    end = dt.datetime.now(ZoneInfo("Asia/Tokyo")).date() - dt.timedelta(days=1)
     start = end - dt.timedelta(days=4)
     print(f"RECENT_WINDOW start={start} end={end} (five completed calendar days)", flush=True)
 
