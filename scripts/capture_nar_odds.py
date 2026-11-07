@@ -550,8 +550,72 @@ def append_snapshot(path: Path, record: dict) -> bool:
     return True
 
 
+def build_capture_audit(now, races, horses_by_race, odds):
+    """Explain the capture state for every race in the current official racecard."""
+    audit = []
+    candidates = []
+    window_races = 0
+    window_with_field = 0
+    window_with_positive_odds = 0
+    for key, race in races.items():
+        venue, race_date_text, race_no = key
+        field = horses_by_race.get(key, [])
+        entries = odds.get(key, [])
+        row = {
+            "race_id": "|".join(key),
+            "venue": venue,
+            "date": race_date_text,
+            "race": race_no,
+            "field_size": len(field),
+            "positive_odds_rows": len(entries),
+            "model_available": None,
+            "prediction_count": 0,
+            "snapshot_saved": False,
+        }
+        try:
+            race_date = dt.datetime.strptime(race_date_text, "%Y%m%d").date()
+        except ValueError:
+            row.update({"status": "invalid_race_date", "reason": "race_date_unparseable"})
+            audit.append(row)
+            continue
+        start = post_time(race.get("time"))
+        if not start:
+            row.update({"status": "invalid_post_time", "reason": "scheduled_post_time_unparseable"})
+            audit.append(row)
+            continue
+        post = dt.datetime.combine(race_date, start, tzinfo=JST)
+        minutes = (post - now).total_seconds() / 60
+        row["scheduled_post_time"] = post.isoformat()
+        row["minutes_to_post"] = round(minutes, 2)
+        if race_date != now.date():
+            row.update({"status": "not_current_race_date", "reason": "archive_row_not_for_today"})
+        elif minutes < STOP_BEFORE_POST_MINUTES:
+            row.update({"status": "past_capture_cutoff", "reason": "less_than_two_minutes_to_post"})
+        elif minutes > CAPTURE_WINDOW_MINUTES:
+            row.update({"status": "outside_capture_window", "reason": "more_than_sixty_minutes_to_post"})
+        else:
+            window_races += 1
+            if len(field) < 3:
+                row.update({"status": "missing_field", "reason": "fewer_than_three_runners"})
+            else:
+                window_with_field += 1
+                if not entries:
+                    row.update({"status": "missing_positive_odds", "reason": "no_positive_odds_rows"})
+                else:
+                    window_with_positive_odds += 1
+                    row.update({"status": "eligible_for_capture", "reason": None})
+                    candidates.append((key, race, race_date, post, minutes, entries, field, row))
+        audit.append(row)
+    return audit, candidates, window_races, window_with_field, window_with_positive_odds
+
+
 def write_capture_status(now, races, horses_by_race, odds, **extra):
+    audit = extra.pop("race_audit", [])
+    status_counts = {}
+    for item in audit:
+        status_counts[item.get("status", "unknown")] = status_counts.get(item.get("status", "unknown"), 0) + 1
     status = {
+        "schema_version": 2,
         "updated_at": now.isoformat(),
         "capture_window_minutes": [CAPTURE_WINDOW_MINUTES, STOP_BEFORE_POST_MINUTES],
         "race_rows": len(races),
@@ -559,6 +623,8 @@ def write_capture_status(now, races, horses_by_race, odds, **extra):
         "odds_rows": sum(len(rows) for rows in odds.values()),
         "races_with_horses": sum(1 for rows in horses_by_race.values() if len(rows) >= 3),
         "races_with_odds": len(odds),
+        "race_status_counts": status_counts,
+        "race_audit": audit,
         **extra,
     }
     path = DATA / "odds-capture-status.json"
@@ -573,30 +639,11 @@ def main():
         write_capture_status(now, races, horses_by_race, odds, result="no_race_rows", captured_races=0)
         print(f"No current official race rows; race_rows={len(races)}")
         return
-    candidates = []
-    window_races = 0
-    window_with_field = 0
-    window_with_positive_odds = 0
-    for key, race in races.items():
-        try:
-            race_date = dt.datetime.strptime(race["date"], "%Y%m%d").date()
-        except ValueError:
-            continue
-        start = post_time(race["time"])
-        if not start:
-            continue
-        post = dt.datetime.combine(race_date, start, tzinfo=JST)
-        minutes = (post - now).total_seconds() / 60
-        if not (STOP_BEFORE_POST_MINUTES <= minutes <= CAPTURE_WINDOW_MINUTES):
-            continue
-        window_races += 1
-        entries = odds.get(key, [])
-        field = horses_by_race.get(key, [])
-        if len(field) >= 3:
-            window_with_field += 1
-        if entries and len(field) >= 3:
-            window_with_positive_odds += 1
-            candidates.append((key, race, race_date, post, minutes, entries, field))
+
+    audit, candidates, window_races, window_with_field, window_with_positive_odds = build_capture_audit(
+        now, races, horses_by_race, odds
+    )
+    audit_by_id = {item["race_id"]: item for item in audit}
     print(
         "Pre-off eligibility:",
         json.dumps({
@@ -615,19 +662,31 @@ def main():
             races_in_window=window_races,
             window_races_with_field=window_with_field,
             window_races_with_positive_odds=window_with_positive_odds,
+            candidate_races=0,
             captured_races=0,
+            race_audit=audit,
         )
         print("No eligible pre-off races yet; the next scheduled capture will retry.")
         return
+
     model_context = load_model_context()
+    model_available = bool(model_context and model_context[0].get("model_version"))
     additions = 0
-    for key, race, race_date, post, minutes, entries, field in candidates:
+    for key, race, race_date, post, minutes, entries, field, audit_row in candidates:
+        audit_row["model_available"] = model_available
+        if not model_available:
+            audit_row.update({"status": "model_unavailable", "reason": "model_context_or_version_missing"})
+            continue
         predictions = predict_horses(race, field, entries, model_context)
+        audit_row["prediction_count"] = len(predictions)
+        if len(predictions) < 3:
+            audit_row.update({"status": "prediction_incomplete", "reason": "fewer_than_three_predictions"})
+            continue
         combination_predictions = predict_combinations(entries, predictions)
         candidate_combinations = predict_combinations(entries, predictions, full_universe=True)
         readiness = race_readiness(race, field, entries, predictions, model_context)
         path = SNAPSHOT_DIR / f"{race_date.isoformat()}.jsonl.gz"
-        model = model_context[0] if model_context else {}
+        model = model_context[0]
         calibration_races = int((model.get("calibration") or {}).get("races") or 0)
         g_predictions = mg.build_g_predictions(
             predictions, entries, calibration_races, model.get("temperature") or 0.18
@@ -660,17 +719,25 @@ def main():
         }
         if append_snapshot(path, record):
             additions += 1
+            audit_row.update({"status": "captured", "reason": None, "snapshot_saved": True})
+        else:
+            audit_row.update({"status": "duplicate_capture", "reason": "same_timestamp_snapshot_already_exists"})
     write_capture_status(
         now, races, horses_by_race, odds,
-        result="captured" if additions else "already_recorded",
+        result="captured" if additions else "no_new_snapshots",
         races_in_window=window_races,
         window_races_with_field=window_with_field,
         window_races_with_positive_odds=window_with_positive_odds,
         candidate_races=len(candidates),
         captured_races=additions,
-        model_available=model_context is not None,
+        model_available=model_available,
+        race_audit=audit,
     )
-    print(f"Captured {additions} pre-off race snapshots at {now.isoformat()}; candidates={len(candidates)} window={CAPTURE_WINDOW_MINUTES}-{STOP_BEFORE_POST_MINUTES}min model_available={model_context is not None}")
+    print(f"Captured {additions} pre-off race snapshots at {now.isoformat()}; candidates={len(candidates)} window={CAPTURE_WINDOW_MINUTES}-{STOP_BEFORE_POST_MINUTES}min model_available={model_available}")
+
+
+if __name__ == "__main__":
+    main()
 
 
 if __name__ == "__main__":
