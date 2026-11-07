@@ -14,6 +14,7 @@ import json
 import math
 import os
 import random
+import urllib.error
 import urllib.parse
 import urllib.request
 import unicodedata
@@ -28,6 +29,28 @@ OUT = ROOT / "data" / "model-g4-preoff-backtest.json"
 SUPABASE_URL = os.environ.get("KEIBA_SUPABASE_URL", "https://mwiinzmnoludksnfnjaa.supabase.co").rstrip("/")
 SUPABASE_KEY = os.environ.get("KEIBA_SUPABASE_KEY", "sb_publishable_uCeqBv6QPzHo6lHPBzkYiQ_i_dcuc_2")
 MAX_MODEL_AGE_MINUTES = 15.0
+
+def fetch_json_with_retry(request, timeout=45, attempts=3):
+    """Retry transient Supabase/PostgREST failures without changing query semantics."""
+    transient_statuses = {408, 425, 429, 500, 502, 503, 504}
+    for attempt in range(attempts):
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            if exc.code not in transient_statuses or attempt + 1 >= attempts:
+                raise
+            delay = min(2 ** (attempt + 1), 6)
+            print(f"Transient Supabase HTTP {exc.code}; retrying in {delay}s", flush=True)
+            time.sleep(delay)
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
+            if attempt + 1 >= attempts:
+                raise
+            delay = min(2 ** (attempt + 1), 6)
+            print(f"Transient Supabase connection error; retrying in {delay}s: {exc}", flush=True)
+            time.sleep(delay)
+    raise RuntimeError("Supabase request exhausted retry attempts")
+
 
 MINUTES_MIN = 2.0
 MINUTES_MAX = 60.0
@@ -141,8 +164,7 @@ def load_outcomes():
                     },
                 )
                 try:
-                    with urllib.request.urlopen(request, timeout=45) as response:
-                        page = json.loads(response.read().decode("utf-8"))
+                    page = fetch_json_with_retry(request, timeout=45)
                     if not isinstance(page, list):
                         raise RuntimeError("nar_race_results response was not a JSON array")
                 except Exception as exc:
@@ -278,8 +300,7 @@ def load_supabase_snapshots(model_rows):
                         "User-Agent": "KEIBA-LAB-G4/1.0",
                     },
                 )
-                with urllib.request.urlopen(model_request, timeout=30) as model_response:
-                    model_page = json.loads(model_response.read().decode("utf-8"))
+                model_page = fetch_json_with_retry(model_request, timeout=30)
                 if not isinstance(model_page, list):
                     raise RuntimeError("Supabase model_prediction_snapshots response was not a JSON array")
                 model_table_rows.extend(model_page)
@@ -379,8 +400,7 @@ def load_supabase_snapshots(model_rows):
                         "User-Agent": "KEIBA-LAB-G4/1.0",
                     },
                 )
-                with urllib.request.urlopen(request, timeout=45) as response:
-                    page = json.loads(response.read().decode("utf-8"))
+                page = fetch_json_with_retry(request, timeout=45)
                 if not isinstance(page, list):
                     raise RuntimeError("Supabase odds_snapshots response was not a JSON array")
                 day_diagnostics["supabase_query_rows"] += len(page)
