@@ -116,7 +116,7 @@ def load_rows() -> tuple[list[dict], dict]:
 
 
 def fetch_existing_keys(
-    rows: list[dict], url: str, anon_key: str, target_new_rows: int = 5, batch_size: int = 25
+    rows: list[dict], url: str, anon_key: str, target_new_rows: int = 5, batch_size: int = 5
 ) -> set[tuple[str, str]]:
     """Check exact indexed race/time keys, stopping after enough new rows are found."""
     ordered = sorted(
@@ -205,7 +205,7 @@ def publish(rows: list[dict], endpoint: str, token: str, anon_key: str, batch_si
         # The archive endpoint uses idempotent upserts keyed by race/time.
         # A transient 5xx can happen after the database committed the batch but
         # before the gateway returned its response, so retrying is safe.
-        for attempt in range(4):
+        for attempt in range(2):
             try:
                 with urllib.request.urlopen(request, timeout=45) as response:
                     payload = json.loads(response.read().decode("utf-8"))
@@ -215,13 +215,13 @@ def publish(rows: list[dict], endpoint: str, token: str, anon_key: str, batch_si
                     published += int(payload.get("upserted", 0))
                 break
             except urllib.error.HTTPError as exc:
-                if exc.code not in (408, 425, 429, 500, 502, 503, 504) or attempt == 3:
+                if exc.code not in (408, 425, 429, 500, 502, 503, 504) or attempt == 1:
                     raise
                 delay = min(2 ** (attempt + 1), 12)
                 print(f"Transient archive HTTP {exc.code}; retrying batch in {delay}s (attempt {attempt + 2}/4)", flush=True)
                 time.sleep(delay)
             except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
-                if attempt == 3:
+                if attempt == 1:
                     raise
                 delay = min(2 ** (attempt + 1), 12)
                 print(f"Transient archive connection error; retrying batch in {delay}s (attempt {attempt + 2}/4): {exc}", flush=True)
@@ -249,7 +249,7 @@ def record_publish_status(status: str, stats: dict, published: int = 0, error: s
             item["supabase_saved"] = True
             item["supabase_saved_at"] = attempted_at
             item.pop("supabase_error", None)
-        elif status == "failed" and item.get("snapshot_saved"):
+        elif status in ("failed", "deferred") and item.get("snapshot_saved"):
             # A transient failure must not erase a previously confirmed save.
             item["supabase_saved"] = bool(item.get("supabase_saved"))
             item["supabase_error"] = (error or "Supabase publish failed")[:500]
@@ -286,13 +286,17 @@ def main() -> None:
         stats["pending_publish_total"] = len(pending_all)
         stats["existing_key_lookup"] = "success"
     except Exception as lookup_exc:
-        # Never let a read-side lookup outage block archival. Idempotent upserts
-        # remain the safe fallback when the current database key set is unknown.
-        pending_all = rows
-        saved_race_ids = set()
-        stats["existing_key_lookup"] = "failed_fallback_to_idempotent_upsert"
+        # A failed read indicates database pressure. Do not immediately add
+        # more writes; the complete gzip archive remains safely committed.
+        stats["existing_key_lookup"] = "failed_deferred"
         stats["existing_key_lookup_error"] = str(lookup_exc)[:300]
-        stats["pending_publish_total"] = len(pending_all)
+        stats["pending_publish_total"] = None
+        record_publish_status("deferred", stats, 0, str(lookup_exc))
+        print(json.dumps({
+            "ok": True, **stats, "published": 0, "rows_sent": 0,
+            "deferred": True, "reason": "Supabase lookup unavailable; local archive preserved",
+        }, ensure_ascii=False), flush=True)
+        return
     pending_rows = limit_pending_rows(pending_all, max_rows=5)
     stats["pending_publish"] = len(pending_rows)
     stats["pending_publish_deferred"] = max(0, len(pending_all) - len(pending_rows))
