@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-11-07T14:12:55.486380+00:00",
+  "generated_at": "2026-11-07T14:48:55.641967+00:00",
   "performance": {
     "stage_seconds": {
       "g1_load_seconds": 0.0,
-      "official_outcomes_load_seconds": 225.434,
-      "snapshots_load_and_supabase_join_seconds": 122.174,
-      "snapshot_outcome_evaluation_seconds": 123.178,
-      "report_aggregation_seconds": 0.335,
-      "total_seconds_before_write": 348.947
+      "official_outcomes_load_seconds": 1.914,
+      "snapshots_load_and_supabase_join_seconds": 284.385,
+      "snapshot_outcome_evaluation_seconds": 285.291,
+      "report_aggregation_seconds": 0.285,
+      "total_seconds_before_write": 287.49
     },
-    "total_seconds": 348.947,
-    "optimization": "bisect_right latest-prior model snapshot lookup; outputs and selection rules unchanged"
+    "total_seconds": 287.49,
+    "optimization": "bisect_right latest-prior model lookup plus single-worker per-day odds retrieval with 20-row JSONB pages and GitHub-archive-primary model snapshots; outputs and selection rules unchanged"
   },
   "feature": "G4_real_preoff_odds_evaluation",
   "status": "evaluated_not_profitable_or_not_confirmed",
@@ -936,10 +936,15 @@
     "supabase_odds_venues": [],
     "supabase_common_venues": [],
     "model_snapshot_table_rows": 0,
-    "model_snapshot_table_status": "unavailable_using_github_fallback",
-    "model_snapshot_table_error": "The read operation timed out",
+    "model_snapshot_table_status": "skipped_github_archive_primary",
+    "github_model_snapshot_rows": 270,
+    "github_model_snapshot_races": 135,
+    "supabase_model_snapshot_rows": 0,
+    "supabase_model_snapshot_races": 0,
+    "github_fallback_only_races": 135,
+    "merged_model_snapshot_rows": 270,
     "supabase_odds_days_requested": 5,
-    "supabase_odds_fetch_parallelism": 4,
+    "supabase_odds_fetch_parallelism": 1,
     "supabase_status": "unavailable",
     "supabase_error": "The read operation timed out",
     "snapshots_from_github_five_minute": 270,
@@ -952,13 +957,7 @@
       "20261106",
       "20261107"
     ],
-    "supabase_result_errors": [
-      "2026-11-03: The read operation timed out",
-      "2026-11-04: The read operation timed out",
-      "2026-11-05: The read operation timed out",
-      "2026-11-06: The read operation timed out",
-      "2026-11-07: The read operation timed out"
-    ],
+    "supabase_result_errors": [],
     "official_outcome_races": 5362,
     "snapshots_with_official_result": 270,
     "snapshots_missing_official_result": 0,
