@@ -10,6 +10,7 @@ on:
       - 'scripts/nar_model_g.py'
       - 'tests/test_nar_model_g.py'
       - 'tests/test_auto_ticket_plans.py'
+      - 'tests/test_publish_model_snapshots.py'
       - '.github/workflows/nar-preoff-odds.yml'
   workflow_dispatch:
   schedule:
@@ -40,6 +41,9 @@ jobs:
 
       - name: Test 12-ticket shadow plans and skip records
         run: python3 -m unittest discover -s tests -p 'test_auto_ticket_plans.py' -v
+
+      - name: Test delta-only Supabase model snapshot publishing
+        run: python3 -m unittest discover -s tests -p 'test_publish_model_snapshots.py' -v
 
       - name: Download current official NAR race and odds archives
         shell: bash
