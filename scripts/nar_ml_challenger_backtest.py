@@ -216,6 +216,51 @@ def evaluate_scores(name, grouped_scores):
             "top3_capture_rate": round(100 * top3 / races, 3) if races else None}
 
 
+def market_odds_start_date(requested_start):
+    """Official NAR monthly odds archive is available from 2026-03 onward."""
+    return max(requested_start, dt.date(2026, 3, 1))
+
+
+def race_segment(group, dimension):
+    race = group[0]
+    if dimension == "venue":
+        return str(race.get("venue") or "unknown")
+    if dimension == "going":
+        return str(race.get("going") or "unknown")
+    if dimension == "distance_band":
+        distance = float(race.get("distance_m") or 0)
+        if distance < 1200: return "<1200m"
+        if distance < 1600: return "1200-1599m"
+        if distance < 2000: return "1600-1999m"
+        return "2000m+"
+    if dimension == "field_size_band":
+        size = float(race.get("field_size") or len(group))
+        if size <= 8: return "8頭以下"
+        if size <= 12: return "9-12頭"
+        return "13頭以上"
+    raise ValueError(f"Unknown race segment: {dimension}")
+
+
+def summarize_stratified_comparison(scored_groups, dimensions):
+    """Summarize each ranking strategy on identical races within each segment."""
+    report = {}
+    for dimension in dimensions:
+        buckets = defaultdict(list)
+        for group, strategy_scores in scored_groups:
+            buckets[race_segment(group, dimension)].append((group, strategy_scores))
+        report[dimension] = {}
+        for segment, entries in sorted(buckets.items()):
+            names = sorted({name for _, scores in entries for name in scores})
+            report[dimension][segment] = {
+                "races": len(entries),
+                "models": [
+                    evaluate_scores(name, [(group, scores[name]) for group, scores in entries])
+                    for name in names
+                ],
+            }
+    return report
+
+
 def score_model(name, model, test_groups, feature_names, category_maps=None, categorical=False):
     output = []
     for group in test_groups:
@@ -377,7 +422,8 @@ def main():
     # These odds are NOT pre-off prices and are never used as model inputs.
     holdout_start = min(test_dates)
     holdout_end = max(test_dates)
-    final_odds, final_odds_downloads = nb.load_final_odds_archives(holdout_start, holdout_end)
+    official_odds_start = market_odds_start_date(holdout_start)
+    final_odds, final_odds_downloads = nb.load_final_odds_archives(official_odds_start, holdout_end)
     market_groups = []
     market_output = []
     for group in test_groups:
@@ -415,14 +461,52 @@ def main():
                             for g in market_groups]
         market_models.append(evaluate_scores("PlackettLuce_independent_raw_same_odds_races",
                                              pl_output_market))
+    # Segment-level diagnostics compare market and model rankings on exactly
+    # the same official-odds-matched races. They are descriptive, not tuning data.
+    stratified_inputs = []
+    for group in market_groups:
+        parts = str(group[0]["race_key"]).split("|")
+        key = nb.race_key(parts[0], parts[1], parts[2])
+        odds_for_race = final_odds.get(key, {})
+        strategy_scores = {
+            "LAB": [r["lab_score"] for r in group],
+            "Market_favorite": [-float(odds_for_race[r["horse_no"]]) for r in group],
+        }
+        for feature_set, features in (("LAB_feature_enhanced", LAB_FEATURES),
+                                      ("independent_raw", RAW_FEATURES)):
+            for kind in ("CatBoost", "LightGBM"):
+                name = f"{feature_set}_{kind}"
+                model = model_objects[name]
+                if kind == "CatBoost":
+                    x = [[r[k] for k in features] for r in group]
+                else:
+                    x = [[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
+                          for k in features] for r in group]
+                strategy_scores[name] = model.predict_proba(x)[:, 1].tolist()
+        x = [[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
+              for k in RAW_FEATURES] for r in group]
+        strategy_scores["LambdaRank"] = ranker.predict(x).tolist()
+        stratified_inputs.append((group, strategy_scores))
+    stratified_comparison = summarize_stratified_comparison(
+        stratified_inputs, ("venue", "distance_band", "field_size_band", "going"))
+
     market_comparison = {
         "odds_source": "NAR official monthly confirmed final win odds; retrospective only, not pre-off odds",
         "holdout_period": {"start": holdout_start.isoformat(), "end": holdout_end.isoformat()},
+        "official_odds_available_from": "2026-03-01",
+        "requested_odds_start": holdout_start.isoformat(),
+        "actual_odds_start": official_odds_start.isoformat(),
+        "pre_official_archive_period_excluded": (
+            {"start": holdout_start.isoformat(),
+             "end": (official_odds_start - dt.timedelta(days=1)).isoformat()}
+            if holdout_start < official_odds_start else None
+        ),
         "holdout_races_total": len(test_groups),
         "races_with_at_least_3_odds_matched_runners_and_winner": len(market_groups),
         "coverage_pct": round(100 * len(market_groups) / len(test_groups), 2) if test_groups else None,
         "races_without_eligible_odds": len(test_groups) - len(market_groups),
         "models": market_models,
+        "stratified_comparison": stratified_comparison,
         "odds_downloads": final_odds_downloads,
         "policy": "Every listed model and final-odds favorite is evaluated on exactly the same holdout races and the same matched runner subset. Market odds are used only as a retrospective benchmark, never as model input or a live betting price."
     }
@@ -472,6 +556,8 @@ def main():
             "LambdaRank and Plackett-Luce use independent_raw features only.",
             "Top1/Top3 are ranking metrics, not profitability or betting-return evidence.",
             "Market benchmark uses official confirmed final odds retrospectively, not odds available before the race.",
+            "Official monthly NAR odds archives are restricted to 2026-03 onward; earlier holdout dates are excluded from the market comparison.",
+            "Venue, distance, field-size and going segments are descriptive diagnostics on the same odds-matched races, not evidence of profitability."
             "NAR monthly CSV has no permanent horse ID; history uses a conservative composite of birth date, sex, sire, dam and name, isolating incomplete identities per race.",
             "Feature importance is model-native gain/importance, not causal attribution.",
             "All same-day race results are withheld until that date's feature generation is complete.",
