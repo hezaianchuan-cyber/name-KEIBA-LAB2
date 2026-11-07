@@ -92,56 +92,116 @@ def supabase_odds_minutes_to_post(item, captured):
         return None
 
 
+OUTCOME_DIAGNOSTICS = {}
+
+
 def load_outcomes():
+    """Load official payouts from the rolling archive and fill recent gaps from Supabase results."""
     if not PAYOUTS_FILE.exists():
         raise RuntimeError("data/daily-payouts.json is missing; official results are required.")
     source = json.loads(PAYOUTS_FILE.read_text(encoding="utf-8"))
-    outcomes = {}
+    records = []
     for day in source.get("days", []):
         date = "".join(ch for ch in str(day.get("date") or "") if ch.isdigit())
         if len(date) != 8:
             continue
         for race in day.get("races", []):
-            venue = norm_venue(race.get("venue"))
-            number = race.get("race")
-            if not venue or number is None:
-                continue
-            key = venue + "|" + date + "|" + str(int(number))
-            payouts = race.get("payouts") or {}
-            win_rows = payouts.get("win") or []
-            winners = set()
-            payout_by_horse = {}
-            for item in win_rows:
-                nums = item.get("numbers") or []
-                if not nums:
-                    continue
+            records.append((race.get("venue"), date, race.get("race"), race.get("payouts") or {}))
+
+    # The rolling official payout archive can lag the current race day. Use the
+    # immutable result table as a second official source for every snapshot date.
+    snapshot_dates = {
+        path.name.split(".")[0].replace("-", "")
+        for path in SNAPSHOT_DIR.glob("*.jsonl.gz")
+        if len(path.name.split(".")[0].replace("-", "")) == 8
+    }
+    result_rows = 0
+    result_errors = []
+    if SUPABASE_URL and SUPABASE_KEY:
+        for date in sorted(snapshot_dates):
+            date_iso = date[:4] + "-" + date[4:6] + "-" + date[6:8]
+            offset = 0
+            while True:
+                query = urllib.parse.urlencode([
+                    ("select", "race_id,race_date,venue,race_number,result_data"),
+                    ("race_date", "eq." + date_iso),
+                    ("order", "venue.asc,race_number.asc"),
+                    ("limit", "1000"),
+                    ("offset", str(offset)),
+                ])
+                request = urllib.request.Request(
+                    SUPABASE_URL + "/rest/v1/nar_race_results?" + query,
+                    headers={
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": "Bearer " + SUPABASE_KEY,
+                        "Accept": "application/json",
+                        "User-Agent": "KEIBA-LAB-G4/1.0",
+                    },
+                )
+                try:
+                    with urllib.request.urlopen(request, timeout=45) as response:
+                        page = json.loads(response.read().decode("utf-8"))
+                    if not isinstance(page, list):
+                        raise RuntimeError("nar_race_results response was not a JSON array")
+                except Exception as exc:
+                    result_errors.append(date_iso + ": " + str(exc))
+                    break
+                for row in page:
+                    data = row.get("result_data") or {}
+                    records.append((row.get("venue"), date, row.get("race_number"), data.get("payouts") or {}))
+                    result_rows += 1
+                if len(page) < 1000:
+                    break
+                offset += 1000
+
+    outcomes = {}
+    for venue_value, date, number, payouts in records:
+        venue = norm_venue(venue_value)
+        if not venue or number is None:
+            continue
+        key = venue + "|" + date + "|" + str(int(number))
+        winners = set()
+        payout_by_horse = {}
+        for item in payouts.get("win") or []:
+            nums = item.get("numbers") or []
+            if nums:
                 no = str(nums[0])
                 winners.add(no)
                 payout_by_horse[no] = int(item.get("pay_100") or 0)
-            trio_payouts = {}
-            for item in payouts.get("trio") or []:
-                nums = []
-                for value in item.get("numbers") or []:
-                    digits = "".join(ch for ch in str(value or "") if ch.isdigit())
-                    if not digits:
-                        nums = []
-                        break
-                    nums.append(str(int(digits)))
-                if len(nums) != 3 or len(set(nums)) != 3:
-                    continue
-                try:
-                    pay = int(item.get("pay_100") or 0)
-                except (TypeError, ValueError):
-                    continue
-                if pay > 0:
-                    combo = tuple(sorted(nums, key=int))
-                    trio_payouts["-".join(combo)] = max(pay, trio_payouts.get("-".join(combo), 0))
-            if winners:
-                outcomes[key] = {
-                    "winners": winners,
-                    "payout_by_horse": payout_by_horse,
-                    "trio_payouts": trio_payouts,
-                }
+        trio_payouts = {}
+        for item in payouts.get("trio") or []:
+            nums = []
+            for value in item.get("numbers") or []:
+                digits = "".join(ch for ch in str(value or "") if ch.isdigit())
+                if not digits:
+                    nums = []
+                    break
+                nums.append(str(int(digits)))
+            if len(nums) != 3 or len(set(nums)) != 3:
+                continue
+            try:
+                pay = int(item.get("pay_100") or 0)
+            except (TypeError, ValueError):
+                continue
+            if pay > 0:
+                combo = tuple(sorted(nums, key=int))
+                trio_payouts["-".join(combo)] = max(pay, trio_payouts.get("-".join(combo), 0))
+        if winners or trio_payouts:
+            existing = outcomes.setdefault(key, {
+                "winners": set(), "payout_by_horse": {}, "trio_payouts": {},
+            })
+            existing["winners"].update(winners)
+            existing["payout_by_horse"].update(payout_by_horse)
+            for combo, pay in trio_payouts.items():
+                existing["trio_payouts"][combo] = max(pay, existing["trio_payouts"].get(combo, 0))
+
+    OUTCOME_DIAGNOSTICS.clear()
+    OUTCOME_DIAGNOSTICS.update({
+        "supabase_result_rows": result_rows,
+        "supabase_result_dates": sorted(snapshot_dates),
+        "supabase_result_errors": result_errors,
+        "official_outcome_races": len(outcomes),
+    })
     return outcomes
 
 
@@ -1048,6 +1108,7 @@ def main():
     temperature = float(g1["selected_temperature"])
     outcomes = load_outcomes()
     snapshots, diagnostics = load_snapshots()
+    diagnostics.update(OUTCOME_DIAGNOSTICS)
     diagnostics["snapshots_with_official_result"] = 0
     diagnostics["snapshots_missing_official_result"] = 0
     diagnostics["recalibrated_with_g1_temperature"] = 0
