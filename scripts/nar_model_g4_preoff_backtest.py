@@ -548,13 +548,13 @@ def summarize_podium_coverage(rows):
     return report
 
 
-def summarize_trio_ticket_strategies(rows):
+def summarize_trio_ticket_strategies(rows, ticket_map_field="trio_ticket_candidates"):
     """Evaluate 3/6/9/12 ticket partial-buy choices against official trio payouts."""
     report = {}
     for count in (3, 6, 9, 12):
         race_count = hit_races = ticket_count = stake = returned = 0
         for row in rows:
-            ticket_map = row.get("trio_ticket_candidates") or {}
+            ticket_map = row.get(ticket_map_field) or {}
             tickets = ticket_map.get(str(count)) or []
             if not tickets:
                 continue
@@ -584,6 +584,16 @@ def summarize_trio_ticket_strategies(rows):
             "average_tickets_per_race": round(ticket_count / race_count, 2) if race_count else None,
         }
     return report
+
+
+def summarize_trio_ticket_strategies_by_blend(rows):
+    """Compare the same 2-4-5 ticket budget across predeclared market weights."""
+    return {
+        f"{weight:.2f}": summarize_trio_ticket_strategies(
+            rows, ticket_map_field="trio_ticket_candidates_by_blend_" + f"{weight:.2f}"
+        )
+        for weight in BLEND_MARKET_WEIGHTS
+    }
 
 
 def build_trio_combo_candidates(candidate_combinations, odds_rows):
@@ -859,13 +869,24 @@ def build_race_evaluation(snapshot, outcome, expected_temperature):
         }
 
     blended_order = sorted(matched, key=lambda no: (-blended[no], int(no)))
-    all_trio_tickets = narrow_trio_tickets(
-        build_245_tickets(blended_order), blended_order, count=1000
-    )
-    trio_ticket_candidates = {
-        str(count): [list(combo) for combo in all_trio_tickets[:count]]
-        for count in (3, 6, 9, 12)
-    }
+    trio_ticket_candidates_by_blend = {}
+    for market_weight in BLEND_MARKET_WEIGHTS:
+        weight_key = f"{market_weight:.2f}"
+        candidate_probabilities = {
+            no: (1.0 - market_weight) * model_common[no] + market_weight * market[no]
+            for no in matched
+        }
+        candidate_order = sorted(
+            matched, key=lambda no: (-candidate_probabilities[no], int(no))
+        )
+        all_tickets = narrow_trio_tickets(
+            build_245_tickets(candidate_order), candidate_order, count=1000
+        )
+        trio_ticket_candidates_by_blend[weight_key] = {
+            str(count): [list(combo) for combo in all_tickets[:count]]
+            for count in (3, 6, 9, 12)
+        }
+    trio_ticket_candidates = trio_ticket_candidates_by_blend.get("0.50", {})
     trio_combo_candidates = build_trio_combo_candidates(
         snapshot.get("candidate_combinations") or [], snapshot.get("odds") or []
     )
@@ -894,6 +915,11 @@ def build_race_evaluation(snapshot, outcome, expected_temperature):
         "market_top7_podium_captured": market_podium_captured,
         "trio_payouts": trio_payouts,
         "trio_ticket_candidates": trio_ticket_candidates,
+        "trio_ticket_candidates_by_blend": trio_ticket_candidates_by_blend,
+        **{
+            "trio_ticket_candidates_by_blend_" + key: value
+            for key, value in trio_ticket_candidates_by_blend.items()
+        },
         "trio_combo_candidates": trio_combo_candidates,
         "trio_candidate_ticket_candidates": trio_candidate_ticket_candidates,
         "value_ticket": value_ticket,
@@ -1223,12 +1249,14 @@ def main():
             "races": len(trio_dev),
             "top7_podium_coverage": summarize_podium_coverage(trio_dev),
             "ticket_strategies": summarize_trio_ticket_strategies(trio_dev),
+            "ticket_strategies_by_blend": summarize_trio_ticket_strategies_by_blend(trio_dev),
             "candidate_combo_strategies": summarize_trio_candidate_strategies(trio_dev),
         },
         "holdout": {
             "races": len(trio_hold),
             "top7_podium_coverage": summarize_podium_coverage(trio_hold),
             "ticket_strategies": summarize_trio_ticket_strategies(trio_hold),
+            "ticket_strategies_by_blend": summarize_trio_ticket_strategies_by_blend(trio_hold),
             "candidate_combo_strategies": summarize_trio_candidate_strategies(trio_hold),
         },
         "method": "Horse-rank 2-4-5 baseline plus saved trio-combination probabilities joined to the exact selected pre-off 3連複 odds. Combo EV is recalculated as saved probability × captured odds. Partial buys of top 3/6/9/12 are compared by probability rank, EV rank, and 50:50 rank fusion; official NAR trio payouts are outcomes only.",
