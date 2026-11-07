@@ -74,6 +74,17 @@ def load_today_payouts(today):
     return {}, 0, last_error, {"payout_files_seen": [], "payout_rows_seen": 0, "payout_rows_today": 0, "today_payout_races": 0}
 
 
+def payout_race_record(key, race, entries):
+    """Serialize official payouts with the canonical race ID used by predictions and tickets."""
+    return {
+        "race_id": "|".join(str(part) for part in key),
+        "venue": str(race.get("venue") or key[0]),
+        "race": int(key[2]),
+        "name": str(race.get("name") or ""),
+        "payouts": entries,
+    }
+
+
 def main():
     today = dt.datetime.now(JST).date()
     start = today - dt.timedelta(days=120)
@@ -123,14 +134,7 @@ def main():
                 ]
         if not entries:
             continue
-        day["races"].append({
-            # Keep the same canonical race key used by odds, predictions, and tickets.
-            "race_id": "|".join(str(part) for part in key),
-            "venue": str(race.get("venue") or key[0]),
-            "race": int(key[2]),
-            "name": str(race.get("name") or ""),
-            "payouts": entries,
-        })
+        day["races"].append(payout_race_record(key, race, entries))
 
     for day in days.values():
         day["races"].sort(key=lambda x: (x["venue"], x["race"]))
