@@ -48,6 +48,50 @@ class CaptureAuditTests(unittest.TestCase):
         self.assertEqual(by_race["5"]["status"], "missing_positive_odds")
         self.assertEqual(by_race["6"]["status"], "not_current_race_date")
 
+    def test_merge_audit_preserves_prior_snapshot_and_supabase_success(self):
+        now = datetime(2026, 11, 6, 11, 0, tzinfo=JST)
+        previous = {
+            "race_audit": [{
+                "race_id": "大井|20261106|1",
+                "date": "20261106",
+                "snapshot_saved": True,
+                "supabase_saved": True,
+                "first_seen_at": "2026-11-06T09:00:00+09:00",
+                "snapshot_saved_at": "2026-11-06T09:20:00+09:00",
+                "supabase_saved_at": "2026-11-06T09:21:00+09:00",
+            }]
+        }
+        incoming = [{
+            "race_id": "大井|20261106|1",
+            "date": "20261106",
+            "status": "past_capture_cutoff",
+            "snapshot_saved": False,
+            "supabase_saved": False,
+        }]
+        merged = capture.merge_race_audit(now, incoming, previous)
+        self.assertEqual(len(merged), 1)
+        self.assertTrue(merged[0]["snapshot_saved"])
+        self.assertTrue(merged[0]["supabase_saved"])
+        self.assertEqual(merged[0]["first_seen_at"], previous["race_audit"][0]["first_seen_at"])
+        self.assertEqual(merged[0]["snapshot_saved_at"], previous["race_audit"][0]["snapshot_saved_at"])
+        self.assertEqual(merged[0]["status"], "past_capture_cutoff")
+        self.assertEqual(merged[0]["last_checked_at"], now.isoformat())
+
+    def test_empty_audit_does_not_erase_same_day_race_history(self):
+        now = datetime(2026, 11, 6, 11, 0, tzinfo=JST)
+        previous = {
+            "race_audit": [{
+                "race_id": "大井|20261106|1",
+                "date": "20261106",
+                "snapshot_saved": True,
+                "supabase_saved": True,
+            }]
+        }
+        merged = capture.merge_race_audit(now, [], previous)
+        self.assertEqual(len(merged), 1)
+        self.assertTrue(merged[0]["snapshot_saved"])
+        self.assertTrue(merged[0]["supabase_saved"])
+
 
 if __name__ == "__main__":
     unittest.main()
