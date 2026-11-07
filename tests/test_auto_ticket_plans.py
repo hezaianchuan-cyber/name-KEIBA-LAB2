@@ -130,6 +130,38 @@ class ShadowTicketPlanTests(unittest.TestCase):
             with patch.object(plans, "DATA", data_dir):
                 self.assertEqual(plans.thresholds(), {"trio": 1.35})
 
+    def test_market_blend_candidates_are_generated_from_lab_and_captured_win_odds(self):
+        predictions = [
+            {"horse_no": "1", "win_probability": 0.60, "score": 0.9},
+            {"horse_no": "2", "win_probability": 0.25, "score": 0.8},
+            {"horse_no": "3", "win_probability": 0.15, "score": 0.7},
+        ]
+        odds = [
+            {"type": "単勝", "n1": "1", "odds": 10.0},
+            {"type": "単勝", "n1": "2", "odds": 2.0},
+            {"type": "単勝", "n1": "3", "odds": 4.0},
+            {"type": "3連複", "n1": "1", "n2": "2", "n3": "3", "odds": 12.0},
+        ]
+        blended, available = plans.market_blended_predictions(predictions, odds, 0.5)
+        self.assertTrue(available)
+        self.assertEqual([h["horse_no"] for h in sorted(blended, key=lambda x: -x["win_probability"])],
+                         ["2", "1", "3"])
+        self.assertAlmostEqual(sum(h["win_probability"] for h in blended), 1.0)
+        plan = plans.base_plan("20261108", "大井", "1", "大井|20261108|1",
+                               predictions, "test-model", "2026-11-08T10:00:00+09:00", odds)
+        self.assertTrue(plan["marketBlendAvailable"])
+        self.assertEqual(plan["marketBlendWeight"], 0.5)
+        self.assertEqual(plan["marketBlendMode"], "research_only_equal_weight_lab_market")
+        self.assertEqual(len(plan["marketBlendShadowTickets"]), 1)
+        self.assertEqual(plan["marketBlendShadowTickets"][0]["comb"], "1-2-3")
+        self.assertEqual(plan["decision"], "SKIP")
+
+    def test_market_blend_is_unavailable_without_three_matched_win_odds(self):
+        blended, available = plans.market_blended_predictions(
+            self.predictions, [{"type": "単勝", "n1": "2", "odds": 2.0}], 0.5)
+        self.assertFalse(available)
+        self.assertEqual(blended, [])
+
     def test_market_favorite_uses_lowest_positive_win_odds(self):
         odds = [
             {"type": "単勝", "n1": "1", "odds": 3.2},
