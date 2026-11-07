@@ -11,6 +11,7 @@ import re
 import time
 import urllib.error
 import urllib.request
+import urllib.parse
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -85,8 +86,8 @@ def record_to_row(record: dict) -> dict | None:
 def load_rows() -> tuple[list[dict], dict]:
     rows_by_key = {}
     stats = {"files": 0, "lines": 0, "valid": 0, "invalid_lock": 0, "invalid_shape": 0}
-    # Re-publish the newest two daily archives on every run. Upserts make
-    # retries safe while keeping the five-minute workflow bounded.
+    # Scan the newest two daily archives. Existing database keys are filtered
+    # later so each scheduled capture publishes only snapshots not yet archived.
     archive_files = sorted(SNAPSHOT_DIR.glob("*.jsonl.gz"))[-2:]
     for path in archive_files:
         stats["files"] += 1
@@ -111,6 +112,57 @@ def load_rows() -> tuple[list[dict], dict]:
             stats["invalid_shape"] += 1
     stats["valid"] = len(rows_by_key)
     return list(rows_by_key.values()), stats
+
+
+
+def fetch_existing_keys(rows: list[dict], url: str, anon_key: str) -> set[tuple[str, str]]:
+    """Read already archived race/capture keys so each run uploads only deltas."""
+    if not rows:
+        return set()
+    dates = sorted({str(row.get("race_date") or "") for row in rows if row.get("race_date")})
+    if not dates:
+        return set()
+    existing = set()
+    offset = 0
+    page_size = 1000
+    while True:
+        query = urllib.parse.urlencode([
+            ("select", "race_id,captured_at"),
+            ("race_date", "gte." + dates[0]),
+            ("race_date", "lte." + dates[-1]),
+            ("order", "race_date.asc,race_id.asc,captured_at.asc"),
+            ("limit", str(page_size)),
+            ("offset", str(offset)),
+        ])
+        request = urllib.request.Request(
+            url.rstrip("/") + "/rest/v1/model_prediction_snapshots?" + query,
+            headers={
+                "apikey": anon_key,
+                "Authorization": "Bearer " + anon_key,
+                "Accept": "application/json",
+                "User-Agent": "KEIBA-LAB-model-snapshot-publisher/1.0",
+            },
+        )
+        with urllib.request.urlopen(request, timeout=30) as response:
+            page = json.loads(response.read().decode("utf-8"))
+        if not isinstance(page, list):
+            raise RuntimeError("Existing model snapshot lookup did not return a JSON array")
+        for item in page:
+            race_id = str(item.get("race_id") or "")
+            captured_at = str(item.get("captured_at") or "")
+            if race_id and captured_at:
+                existing.add((race_id, captured_at))
+        if len(page) < page_size:
+            break
+        offset += page_size
+    return existing
+
+
+def filter_unpublished_rows(rows: list[dict], existing_keys: set[tuple[str, str]]) -> list[dict]:
+    return [
+        row for row in rows
+        if (str(row.get("race_id") or ""), str(row.get("captured_at") or "")) not in existing_keys
+    ]
 
 
 def publish(rows: list[dict], endpoint: str, token: str, anon_key: str, batch_size: int = 5) -> int:
@@ -201,15 +253,32 @@ def main() -> None:
     rows, stats = load_rows()
     if not rows:
         record_publish_status("success", stats, 0)
-        print(json.dumps({"ok": True, **stats, "published": 0}, ensure_ascii=False), flush=True)
+        print(json.dumps({"ok": True, **stats, "published": 0, "rows_sent": 0}, ensure_ascii=False), flush=True)
         return
     try:
-        published = publish(rows, url + "/functions/v1/nar-model-snapshot-archive", token, anon_key)
+        existing_keys = fetch_existing_keys(rows, url, anon_key)
+        pending_rows = filter_unpublished_rows(rows, existing_keys)
+        stats["already_in_supabase"] = len(rows) - len(pending_rows)
+        stats["pending_publish"] = len(pending_rows)
+        stats["existing_key_lookup"] = "success"
+    except Exception as lookup_exc:
+        # Never let a read-side lookup outage block archival. Idempotent upserts
+        # remain the safe fallback when the current database key set is unknown.
+        pending_rows = rows
+        stats["existing_key_lookup"] = "failed_fallback_to_idempotent_upsert"
+        stats["existing_key_lookup_error"] = str(lookup_exc)[:300]
+        stats["pending_publish"] = len(pending_rows)
+    if not pending_rows:
+        record_publish_status("success", stats, 0)
+        print(json.dumps({"ok": True, **stats, "published": 0, "rows_sent": 0}, ensure_ascii=False), flush=True)
+        return
+    try:
+        published = publish(pending_rows, url + "/functions/v1/nar-model-snapshot-archive", token, anon_key)
     except Exception as exc:
         record_publish_status("failed", stats, 0, str(exc))
         raise
     record_publish_status("success", stats, published)
-    print(json.dumps({"ok": True, **stats, "published": published}, ensure_ascii=False), flush=True)
+    print(json.dumps({"ok": True, **stats, "published": published, "rows_sent": len(pending_rows)}, ensure_ascii=False), flush=True)
 
 
 if __name__ == "__main__":
