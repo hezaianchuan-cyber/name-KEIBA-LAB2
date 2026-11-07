@@ -179,7 +179,8 @@ class G4SupabasePaginationTests(unittest.TestCase):
             },
         ]
 
-        with patch.object(g4, "SUPABASE_URL", "https://example.supabase.co"), \
+        with patch.dict("os.environ", {"KEIBA_G4_READ_MODEL_SNAPSHOT_TABLE": "1"}), \
+             patch.object(g4, "SUPABASE_URL", "https://example.supabase.co"), \
              patch.object(g4, "SUPABASE_KEY", "test-key"), \
              patch.object(g4.urllib.request, "urlopen", side_effect=fake_urlopen):
             _rows, diagnostics = g4.load_supabase_snapshots(model_rows)
