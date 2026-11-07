@@ -101,6 +101,26 @@ class CaptureAuditTests(unittest.TestCase):
         self.assertIn('captured_at: new Date(now).toISOString(),\n          scheduled_post_time:', source)
 
 
+    def test_supabase_capture_retries_transient_archive_and_plan_attach_failures(self):
+        source = (
+            Path(capture.__file__).resolve().parents[1]
+            / "supabase" / "functions" / "nar-odds-capture" / "index.ts"
+        ).read_text(encoding="utf-8")
+        self.assertIn("for (let attempt = 1; attempt <= 3; attempt++)", source)
+        self.assertIn("NAR archive fetch failed after 3 attempts", source)
+        self.assertIn("for (let attempt = 1; attempt <= 3 && !attached; attempt++)", source)
+        self.assertIn("Could not attach auto ticket plan after 3 attempts", source)
+
+    def test_supabase_shadow_plan_is_capped_at_twelve_and_respects_readiness(self):
+        source = (
+            Path(capture.__file__).resolve().parents[1]
+            / "supabase" / "functions" / "nar-odds-capture" / "index.ts"
+        ).read_text(encoding="utf-8")
+        self.assertIn("strategy.selectTickets(pricedCandidates,12,0.5,0)", source)
+        self.assertIn("selectedShadow.slice(0,12)", source)
+        self.assertIn("base.shadowTicketSets", source)
+        self.assertIn('"RACE_QUALITY_GATE"', source)
+
     def test_capture_script_has_exactly_one_main_entrypoint(self):
         source = Path(capture.__file__).read_text(encoding="utf-8")
         self.assertEqual(source.count('if __name__ == "__main__":'), 1)
