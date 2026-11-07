@@ -308,74 +308,85 @@ def load_supabase_snapshots(model_rows):
     offset = 0
     # Keep JSONB response pages small and match the composite
     # (race_date, captured_at DESC, id DESC) index to avoid API timeouts.
-    page_size = 10
+    page_size = 20
     try:
-        model_table_rows = []
-        model_offset = 0
-        model_page_size = 10
-        try:
-            while True:
-                model_query = urllib.parse.urlencode([
-                    ("select", "race_id,race_date,captured_at,model_temperature,model_version,predictions,candidate_combinations"),
-                    ("race_date", "gte." + start_date),
-                    ("race_date", "lte." + end_date),
-                    ("order", "race_date.asc,captured_at.desc"),
-                    ("limit", str(model_page_size)),
-                    ("offset", str(model_offset)),
-                ])
-                model_request = urllib.request.Request(
-                    SUPABASE_URL + "/rest/v1/model_prediction_snapshots?" + model_query,
-                    headers={
-                        "apikey": SUPABASE_KEY,
-                        "Authorization": "Bearer " + SUPABASE_KEY,
-                        "Accept": "application/json",
-                        "User-Agent": "KEIBA-LAB-G4/1.0",
-                    },
-                )
-                model_page = fetch_json_with_retry(model_request, timeout=30)
-                if not isinstance(model_page, list):
-                    raise RuntimeError("Supabase model_prediction_snapshots response was not a JSON array")
-                model_table_rows.extend(model_page)
-                if len(model_page) < model_page_size:
-                    break
-                model_offset += model_page_size
-            supabase_model_rows = []
-            for item in model_table_rows:
-                key = race_key(item.get("race_id"))
-                captured = parse_time(item.get("captured_at"))
-                if not key or captured is None:
-                    continue
-                date = "".join(ch for ch in str(item.get("race_date") or "") if ch.isdigit())
-                supabase_model_rows.append({
-                    "race_key": key,
-                    "date": date,
-                    "captured_at": item.get("captured_at"),
-                    "model_temperature": item.get("model_temperature"),
-                    "model_version": item.get("model_version"),
-                    "predictions": item.get("predictions") or [],
-                    "candidate_combinations": item.get("candidate_combinations") or [],
-                })
-            # Supabase is authoritative for an identical (race, capture time),
-            # but must not erase GitHub archive-only races. During rollout the
-            # database can be only partially populated, including newcomer races.
-            models_by_race = merge_model_snapshot_sources(model_rows, supabase_model_rows)
-            supabase_model_keys = {
-                key for key in (race_key(row.get("race_key")) for row in supabase_model_rows) if key
-            }
+        if os.environ.get("KEIBA_G4_READ_MODEL_SNAPSHOT_TABLE", "0") == "1":
+            model_table_rows = []
+            model_offset = 0
+            model_page_size = 10
+            try:
+                while True:
+                    model_query = urllib.parse.urlencode([
+                        ("select", "race_id,race_date,captured_at,model_temperature,model_version,predictions,candidate_combinations"),
+                        ("race_date", "gte." + start_date),
+                        ("race_date", "lte." + end_date),
+                        ("order", "race_date.asc,captured_at.desc"),
+                        ("limit", str(model_page_size)),
+                        ("offset", str(model_offset)),
+                    ])
+                    model_request = urllib.request.Request(
+                        SUPABASE_URL + "/rest/v1/model_prediction_snapshots?" + model_query,
+                        headers={
+                            "apikey": SUPABASE_KEY,
+                            "Authorization": "Bearer " + SUPABASE_KEY,
+                            "Accept": "application/json",
+                            "User-Agent": "KEIBA-LAB-G4/1.0",
+                        },
+                    )
+                    model_page = fetch_json_with_retry(model_request, timeout=30)
+                    if not isinstance(model_page, list):
+                        raise RuntimeError("Supabase model_prediction_snapshots response was not a JSON array")
+                    model_table_rows.extend(model_page)
+                    if len(model_page) < model_page_size:
+                        break
+                    model_offset += model_page_size
+                supabase_model_rows = []
+                for item in model_table_rows:
+                    key = race_key(item.get("race_id"))
+                    captured = parse_time(item.get("captured_at"))
+                    if not key or captured is None:
+                        continue
+                    date = "".join(ch for ch in str(item.get("race_date") or "") if ch.isdigit())
+                    supabase_model_rows.append({
+                        "race_key": key,
+                        "date": date,
+                        "captured_at": item.get("captured_at"),
+                        "model_temperature": item.get("model_temperature"),
+                        "model_version": item.get("model_version"),
+                        "predictions": item.get("predictions") or [],
+                        "candidate_combinations": item.get("candidate_combinations") or [],
+                    })
+                # Supabase is authoritative for an identical (race, capture time),
+                # but must not erase GitHub archive-only races. During rollout the
+                # database can be only partially populated, including newcomer races.
+                models_by_race = merge_model_snapshot_sources(model_rows, supabase_model_rows)
+                supabase_model_keys = {
+                    key for key in (race_key(row.get("race_key")) for row in supabase_model_rows) if key
+                }
+                diagnostics["github_model_snapshot_rows"] = github_model_rows
+                diagnostics["github_model_snapshot_races"] = len(github_model_keys)
+                diagnostics["supabase_model_snapshot_rows"] = len(supabase_model_rows)
+                diagnostics["supabase_model_snapshot_races"] = len(supabase_model_keys)
+                diagnostics["github_fallback_only_races"] = len(github_model_keys - supabase_model_keys)
+                diagnostics["merged_model_snapshot_rows"] = sum(len(values) for values in models_by_race.values())
+                if model_table_rows:
+                    diagnostics["model_snapshot_table_status"] = "loaded_merged_with_github_fallback"
+                    diagnostics["model_snapshot_table_rows"] = len(model_table_rows)
+                else:
+                    diagnostics["model_snapshot_table_status"] = "empty_using_github_fallback"
+            except Exception as model_exc:
+                diagnostics["model_snapshot_table_status"] = "unavailable_using_github_fallback"
+                diagnostics["model_snapshot_table_error"] = str(model_exc)[:300]
+    
+        else:
+            diagnostics["model_snapshot_table_status"] = "skipped_github_archive_primary"
+            diagnostics["model_snapshot_table_rows"] = 0
             diagnostics["github_model_snapshot_rows"] = github_model_rows
             diagnostics["github_model_snapshot_races"] = len(github_model_keys)
-            diagnostics["supabase_model_snapshot_rows"] = len(supabase_model_rows)
-            diagnostics["supabase_model_snapshot_races"] = len(supabase_model_keys)
-            diagnostics["github_fallback_only_races"] = len(github_model_keys - supabase_model_keys)
-            diagnostics["merged_model_snapshot_rows"] = sum(len(values) for values in models_by_race.values())
-            if model_table_rows:
-                diagnostics["model_snapshot_table_status"] = "loaded_merged_with_github_fallback"
-                diagnostics["model_snapshot_table_rows"] = len(model_table_rows)
-            else:
-                diagnostics["model_snapshot_table_status"] = "empty_using_github_fallback"
-        except Exception as model_exc:
-            diagnostics["model_snapshot_table_status"] = "unavailable_using_github_fallback"
-            diagnostics["model_snapshot_table_error"] = str(model_exc)[:300]
+            diagnostics["supabase_model_snapshot_rows"] = 0
+            diagnostics["supabase_model_snapshot_races"] = 0
+            diagnostics["github_fallback_only_races"] = len(github_model_keys)
+            diagnostics["merged_model_snapshot_rows"] = github_model_rows
         for values in models_by_race.values():
             values.sort(key=lambda item: item[0])
         # Precompute capture timestamps once. The former per-odds-row list
@@ -491,7 +502,7 @@ def load_supabase_snapshots(model_rows):
             return day_output, day_diagnostics
 
         from concurrent.futures import ThreadPoolExecutor
-        worker_count = min(2, max(1, len(day_list)))
+        worker_count = min(1, max(1, len(day_list)))
         diagnostics["supabase_odds_days_requested"] = len(day_list)
         diagnostics["supabase_odds_fetch_parallelism"] = worker_count
         with ThreadPoolExecutor(max_workers=worker_count) as executor:
@@ -1385,7 +1396,7 @@ def main():
         "performance": {
             "stage_seconds": stage_timings,
             "total_seconds": round(time.perf_counter() - run_started, 3),
-            "optimization": "bisect_right latest-prior model lookup plus bounded two-worker per-day odds retrieval with 10-row JSONB pages; outputs and selection rules unchanged",
+            "optimization": "bisect_right latest-prior model lookup plus single-worker per-day odds retrieval with 20-row JSONB pages and GitHub-archive-primary model snapshots; outputs and selection rules unchanged",
         },
         "feature": "G4_real_preoff_odds_evaluation",
         "status": "G4_passed" if g4_pass else (
