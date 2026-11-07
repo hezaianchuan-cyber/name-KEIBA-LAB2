@@ -110,8 +110,8 @@ jobs:
             python3 scripts/publish_model_snapshots.py || echo "Supabase model snapshot publish failed; GitHub gzip archive remains available as fallback."
             python3 scripts/build_auto_ticket_plans.py
             git add data/odds-snapshots data/odds-capture-status.json data/auto-ticket-plans.json
-            # Publish the official ZIP archives consumed by the web race/runner importer.
-            git add -f data/latest-race.zip data/latest-odds.zip
+            # The separate nar-data.yml workflow publishes the large official ZIPs
+            # every 15 minutes; keep this frequent capture commit to compact JSON only.
             if git diff --cached --quiet; then
               echo "No new snapshot or status changes."
               exit 0
