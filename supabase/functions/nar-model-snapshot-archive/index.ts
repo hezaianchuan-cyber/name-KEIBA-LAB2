@@ -61,7 +61,7 @@ Deno.serve(async (request: Request) => {
           Prefer: "resolution=ignore-duplicates,return=representation",
         },
         body: JSON.stringify(valid),
-        signal: AbortSignal.timeout(20000),
+        signal: AbortSignal.timeout(45000),
       },
     );
     if (!response.ok) {
