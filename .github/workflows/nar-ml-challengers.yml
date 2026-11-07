@@ -1,0 +1,59 @@
+name: Research CatBoost and LightGBM challengers
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/nar_ml_challenger_backtest.py'
+      - 'scripts/nar_backtest.py'
+      - '.github/workflows/nar-ml-challengers.yml'
+permissions:
+  contents: write
+concurrency:
+  group: nar-ml-challengers
+  cancel-in-progress: false
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install research-only ML dependencies
+        run: python -m pip install --disable-pip-version-check numpy catboost lightgbm
+      - name: Compile and test research script
+        run: python -m py_compile scripts/nar_ml_challenger_backtest.py scripts/nar_backtest.py
+      - name: Run independent ML challenger backtest
+        env:
+          NAR_CACHE_DIR: .cache/nar-monthly
+          NAR_PARSED_CACHE_DIR: .cache/nar-parsed
+        run: python scripts/nar_ml_challenger_backtest.py
+      - name: Upload full ML comparison report
+        uses: actions/upload-artifact@v4
+        with:
+          name: nar-ml-challenger-backtest
+          path: data/ml-challenger-backtest.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish aggregate research report
+        shell: bash
+        run: |
+          set -e
+          test -s data/ml-challenger-backtest.json
+          cp data/ml-challenger-backtest.json /tmp/ml-challenger-backtest.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/ml-challenger-backtest.json data/ml-challenger-backtest.json
+            git add data/ml-challenger-backtest.json
+            if git diff --cached --quiet; then exit 0; fi
+            git commit -m "Publish research-only CatBoost and LightGBM comparison"
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 2
+          done
+          echo "Failed to publish ML challenger report after five attempts."
+          exit 1
