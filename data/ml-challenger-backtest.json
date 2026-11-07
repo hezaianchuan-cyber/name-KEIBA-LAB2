@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-07T17:08:06.268804+00:00",
+  "generated_at": "2026-11-07T17:26:57.912467+00:00",
   "status": "evaluated",
   "period": {
     "start": "2022-11-07",
@@ -370,6 +370,152 @@
       "top3_capture_rate": 66.168
     }
   ],
+  "market_comparison": {
+    "odds_source": "NAR official monthly confirmed final win odds; retrospective only, not pre-off odds",
+    "holdout_period": {
+      "start": "2026-01-18",
+      "end": "2026-11-06"
+    },
+    "holdout_races_total": 12509,
+    "races_with_at_least_3_odds_matched_runners_and_winner": 11976,
+    "coverage_pct": 95.74,
+    "races_without_eligible_odds": 533,
+    "models": [
+      {
+        "name": "final_odds_market_favorite",
+        "races": 11976,
+        "top1_hits": 5330,
+        "top3_hits": 9231,
+        "top1_rate": 44.506,
+        "top3_capture_rate": 77.079
+      },
+      {
+        "name": "LAB_frozen_baseline_same_odds_races",
+        "races": 11976,
+        "top1_hits": 3582,
+        "top3_hits": 7252,
+        "top1_rate": 29.91,
+        "top3_capture_rate": 60.554
+      },
+      {
+        "name": "LAB_feature_enhanced_CatBoost_same_odds_races",
+        "races": 11976,
+        "top1_hits": 3921,
+        "top3_hits": 7782,
+        "top1_rate": 32.74,
+        "top3_capture_rate": 64.98
+      },
+      {
+        "name": "LAB_feature_enhanced_LightGBM_same_odds_races",
+        "races": 11976,
+        "top1_hits": 3904,
+        "top3_hits": 7751,
+        "top1_rate": 32.599,
+        "top3_capture_rate": 64.721
+      },
+      {
+        "name": "independent_raw_CatBoost_same_odds_races",
+        "races": 11976,
+        "top1_hits": 3973,
+        "top3_hits": 7872,
+        "top1_rate": 33.175,
+        "top3_capture_rate": 65.731
+      },
+      {
+        "name": "independent_raw_LightGBM_same_odds_races",
+        "races": 11976,
+        "top1_hits": 4017,
+        "top3_hits": 7976,
+        "top1_rate": 33.542,
+        "top3_capture_rate": 66.6
+      },
+      {
+        "name": "LambdaRank_independent_raw_same_odds_races",
+        "races": 11976,
+        "top1_hits": 4106,
+        "top3_hits": 8040,
+        "top1_rate": 34.285,
+        "top3_capture_rate": 67.134
+      },
+      {
+        "name": "PlackettLuce_independent_raw_same_odds_races",
+        "races": 11976,
+        "top1_hits": 4014,
+        "top3_hits": 7912,
+        "top1_rate": 33.517,
+        "top3_capture_rate": 66.065
+      }
+    ],
+    "odds_downloads": [
+      {
+        "month": "2026-01",
+        "bytes": 661,
+        "win_odds_rows": 0,
+        "odds_cache": "miss"
+      },
+      {
+        "month": "2026-02",
+        "bytes": 8073838,
+        "win_odds_rows": 9626,
+        "odds_cache": "miss"
+      },
+      {
+        "month": "2026-03",
+        "bytes": 10293831,
+        "win_odds_rows": 13224,
+        "odds_cache": "miss"
+      },
+      {
+        "month": "2026-04",
+        "bytes": 9961302,
+        "win_odds_rows": 12531,
+        "odds_cache": "miss"
+      },
+      {
+        "month": "2026-05",
+        "bytes": 10901845,
+        "win_odds_rows": 14076,
+        "odds_cache": "miss"
+      },
+      {
+        "month": "2026-06",
+        "bytes": 10481574,
+        "win_odds_rows": 13604,
+        "odds_cache": "miss"
+      },
+      {
+        "month": "2026-07",
+        "bytes": 10905182,
+        "win_odds_rows": 13940,
+        "odds_cache": "miss"
+      },
+      {
+        "month": "2026-08",
+        "bytes": 9519221,
+        "win_odds_rows": 12602,
+        "odds_cache": "miss"
+      },
+      {
+        "month": "2026-09",
+        "bytes": 10925912,
+        "win_odds_rows": 14047,
+        "odds_cache": "miss"
+      },
+      {
+        "month": "2026-10",
+        "bytes": 11633366,
+        "win_odds_rows": 14725,
+        "odds_cache": "miss"
+      },
+      {
+        "month": "2026-11",
+        "bytes": 2696612,
+        "win_odds_rows": 3006,
+        "odds_cache": "current_month_refresh"
+      }
+    ],
+    "policy": "Every listed model and final-odds favorite is evaluated on exactly the same holdout races and the same matched runner subset. Market odds are used only as a retrospective benchmark, never as model input or a live betting price."
+  },
   "feature_importance": {
     "LAB_feature_enhanced_CatBoost": [
       {
@@ -728,6 +874,8 @@
     "LAB_feature_enhanced includes LAB score components; independent_raw excludes all LAB-derived scores.",
     "LambdaRank and Plackett-Luce use independent_raw features only.",
     "Top1/Top3 are ranking metrics, not profitability or betting-return evidence.",
+    "Market benchmark uses official confirmed final odds retrospectively, not odds available before the race.",
+    "Horse history is currently keyed by normalized horse name; same-name horse identity collisions require a source-level identifier audit.",
     "Feature importance is model-native gain/importance, not causal attribution.",
     "All same-day race results are withheld until that date's feature generation is complete.",
     "All category mappings and PL scaling are fit on training data only; early stopping uses development only."
