@@ -9,6 +9,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import math
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -33,6 +34,27 @@ RAW_NUMERIC = [
 CATEGORICAL = ["venue", "surface", "going", "jockey", "sire"]
 LAB_FEATURES = LAB_NUMERIC + ["venue", "surface", "going"]
 RAW_FEATURES = RAW_NUMERIC + CATEGORICAL
+
+
+def horse_history_key(h):
+    """Build a conservative identity key from official NAR runner attributes.
+
+    The published monthly CSV has no permanent horse ID. Use birth date, sex,
+    sire, dam and name when complete; isolate incomplete identities per race
+    rather than silently merging uncertain horses by name.
+    """
+    name = nb.norm(h.get("name"))
+    birth = re.sub(r"\D", "", str(h.get("birth_date") or ""))
+    sex = nb.norm(h.get("sex"))
+    sire = nb.norm(h.get("sire"))
+    dam = nb.norm(h.get("dam"))
+    if len(birth) == 8 and name and sex and sire and dam:
+        return "identified|" + "|".join((birth, sex, sire, dam, name)), "strong"
+    if len(birth) == 8 and name:
+        return "partial|" + "|".join((birth, sex, sire, dam, name)), "partial"
+    if name and sire and dam:
+        return "partial|" + "|".join((sex, sire, dam, name)), "partial"
+    return "isolated|" + str(h.get("race_key") or "") + "|" + str(h.get("no") or ""), "isolated"
 
 
 def mean_or(values, default=0.0):
@@ -66,12 +88,13 @@ def build_rows(races, horses):
             if len(field) < 3:
                 continue
             for h in field:
-                _, parts = nb.score_runner(h, history, sire_stats, jockey_stats, race, BASE_WEIGHTS)
+                history_key, identity_quality = horse_history_key({**h, "race_key": "|".join(map(str, race["key"]))})
+                _, parts = nb.score_runner({**h, "name": history_key}, history, sire_stats, jockey_stats, race, BASE_WEIGHTS)
                 score = sum(BASE_WEIGHTS[k] * parts[k] for k in BASE_WEIGHTS)
                 finish = nb.rank_value(h.get("finish"))
                 if finish is None:
                     continue
-                past = history.get(h["name"], [])
+                past = history.get(history_key, [])
                 recent = past[-5:]
                 venue_past = [x for x in past if x.get("venue") == race.get("venue")]
                 distance = nb.number(race.get("distance"))
@@ -95,6 +118,7 @@ def build_rows(races, horses):
                 ss = sire_stats[h.get("sire")] if h.get("sire") else {"runs": 0, "top3": 0, "wins": 0}
                 row = {
                     "race_key": "|".join(map(str, race["key"])),
+                    "horse_identity_quality": identity_quality,
                     "date": race["date"].isoformat(),
                     "horse_no": str(h.get("no", "")),
                     "finish": finish, "winner": int(finish == 1),
@@ -153,7 +177,8 @@ def build_rows(races, horses):
                     jockey_stats[jockey]["runs"] += 1
                     jockey_stats[jockey]["top3"] += int(runner["finish"] <= 3)
                     jockey_stats[jockey]["wins"] += int(runner["finish"] == 1)
-                history[runner["name"]].append({
+                history_key, _ = horse_history_key({**runner, "race_key": "|".join(map(str, race["key"]))})
+                history[history_key].append({
                     **performance.get(runner["no"], {}),
                     "date": race["date"], "venue": race["venue"],
                     "distance": race.get("distance"), "going": race.get("going"),
@@ -428,6 +453,12 @@ def main():
                   "development_end": dates[cut_dev-1].isoformat(),
                   "holdout_start": dates[cut_dev].isoformat(), "holdout_end": dates[-1].isoformat(),
                   "policy": "Chronological 70/10/20 split; early stopping uses development only; holdout untouched."},
+        "identity_audit": {
+            "strong_identity_rows": sum(1 for r in rows if r.get("horse_identity_quality") == "strong"),
+            "partial_identity_rows": sum(1 for r in rows if r.get("horse_identity_quality") == "partial"),
+            "isolated_identity_rows": sum(1 for r in rows if r.get("horse_identity_quality") == "isolated"),
+            "policy": "No permanent NAR horse ID is present in the published monthly runner CSV; complete composite identities are used where possible and incomplete identities are isolated per race to prevent cross-horse history contamination."
+        },
         "data": {"races": len(races), "runner_rows": len(rows), "dates": len(dates),
                  "train_races": len(train_groups), "development_races": len(dev_groups),
                  "holdout_races": len(test_groups), "downloaded_months": downloads},
@@ -443,7 +474,7 @@ def main():
             "LambdaRank and Plackett-Luce use independent_raw features only.",
             "Top1/Top3 are ranking metrics, not profitability or betting-return evidence.",
             "Market benchmark uses official confirmed final odds retrospectively, not odds available before the race.",
-            "Horse history is currently keyed by normalized horse name; same-name horse identity collisions require a source-level identifier audit.",
+            "NAR monthly CSV has no permanent horse ID; history uses a conservative composite of birth date, sex, sire, dam and name, isolating incomplete identities per race.",
             "Feature importance is model-native gain/importance, not causal attribution.",
             "All same-day race results are withheld until that date's feature generation is complete.",
             "All category mappings and PL scaling are fit on training data only; early stopping uses development only."
