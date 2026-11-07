@@ -133,17 +133,49 @@ def load_outcomes():
         for race in day.get("races", []):
             records.append((race.get("venue"), date, race.get("race"), race.get("payouts") or {}))
 
-    # The rolling official payout archive can lag the current race day. Use the
-    # immutable result table as a second official source for every snapshot date.
-    snapshot_dates = {
-        path.name.split(".")[0].replace("-", "")
-        for path in SNAPSHOT_DIR.glob("*.jsonl.gz")
-        if len(path.name.split(".")[0].replace("-", "")) == 8
-    }
+    # Read race keys from the captured snapshot archive and query Supabase only
+    # for dates whose required official win/trio payouts are missing locally.
+    snapshot_races_by_date = {}
+    for path in sorted(SNAPSHOT_DIR.glob("*.jsonl.gz")):
+        try:
+            with gzip.open(path, "rt", encoding="utf-8") as stream:
+                for line in stream:
+                    try:
+                        record = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    key = race_key(record.get("race_key"))
+                    if key:
+                        snapshot_races_by_date.setdefault(key.split("|")[1], set()).add(key)
+        except OSError:
+            continue
+    snapshot_dates = set(snapshot_races_by_date)
+    archive_result_keys = set()
+    for venue_value, date, number, payouts in records:
+        if not (payouts.get("win") and payouts.get("trio")):
+            continue
+        venue = norm_venue(venue_value)
+        if venue and number is not None:
+            try:
+                archive_result_keys.add(venue + "|" + date + "|" + str(int(number)))
+            except (TypeError, ValueError):
+                continue
+    missing_result_dates = sorted(
+        date for date, race_keys in snapshot_races_by_date.items()
+        if not race_keys.issubset(archive_result_keys)
+    )
+    # If the snapshot files could not be read, preserve the previous safe
+    # behavior and query every date rather than silently skipping outcomes.
+    if not snapshot_dates:
+        missing_result_dates = sorted({
+            path.name.split(".")[0].replace("-", "")
+            for path in SNAPSHOT_DIR.glob("*.jsonl.gz")
+            if len(path.name.split(".")[0].replace("-", "")) == 8
+        })
     result_rows = 0
     result_errors = []
     if SUPABASE_URL and SUPABASE_KEY:
-        for date in sorted(snapshot_dates):
+        for date in missing_result_dates:
             date_iso = date[:4] + "-" + date[4:6] + "-" + date[6:8]
             offset = 0
             while True:
