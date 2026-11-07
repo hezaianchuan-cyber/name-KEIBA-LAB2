@@ -351,6 +351,9 @@ Deno.serve(async (request) => {
       const rows = odds.get(key);
       if (!rows?.length) continue;
       inserts.push({
+        // Keep the indexed column aligned with the exact capture timestamp
+        // stored in odds_data; otherwise DB insert latency skews T-minus.
+        captured_at: new Date(now).toISOString(),
         race_id: key,
         race_date: `${race.date.slice(0, 4)}-${race.date.slice(4, 6)}-${race.date.slice(6, 8)}`,
         venue: race.venue,

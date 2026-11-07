@@ -74,6 +74,23 @@ def parse_time(value):
     except (TypeError, ValueError):
         return None
 
+def supabase_odds_capture_time(item):
+    """Prefer the collector's source timestamp over the database insert timestamp."""
+    odds_data = item.get("odds_data") or {}
+    return parse_time(odds_data.get("captured_at")) or parse_time(item.get("captured_at"))
+
+
+def supabase_odds_minutes_to_post(item, captured):
+    """Derive T-minus from the same timestamp used to identify the odds snapshot."""
+    odds_data = item.get("odds_data") or {}
+    post = parse_time(odds_data.get("scheduled_post_time"))
+    if post is not None and captured is not None:
+        return (post - captured).total_seconds() / 60.0
+    try:
+        return float(odds_data.get("minutes_to_post"))
+    except (TypeError, ValueError):
+        return None
+
 
 def load_outcomes():
     if not PAYOUTS_FILE.exists():
@@ -284,7 +301,8 @@ def load_supabase_snapshots(model_rows):
                 diagnostics["supabase_query_rows"] += len(page)
                 for item in page:
                     key = race_key(item.get("race_id"))
-                    captured = parse_time(item.get("captured_at"))
+                    odds_data = item.get("odds_data") or {}
+                    captured = supabase_odds_capture_time(item)
                     if not key or captured is None:
                         continue
                     if len(diagnostics["supabase_odds_key_samples"]) < 8 and key not in diagnostics["supabase_odds_key_samples"]:
@@ -306,17 +324,11 @@ def load_supabase_snapshots(model_rows):
                     if age_minutes < 0 or age_minutes > MAX_MODEL_AGE_MINUTES:
                         diagnostics["supabase_model_too_old"] += 1
                         continue
-                    odds_data = item.get("odds_data") or {}
                     odds = odds_data.get("odds") or []
                     if not odds:
                         diagnostics["supabase_empty_odds"] += 1
                         continue
-                    minutes = odds_data.get("minutes_to_post")
-                    try:
-                        minutes = float(minutes)
-                    except (TypeError, ValueError):
-                        post = parse_time(odds_data.get("scheduled_post_time"))
-                        minutes = ((post - captured).total_seconds() / 60.0) if post else None
+                    minutes = supabase_odds_minutes_to_post(item, captured)
                     if minutes is None:
                         continue
                     output.append({

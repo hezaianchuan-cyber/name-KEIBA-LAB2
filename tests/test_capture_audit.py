@@ -92,6 +92,15 @@ class CaptureAuditTests(unittest.TestCase):
         self.assertTrue(merged[0]["snapshot_saved"])
         self.assertTrue(merged[0]["supabase_saved"])
 
+    def test_odds_snapshot_insert_sets_indexed_capture_timestamp(self):
+        source = (
+            Path(capture.__file__).resolve().parents[1]
+            / "supabase" / "functions" / "nar-odds-capture" / "index.ts"
+        ).read_text(encoding="utf-8")
+        self.assertIn('captured_at: new Date(now).toISOString(),', source)
+        self.assertIn('captured_at: new Date(now).toISOString(),\n          scheduled_post_time:', source)
+
+
     def test_capture_script_has_exactly_one_main_entrypoint(self):
         source = Path(capture.__file__).read_text(encoding="utf-8")
         self.assertEqual(source.count('if __name__ == "__main__":'), 1)

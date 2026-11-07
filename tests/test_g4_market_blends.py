@@ -190,6 +190,29 @@ class PreoffMarketBlendComparisonTests(unittest.TestCase):
 
 
 
+
+class SupabaseOddsTimestampTests(unittest.TestCase):
+    def test_payload_capture_time_overrides_database_insert_time(self):
+        item = {
+            "captured_at": "2026-11-06T08:22:01.621745+00:00",
+            "odds_data": {
+                "captured_at": "2026-11-06T08:21:01.233Z",
+                "scheduled_post_time": "2026-11-06T08:45:00.000Z",
+                "minutes_to_post": 22.98,
+            },
+        }
+        captured = g4.supabase_odds_capture_time(item)
+        self.assertEqual(captured, g4.parse_time("2026-11-06T08:21:01.233Z"))
+        self.assertAlmostEqual(g4.supabase_odds_minutes_to_post(item, captured), 23.97945, places=4)
+
+    def test_database_timestamp_is_fallback_when_payload_timestamp_is_missing(self):
+        item = {"captured_at": "2026-11-06T08:22:01.621745+00:00", "odds_data": {}}
+        self.assertEqual(
+            g4.supabase_odds_capture_time(item),
+            g4.parse_time("2026-11-06T08:22:01.621745+00:00"),
+        )
+
+
 class ModelSnapshotSourceMergeTests(unittest.TestCase):
     def test_partial_supabase_table_does_not_drop_github_only_races(self):
         github_rows = [
