@@ -147,6 +147,26 @@ def main() -> None:
         for name in research_names if name in models
     }
 
+    # Independent adjacent five-day holdout: compare the immediately preceding
+    # five calendar days using only history strictly earlier than that window.
+    prior_end = start - dt.timedelta(days=1)
+    prior_start = prior_end - dt.timedelta(days=4)
+    prior_dates = [d for d in all_dates if prior_start <= d <= prior_end]
+    prior_train_dates = [d for d in all_dates if d < prior_start]
+    prior_odds, prior_odds_downloads = nb.load_final_odds_archives(prior_start, prior_end)
+    prior_fold = nb.evaluate_holdout_fold(
+        races, horses, payouts, prior_train_dates, prior_dates, prior_odds
+    ) if prior_dates and prior_train_dates else {}
+    prior_models = prior_fold.get("models") or {}
+    prior_candidate_names = (
+        "C_performance_pace", "D2_jockey_distance", "D4_jockey_venue_distance",
+        "weight_jockey_up_1_5", "ablate_jockey", "ablate_distance",
+    )
+    prior_comparison = {
+        name: compact_model(prior_models[name])
+        for name in prior_candidate_names if name in prior_models
+    }
+
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "evaluated",
@@ -205,6 +225,27 @@ def main() -> None:
             "market_favorite": compact_market(market.get("final_odds_favorite")),
         },
         "research_candidate_comparison": research_candidates,
+        "independent_adjacent_window_comparison": {
+            "evaluation_window": {
+                "start": prior_start.isoformat(),
+                "end": prior_end.isoformat(),
+                "race_dates_with_data": [d.isoformat() for d in prior_dates],
+                "races_in_archive": sum(1 for r in races.values() if r["date"] in set(prior_dates)),
+                "races_with_official_win_result": sum(
+                    1 for key, race in races.items()
+                    if race["date"] in set(prior_dates) and (payouts.get(key) or {}).get("win")
+                ),
+            },
+            "training_window": {
+                "start": min(prior_train_dates).isoformat() if prior_train_dates else None,
+                "end": max(prior_train_dates).isoformat() if prior_train_dates else None,
+                "strictly_before_test": bool(prior_train_dates and prior_dates and max(prior_train_dates) < min(prior_dates)),
+            },
+            "final_odds_races": len(prior_odds),
+            "final_odds_downloads": prior_odds_downloads,
+            "candidate_comparison": prior_comparison,
+            "market_rank_diagnostics": prior_fold.get("market_rank_diagnostics"),
+        },
         "diagnostics": {
             "market_rank_diagnostics": fold.get("market_rank_diagnostics"),
             "condition_model_segments": fold.get("condition_model_segments"),
