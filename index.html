@@ -1447,6 +1447,58 @@ function saveInsufficientTicketPlan(raceId,reason,code){
  return saved;
 }
 let manualTicketCurrentRaceId='';
+
+function expandTrioFormation(first,second,third){
+ const groups=[first,second,third].map(values=>[...new Set((values||[]).map(x=>String(x).trim()).filter(x=>/^\\d+$/.test(x)))]);
+ const combos=new Map();
+ for(const a of groups[0])for(const b of groups[1])for(const c of groups[2]){
+  if(new Set([a,b,c]).size!==3)continue;
+  const nums=[a,b,c].sort((x,y)=>Number(x)-Number(y)),key=nums.join('-');
+  combos.set(key,nums);
+ }
+ return [...combos.values()];
+}
+function parseTrioFormationGroup(value){
+ return [...new Set(String(value||'').split(/[、,，\\s]+/).map(x=>x.trim()).filter(Boolean))];
+}
+function latestTrioOddsFor(raceId,comb){
+ const wanted=comb.map(String).sort((a,b)=>Number(a)-Number(b)).join('-');
+ return [...(minuteOddsRows||[]),...(db.odds||[])].filter(o=>{
+  if(String(o.id)!==String(raceId)||Number(o.odds)<=0)return false;
+  const label=norm(o.type);
+  if(!label.includes(norm('3連複'))&&!label.includes(norm('三連複')))return false;
+  const nums=[o.n1,o.n2,o.n3].filter(x=>String(x??'').trim()!=='').map(String).sort((a,b)=>Number(a)-Number(b));
+  return nums.join('-')===wanted;
+ }).sort((a,b)=>String(b.capturedAt||'').localeCompare(String(a.capturedAt||'')))[0]||null;
+}
+function buildTrioFormations(rows){
+ const normalized=[...new Set((rows||[]).map(x=>String(x.comb||'').split('-').map(s=>s.trim()).sort((a,b)=>Number(a)-Number(b)).join('-')).filter(x=>/^\\d+-\\d+-\\d+$/.test(x)))];
+ const remaining=new Set(normalized),formations=[];
+ const numbers=[...new Set(normalized.flatMap(x=>x.split('-')))].sort((a,b)=>Number(a)-Number(b));
+ const subsets=arr=>{const out=[];for(let mask=1;mask<(1<<arr.length);mask++){const group=arr.filter((_,i)=>mask&(1<<i));out.push(group);}return out;};
+ while(remaining.size>=2){
+  let best=null;
+  for(const axis of numbers){
+   const edgeSet=new Set([...remaining].filter(key=>key.split('-').includes(axis)).map(key=>key.split('-').filter(n=>n!==axis).sort((a,b)=>Number(a)-Number(b)).join('|')));
+   const vertices=[...new Set([...edgeSet].flatMap(x=>x.split('|')))].sort((a,b)=>Number(a)-Number(b));
+   const groups=subsets(vertices);
+   for(const second of groups)for(const third of groups){
+    const generated=new Set();let valid=true;
+    for(const b of second)for(const c of third){
+     if(b===c)continue;
+     const pair=[b,c].sort((a,z)=>Number(a)-Number(z)).join('|');
+     if(!edgeSet.has(pair)){valid=false;break;}
+     generated.add([axis,b,c].sort((a,z)=>Number(a)-Number(z)).join('-'));
+    }
+    if(!valid||generated.size<2||[...generated].some(key=>!remaining.has(key)))continue;
+    if(!best||generated.size>best.combos.length)best={axis,second,third,combos:[...generated].sort()};
+   }
+  }
+  if(!best)break;
+  formations.push(best);best.combos.forEach(key=>remaining.delete(key));
+ }
+ return {formations,remaining:[...remaining].sort()};
+}
 function renderManualTicketEditor(plan,field){
  const editor=$('manualTicketEditor');if(!editor)return;
  manualTicketCurrentRaceId=String(plan?.raceId||'');
