@@ -80,9 +80,11 @@ def shadow_tickets(predictions, odds_rows=None, count=12):
         candidates.append({"key":key,"probability":probability,"odds":price,
                            "ev":probability*price if price is not None else None})
     probability_order=sorted(candidates,key=lambda x:(-x["probability"],x["key"]))
-    probability_rank={row["key"]:rank for rank,row in enumerate(probability_order,1)}
     priced=[row for row in candidates if row["odds"] is not None]
     if priced:
+        # Rank probability and EV over the same odds-matched candidate set.
+        priced_probability_order=sorted(priced,key=lambda x:(-x["probability"],x["key"]))
+        probability_rank={row["key"]:rank for rank,row in enumerate(priced_probability_order,1)}
         ev_order=sorted(priced,key=lambda x:(-x["ev"],-x["probability"],x["key"]))
         ev_rank={row["key"]:rank for rank,row in enumerate(ev_order,1)}
         selected=sorted(priced,key=lambda x:(probability_rank[x["key"]]+ev_rank[x["key"]],
