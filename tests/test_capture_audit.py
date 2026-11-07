@@ -120,7 +120,8 @@ class CaptureAuditTests(unittest.TestCase):
         self.assertIn("selectedShadow.slice(0,12)", source)
         self.assertIn("base.shadowTicketSets", source)
         self.assertIn('"RACE_QUALITY_GATE"', source)
-        self.assertIn("const modelFresh=modelAgeMinutes!==null&&modelAgeMinutes<=15", source)
+        self.assertIn("modelCapturedMs<=oddsCapturedMs", source)
+        self.assertIn("modelAgeMinutes>=0&&modelAgeMinutes<=15", source)
         self.assertIn('"MODEL_SNAPSHOT_STALE"', source)
 
     def test_preoff_capture_does_not_recommit_large_source_archives(self):
