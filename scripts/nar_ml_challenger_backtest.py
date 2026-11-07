@@ -52,8 +52,6 @@ def horse_history_key(h):
         return "identified|" + "|".join((birth, sex, sire, dam, name)), "strong"
     if len(birth) == 8 and name:
         return "partial|" + "|".join((birth, sex, sire, dam, name)), "partial"
-    if name and sire and dam:
-        return "partial|" + "|".join((sex, sire, dam, name)), "partial"
     return "isolated|" + str(h.get("race_key") or "") + "|" + str(h.get("no") or ""), "isolated"
 
 
