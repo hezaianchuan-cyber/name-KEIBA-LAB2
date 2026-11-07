@@ -283,6 +283,26 @@ def allocate_for_race(candidates, mode):
     raise ValueError(f"Unknown allocation mode: {mode}")
 
 
+def reweight_races(races, market_weight):
+    """Re-rank the identical LAB/market candidate universe at a tested blend weight."""
+    weight = min(1.0, max(0.0, float(market_weight)))
+    output = []
+    for race in races:
+        candidates = []
+        for source in race["candidates"]:
+            row = dict(source)
+            lab = float(row["lab_probability"])
+            market = float(row["market_probability"])
+            row["fused_probability"] = (1.0 - weight) * lab + weight * market
+            row["expected_value"] = row["fused_probability"] * float(row["odds"])
+            candidates.append(row)
+        candidates.sort(key=lambda row: (
+            -row["fused_probability"], -row["expected_value"], row["combo"]
+        ))
+        output.append({**race, "candidates": candidates})
+    return output
+
+
 def evaluate_races(races, mode):
     per_race = []
     for race in races:
@@ -403,6 +423,15 @@ def run_backtest(snapshot_dir=SNAPSHOT_DIR, payouts_file=PAYOUTS_FILE, output_fi
             evaluate_races(races, "balanced_30"),
             evaluate_races(races, "balanced_40"),
         ] if has_data else []),
+        "market_fusion_weight_sweep": ([
+            {
+                "market_weight": weight,
+                "lab_weight": round(1.0 - weight, 2),
+                **evaluate_races(reweight_races(races, weight), "equal"),
+            }
+            for weight in (0.0, 0.25, 0.50, 0.75, 1.0)
+        ] if has_data else []),
+        "fusion_sweep_policy": "Exploratory only: identical matched races, candidate universe, 1,900-yen race budget, and equal allocation across the top 12. Weights are not selected on this same sample for production. Any candidate weight must be chosen on earlier dates and evaluated on later untouched dates.",
         "note": "Research only. A and B use the same selected tickets; variable ticket count and model weight tuning are separate experiments. Stakes are capped at JPY 1,900 per race in 100-yen units; unused budget is not forced into negative-edge tickets. Strategy metrics are preliminary until both the matched-race and matched-race-day thresholds are met; no production strategy is changed by this report.",
     }
     output_file.parent.mkdir(parents=True, exist_ok=True)
