@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-07T15:43:39.825921+00:00",
+  "generated_at": "2026-11-07T17:14:42.042655+00:00",
   "holdout_period": {
     "start": "2025-11-07",
     "end": "2026-11-06"
@@ -33763,7 +33763,7 @@
       ]
     },
     "selected_on_prior_folds": "D4_jockey_venue_distance",
-    "selection_rule": "A candidate must beat C on pooled top-3 coverage and stay within 1.0 ROI percentage point for the 12-ticket 2-4-5 narrowed trio portfolio (19 x 100-yen units allocated across 12 tickets; 1,900 yen per race), and must independently beat C top-3 coverage while staying within the same ROI tolerance in every prior development fold. Among eligible candidates, rank by pooled top3, then top1, then trio ROI. The latest one-year holdout is untouched.",
+    "selection_rule": "A candidate must improve pooled top-1 and top-3 coverage over C, stay within 1.0 ROI percentage point for the 12-ticket 2-4-5 narrowed trio portfolio (19 x 100-yen units; 1,900 yen per race), and independently improve both top-1 and top-3 while staying within the same ROI tolerance in every prior development fold. Among eligible candidates, rank by pooled top3, then top1, then trio ROI. The latest one-year holdout is untouched.",
     "development_roi_tolerance_pp": 1.0,
     "trio_comparison_policy": "12 unique 2-4-5 narrowed tickets per race, 19 x 100-yen units allocated equally, fixed 1,900-yen race budget; identical race set for every model.",
     "holdout_comparison": {
