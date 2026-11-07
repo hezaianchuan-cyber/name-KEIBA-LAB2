@@ -123,6 +123,13 @@ class CaptureAuditTests(unittest.TestCase):
         self.assertIn("const modelFresh=modelAgeMinutes!==null&&modelAgeMinutes<=15", source)
         self.assertIn('"MODEL_SNAPSHOT_STALE"', source)
 
+    def test_preoff_capture_does_not_recommit_large_source_archives(self):
+        root = Path(capture.__file__).resolve().parents[1]
+        preoff = (root / ".github" / "workflows" / "nar-preoff-odds.yml").read_text(encoding="utf-8")
+        archive = (root / ".github" / "workflows" / "nar-data.yml").read_text(encoding="utf-8")
+        self.assertNotIn("git add -f data/latest-race.zip data/latest-odds.zip", preoff)
+        self.assertIn('cron: "*/15 * * * *"', archive)
+
     def test_capture_script_has_exactly_one_main_entrypoint(self):
         source = Path(capture.__file__).read_text(encoding="utf-8")
         self.assertEqual(source.count('if __name__ == "__main__":'), 1)
