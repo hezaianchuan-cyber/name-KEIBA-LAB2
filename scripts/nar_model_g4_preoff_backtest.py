@@ -254,7 +254,7 @@ def load_supabase_snapshots(model_rows):
     offset = 0
     # Keep JSONB response pages small and match the composite
     # (race_date, captured_at DESC, id DESC) index to avoid API timeouts.
-    page_size = 20
+    page_size = 10
     try:
         model_table_rows = []
         model_offset = 0
@@ -439,7 +439,7 @@ def load_supabase_snapshots(model_rows):
             return day_output, day_diagnostics
 
         from concurrent.futures import ThreadPoolExecutor
-        worker_count = min(4, max(1, len(day_list)))
+        worker_count = min(2, max(1, len(day_list)))
         diagnostics["supabase_odds_days_requested"] = len(day_list)
         diagnostics["supabase_odds_fetch_parallelism"] = worker_count
         with ThreadPoolExecutor(max_workers=worker_count) as executor:
@@ -1333,7 +1333,7 @@ def main():
         "performance": {
             "stage_seconds": stage_timings,
             "total_seconds": round(time.perf_counter() - run_started, 3),
-            "optimization": "bisect_right latest-prior model snapshot lookup; outputs and selection rules unchanged",
+            "optimization": "bisect_right latest-prior model lookup plus bounded two-worker per-day odds retrieval with 10-row JSONB pages; outputs and selection rules unchanged",
         },
         "feature": "G4_real_preoff_odds_evaluation",
         "status": "G4_passed" if g4_pass else (
