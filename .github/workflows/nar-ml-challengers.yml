@@ -11,7 +11,7 @@ permissions:
   contents: write
 concurrency:
   group: nar-ml-challengers
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   evaluate:
     runs-on: ubuntu-latest
