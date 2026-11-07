@@ -115,24 +115,34 @@ def load_rows() -> tuple[list[dict], dict]:
 
 
 
-def fetch_existing_keys(rows: list[dict], url: str, anon_key: str) -> set[tuple[str, str]]:
-    """Read already archived race/capture keys so each run uploads only deltas."""
-    if not rows:
-        return set()
-    dates = sorted({str(row.get("race_date") or "") for row in rows if row.get("race_date")})
-    if not dates:
-        return set()
-    existing = set()
-    offset = 0
-    page_size = 1000
-    while True:
+def fetch_existing_keys(
+    rows: list[dict], url: str, anon_key: str, target_new_rows: int = 5, batch_size: int = 25
+) -> set[tuple[str, str]]:
+    """Check exact indexed race/time keys, stopping after enough new rows are found."""
+    ordered = sorted(
+        rows,
+        key=lambda row: (str(row.get("captured_at") or ""), str(row.get("race_id") or "")),
+        reverse=True,
+    )
+    existing: set[tuple[str, str]] = set()
+    found_new = 0
+    for start in range(0, len(ordered), max(1, batch_size)):
+        batch = ordered[start:start + max(1, batch_size)]
+        pairs = [
+            (str(row.get("race_id") or ""), str(row.get("captured_at") or ""))
+            for row in batch
+        ]
+        pairs = [(race_id, captured_at) for race_id, captured_at in pairs if race_id and captured_at]
+        if not pairs:
+            continue
+        clauses = ",".join(
+            f"and(race_id.eq.{race_id},captured_at.eq.{captured_at})"
+            for race_id, captured_at in pairs
+        )
         query = urllib.parse.urlencode([
             ("select", "race_id,captured_at"),
-            ("race_date", "gte." + dates[0]),
-            ("race_date", "lte." + dates[-1]),
-            ("order", "race_date.asc,race_id.asc,captured_at.asc"),
-            ("limit", str(page_size)),
-            ("offset", str(offset)),
+            ("or", "(" + clauses + ")"),
+            ("limit", str(len(pairs))),
         ])
         request = urllib.request.Request(
             url.rstrip("/") + "/rest/v1/model_prediction_snapshots?" + query,
@@ -143,7 +153,7 @@ def fetch_existing_keys(rows: list[dict], url: str, anon_key: str) -> set[tuple[
                 "User-Agent": "KEIBA-LAB-model-snapshot-publisher/1.0",
             },
         )
-        with urllib.request.urlopen(request, timeout=30) as response:
+        with urllib.request.urlopen(request, timeout=20) as response:
             page = json.loads(response.read().decode("utf-8"))
         if not isinstance(page, list):
             raise RuntimeError("Existing model snapshot lookup did not return a JSON array")
@@ -152,9 +162,9 @@ def fetch_existing_keys(rows: list[dict], url: str, anon_key: str) -> set[tuple[
             captured_at = str(item.get("captured_at") or "")
             if race_id and captured_at:
                 existing.add((race_id, captured_at))
-        if len(page) < page_size:
+        found_new += sum(1 for pair in pairs if pair not in existing)
+        if found_new >= max(1, target_new_rows):
             break
-        offset += page_size
     return existing
 
 
