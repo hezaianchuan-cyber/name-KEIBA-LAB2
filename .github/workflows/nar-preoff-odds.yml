@@ -64,14 +64,6 @@ jobs:
       - name: Capture timestamped pre-off snapshots
         run: python3 scripts/capture_nar_odds.py
 
-      - name: Archive locked model snapshots to Supabase
-        continue-on-error: true
-        env:
-          SUPABASE_URL: https://mwiinzmnoludksnfnjaa.supabase.co
-          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13aWluem1ub2x1ZGtzbmZuamFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2OTY3ODEsImV4cCI6MjEwOTI3Mjc4MX0.chF7IsxctYMdKdDz39dwKTCJs-sUQbuO7XafIx5_kic
-          NAR_CAPTURE_TOKEN: ${{ secrets.NAR_CAPTURE_TOKEN }}
-        run: python3 scripts/publish_model_snapshots.py
-
       - name: Build automatic ticket plans from captured snapshots
         run: python3 scripts/build_auto_ticket_plans.py
 
