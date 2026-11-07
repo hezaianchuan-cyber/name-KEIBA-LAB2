@@ -2479,7 +2479,7 @@ class G4SupabasePaginationTests(unittest.TestCase):
         self.assertEqual(model_query["order"], ["race_date.asc,captured_at.desc"])
         self.assertEqual(odds_query["race_date"], ["eq.2026-11-04"])
         self.assertEqual(odds_query["order"], ["captured_at.desc,id.desc"])
-        self.assertEqual(odds_query["limit"], ["20"])
+        self.assertEqual(odds_query["limit"], ["10"])
 
     def test_g4_prefers_persisted_supabase_model_snapshot(self):
         model_rows = [{
