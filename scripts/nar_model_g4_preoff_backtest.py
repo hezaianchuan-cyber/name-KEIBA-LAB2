@@ -312,7 +312,7 @@ def load_supabase_snapshots(model_rows):
     try:
         model_table_rows = []
         model_offset = 0
-        model_page_size = 100
+        model_page_size = 10
         try:
             while True:
                 model_query = urllib.parse.urlencode([
