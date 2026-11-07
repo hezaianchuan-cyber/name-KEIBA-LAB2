@@ -226,9 +226,11 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>):Pro
   base.modelCapturedAt=model.captured_at||null;
   const modelCapturedMs=new Date(String(model.captured_at||"")).getTime();
   const oddsCapturedMs=new Date(capturedAt).getTime();
-  const modelAgeMinutes=Number.isFinite(modelCapturedMs)&&Number.isFinite(oddsCapturedMs)
-    ? Math.max(0,(oddsCapturedMs-modelCapturedMs)/60000) : null;
-  const modelFresh=modelAgeMinutes!==null&&modelAgeMinutes<=15;
+  // Never treat a future-dated model snapshot as age zero: it may be
+  // generated after the odds capture and would violate pre-off chronology.
+  const modelAgeMinutes=Number.isFinite(modelCapturedMs)&&Number.isFinite(oddsCapturedMs)&&modelCapturedMs<=oddsCapturedMs
+    ? (oddsCapturedMs-modelCapturedMs)/60000 : null;
+  const modelFresh=modelAgeMinutes!==null&&modelAgeMinutes>=0&&modelAgeMinutes<=15;
   base.modelAgeMinutes=modelAgeMinutes===null?null:Math.round(modelAgeMinutes*100)/100;
   base.modelFresh=modelFresh;
   const readiness=model.race_readiness||null;
