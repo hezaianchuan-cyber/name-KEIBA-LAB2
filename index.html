@@ -1164,7 +1164,7 @@ function loadLabTicketPlans(){
    }
    // Manual user tickets are independent of LAB-generated and shadow tickets.
    const priorUser=prior.userTickets,nextUser=next.userTickets;
-   if(nextUser.length)merged.userTickets=(useIncoming||!priorUser.length)?nextUser:priorUser;
+   if(nextUser.length&&(!priorUser.length||stamp(next)>=stamp(prior)))merged.userTickets=nextUser;
    else merged.userTickets=priorUser;
    if(merged.dataStatus==='INSUFFICIENT_DATA'&&other.dataStatus!=='INSUFFICIENT_DATA'&&richness(other)>0){
     merged.dataStatus=other.dataStatus;
