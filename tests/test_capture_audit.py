@@ -92,6 +92,10 @@ class CaptureAuditTests(unittest.TestCase):
         self.assertTrue(merged[0]["snapshot_saved"])
         self.assertTrue(merged[0]["supabase_saved"])
 
+    def test_capture_script_has_exactly_one_main_entrypoint(self):
+        source = Path(capture.__file__).read_text(encoding="utf-8")
+        self.assertEqual(source.count('if __name__ == "__main__":'), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
