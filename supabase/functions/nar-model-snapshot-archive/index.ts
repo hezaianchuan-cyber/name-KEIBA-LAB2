@@ -51,7 +51,7 @@ Deno.serve(async (request: Request) => {
       return Response.json({ ok: true, received, upserted: 0, rejected: received });
     }
     const response = await fetch(
-      serviceUrl + "/rest/v1/model_prediction_snapshots?on_conflict=race_id,captured_at",
+      serviceUrl + "/rest/v1/model_prediction_snapshots?on_conflict=race_id,captured_at&select=race_id,captured_at",
       {
         method: "POST",
         headers: {
