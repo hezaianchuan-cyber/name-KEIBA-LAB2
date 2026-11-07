@@ -441,7 +441,7 @@ def parse_month_archive(blob, y, m):
                     if not horse_no or not name:
                         continue
                     horses[key].append({
-                        "no": horse_no, "name": name,
+                        "no": horse_no, "name": name, "race_key": key,
                         "frame_no": rank_value(row[4]) if len(row) > 4 else None,
                         "sex": norm(row[7]) if len(row) > 7 else "",
                         "age": number(row[8]),
