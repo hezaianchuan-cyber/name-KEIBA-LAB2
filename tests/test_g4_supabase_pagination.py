@@ -128,6 +128,33 @@ class G4SupabasePaginationTests(unittest.TestCase):
         self.assertEqual(result, [])
         self.assertEqual(urlopen.call_count, 2)
 
+    def test_github_model_archive_is_primary_without_optional_supabase_read(self):
+        model_rows = [{
+            "race_key": "大井|20261104|1",
+            "date": "20261104",
+            "captured_at": "2026-11-04T10:00:00+09:00",
+            "predictions": [{"horse_no": "1"}, {"horse_no": "2"}, {"horse_no": "3"}],
+        }]
+        requests = []
+
+        def fake_urlopen(request, timeout=30):
+            requests.append(request)
+            return io.BytesIO(b"[]")
+
+        with (
+            patch.dict("os.environ", {"KEIBA_G4_READ_MODEL_SNAPSHOT_TABLE": "0"}),
+            patch.object(g4, "SUPABASE_URL", "https://example.supabase.co"),
+            patch.object(g4, "SUPABASE_KEY", "test-key"),
+            patch.object(g4.urllib.request, "urlopen", side_effect=fake_urlopen),
+        ):
+            rows, diagnostics = g4.load_supabase_snapshots(model_rows)
+
+        self.assertEqual(rows, [])
+        self.assertEqual(len(requests), 1)
+        self.assertTrue(requests[0].full_url.split("?")[0].endswith("/odds_snapshots"))
+        self.assertEqual(diagnostics["model_snapshot_table_status"], "skipped_github_archive_primary")
+        self.assertEqual(diagnostics["github_model_snapshot_races"], 1)
+
     def test_odds_snapshots_are_fetched_per_day_in_small_indexed_pages(self):
         requested = []
 
