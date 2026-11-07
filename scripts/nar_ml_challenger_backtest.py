@@ -103,7 +103,7 @@ def build_rows(races, horses):
     return rows, dates
 
 
-def summarize(name, model, test, categorical=False):
+def summarize(name, model, test, categorical=False, category_maps=None):
     from collections import defaultdict
     grouped = defaultdict(list)
     for row in test:
@@ -115,7 +115,10 @@ def summarize(name, model, test, categorical=False):
         if categorical:
             x = [[r[k] if k in CATEGORICAL else r[k] for k in FEATURES] for r in group]
         else:
-            x = [[r[k] for k in FEATURES] for r in group]
+            # LightGBM requires numeric inputs at prediction time too; apply the
+            # exact train-only category maps used during fitting.
+            x = [[r[k] if k in NUMERIC else category_maps[k].get(r[k], -1)
+                  for k in FEATURES] for r in group]
         probs = model.predict_proba(x)[:, 1]
         order = sorted(range(len(group)), key=lambda z: (-float(probs[z]), group[z]["horse_no"]))
         winner_idx = next((i for i, r in enumerate(group) if r["winner"]), None)
@@ -189,7 +192,8 @@ def main():
         lab["top3_hits"] += int(winner in order[:3])
     for key, hits in (("top1_rate", "top1_hits"), ("top3_capture_rate", "top3_hits")):
         lab[key] = round(100 * lab[hits] / lab["races"], 3) if lab["races"] else None
-    results = [lab, summarize("CatBoost", cat, test, True), summarize("LightGBM", lgb, test)]
+    results = [lab, summarize("CatBoost", cat, test, True),
+               summarize("LightGBM", lgb, test, False, category_maps)]
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "evaluated",
