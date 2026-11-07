@@ -1,4 +1,4 @@
-name: Research CatBoost and LightGBM challengers
+name: Research NAR ML ranking challengers
 on:
   workflow_dispatch:
   push:
@@ -22,10 +22,10 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install research-only ML dependencies
-        run: python -m pip install --disable-pip-version-check numpy scikit-learn catboost lightgbm
+        run: python -m pip install --disable-pip-version-check numpy scipy scikit-learn catboost lightgbm
       - name: Compile and test research script
         run: python -m py_compile scripts/nar_ml_challenger_backtest.py scripts/nar_backtest.py
-      - name: Run independent ML challenger backtest
+      - name: Run NAR ML challenger suite
         env:
           NAR_CACHE_DIR: .cache/nar-monthly
           NAR_PARSED_CACHE_DIR: .cache/nar-parsed
@@ -51,7 +51,7 @@ jobs:
             cp /tmp/ml-challenger-backtest.json data/ml-challenger-backtest.json
             git add data/ml-challenger-backtest.json
             if git diff --cached --quiet; then exit 0; fi
-            git commit -m "Publish research-only CatBoost and LightGBM comparison"
+            git commit -m "Publish research-only NAR ML challenger comparison"
             if git push origin HEAD:main; then exit 0; fi
             sleep 2
           done
