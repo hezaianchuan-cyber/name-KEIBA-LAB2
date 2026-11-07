@@ -2513,7 +2513,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                                *(f"ablate_{feature}" for feature in ablation_features),
                                *FEATURE_WEIGHT_NAMES)
     final_market_stats = {name: {"races":0,"top1_hits":0,"hits":0,"tickets":0,"stake":0,"return":0,"race_count":0,"sum_return_sq":0,"sum_stake_sq":0,"sum_stake_return":0} for name in market_comparison_names}
-    market_rank_diagnostics = new_market_rank_diagnostics()
+    market_rank_diagnostics = {name: new_market_rank_diagnostics() for name in ("C_performance_pace", "D4_jockey_venue_distance")}
     integrated_stats = {
         "confidence_threshold": 0.30,
         "role_blend": 0.10,
@@ -2648,8 +2648,9 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                 available_market = [(float(odds), str(no)) for no, odds in odds_for_race.items()
                                     if str(no) in field_numbers]
                 if available_market:
-                    if model_name == "C_performance_pace":
-                        update_market_rank_diagnostics(market_rank_diagnostics, ranked, field, odds_for_race)
+                    if model_name in ("C_performance_pace", "D4_jockey_venue_distance"):
+                        update_market_rank_diagnostics(
+                            market_rank_diagnostics[model_name], ranked, field, odds_for_race)
                     favorite_no = min(available_market, key=lambda item: (item[0], int(item[1])))[1]
                     selected_label = ("C_model_top_pick" if model_name == "C_performance_pace"
                                       else model_name)
@@ -2915,7 +2916,10 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             "condition_finish_position_segments":condition_finish_segments,
             "confidence_filter_backtest":summarize_confidence_filter_stats(confidence_filter_stats),
             "integrated_strategy_E": integrated_summary,
-            "market_rank_diagnostics": summarize_market_rank_diagnostics(market_rank_diagnostics),
+            "market_rank_diagnostics": {
+                name: summarize_market_rank_diagnostics(bucket)
+                for name, bucket in market_rank_diagnostics.items()
+            },
             "final_odds_market_comparison": {name: summarize_final_market_pair(bucket) for name, bucket in final_market_stats.items()}}
 
 
