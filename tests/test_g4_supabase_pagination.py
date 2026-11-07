@@ -1,3 +1,4 @@
+import gzip
 import json
 import sys
 import tempfile
@@ -23,6 +24,41 @@ class _Response:
 
 
 class G4SupabasePaginationTests(unittest.TestCase):
+    def test_official_results_skip_supabase_when_archive_covers_snapshot_races(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            payouts_file = root / "daily-payouts.json"
+            payouts_file.write_text(json.dumps({"days": [{
+                "date": "2026-11-07",
+                "races": [{
+                    "venue": "佐賀",
+                    "race": 1,
+                    "payouts": {
+                        "win": [{"numbers": ["1"], "pay_100": 180}],
+                        "trio": [{"numbers": ["1", "2", "3"], "pay_100": 920}],
+                    },
+                }],
+            }]}), encoding="utf-8")
+            snapshot_dir = root / "odds-snapshots"
+            snapshot_dir.mkdir()
+            with gzip.open(snapshot_dir / "2026-11-07.jsonl.gz", "wt", encoding="utf-8") as stream:
+                stream.write(json.dumps({"race_key": "佐賀|20261107|1"}) + "\n")
+
+            with (
+                patch.object(g4, "PAYOUTS_FILE", payouts_file),
+                patch.object(g4, "SNAPSHOT_DIR", snapshot_dir),
+                patch.object(g4, "SUPABASE_URL", "https://example.supabase.co"),
+                patch.object(g4, "SUPABASE_KEY", "test-key"),
+                patch.object(g4.urllib.request, "urlopen", side_effect=AssertionError("unexpected Supabase request")),
+            ):
+                outcomes = g4.load_outcomes()
+
+        self.assertIn("佐賀|20261107|1", outcomes)
+        self.assertEqual(outcomes["佐賀|20261107|1"]["winners"], {"1"})
+        self.assertEqual(outcomes["佐賀|20261107|1"]["trio_payouts"], {"1-2-3": 920})
+        self.assertEqual(g4.OUTCOME_DIAGNOSTICS["supabase_result_rows"], 0)
+        self.assertEqual(g4.OUTCOME_DIAGNOSTICS["supabase_result_errors"], [])
+
     def test_official_results_fill_current_day_gap_from_supabase(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
