@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-07T16:48:04.214367+00:00",
+  "generated_at": "2026-11-07T16:59:15.195975+00:00",
   "status": "evaluated",
   "period": {
     "start": "2022-11-07",
@@ -11,12 +11,15 @@
     "development_end": "2026-01-17",
     "holdout_start": "2026-01-18",
     "holdout_end": "2026-11-06",
-    "policy": "70% earliest dates train, next 10% development for early stopping, final 20% untouched holdout"
+    "policy": "Chronological 70/10/20 split; early stopping uses development only; holdout untouched."
   },
   "data": {
     "races": 61729,
     "runner_rows": 616204,
     "dates": 1459,
+    "train_races": 42476,
+    "development_races": 6303,
+    "holdout_races": 12509,
     "downloaded_months": [
       {
         "month": "2022-11",
@@ -265,51 +268,468 @@
       }
     ]
   },
-  "features": [
-    "lab_score",
-    "form",
-    "venue_score",
-    "distance_score",
-    "sire_score",
-    "jockey_score",
-    "age_score",
-    "field_size",
-    "distance_m",
-    "venue",
-    "surface",
-    "going"
-  ],
+  "feature_sets": {
+    "LAB_feature_enhanced": [
+      "lab_score",
+      "form",
+      "venue_score",
+      "distance_score",
+      "sire_score",
+      "jockey_score",
+      "age_score",
+      "field_size",
+      "distance_m",
+      "venue",
+      "surface",
+      "going"
+    ],
+    "independent_raw": [
+      "prior_runs",
+      "career_win_rate",
+      "career_top3_rate",
+      "recent_finish_pct",
+      "recent_top3_rate",
+      "recent_margin_quality",
+      "recent_last3f_rank",
+      "recent_time_per_km",
+      "venue_runs",
+      "venue_top3_rate",
+      "distance_runs",
+      "distance_top3_rate",
+      "going_runs",
+      "going_top3_rate",
+      "jockey_runs",
+      "jockey_top3_rate",
+      "sire_runs",
+      "sire_top3_rate",
+      "age",
+      "field_size",
+      "distance_m",
+      "venue",
+      "surface",
+      "going",
+      "jockey",
+      "sire"
+    ]
+  },
   "models": [
     {
       "name": "LAB_frozen_baseline",
       "races": 12509,
-      "top1_hits": 3764,
-      "top3_hits": 7596,
-      "top1_rate": 30.09,
-      "top3_capture_rate": 60.724
+      "top1_hits": 3768,
+      "top3_hits": 7597,
+      "top1_rate": 30.122,
+      "top3_capture_rate": 60.732
     },
     {
-      "name": "CatBoost",
+      "name": "LAB_feature_enhanced_CatBoost",
       "races": 12509,
-      "top1_rate": 32.672,
-      "top3_capture_rate": 64.825,
-      "top1_hits": 4087,
-      "top3_hits": 8109
+      "top1_hits": 4102,
+      "top3_hits": 8148,
+      "top1_rate": 32.792,
+      "top3_capture_rate": 65.137
     },
     {
-      "name": "LightGBM",
+      "name": "LAB_feature_enhanced_LightGBM",
       "races": 12509,
-      "top1_rate": 32.688,
-      "top3_capture_rate": 64.729,
-      "top1_hits": 4089,
-      "top3_hits": 8097
+      "top1_hits": 4106,
+      "top3_hits": 8115,
+      "top1_rate": 32.824,
+      "top3_capture_rate": 64.873
+    },
+    {
+      "name": "independent_raw_CatBoost",
+      "races": 12509,
+      "top1_hits": 4165,
+      "top3_hits": 8288,
+      "top1_rate": 33.296,
+      "top3_capture_rate": 66.256
+    },
+    {
+      "name": "independent_raw_LightGBM",
+      "races": 12509,
+      "top1_hits": 4200,
+      "top3_hits": 8286,
+      "top1_rate": 33.576,
+      "top3_capture_rate": 66.24
+    },
+    {
+      "name": "LambdaRank_independent_raw",
+      "races": 12509,
+      "top1_hits": 4289,
+      "top3_hits": 8385,
+      "top1_rate": 34.287,
+      "top3_capture_rate": 67.032
+    },
+    {
+      "name": "PlackettLuce_independent_raw",
+      "races": 12509,
+      "top1_hits": 4157,
+      "top3_hits": 8271,
+      "top1_rate": 33.232,
+      "top3_capture_rate": 66.12
     }
   ],
+  "feature_importance": {
+    "LAB_feature_enhanced_CatBoost": [
+      {
+        "feature": "jockey_score",
+        "importance": 20.984769
+      },
+      {
+        "feature": "lab_score",
+        "importance": 20.211435
+      },
+      {
+        "feature": "venue_score",
+        "importance": 16.993687
+      },
+      {
+        "feature": "form",
+        "importance": 11.642093
+      },
+      {
+        "feature": "distance_score",
+        "importance": 7.340666
+      },
+      {
+        "feature": "field_size",
+        "importance": 7.305409
+      },
+      {
+        "feature": "sire_score",
+        "importance": 4.578213
+      },
+      {
+        "feature": "distance_m",
+        "importance": 3.534637
+      },
+      {
+        "feature": "venue",
+        "importance": 2.573707
+      },
+      {
+        "feature": "age_score",
+        "importance": 2.261578
+      },
+      {
+        "feature": "surface",
+        "importance": 1.805963
+      },
+      {
+        "feature": "going",
+        "importance": 0.767843
+      }
+    ],
+    "LAB_feature_enhanced_LightGBM": [
+      {
+        "feature": "lab_score",
+        "importance": 247289.714773
+      },
+      {
+        "feature": "jockey_score",
+        "importance": 72010.196947
+      },
+      {
+        "feature": "venue_score",
+        "importance": 58727.897024
+      },
+      {
+        "feature": "form",
+        "importance": 49565.612458
+      },
+      {
+        "feature": "field_size",
+        "importance": 22097.797626
+      },
+      {
+        "feature": "distance_score",
+        "importance": 14274.000872
+      },
+      {
+        "feature": "sire_score",
+        "importance": 13673.315327
+      },
+      {
+        "feature": "distance_m",
+        "importance": 12661.982901
+      },
+      {
+        "feature": "venue",
+        "importance": 9609.597757
+      },
+      {
+        "feature": "age_score",
+        "importance": 3962.040205
+      },
+      {
+        "feature": "going",
+        "importance": 2999.538253
+      },
+      {
+        "feature": "surface",
+        "importance": 45.188551
+      }
+    ],
+    "independent_raw_CatBoost": [
+      {
+        "feature": "recent_finish_pct",
+        "importance": 21.179599
+      },
+      {
+        "feature": "jockey_top3_rate",
+        "importance": 11.449048
+      },
+      {
+        "feature": "venue_top3_rate",
+        "importance": 8.906828
+      },
+      {
+        "feature": "field_size",
+        "importance": 5.532671
+      },
+      {
+        "feature": "jockey",
+        "importance": 5.431331
+      },
+      {
+        "feature": "career_win_rate",
+        "importance": 4.727877
+      },
+      {
+        "feature": "venue_runs",
+        "importance": 4.271833
+      },
+      {
+        "feature": "recent_top3_rate",
+        "importance": 4.119853
+      },
+      {
+        "feature": "distance_top3_rate",
+        "importance": 3.661684
+      },
+      {
+        "feature": "career_top3_rate",
+        "importance": 3.511825
+      },
+      {
+        "feature": "sire",
+        "importance": 3.290119
+      },
+      {
+        "feature": "distance_m",
+        "importance": 3.191249
+      },
+      {
+        "feature": "age",
+        "importance": 3.174963
+      },
+      {
+        "feature": "venue",
+        "importance": 3.069173
+      },
+      {
+        "feature": "recent_last3f_rank",
+        "importance": 2.369051
+      },
+      {
+        "feature": "jockey_runs",
+        "importance": 2.309986
+      },
+      {
+        "feature": "recent_margin_quality",
+        "importance": 1.910471
+      },
+      {
+        "feature": "recent_time_per_km",
+        "importance": 1.734078
+      },
+      {
+        "feature": "sire_top3_rate",
+        "importance": 1.463183
+      },
+      {
+        "feature": "distance_runs",
+        "importance": 0.983923
+      }
+    ],
+    "independent_raw_LightGBM": [
+      {
+        "feature": "venue_top3_rate",
+        "importance": 129558.205885
+      },
+      {
+        "feature": "recent_finish_pct",
+        "importance": 109992.078859
+      },
+      {
+        "feature": "recent_top3_rate",
+        "importance": 71500.429816
+      },
+      {
+        "feature": "jockey_top3_rate",
+        "importance": 69913.412396
+      },
+      {
+        "feature": "career_win_rate",
+        "importance": 25982.779313
+      },
+      {
+        "feature": "field_size",
+        "importance": 19450.746912
+      },
+      {
+        "feature": "distance_m",
+        "importance": 14060.718999
+      },
+      {
+        "feature": "jockey_runs",
+        "importance": 13530.107818
+      },
+      {
+        "feature": "age",
+        "importance": 11008.421238
+      },
+      {
+        "feature": "venue_runs",
+        "importance": 10466.354886
+      },
+      {
+        "feature": "recent_last3f_rank",
+        "importance": 9333.831156
+      },
+      {
+        "feature": "recent_time_per_km",
+        "importance": 8795.676426
+      },
+      {
+        "feature": "sire_top3_rate",
+        "importance": 8451.56526
+      },
+      {
+        "feature": "venue",
+        "importance": 7035.187725
+      },
+      {
+        "feature": "sire_runs",
+        "importance": 5913.776804
+      },
+      {
+        "feature": "distance_top3_rate",
+        "importance": 5902.739102
+      },
+      {
+        "feature": "recent_margin_quality",
+        "importance": 5304.178852
+      },
+      {
+        "feature": "jockey",
+        "importance": 5071.645485
+      },
+      {
+        "feature": "career_top3_rate",
+        "importance": 4974.483069
+      },
+      {
+        "feature": "sire",
+        "importance": 4770.744292
+      }
+    ],
+    "LambdaRank_independent_raw": [
+      {
+        "feature": "recent_finish_pct",
+        "importance": 185024.574152
+      },
+      {
+        "feature": "venue_top3_rate",
+        "importance": 166452.655988
+      },
+      {
+        "feature": "jockey_top3_rate",
+        "importance": 73936.321958
+      },
+      {
+        "feature": "career_win_rate",
+        "importance": 41319.122704
+      },
+      {
+        "feature": "distance_top3_rate",
+        "importance": 30043.195861
+      },
+      {
+        "feature": "recent_top3_rate",
+        "importance": 27645.948457
+      },
+      {
+        "feature": "recent_time_per_km",
+        "importance": 11824.300188
+      },
+      {
+        "feature": "venue_runs",
+        "importance": 9748.373916
+      },
+      {
+        "feature": "recent_last3f_rank",
+        "importance": 8681.535906
+      },
+      {
+        "feature": "distance_m",
+        "importance": 7769.379681
+      },
+      {
+        "feature": "sire_top3_rate",
+        "importance": 7027.282309
+      },
+      {
+        "feature": "career_top3_rate",
+        "importance": 5359.158785
+      },
+      {
+        "feature": "recent_margin_quality",
+        "importance": 4518.033199
+      },
+      {
+        "feature": "age",
+        "importance": 4107.124803
+      },
+      {
+        "feature": "going",
+        "importance": 4072.22967
+      },
+      {
+        "feature": "jockey_runs",
+        "importance": 1791.943108
+      },
+      {
+        "feature": "sire_runs",
+        "importance": 1432.457805
+      },
+      {
+        "feature": "sire",
+        "importance": 1192.695698
+      },
+      {
+        "feature": "venue",
+        "importance": 1062.352599
+      },
+      {
+        "feature": "going_top3_rate",
+        "importance": 1051.2195
+      }
+    ]
+  },
+  "plackett_luce_fit": {
+    "converged": true,
+    "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+    "iterations": 21
+  },
   "limitations": [
-    "Research-only runner ranking; no production code or tickets changed.",
-    "Winner classification is trained per runner; top-k is evaluated within race.",
-    "LAB reference is a frozen baseline feature score, not the adaptive production B/C model.",
-    "No profitability claim: this first experiment tests ranking skill only.",
-    "CatBoost and LightGBM parameters were fixed before holdout; no tuning on holdout."
+    "Research-only ranking; no production model or ticket logic changed.",
+    "LAB_feature_enhanced includes LAB score components; independent_raw excludes all LAB-derived scores.",
+    "LambdaRank and Plackett-Luce use independent_raw features only.",
+    "Top1/Top3 are ranking metrics, not profitability or betting-return evidence.",
+    "Feature importance is model-native gain/importance, not causal attribution.",
+    "All same-day race results are withheld until that date's feature generation is complete.",
+    "All category mappings and PL scaling are fit on training data only; early stopping uses development only."
   ]
 }
