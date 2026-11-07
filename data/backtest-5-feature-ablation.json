@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-07T17:14:42.042655+00:00",
+  "generated_at": "2026-11-07T18:46:17.721503+00:00",
   "holdout_period": {
     "start": "2025-11-07",
     "end": "2026-11-06"
@@ -34339,149 +34339,296 @@
     }
   },
   "market_rank_diagnostics": {
-    "races": 11056,
-    "matched_horses": 111755,
-    "avg_top7_overlap": 5.95,
-    "rank_gap_definition": "market rank minus LAB rank; positive means LAB ranks the horse higher",
-    "rank_gap_bands": {
-      "lab_upgrade_5_plus": {
-        "horses": 3869,
-        "finish_top3": 469,
-        "winner": 83,
-        "finish_top3_rate_pct": 12.12,
-        "winner_rate_pct": 2.15
-      },
-      "lab_upgrade_3_4": {
-        "horses": 10620,
-        "finish_top3": 1755,
-        "winner": 313,
-        "finish_top3_rate_pct": 16.53,
-        "winner_rate_pct": 2.95
-      },
-      "lab_upgrade_1_2": {
-        "horses": 29168,
-        "finish_top3": 7182,
-        "winner": 1656,
-        "finish_top3_rate_pct": 24.62,
-        "winner_rate_pct": 5.68
-      },
-      "near_alignment_minus2_to_plus2": {
-        "horses": 53228,
-        "finish_top3": 17812,
-        "winner": 6741,
-        "finish_top3_rate_pct": 33.46,
-        "winner_rate_pct": 12.66
-      },
-      "market_upgrade_3_4": {
-        "horses": 10086,
-        "finish_top3": 3813,
-        "winner": 1368,
-        "finish_top3_rate_pct": 37.8,
-        "winner_rate_pct": 13.56
-      },
-      "market_upgrade_5_plus": {
-        "horses": 4784,
-        "finish_top3": 2149,
-        "winner": 914,
-        "finish_top3_rate_pct": 44.92,
-        "winner_rate_pct": 19.11
-      }
-    },
-    "top_k_selection": {
-      "lab": {
-        "1": {
-          "selected": 11056,
-          "finish_top3": 6841,
-          "winner": 3308,
-          "races_with_any_top3": 6841,
-          "races_with_all_top3": 0,
-          "finish_top3_precision_pct": 61.88,
-          "winner_precision_pct": 29.92,
-          "race_any_top3_rate_pct": 61.88,
-          "race_all_top3_rate_pct": 0.0
+    "C_performance_pace": {
+      "races": 11056,
+      "matched_horses": 111755,
+      "avg_top7_overlap": 5.95,
+      "rank_gap_definition": "market rank minus LAB rank; positive means LAB ranks the horse higher",
+      "rank_gap_bands": {
+        "lab_upgrade_5_plus": {
+          "horses": 3869,
+          "finish_top3": 469,
+          "winner": 83,
+          "finish_top3_rate_pct": 12.12,
+          "winner_rate_pct": 2.15
         },
-        "3": {
-          "selected": 33168,
-          "finish_top3": 16997,
-          "winner": 6713,
-          "races_with_any_top3": 10220,
-          "races_with_all_top3": 931,
-          "finish_top3_precision_pct": 51.25,
-          "winner_precision_pct": 20.24,
-          "race_any_top3_rate_pct": 92.44,
-          "race_all_top3_rate_pct": 8.42
+        "lab_upgrade_3_4": {
+          "horses": 10620,
+          "finish_top3": 1755,
+          "winner": 313,
+          "finish_top3_rate_pct": 16.53,
+          "winner_rate_pct": 2.95
         },
-        "5": {
-          "selected": 55269,
-          "finish_top3": 24091,
-          "winner": 8690,
-          "races_with_any_top3": 10900,
-          "races_with_all_top3": 4019,
-          "finish_top3_precision_pct": 43.59,
-          "winner_precision_pct": 15.72,
-          "race_any_top3_rate_pct": 98.59,
-          "race_all_top3_rate_pct": 36.35
+        "lab_upgrade_1_2": {
+          "horses": 29168,
+          "finish_top3": 7182,
+          "winner": 1656,
+          "finish_top3_rate_pct": 24.62,
+          "winner_rate_pct": 5.68
         },
-        "7": {
-          "selected": 76942,
-          "finish_top3": 29007,
-          "winner": 9993,
-          "races_with_any_top3": 11040,
-          "races_with_all_top3": 7371,
-          "finish_top3_precision_pct": 37.7,
-          "winner_precision_pct": 12.99,
-          "race_any_top3_rate_pct": 99.86,
-          "race_all_top3_rate_pct": 66.67
+        "near_alignment_minus2_to_plus2": {
+          "horses": 53228,
+          "finish_top3": 17812,
+          "winner": 6741,
+          "finish_top3_rate_pct": 33.46,
+          "winner_rate_pct": 12.66
+        },
+        "market_upgrade_3_4": {
+          "horses": 10086,
+          "finish_top3": 3813,
+          "winner": 1368,
+          "finish_top3_rate_pct": 37.8,
+          "winner_rate_pct": 13.56
+        },
+        "market_upgrade_5_plus": {
+          "horses": 4784,
+          "finish_top3": 2149,
+          "winner": 914,
+          "finish_top3_rate_pct": 44.92,
+          "winner_rate_pct": 19.11
         }
       },
-      "market": {
-        "1": {
-          "selected": 11056,
-          "finish_top3": 8319,
-          "winner": 4912,
-          "races_with_any_top3": 8319,
-          "races_with_all_top3": 0,
-          "finish_top3_precision_pct": 75.24,
-          "winner_precision_pct": 44.43,
-          "race_any_top3_rate_pct": 75.24,
-          "race_all_top3_rate_pct": 0.0
+      "top_k_selection": {
+        "lab": {
+          "1": {
+            "selected": 11056,
+            "finish_top3": 6841,
+            "winner": 3308,
+            "races_with_any_top3": 6841,
+            "races_with_all_top3": 0,
+            "finish_top3_precision_pct": 61.88,
+            "winner_precision_pct": 29.92,
+            "race_any_top3_rate_pct": 61.88,
+            "race_all_top3_rate_pct": 0.0
+          },
+          "3": {
+            "selected": 33168,
+            "finish_top3": 16997,
+            "winner": 6713,
+            "races_with_any_top3": 10220,
+            "races_with_all_top3": 931,
+            "finish_top3_precision_pct": 51.25,
+            "winner_precision_pct": 20.24,
+            "race_any_top3_rate_pct": 92.44,
+            "race_all_top3_rate_pct": 8.42
+          },
+          "5": {
+            "selected": 55269,
+            "finish_top3": 24091,
+            "winner": 8690,
+            "races_with_any_top3": 10900,
+            "races_with_all_top3": 4019,
+            "finish_top3_precision_pct": 43.59,
+            "winner_precision_pct": 15.72,
+            "race_any_top3_rate_pct": 98.59,
+            "race_all_top3_rate_pct": 36.35
+          },
+          "7": {
+            "selected": 76942,
+            "finish_top3": 29007,
+            "winner": 9993,
+            "races_with_any_top3": 11040,
+            "races_with_all_top3": 7371,
+            "finish_top3_precision_pct": 37.7,
+            "winner_precision_pct": 12.99,
+            "race_any_top3_rate_pct": 99.86,
+            "race_all_top3_rate_pct": 66.67
+          }
         },
-        "3": {
-          "selected": 33168,
-          "finish_top3": 20070,
-          "winner": 8525,
-          "races_with_any_top3": 10723,
-          "races_with_all_top3": 1671,
-          "finish_top3_precision_pct": 60.51,
-          "winner_precision_pct": 25.7,
-          "race_any_top3_rate_pct": 96.99,
-          "race_all_top3_rate_pct": 15.11
-        },
-        "5": {
-          "selected": 55269,
-          "finish_top3": 27061,
-          "winner": 10010,
-          "races_with_any_top3": 11024,
-          "races_with_all_top3": 5834,
-          "finish_top3_precision_pct": 48.96,
-          "winner_precision_pct": 18.11,
-          "race_any_top3_rate_pct": 99.71,
-          "race_all_top3_rate_pct": 52.77
-        },
-        "7": {
-          "selected": 76942,
-          "finish_top3": 30861,
-          "winner": 10680,
-          "races_with_any_top3": 11052,
-          "races_with_all_top3": 8912,
-          "finish_top3_precision_pct": 40.11,
-          "winner_precision_pct": 13.88,
-          "race_any_top3_rate_pct": 99.96,
-          "race_all_top3_rate_pct": 80.61
+        "market": {
+          "1": {
+            "selected": 11056,
+            "finish_top3": 8319,
+            "winner": 4912,
+            "races_with_any_top3": 8319,
+            "races_with_all_top3": 0,
+            "finish_top3_precision_pct": 75.24,
+            "winner_precision_pct": 44.43,
+            "race_any_top3_rate_pct": 75.24,
+            "race_all_top3_rate_pct": 0.0
+          },
+          "3": {
+            "selected": 33168,
+            "finish_top3": 20070,
+            "winner": 8525,
+            "races_with_any_top3": 10723,
+            "races_with_all_top3": 1671,
+            "finish_top3_precision_pct": 60.51,
+            "winner_precision_pct": 25.7,
+            "race_any_top3_rate_pct": 96.99,
+            "race_all_top3_rate_pct": 15.11
+          },
+          "5": {
+            "selected": 55269,
+            "finish_top3": 27061,
+            "winner": 10010,
+            "races_with_any_top3": 11024,
+            "races_with_all_top3": 5834,
+            "finish_top3_precision_pct": 48.96,
+            "winner_precision_pct": 18.11,
+            "race_any_top3_rate_pct": 99.71,
+            "race_all_top3_rate_pct": 52.77
+          },
+          "7": {
+            "selected": 76942,
+            "finish_top3": 30861,
+            "winner": 10680,
+            "races_with_any_top3": 11052,
+            "races_with_all_top3": 8912,
+            "finish_top3_precision_pct": 40.11,
+            "winner_precision_pct": 13.88,
+            "race_any_top3_rate_pct": 99.96,
+            "race_all_top3_rate_pct": 80.61
+          }
         }
-      }
+      },
+      "comparison_policy": "LAB and market ranks are recomputed on the same horses with valid official final odds in each race; outcomes are official finishing positions."
     },
-    "comparison_policy": "LAB and market ranks are recomputed on the same horses with valid official final odds in each race; outcomes are official finishing positions."
+    "D4_jockey_venue_distance": {
+      "races": 11056,
+      "matched_horses": 111755,
+      "avg_top7_overlap": 5.96,
+      "rank_gap_definition": "market rank minus LAB rank; positive means LAB ranks the horse higher",
+      "rank_gap_bands": {
+        "lab_upgrade_5_plus": {
+          "horses": 3774,
+          "finish_top3": 462,
+          "winner": 82,
+          "finish_top3_rate_pct": 12.24,
+          "winner_rate_pct": 2.17
+        },
+        "lab_upgrade_3_4": {
+          "horses": 10544,
+          "finish_top3": 1743,
+          "winner": 310,
+          "finish_top3_rate_pct": 16.53,
+          "winner_rate_pct": 2.94
+        },
+        "lab_upgrade_1_2": {
+          "horses": 29193,
+          "finish_top3": 7205,
+          "winner": 1660,
+          "finish_top3_rate_pct": 24.68,
+          "winner_rate_pct": 5.69
+        },
+        "near_alignment_minus2_to_plus2": {
+          "horses": 53486,
+          "finish_top3": 17916,
+          "winner": 6781,
+          "finish_top3_rate_pct": 33.5,
+          "winner_rate_pct": 12.68
+        },
+        "market_upgrade_3_4": {
+          "horses": 10111,
+          "finish_top3": 3796,
+          "winner": 1374,
+          "finish_top3_rate_pct": 37.54,
+          "winner_rate_pct": 13.59
+        },
+        "market_upgrade_5_plus": {
+          "horses": 4647,
+          "finish_top3": 2058,
+          "winner": 868,
+          "finish_top3_rate_pct": 44.29,
+          "winner_rate_pct": 18.68
+        }
+      },
+      "top_k_selection": {
+        "lab": {
+          "1": {
+            "selected": 11056,
+            "finish_top3": 6879,
+            "winner": 3320,
+            "races_with_any_top3": 6879,
+            "races_with_all_top3": 0,
+            "finish_top3_precision_pct": 62.22,
+            "winner_precision_pct": 30.03,
+            "race_any_top3_rate_pct": 62.22,
+            "race_all_top3_rate_pct": 0.0
+          },
+          "3": {
+            "selected": 33168,
+            "finish_top3": 17063,
+            "winner": 6772,
+            "races_with_any_top3": 10238,
+            "races_with_all_top3": 927,
+            "finish_top3_precision_pct": 51.44,
+            "winner_precision_pct": 20.42,
+            "race_any_top3_rate_pct": 92.6,
+            "race_all_top3_rate_pct": 8.38
+          },
+          "5": {
+            "selected": 55269,
+            "finish_top3": 24213,
+            "winner": 8736,
+            "races_with_any_top3": 10919,
+            "races_with_all_top3": 4102,
+            "finish_top3_precision_pct": 43.81,
+            "winner_precision_pct": 15.81,
+            "race_any_top3_rate_pct": 98.76,
+            "race_all_top3_rate_pct": 37.1
+          },
+          "7": {
+            "selected": 76942,
+            "finish_top3": 29055,
+            "winner": 9988,
+            "races_with_any_top3": 11041,
+            "races_with_all_top3": 7409,
+            "finish_top3_precision_pct": 37.76,
+            "winner_precision_pct": 12.98,
+            "race_any_top3_rate_pct": 99.86,
+            "race_all_top3_rate_pct": 67.01
+          }
+        },
+        "market": {
+          "1": {
+            "selected": 11056,
+            "finish_top3": 8319,
+            "winner": 4912,
+            "races_with_any_top3": 8319,
+            "races_with_all_top3": 0,
+            "finish_top3_precision_pct": 75.24,
+            "winner_precision_pct": 44.43,
+            "race_any_top3_rate_pct": 75.24,
+            "race_all_top3_rate_pct": 0.0
+          },
+          "3": {
+            "selected": 33168,
+            "finish_top3": 20070,
+            "winner": 8525,
+            "races_with_any_top3": 10723,
+            "races_with_all_top3": 1671,
+            "finish_top3_precision_pct": 60.51,
+            "winner_precision_pct": 25.7,
+            "race_any_top3_rate_pct": 96.99,
+            "race_all_top3_rate_pct": 15.11
+          },
+          "5": {
+            "selected": 55269,
+            "finish_top3": 27061,
+            "winner": 10010,
+            "races_with_any_top3": 11024,
+            "races_with_all_top3": 5834,
+            "finish_top3_precision_pct": 48.96,
+            "winner_precision_pct": 18.11,
+            "race_any_top3_rate_pct": 99.71,
+            "race_all_top3_rate_pct": 52.77
+          },
+          "7": {
+            "selected": 76942,
+            "finish_top3": 30861,
+            "winner": 10680,
+            "races_with_any_top3": 11052,
+            "races_with_all_top3": 8912,
+            "finish_top3_precision_pct": 40.11,
+            "winner_precision_pct": 13.88,
+            "race_any_top3_rate_pct": 99.96,
+            "race_all_top3_rate_pct": 80.61
+          }
+        }
+      },
+      "comparison_policy": "LAB and market ranks are recomputed on the same horses with valid official final odds in each race; outcomes are official finishing positions."
+    }
   },
   "method": {
     "type": "feature_ablation_plus_single_and_combined_chronological_weight_challengers",

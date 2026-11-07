@@ -1,6 +1,6 @@
 {
   "model_version": "nar-chronological-v9-D-frame-preoff",
-  "generated_at": "2026-11-07T17:14:42.042655+00:00",
+  "generated_at": "2026-11-07T18:46:17.721503+00:00",
   "training_period": {
     "start": "2022-11-07",
     "end": "2026-11-06"
@@ -2292,7 +2292,7 @@
       {
         "fold": 1,
         "period_label": "previous_year_2",
-        "runtime_seconds": 1735.615,
+        "runtime_seconds": 1776.659,
         "train_start": "2022-11-05",
         "train_end": "2023-11-07",
         "test_start": "2023-11-08",
@@ -107583,11 +107583,20 @@
           "policy": "Fixed 0.30 calibrated top-win probability gate; role-specific trifecta ranking blend 0.10; 2-3-4 formation. The reference uses the same qualifying races and formation with ordinary ranking, isolating the ranking change. Parameters are not selected on the holdout fold."
         },
         "market_rank_diagnostics": {
-          "races": 0,
-          "matched_horses": 0,
-          "avg_top7_overlap": null,
-          "rank_gap_bands": {},
-          "top_k_selection": {}
+          "C_performance_pace": {
+            "races": 0,
+            "matched_horses": 0,
+            "avg_top7_overlap": null,
+            "rank_gap_bands": {},
+            "top_k_selection": {}
+          },
+          "D4_jockey_venue_distance": {
+            "races": 0,
+            "matched_horses": 0,
+            "avg_top7_overlap": null,
+            "rank_gap_bands": {},
+            "top_k_selection": {}
+          }
         },
         "final_odds_market_comparison": {
           "C_model_top_pick": {
@@ -108135,7 +108144,7 @@
       {
         "fold": 2,
         "period_label": "previous_year_1",
-        "runtime_seconds": 1737.16,
+        "runtime_seconds": 1738.942,
         "train_start": "2022-11-05",
         "train_end": "2024-11-06",
         "test_start": "2024-11-07",
@@ -212774,11 +212783,20 @@
           "policy": "Fixed 0.30 calibrated top-win probability gate; role-specific trifecta ranking blend 0.10; 2-3-4 formation. The reference uses the same qualifying races and formation with ordinary ranking, isolating the ranking change. Parameters are not selected on the holdout fold."
         },
         "market_rank_diagnostics": {
-          "races": 0,
-          "matched_horses": 0,
-          "avg_top7_overlap": null,
-          "rank_gap_bands": {},
-          "top_k_selection": {}
+          "C_performance_pace": {
+            "races": 0,
+            "matched_horses": 0,
+            "avg_top7_overlap": null,
+            "rank_gap_bands": {},
+            "top_k_selection": {}
+          },
+          "D4_jockey_venue_distance": {
+            "races": 0,
+            "matched_horses": 0,
+            "avg_top7_overlap": null,
+            "rank_gap_bands": {},
+            "top_k_selection": {}
+          }
         },
         "final_odds_market_comparison": {
           "C_model_top_pick": {
@@ -213326,7 +213344,7 @@
       {
         "fold": 3,
         "period_label": "recent_year",
-        "runtime_seconds": 1787.729,
+        "runtime_seconds": 1793.694,
         "train_start": "2022-11-05",
         "train_end": "2025-11-06",
         "test_start": "2025-11-07",
@@ -302421,9 +302439,9 @@
           "surface:ダート": {
             "dimension": "surface",
             "label": "ダート",
-            "races": 13672,
-            "winner_top1_rate": 32.45,
-            "winner_top3_rate": 63.8,
+            "races": 13660,
+            "winner_top1_rate": 32.47,
+            "winner_top3_rate": 63.82,
             "bet_types": {
               "win": {
                 "tickets": 0,
@@ -302444,13 +302462,13 @@
                 "profit": 0
               },
               "wide": {
-                "tickets": 41016,
-                "hits": 9924,
-                "stake": 4101600,
-                "return": 2733220.0,
+                "tickets": 40980,
+                "hits": 9918,
+                "stake": 4098000,
+                "return": 2730920.0,
                 "hit_rate": 24.2,
                 "roi": 66.64,
-                "profit": -1368380.0
+                "profit": -1367080.0
               },
               "quinella": {
                 "tickets": 0,
@@ -302462,31 +302480,31 @@
                 "profit": 0
               },
               "exacta": {
-                "tickets": 54688,
+                "tickets": 54640,
                 "hits": 3323,
-                "stake": 5468800,
+                "stake": 5464000,
                 "return": 3399000.0,
                 "hit_rate": 6.08,
-                "roi": 62.15,
-                "profit": -2069800.0
+                "roi": 62.21,
+                "profit": -2065000.0
               },
               "trio": {
-                "tickets": 136720,
-                "hits": 5264,
-                "stake": 13672000,
-                "return": 8044380.0,
+                "tickets": 136600,
+                "hits": 5261,
+                "stake": 13660000,
+                "return": 8038260.0,
                 "hit_rate": 3.85,
-                "roi": 58.84,
-                "profit": -5627620.0
+                "roi": 58.85,
+                "profit": -5621740.0
               },
               "trifecta": {
-                "tickets": 328128,
-                "hits": 3278,
-                "stake": 32812800,
-                "return": 18020400.0,
+                "tickets": 327840,
+                "hits": 3277,
+                "stake": 32784000,
+                "return": 18007870.0,
                 "hit_rate": 1.0,
-                "roi": 54.92,
-                "profit": -14792400.0
+                "roi": 54.93,
+                "profit": -14776130.0
               }
             }
           },
@@ -304117,14 +304135,14 @@
                 "profit": -178710.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 41016,
-                "hits": 9584,
-                "stake": 4101600,
-                "return": 2686940.0,
-                "roi": 65.51,
-                "hit_rate": 23.37,
-                "profit": -1414660.0
+                "races": 13660,
+                "tickets": 40980,
+                "hits": 9580,
+                "stake": 4098000,
+                "return": 2685440.0,
+                "roi": 65.53,
+                "hit_rate": 23.38,
+                "profit": -1412560.0
               },
               "surface:芝": {
                 "races": 26,
@@ -304759,14 +304777,14 @@
                 "profit": -180510.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 41016,
-                "hits": 7024,
-                "stake": 4101600,
-                "return": 3065590.0,
-                "roi": 74.74,
+                "races": 13660,
+                "tickets": 40980,
+                "hits": 7021,
+                "stake": 4098000,
+                "return": 3064440.0,
+                "roi": 74.78,
                 "hit_rate": 17.13,
-                "profit": -1036010.0
+                "profit": -1033560.0
               },
               "surface:芝": {
                 "races": 26,
@@ -305403,14 +305421,14 @@
                 "profit": -257590.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 54688,
+                "races": 13660,
+                "tickets": 54640,
                 "hits": 3173,
-                "stake": 5468800,
+                "stake": 5464000,
                 "return": 3337390.0,
-                "roi": 61.03,
-                "hit_rate": 5.8,
-                "profit": -2131410.0
+                "roi": 61.08,
+                "hit_rate": 5.81,
+                "profit": -2126610.0
               },
               "surface:芝": {
                 "races": 26,
@@ -306045,14 +306063,14 @@
                 "profit": -203260.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 54688,
-                "hits": 2092,
-                "stake": 5468800,
-                "return": 3782100.0,
-                "roi": 69.16,
+                "races": 13660,
+                "tickets": 54640,
+                "hits": 2091,
+                "stake": 5464000,
+                "return": 3780540.0,
+                "roi": 69.19,
                 "hit_rate": 3.83,
-                "profit": -1686700.0
+                "profit": -1683460.0
               },
               "surface:芝": {
                 "races": 26,
@@ -306689,14 +306707,14 @@
                 "profit": -813000.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 136720,
-                "hits": 5114,
-                "stake": 13672000,
-                "return": 7682990.0,
-                "roi": 56.2,
+                "races": 13660,
+                "tickets": 136600,
+                "hits": 5110,
+                "stake": 13660000,
+                "return": 7669930.0,
+                "roi": 56.15,
                 "hit_rate": 3.74,
-                "profit": -5989010.0
+                "profit": -5990070.0
               },
               "surface:芝": {
                 "races": 26,
@@ -307331,14 +307349,14 @@
                 "profit": -740240.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 136720,
-                "hits": 3442,
-                "stake": 13672000,
-                "return": 8214260.0,
-                "roi": 60.08,
+                "races": 13660,
+                "tickets": 136600,
+                "hits": 3441,
+                "stake": 13660000,
+                "return": 8212500.0,
+                "roi": 60.12,
                 "hit_rate": 2.52,
-                "profit": -5457740.0
+                "profit": -5447500.0
               },
               "surface:芝": {
                 "races": 26,
@@ -307975,14 +307993,14 @@
                 "profit": -1911730.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 328128,
-                "hits": 3142,
-                "stake": 32812800,
-                "return": 17931020.0,
-                "roi": 54.65,
+                "races": 13660,
+                "tickets": 327840,
+                "hits": 3141,
+                "stake": 32784000,
+                "return": 17918490.0,
+                "roi": 54.66,
                 "hit_rate": 0.96,
-                "profit": -14881780.0
+                "profit": -14865510.0
               },
               "surface:芝": {
                 "races": 26,
@@ -308617,14 +308635,14 @@
                 "profit": -1454340.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 328128,
+                "races": 13660,
+                "tickets": 327840,
                 "hits": 1868,
-                "stake": 32812800,
+                "stake": 32784000,
                 "return": 20702660.0,
-                "roi": 63.09,
+                "roi": 63.15,
                 "hit_rate": 0.57,
-                "profit": -12110140.0
+                "profit": -12081340.0
               },
               "surface:芝": {
                 "races": 26,
@@ -309545,19 +309563,19 @@
             },
             {
               "segment": "surface:ダート",
-              "baseline_races": 13672,
-              "candidate_races": 13672,
-              "baseline_tickets": 41016,
-              "candidate_tickets": 41016,
-              "baseline_hits": 9584,
-              "candidate_hits": 7024,
-              "baseline_hit_rate": 23.37,
+              "baseline_races": 13660,
+              "candidate_races": 13660,
+              "baseline_tickets": 40980,
+              "candidate_tickets": 40980,
+              "baseline_hits": 9580,
+              "candidate_hits": 7021,
+              "baseline_hit_rate": 23.38,
               "candidate_hit_rate": 17.13,
-              "baseline_roi": 65.51,
-              "candidate_roi": 74.74,
-              "roi_delta": 9.23,
-              "baseline_profit": -1414660.0,
-              "candidate_profit": -1036010.0
+              "baseline_roi": 65.53,
+              "candidate_roi": 74.78,
+              "roi_delta": 9.25,
+              "baseline_profit": -1412560.0,
+              "candidate_profit": -1033560.0
             },
             {
               "segment": "surface:芝",
@@ -310571,19 +310589,19 @@
             },
             {
               "segment": "surface:ダート",
-              "baseline_races": 13672,
-              "candidate_races": 13672,
-              "baseline_tickets": 54688,
-              "candidate_tickets": 54688,
+              "baseline_races": 13660,
+              "candidate_races": 13660,
+              "baseline_tickets": 54640,
+              "candidate_tickets": 54640,
               "baseline_hits": 3173,
-              "candidate_hits": 2092,
-              "baseline_hit_rate": 5.8,
+              "candidate_hits": 2091,
+              "baseline_hit_rate": 5.81,
               "candidate_hit_rate": 3.83,
-              "baseline_roi": 61.03,
-              "candidate_roi": 69.16,
-              "roi_delta": 8.13,
-              "baseline_profit": -2131410.0,
-              "candidate_profit": -1686700.0
+              "baseline_roi": 61.08,
+              "candidate_roi": 69.19,
+              "roi_delta": 8.11,
+              "baseline_profit": -2126610.0,
+              "candidate_profit": -1683460.0
             },
             {
               "segment": "surface:芝",
@@ -311597,19 +311615,19 @@
             },
             {
               "segment": "surface:ダート",
-              "baseline_races": 13672,
-              "candidate_races": 13672,
-              "baseline_tickets": 136720,
-              "candidate_tickets": 136720,
-              "baseline_hits": 5114,
-              "candidate_hits": 3442,
+              "baseline_races": 13660,
+              "candidate_races": 13660,
+              "baseline_tickets": 136600,
+              "candidate_tickets": 136600,
+              "baseline_hits": 5110,
+              "candidate_hits": 3441,
               "baseline_hit_rate": 3.74,
               "candidate_hit_rate": 2.52,
-              "baseline_roi": 56.2,
-              "candidate_roi": 60.08,
-              "roi_delta": 3.88,
-              "baseline_profit": -5989010.0,
-              "candidate_profit": -5457740.0
+              "baseline_roi": 56.15,
+              "candidate_roi": 60.12,
+              "roi_delta": 3.97,
+              "baseline_profit": -5990070.0,
+              "candidate_profit": -5447500.0
             },
             {
               "segment": "surface:芝",
@@ -312623,19 +312641,19 @@
             },
             {
               "segment": "surface:ダート",
-              "baseline_races": 13672,
-              "candidate_races": 13672,
-              "baseline_tickets": 328128,
-              "candidate_tickets": 328128,
-              "baseline_hits": 3142,
+              "baseline_races": 13660,
+              "candidate_races": 13660,
+              "baseline_tickets": 327840,
+              "candidate_tickets": 327840,
+              "baseline_hits": 3141,
               "candidate_hits": 1868,
               "baseline_hit_rate": 0.96,
               "candidate_hit_rate": 0.57,
-              "baseline_roi": 54.65,
-              "candidate_roi": 63.09,
-              "roi_delta": 8.44,
-              "baseline_profit": -14881780.0,
-              "candidate_profit": -12110140.0
+              "baseline_roi": 54.66,
+              "candidate_roi": 63.15,
+              "roi_delta": 8.49,
+              "baseline_profit": -14865510.0,
+              "candidate_profit": -12081340.0
             },
             {
               "segment": "surface:芝",
@@ -318069,107 +318087,107 @@
           "surface:ダート": {
             "1": {
               "ordinary": {
-                "races": 13672,
+                "races": 13660,
                 "topk_hits": {
-                  "1": 4437,
-                  "2": 6955,
-                  "3": 8723,
-                  "5": 11050,
-                  "7": 12490
+                  "1": 4436,
+                  "2": 6952,
+                  "3": 8718,
+                  "5": 11042,
+                  "7": 12482
                 },
                 "topk_rate": {
-                  "1": 32.45,
-                  "2": 50.87,
-                  "3": 63.8,
-                  "5": 80.82,
-                  "7": 91.35
+                  "1": 32.47,
+                  "2": 50.89,
+                  "3": 63.82,
+                  "5": 80.83,
+                  "7": 91.38
                 }
               },
               "role_specific": {
-                "races": 13672,
+                "races": 13660,
                 "topk_hits": {
-                  "1": 4434,
-                  "2": 6961,
-                  "3": 8727,
-                  "5": 11064,
-                  "7": 12503
+                  "1": 4433,
+                  "2": 6959,
+                  "3": 8722,
+                  "5": 11056,
+                  "7": 12495
                 },
                 "topk_rate": {
-                  "1": 32.43,
-                  "2": 50.91,
-                  "3": 63.83,
-                  "5": 80.92,
-                  "7": 91.45
+                  "1": 32.45,
+                  "2": 50.94,
+                  "3": 63.85,
+                  "5": 80.94,
+                  "7": 91.47
                 }
               }
             },
             "2": {
               "ordinary": {
-                "races": 13657,
+                "races": 13645,
                 "topk_hits": {
-                  "1": 2576,
-                  "2": 5080,
-                  "3": 7035,
-                  "5": 10103,
-                  "7": 12054
+                  "1": 2575,
+                  "2": 5079,
+                  "3": 7031,
+                  "5": 10095,
+                  "7": 12042
                 },
                 "topk_rate": {
-                  "1": 18.86,
-                  "2": 37.2,
-                  "3": 51.51,
+                  "1": 18.87,
+                  "2": 37.22,
+                  "3": 51.53,
                   "5": 73.98,
-                  "7": 88.26
+                  "7": 88.25
                 }
               },
               "role_specific": {
-                "races": 13657,
+                "races": 13645,
                 "topk_hits": {
-                  "1": 2602,
-                  "2": 5078,
-                  "3": 7044,
-                  "5": 10106,
-                  "7": 12031
+                  "1": 2601,
+                  "2": 5077,
+                  "3": 7040,
+                  "5": 10098,
+                  "7": 12019
                 },
                 "topk_rate": {
-                  "1": 19.05,
-                  "2": 37.18,
-                  "3": 51.58,
-                  "5": 74.0,
-                  "7": 88.09
+                  "1": 19.06,
+                  "2": 37.21,
+                  "3": 51.59,
+                  "5": 74.01,
+                  "7": 88.08
                 }
               }
             },
             "3": {
               "ordinary": {
-                "races": 13652,
+                "races": 13640,
                 "topk_hits": {
-                  "1": 1733,
-                  "2": 3746,
-                  "3": 5715,
-                  "5": 9175,
-                  "7": 11503
+                  "1": 1730,
+                  "2": 3742,
+                  "3": 5707,
+                  "5": 9166,
+                  "7": 11492
                 },
                 "topk_rate": {
-                  "1": 12.69,
-                  "2": 27.44,
-                  "3": 41.86,
-                  "5": 67.21,
-                  "7": 84.26
+                  "1": 12.68,
+                  "2": 27.43,
+                  "3": 41.84,
+                  "5": 67.2,
+                  "7": 84.25
                 }
               },
               "role_specific": {
-                "races": 13652,
+                "races": 13640,
                 "topk_hits": {
-                  "1": 1750,
-                  "2": 3742,
-                  "3": 5723,
-                  "5": 9165,
-                  "7": 11509
+                  "1": 1747,
+                  "2": 3737,
+                  "3": 5715,
+                  "5": 9156,
+                  "7": 11498
                 },
                 "topk_rate": {
-                  "1": 12.82,
-                  "2": 27.41,
-                  "3": 41.92,
+                  "1": 12.81,
+                  "2": 27.4,
+                  "3": 41.9,
                   "5": 67.13,
                   "7": 84.3
                 }
@@ -320573,149 +320591,296 @@
           "policy": "Fixed 0.30 calibrated top-win probability gate; role-specific trifecta ranking blend 0.10; 2-3-4 formation. The reference uses the same qualifying races and formation with ordinary ranking, isolating the ranking change. Parameters are not selected on the holdout fold."
         },
         "market_rank_diagnostics": {
-          "races": 11056,
-          "matched_horses": 111755,
-          "avg_top7_overlap": 5.95,
-          "rank_gap_definition": "market rank minus LAB rank; positive means LAB ranks the horse higher",
-          "rank_gap_bands": {
-            "lab_upgrade_5_plus": {
-              "horses": 3869,
-              "finish_top3": 469,
-              "winner": 83,
-              "finish_top3_rate_pct": 12.12,
-              "winner_rate_pct": 2.15
-            },
-            "lab_upgrade_3_4": {
-              "horses": 10620,
-              "finish_top3": 1755,
-              "winner": 313,
-              "finish_top3_rate_pct": 16.53,
-              "winner_rate_pct": 2.95
-            },
-            "lab_upgrade_1_2": {
-              "horses": 29168,
-              "finish_top3": 7182,
-              "winner": 1656,
-              "finish_top3_rate_pct": 24.62,
-              "winner_rate_pct": 5.68
-            },
-            "near_alignment_minus2_to_plus2": {
-              "horses": 53228,
-              "finish_top3": 17812,
-              "winner": 6741,
-              "finish_top3_rate_pct": 33.46,
-              "winner_rate_pct": 12.66
-            },
-            "market_upgrade_3_4": {
-              "horses": 10086,
-              "finish_top3": 3813,
-              "winner": 1368,
-              "finish_top3_rate_pct": 37.8,
-              "winner_rate_pct": 13.56
-            },
-            "market_upgrade_5_plus": {
-              "horses": 4784,
-              "finish_top3": 2149,
-              "winner": 914,
-              "finish_top3_rate_pct": 44.92,
-              "winner_rate_pct": 19.11
-            }
-          },
-          "top_k_selection": {
-            "lab": {
-              "1": {
-                "selected": 11056,
-                "finish_top3": 6841,
-                "winner": 3308,
-                "races_with_any_top3": 6841,
-                "races_with_all_top3": 0,
-                "finish_top3_precision_pct": 61.88,
-                "winner_precision_pct": 29.92,
-                "race_any_top3_rate_pct": 61.88,
-                "race_all_top3_rate_pct": 0.0
+          "C_performance_pace": {
+            "races": 11056,
+            "matched_horses": 111755,
+            "avg_top7_overlap": 5.95,
+            "rank_gap_definition": "market rank minus LAB rank; positive means LAB ranks the horse higher",
+            "rank_gap_bands": {
+              "lab_upgrade_5_plus": {
+                "horses": 3869,
+                "finish_top3": 469,
+                "winner": 83,
+                "finish_top3_rate_pct": 12.12,
+                "winner_rate_pct": 2.15
               },
-              "3": {
-                "selected": 33168,
-                "finish_top3": 16997,
-                "winner": 6713,
-                "races_with_any_top3": 10220,
-                "races_with_all_top3": 931,
-                "finish_top3_precision_pct": 51.25,
-                "winner_precision_pct": 20.24,
-                "race_any_top3_rate_pct": 92.44,
-                "race_all_top3_rate_pct": 8.42
+              "lab_upgrade_3_4": {
+                "horses": 10620,
+                "finish_top3": 1755,
+                "winner": 313,
+                "finish_top3_rate_pct": 16.53,
+                "winner_rate_pct": 2.95
               },
-              "5": {
-                "selected": 55269,
-                "finish_top3": 24091,
-                "winner": 8690,
-                "races_with_any_top3": 10900,
-                "races_with_all_top3": 4019,
-                "finish_top3_precision_pct": 43.59,
-                "winner_precision_pct": 15.72,
-                "race_any_top3_rate_pct": 98.59,
-                "race_all_top3_rate_pct": 36.35
+              "lab_upgrade_1_2": {
+                "horses": 29168,
+                "finish_top3": 7182,
+                "winner": 1656,
+                "finish_top3_rate_pct": 24.62,
+                "winner_rate_pct": 5.68
               },
-              "7": {
-                "selected": 76942,
-                "finish_top3": 29007,
-                "winner": 9993,
-                "races_with_any_top3": 11040,
-                "races_with_all_top3": 7371,
-                "finish_top3_precision_pct": 37.7,
-                "winner_precision_pct": 12.99,
-                "race_any_top3_rate_pct": 99.86,
-                "race_all_top3_rate_pct": 66.67
+              "near_alignment_minus2_to_plus2": {
+                "horses": 53228,
+                "finish_top3": 17812,
+                "winner": 6741,
+                "finish_top3_rate_pct": 33.46,
+                "winner_rate_pct": 12.66
+              },
+              "market_upgrade_3_4": {
+                "horses": 10086,
+                "finish_top3": 3813,
+                "winner": 1368,
+                "finish_top3_rate_pct": 37.8,
+                "winner_rate_pct": 13.56
+              },
+              "market_upgrade_5_plus": {
+                "horses": 4784,
+                "finish_top3": 2149,
+                "winner": 914,
+                "finish_top3_rate_pct": 44.92,
+                "winner_rate_pct": 19.11
               }
             },
-            "market": {
-              "1": {
-                "selected": 11056,
-                "finish_top3": 8319,
-                "winner": 4912,
-                "races_with_any_top3": 8319,
-                "races_with_all_top3": 0,
-                "finish_top3_precision_pct": 75.24,
-                "winner_precision_pct": 44.43,
-                "race_any_top3_rate_pct": 75.24,
-                "race_all_top3_rate_pct": 0.0
+            "top_k_selection": {
+              "lab": {
+                "1": {
+                  "selected": 11056,
+                  "finish_top3": 6841,
+                  "winner": 3308,
+                  "races_with_any_top3": 6841,
+                  "races_with_all_top3": 0,
+                  "finish_top3_precision_pct": 61.88,
+                  "winner_precision_pct": 29.92,
+                  "race_any_top3_rate_pct": 61.88,
+                  "race_all_top3_rate_pct": 0.0
+                },
+                "3": {
+                  "selected": 33168,
+                  "finish_top3": 16997,
+                  "winner": 6713,
+                  "races_with_any_top3": 10220,
+                  "races_with_all_top3": 931,
+                  "finish_top3_precision_pct": 51.25,
+                  "winner_precision_pct": 20.24,
+                  "race_any_top3_rate_pct": 92.44,
+                  "race_all_top3_rate_pct": 8.42
+                },
+                "5": {
+                  "selected": 55269,
+                  "finish_top3": 24091,
+                  "winner": 8690,
+                  "races_with_any_top3": 10900,
+                  "races_with_all_top3": 4019,
+                  "finish_top3_precision_pct": 43.59,
+                  "winner_precision_pct": 15.72,
+                  "race_any_top3_rate_pct": 98.59,
+                  "race_all_top3_rate_pct": 36.35
+                },
+                "7": {
+                  "selected": 76942,
+                  "finish_top3": 29007,
+                  "winner": 9993,
+                  "races_with_any_top3": 11040,
+                  "races_with_all_top3": 7371,
+                  "finish_top3_precision_pct": 37.7,
+                  "winner_precision_pct": 12.99,
+                  "race_any_top3_rate_pct": 99.86,
+                  "race_all_top3_rate_pct": 66.67
+                }
               },
-              "3": {
-                "selected": 33168,
-                "finish_top3": 20070,
-                "winner": 8525,
-                "races_with_any_top3": 10723,
-                "races_with_all_top3": 1671,
-                "finish_top3_precision_pct": 60.51,
-                "winner_precision_pct": 25.7,
-                "race_any_top3_rate_pct": 96.99,
-                "race_all_top3_rate_pct": 15.11
-              },
-              "5": {
-                "selected": 55269,
-                "finish_top3": 27061,
-                "winner": 10010,
-                "races_with_any_top3": 11024,
-                "races_with_all_top3": 5834,
-                "finish_top3_precision_pct": 48.96,
-                "winner_precision_pct": 18.11,
-                "race_any_top3_rate_pct": 99.71,
-                "race_all_top3_rate_pct": 52.77
-              },
-              "7": {
-                "selected": 76942,
-                "finish_top3": 30861,
-                "winner": 10680,
-                "races_with_any_top3": 11052,
-                "races_with_all_top3": 8912,
-                "finish_top3_precision_pct": 40.11,
-                "winner_precision_pct": 13.88,
-                "race_any_top3_rate_pct": 99.96,
-                "race_all_top3_rate_pct": 80.61
+              "market": {
+                "1": {
+                  "selected": 11056,
+                  "finish_top3": 8319,
+                  "winner": 4912,
+                  "races_with_any_top3": 8319,
+                  "races_with_all_top3": 0,
+                  "finish_top3_precision_pct": 75.24,
+                  "winner_precision_pct": 44.43,
+                  "race_any_top3_rate_pct": 75.24,
+                  "race_all_top3_rate_pct": 0.0
+                },
+                "3": {
+                  "selected": 33168,
+                  "finish_top3": 20070,
+                  "winner": 8525,
+                  "races_with_any_top3": 10723,
+                  "races_with_all_top3": 1671,
+                  "finish_top3_precision_pct": 60.51,
+                  "winner_precision_pct": 25.7,
+                  "race_any_top3_rate_pct": 96.99,
+                  "race_all_top3_rate_pct": 15.11
+                },
+                "5": {
+                  "selected": 55269,
+                  "finish_top3": 27061,
+                  "winner": 10010,
+                  "races_with_any_top3": 11024,
+                  "races_with_all_top3": 5834,
+                  "finish_top3_precision_pct": 48.96,
+                  "winner_precision_pct": 18.11,
+                  "race_any_top3_rate_pct": 99.71,
+                  "race_all_top3_rate_pct": 52.77
+                },
+                "7": {
+                  "selected": 76942,
+                  "finish_top3": 30861,
+                  "winner": 10680,
+                  "races_with_any_top3": 11052,
+                  "races_with_all_top3": 8912,
+                  "finish_top3_precision_pct": 40.11,
+                  "winner_precision_pct": 13.88,
+                  "race_any_top3_rate_pct": 99.96,
+                  "race_all_top3_rate_pct": 80.61
+                }
               }
-            }
+            },
+            "comparison_policy": "LAB and market ranks are recomputed on the same horses with valid official final odds in each race; outcomes are official finishing positions."
           },
-          "comparison_policy": "LAB and market ranks are recomputed on the same horses with valid official final odds in each race; outcomes are official finishing positions."
+          "D4_jockey_venue_distance": {
+            "races": 11056,
+            "matched_horses": 111755,
+            "avg_top7_overlap": 5.96,
+            "rank_gap_definition": "market rank minus LAB rank; positive means LAB ranks the horse higher",
+            "rank_gap_bands": {
+              "lab_upgrade_5_plus": {
+                "horses": 3774,
+                "finish_top3": 462,
+                "winner": 82,
+                "finish_top3_rate_pct": 12.24,
+                "winner_rate_pct": 2.17
+              },
+              "lab_upgrade_3_4": {
+                "horses": 10544,
+                "finish_top3": 1743,
+                "winner": 310,
+                "finish_top3_rate_pct": 16.53,
+                "winner_rate_pct": 2.94
+              },
+              "lab_upgrade_1_2": {
+                "horses": 29193,
+                "finish_top3": 7205,
+                "winner": 1660,
+                "finish_top3_rate_pct": 24.68,
+                "winner_rate_pct": 5.69
+              },
+              "near_alignment_minus2_to_plus2": {
+                "horses": 53486,
+                "finish_top3": 17916,
+                "winner": 6781,
+                "finish_top3_rate_pct": 33.5,
+                "winner_rate_pct": 12.68
+              },
+              "market_upgrade_3_4": {
+                "horses": 10111,
+                "finish_top3": 3796,
+                "winner": 1374,
+                "finish_top3_rate_pct": 37.54,
+                "winner_rate_pct": 13.59
+              },
+              "market_upgrade_5_plus": {
+                "horses": 4647,
+                "finish_top3": 2058,
+                "winner": 868,
+                "finish_top3_rate_pct": 44.29,
+                "winner_rate_pct": 18.68
+              }
+            },
+            "top_k_selection": {
+              "lab": {
+                "1": {
+                  "selected": 11056,
+                  "finish_top3": 6879,
+                  "winner": 3320,
+                  "races_with_any_top3": 6879,
+                  "races_with_all_top3": 0,
+                  "finish_top3_precision_pct": 62.22,
+                  "winner_precision_pct": 30.03,
+                  "race_any_top3_rate_pct": 62.22,
+                  "race_all_top3_rate_pct": 0.0
+                },
+                "3": {
+                  "selected": 33168,
+                  "finish_top3": 17063,
+                  "winner": 6772,
+                  "races_with_any_top3": 10238,
+                  "races_with_all_top3": 927,
+                  "finish_top3_precision_pct": 51.44,
+                  "winner_precision_pct": 20.42,
+                  "race_any_top3_rate_pct": 92.6,
+                  "race_all_top3_rate_pct": 8.38
+                },
+                "5": {
+                  "selected": 55269,
+                  "finish_top3": 24213,
+                  "winner": 8736,
+                  "races_with_any_top3": 10919,
+                  "races_with_all_top3": 4102,
+                  "finish_top3_precision_pct": 43.81,
+                  "winner_precision_pct": 15.81,
+                  "race_any_top3_rate_pct": 98.76,
+                  "race_all_top3_rate_pct": 37.1
+                },
+                "7": {
+                  "selected": 76942,
+                  "finish_top3": 29055,
+                  "winner": 9988,
+                  "races_with_any_top3": 11041,
+                  "races_with_all_top3": 7409,
+                  "finish_top3_precision_pct": 37.76,
+                  "winner_precision_pct": 12.98,
+                  "race_any_top3_rate_pct": 99.86,
+                  "race_all_top3_rate_pct": 67.01
+                }
+              },
+              "market": {
+                "1": {
+                  "selected": 11056,
+                  "finish_top3": 8319,
+                  "winner": 4912,
+                  "races_with_any_top3": 8319,
+                  "races_with_all_top3": 0,
+                  "finish_top3_precision_pct": 75.24,
+                  "winner_precision_pct": 44.43,
+                  "race_any_top3_rate_pct": 75.24,
+                  "race_all_top3_rate_pct": 0.0
+                },
+                "3": {
+                  "selected": 33168,
+                  "finish_top3": 20070,
+                  "winner": 8525,
+                  "races_with_any_top3": 10723,
+                  "races_with_all_top3": 1671,
+                  "finish_top3_precision_pct": 60.51,
+                  "winner_precision_pct": 25.7,
+                  "race_any_top3_rate_pct": 96.99,
+                  "race_all_top3_rate_pct": 15.11
+                },
+                "5": {
+                  "selected": 55269,
+                  "finish_top3": 27061,
+                  "winner": 10010,
+                  "races_with_any_top3": 11024,
+                  "races_with_all_top3": 5834,
+                  "finish_top3_precision_pct": 48.96,
+                  "winner_precision_pct": 18.11,
+                  "race_any_top3_rate_pct": 99.71,
+                  "race_all_top3_rate_pct": 52.77
+                },
+                "7": {
+                  "selected": 76942,
+                  "finish_top3": 30861,
+                  "winner": 10680,
+                  "races_with_any_top3": 11052,
+                  "races_with_all_top3": 8912,
+                  "finish_top3_precision_pct": 40.11,
+                  "winner_precision_pct": 13.88,
+                  "race_any_top3_rate_pct": 99.96,
+                  "race_all_top3_rate_pct": 80.61
+                }
+              }
+            },
+            "comparison_policy": "LAB and market ranks are recomputed on the same horses with valid official final odds in each race; outcomes are official finishing positions."
+          }
         },
         "final_odds_market_comparison": {
           "C_model_top_pick": {
@@ -321262,9 +321427,9 @@
       }
     ],
     "fold_runtime_seconds": {
-      "previous_year_2": 1735.615,
-      "previous_year_1": 1737.16,
-      "recent_year": 1787.729
+      "previous_year_2": 1776.659,
+      "previous_year_1": 1738.942,
+      "recent_year": 1793.694
     },
     "recent_year_validation": {
       "status": "evaluated",
@@ -329055,7 +329220,7 @@
       "fold": {
         "fold": 3,
         "period_label": "recent_year",
-        "runtime_seconds": 1787.729,
+        "runtime_seconds": 1793.694,
         "train_start": "2022-11-05",
         "train_end": "2025-11-06",
         "test_start": "2025-11-07",
@@ -418150,9 +418315,9 @@
           "surface:ダート": {
             "dimension": "surface",
             "label": "ダート",
-            "races": 13672,
-            "winner_top1_rate": 32.45,
-            "winner_top3_rate": 63.8,
+            "races": 13660,
+            "winner_top1_rate": 32.47,
+            "winner_top3_rate": 63.82,
             "bet_types": {
               "win": {
                 "tickets": 0,
@@ -418173,13 +418338,13 @@
                 "profit": 0
               },
               "wide": {
-                "tickets": 41016,
-                "hits": 9924,
-                "stake": 4101600,
-                "return": 2733220.0,
+                "tickets": 40980,
+                "hits": 9918,
+                "stake": 4098000,
+                "return": 2730920.0,
                 "hit_rate": 24.2,
                 "roi": 66.64,
-                "profit": -1368380.0
+                "profit": -1367080.0
               },
               "quinella": {
                 "tickets": 0,
@@ -418191,31 +418356,31 @@
                 "profit": 0
               },
               "exacta": {
-                "tickets": 54688,
+                "tickets": 54640,
                 "hits": 3323,
-                "stake": 5468800,
+                "stake": 5464000,
                 "return": 3399000.0,
                 "hit_rate": 6.08,
-                "roi": 62.15,
-                "profit": -2069800.0
+                "roi": 62.21,
+                "profit": -2065000.0
               },
               "trio": {
-                "tickets": 136720,
-                "hits": 5264,
-                "stake": 13672000,
-                "return": 8044380.0,
+                "tickets": 136600,
+                "hits": 5261,
+                "stake": 13660000,
+                "return": 8038260.0,
                 "hit_rate": 3.85,
-                "roi": 58.84,
-                "profit": -5627620.0
+                "roi": 58.85,
+                "profit": -5621740.0
               },
               "trifecta": {
-                "tickets": 328128,
-                "hits": 3278,
-                "stake": 32812800,
-                "return": 18020400.0,
+                "tickets": 327840,
+                "hits": 3277,
+                "stake": 32784000,
+                "return": 18007870.0,
                 "hit_rate": 1.0,
-                "roi": 54.92,
-                "profit": -14792400.0
+                "roi": 54.93,
+                "profit": -14776130.0
               }
             }
           },
@@ -419846,14 +420011,14 @@
                 "profit": -178710.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 41016,
-                "hits": 9584,
-                "stake": 4101600,
-                "return": 2686940.0,
-                "roi": 65.51,
-                "hit_rate": 23.37,
-                "profit": -1414660.0
+                "races": 13660,
+                "tickets": 40980,
+                "hits": 9580,
+                "stake": 4098000,
+                "return": 2685440.0,
+                "roi": 65.53,
+                "hit_rate": 23.38,
+                "profit": -1412560.0
               },
               "surface:芝": {
                 "races": 26,
@@ -420488,14 +420653,14 @@
                 "profit": -180510.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 41016,
-                "hits": 7024,
-                "stake": 4101600,
-                "return": 3065590.0,
-                "roi": 74.74,
+                "races": 13660,
+                "tickets": 40980,
+                "hits": 7021,
+                "stake": 4098000,
+                "return": 3064440.0,
+                "roi": 74.78,
                 "hit_rate": 17.13,
-                "profit": -1036010.0
+                "profit": -1033560.0
               },
               "surface:芝": {
                 "races": 26,
@@ -421132,14 +421297,14 @@
                 "profit": -257590.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 54688,
+                "races": 13660,
+                "tickets": 54640,
                 "hits": 3173,
-                "stake": 5468800,
+                "stake": 5464000,
                 "return": 3337390.0,
-                "roi": 61.03,
-                "hit_rate": 5.8,
-                "profit": -2131410.0
+                "roi": 61.08,
+                "hit_rate": 5.81,
+                "profit": -2126610.0
               },
               "surface:芝": {
                 "races": 26,
@@ -421774,14 +421939,14 @@
                 "profit": -203260.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 54688,
-                "hits": 2092,
-                "stake": 5468800,
-                "return": 3782100.0,
-                "roi": 69.16,
+                "races": 13660,
+                "tickets": 54640,
+                "hits": 2091,
+                "stake": 5464000,
+                "return": 3780540.0,
+                "roi": 69.19,
                 "hit_rate": 3.83,
-                "profit": -1686700.0
+                "profit": -1683460.0
               },
               "surface:芝": {
                 "races": 26,
@@ -422418,14 +422583,14 @@
                 "profit": -813000.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 136720,
-                "hits": 5114,
-                "stake": 13672000,
-                "return": 7682990.0,
-                "roi": 56.2,
+                "races": 13660,
+                "tickets": 136600,
+                "hits": 5110,
+                "stake": 13660000,
+                "return": 7669930.0,
+                "roi": 56.15,
                 "hit_rate": 3.74,
-                "profit": -5989010.0
+                "profit": -5990070.0
               },
               "surface:芝": {
                 "races": 26,
@@ -423060,14 +423225,14 @@
                 "profit": -740240.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 136720,
-                "hits": 3442,
-                "stake": 13672000,
-                "return": 8214260.0,
-                "roi": 60.08,
+                "races": 13660,
+                "tickets": 136600,
+                "hits": 3441,
+                "stake": 13660000,
+                "return": 8212500.0,
+                "roi": 60.12,
                 "hit_rate": 2.52,
-                "profit": -5457740.0
+                "profit": -5447500.0
               },
               "surface:芝": {
                 "races": 26,
@@ -423704,14 +423869,14 @@
                 "profit": -1911730.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 328128,
-                "hits": 3142,
-                "stake": 32812800,
-                "return": 17931020.0,
-                "roi": 54.65,
+                "races": 13660,
+                "tickets": 327840,
+                "hits": 3141,
+                "stake": 32784000,
+                "return": 17918490.0,
+                "roi": 54.66,
                 "hit_rate": 0.96,
-                "profit": -14881780.0
+                "profit": -14865510.0
               },
               "surface:芝": {
                 "races": 26,
@@ -424346,14 +424511,14 @@
                 "profit": -1454340.0
               },
               "surface:ダート": {
-                "races": 13672,
-                "tickets": 328128,
+                "races": 13660,
+                "tickets": 327840,
                 "hits": 1868,
-                "stake": 32812800,
+                "stake": 32784000,
                 "return": 20702660.0,
-                "roi": 63.09,
+                "roi": 63.15,
                 "hit_rate": 0.57,
-                "profit": -12110140.0
+                "profit": -12081340.0
               },
               "surface:芝": {
                 "races": 26,
@@ -425274,19 +425439,19 @@
             },
             {
               "segment": "surface:ダート",
-              "baseline_races": 13672,
-              "candidate_races": 13672,
-              "baseline_tickets": 41016,
-              "candidate_tickets": 41016,
-              "baseline_hits": 9584,
-              "candidate_hits": 7024,
-              "baseline_hit_rate": 23.37,
+              "baseline_races": 13660,
+              "candidate_races": 13660,
+              "baseline_tickets": 40980,
+              "candidate_tickets": 40980,
+              "baseline_hits": 9580,
+              "candidate_hits": 7021,
+              "baseline_hit_rate": 23.38,
               "candidate_hit_rate": 17.13,
-              "baseline_roi": 65.51,
-              "candidate_roi": 74.74,
-              "roi_delta": 9.23,
-              "baseline_profit": -1414660.0,
-              "candidate_profit": -1036010.0
+              "baseline_roi": 65.53,
+              "candidate_roi": 74.78,
+              "roi_delta": 9.25,
+              "baseline_profit": -1412560.0,
+              "candidate_profit": -1033560.0
             },
             {
               "segment": "surface:芝",
@@ -426300,19 +426465,19 @@
             },
             {
               "segment": "surface:ダート",
-              "baseline_races": 13672,
-              "candidate_races": 13672,
-              "baseline_tickets": 54688,
-              "candidate_tickets": 54688,
+              "baseline_races": 13660,
+              "candidate_races": 13660,
+              "baseline_tickets": 54640,
+              "candidate_tickets": 54640,
               "baseline_hits": 3173,
-              "candidate_hits": 2092,
-              "baseline_hit_rate": 5.8,
+              "candidate_hits": 2091,
+              "baseline_hit_rate": 5.81,
               "candidate_hit_rate": 3.83,
-              "baseline_roi": 61.03,
-              "candidate_roi": 69.16,
-              "roi_delta": 8.13,
-              "baseline_profit": -2131410.0,
-              "candidate_profit": -1686700.0
+              "baseline_roi": 61.08,
+              "candidate_roi": 69.19,
+              "roi_delta": 8.11,
+              "baseline_profit": -2126610.0,
+              "candidate_profit": -1683460.0
             },
             {
               "segment": "surface:芝",
@@ -427326,19 +427491,19 @@
             },
             {
               "segment": "surface:ダート",
-              "baseline_races": 13672,
-              "candidate_races": 13672,
-              "baseline_tickets": 136720,
-              "candidate_tickets": 136720,
-              "baseline_hits": 5114,
-              "candidate_hits": 3442,
+              "baseline_races": 13660,
+              "candidate_races": 13660,
+              "baseline_tickets": 136600,
+              "candidate_tickets": 136600,
+              "baseline_hits": 5110,
+              "candidate_hits": 3441,
               "baseline_hit_rate": 3.74,
               "candidate_hit_rate": 2.52,
-              "baseline_roi": 56.2,
-              "candidate_roi": 60.08,
-              "roi_delta": 3.88,
-              "baseline_profit": -5989010.0,
-              "candidate_profit": -5457740.0
+              "baseline_roi": 56.15,
+              "candidate_roi": 60.12,
+              "roi_delta": 3.97,
+              "baseline_profit": -5990070.0,
+              "candidate_profit": -5447500.0
             },
             {
               "segment": "surface:芝",
@@ -428352,19 +428517,19 @@
             },
             {
               "segment": "surface:ダート",
-              "baseline_races": 13672,
-              "candidate_races": 13672,
-              "baseline_tickets": 328128,
-              "candidate_tickets": 328128,
-              "baseline_hits": 3142,
+              "baseline_races": 13660,
+              "candidate_races": 13660,
+              "baseline_tickets": 327840,
+              "candidate_tickets": 327840,
+              "baseline_hits": 3141,
               "candidate_hits": 1868,
               "baseline_hit_rate": 0.96,
               "candidate_hit_rate": 0.57,
-              "baseline_roi": 54.65,
-              "candidate_roi": 63.09,
-              "roi_delta": 8.44,
-              "baseline_profit": -14881780.0,
-              "candidate_profit": -12110140.0
+              "baseline_roi": 54.66,
+              "candidate_roi": 63.15,
+              "roi_delta": 8.49,
+              "baseline_profit": -14865510.0,
+              "candidate_profit": -12081340.0
             },
             {
               "segment": "surface:芝",
@@ -433798,107 +433963,107 @@
           "surface:ダート": {
             "1": {
               "ordinary": {
-                "races": 13672,
+                "races": 13660,
                 "topk_hits": {
-                  "1": 4437,
-                  "2": 6955,
-                  "3": 8723,
-                  "5": 11050,
-                  "7": 12490
+                  "1": 4436,
+                  "2": 6952,
+                  "3": 8718,
+                  "5": 11042,
+                  "7": 12482
                 },
                 "topk_rate": {
-                  "1": 32.45,
-                  "2": 50.87,
-                  "3": 63.8,
-                  "5": 80.82,
-                  "7": 91.35
+                  "1": 32.47,
+                  "2": 50.89,
+                  "3": 63.82,
+                  "5": 80.83,
+                  "7": 91.38
                 }
               },
               "role_specific": {
-                "races": 13672,
+                "races": 13660,
                 "topk_hits": {
-                  "1": 4434,
-                  "2": 6961,
-                  "3": 8727,
-                  "5": 11064,
-                  "7": 12503
+                  "1": 4433,
+                  "2": 6959,
+                  "3": 8722,
+                  "5": 11056,
+                  "7": 12495
                 },
                 "topk_rate": {
-                  "1": 32.43,
-                  "2": 50.91,
-                  "3": 63.83,
-                  "5": 80.92,
-                  "7": 91.45
+                  "1": 32.45,
+                  "2": 50.94,
+                  "3": 63.85,
+                  "5": 80.94,
+                  "7": 91.47
                 }
               }
             },
             "2": {
               "ordinary": {
-                "races": 13657,
+                "races": 13645,
                 "topk_hits": {
-                  "1": 2576,
-                  "2": 5080,
-                  "3": 7035,
-                  "5": 10103,
-                  "7": 12054
+                  "1": 2575,
+                  "2": 5079,
+                  "3": 7031,
+                  "5": 10095,
+                  "7": 12042
                 },
                 "topk_rate": {
-                  "1": 18.86,
-                  "2": 37.2,
-                  "3": 51.51,
+                  "1": 18.87,
+                  "2": 37.22,
+                  "3": 51.53,
                   "5": 73.98,
-                  "7": 88.26
+                  "7": 88.25
                 }
               },
               "role_specific": {
-                "races": 13657,
+                "races": 13645,
                 "topk_hits": {
-                  "1": 2602,
-                  "2": 5078,
-                  "3": 7044,
-                  "5": 10106,
-                  "7": 12031
+                  "1": 2601,
+                  "2": 5077,
+                  "3": 7040,
+                  "5": 10098,
+                  "7": 12019
                 },
                 "topk_rate": {
-                  "1": 19.05,
-                  "2": 37.18,
-                  "3": 51.58,
-                  "5": 74.0,
-                  "7": 88.09
+                  "1": 19.06,
+                  "2": 37.21,
+                  "3": 51.59,
+                  "5": 74.01,
+                  "7": 88.08
                 }
               }
             },
             "3": {
               "ordinary": {
-                "races": 13652,
+                "races": 13640,
                 "topk_hits": {
-                  "1": 1733,
-                  "2": 3746,
-                  "3": 5715,
-                  "5": 9175,
-                  "7": 11503
+                  "1": 1730,
+                  "2": 3742,
+                  "3": 5707,
+                  "5": 9166,
+                  "7": 11492
                 },
                 "topk_rate": {
-                  "1": 12.69,
-                  "2": 27.44,
-                  "3": 41.86,
-                  "5": 67.21,
-                  "7": 84.26
+                  "1": 12.68,
+                  "2": 27.43,
+                  "3": 41.84,
+                  "5": 67.2,
+                  "7": 84.25
                 }
               },
               "role_specific": {
-                "races": 13652,
+                "races": 13640,
                 "topk_hits": {
-                  "1": 1750,
-                  "2": 3742,
-                  "3": 5723,
-                  "5": 9165,
-                  "7": 11509
+                  "1": 1747,
+                  "2": 3737,
+                  "3": 5715,
+                  "5": 9156,
+                  "7": 11498
                 },
                 "topk_rate": {
-                  "1": 12.82,
-                  "2": 27.41,
-                  "3": 41.92,
+                  "1": 12.81,
+                  "2": 27.4,
+                  "3": 41.9,
                   "5": 67.13,
                   "7": 84.3
                 }
@@ -436302,149 +436467,296 @@
           "policy": "Fixed 0.30 calibrated top-win probability gate; role-specific trifecta ranking blend 0.10; 2-3-4 formation. The reference uses the same qualifying races and formation with ordinary ranking, isolating the ranking change. Parameters are not selected on the holdout fold."
         },
         "market_rank_diagnostics": {
-          "races": 11056,
-          "matched_horses": 111755,
-          "avg_top7_overlap": 5.95,
-          "rank_gap_definition": "market rank minus LAB rank; positive means LAB ranks the horse higher",
-          "rank_gap_bands": {
-            "lab_upgrade_5_plus": {
-              "horses": 3869,
-              "finish_top3": 469,
-              "winner": 83,
-              "finish_top3_rate_pct": 12.12,
-              "winner_rate_pct": 2.15
-            },
-            "lab_upgrade_3_4": {
-              "horses": 10620,
-              "finish_top3": 1755,
-              "winner": 313,
-              "finish_top3_rate_pct": 16.53,
-              "winner_rate_pct": 2.95
-            },
-            "lab_upgrade_1_2": {
-              "horses": 29168,
-              "finish_top3": 7182,
-              "winner": 1656,
-              "finish_top3_rate_pct": 24.62,
-              "winner_rate_pct": 5.68
-            },
-            "near_alignment_minus2_to_plus2": {
-              "horses": 53228,
-              "finish_top3": 17812,
-              "winner": 6741,
-              "finish_top3_rate_pct": 33.46,
-              "winner_rate_pct": 12.66
-            },
-            "market_upgrade_3_4": {
-              "horses": 10086,
-              "finish_top3": 3813,
-              "winner": 1368,
-              "finish_top3_rate_pct": 37.8,
-              "winner_rate_pct": 13.56
-            },
-            "market_upgrade_5_plus": {
-              "horses": 4784,
-              "finish_top3": 2149,
-              "winner": 914,
-              "finish_top3_rate_pct": 44.92,
-              "winner_rate_pct": 19.11
-            }
-          },
-          "top_k_selection": {
-            "lab": {
-              "1": {
-                "selected": 11056,
-                "finish_top3": 6841,
-                "winner": 3308,
-                "races_with_any_top3": 6841,
-                "races_with_all_top3": 0,
-                "finish_top3_precision_pct": 61.88,
-                "winner_precision_pct": 29.92,
-                "race_any_top3_rate_pct": 61.88,
-                "race_all_top3_rate_pct": 0.0
+          "C_performance_pace": {
+            "races": 11056,
+            "matched_horses": 111755,
+            "avg_top7_overlap": 5.95,
+            "rank_gap_definition": "market rank minus LAB rank; positive means LAB ranks the horse higher",
+            "rank_gap_bands": {
+              "lab_upgrade_5_plus": {
+                "horses": 3869,
+                "finish_top3": 469,
+                "winner": 83,
+                "finish_top3_rate_pct": 12.12,
+                "winner_rate_pct": 2.15
               },
-              "3": {
-                "selected": 33168,
-                "finish_top3": 16997,
-                "winner": 6713,
-                "races_with_any_top3": 10220,
-                "races_with_all_top3": 931,
-                "finish_top3_precision_pct": 51.25,
-                "winner_precision_pct": 20.24,
-                "race_any_top3_rate_pct": 92.44,
-                "race_all_top3_rate_pct": 8.42
+              "lab_upgrade_3_4": {
+                "horses": 10620,
+                "finish_top3": 1755,
+                "winner": 313,
+                "finish_top3_rate_pct": 16.53,
+                "winner_rate_pct": 2.95
               },
-              "5": {
-                "selected": 55269,
-                "finish_top3": 24091,
-                "winner": 8690,
-                "races_with_any_top3": 10900,
-                "races_with_all_top3": 4019,
-                "finish_top3_precision_pct": 43.59,
-                "winner_precision_pct": 15.72,
-                "race_any_top3_rate_pct": 98.59,
-                "race_all_top3_rate_pct": 36.35
+              "lab_upgrade_1_2": {
+                "horses": 29168,
+                "finish_top3": 7182,
+                "winner": 1656,
+                "finish_top3_rate_pct": 24.62,
+                "winner_rate_pct": 5.68
               },
-              "7": {
-                "selected": 76942,
-                "finish_top3": 29007,
-                "winner": 9993,
-                "races_with_any_top3": 11040,
-                "races_with_all_top3": 7371,
-                "finish_top3_precision_pct": 37.7,
-                "winner_precision_pct": 12.99,
-                "race_any_top3_rate_pct": 99.86,
-                "race_all_top3_rate_pct": 66.67
+              "near_alignment_minus2_to_plus2": {
+                "horses": 53228,
+                "finish_top3": 17812,
+                "winner": 6741,
+                "finish_top3_rate_pct": 33.46,
+                "winner_rate_pct": 12.66
+              },
+              "market_upgrade_3_4": {
+                "horses": 10086,
+                "finish_top3": 3813,
+                "winner": 1368,
+                "finish_top3_rate_pct": 37.8,
+                "winner_rate_pct": 13.56
+              },
+              "market_upgrade_5_plus": {
+                "horses": 4784,
+                "finish_top3": 2149,
+                "winner": 914,
+                "finish_top3_rate_pct": 44.92,
+                "winner_rate_pct": 19.11
               }
             },
-            "market": {
-              "1": {
-                "selected": 11056,
-                "finish_top3": 8319,
-                "winner": 4912,
-                "races_with_any_top3": 8319,
-                "races_with_all_top3": 0,
-                "finish_top3_precision_pct": 75.24,
-                "winner_precision_pct": 44.43,
-                "race_any_top3_rate_pct": 75.24,
-                "race_all_top3_rate_pct": 0.0
+            "top_k_selection": {
+              "lab": {
+                "1": {
+                  "selected": 11056,
+                  "finish_top3": 6841,
+                  "winner": 3308,
+                  "races_with_any_top3": 6841,
+                  "races_with_all_top3": 0,
+                  "finish_top3_precision_pct": 61.88,
+                  "winner_precision_pct": 29.92,
+                  "race_any_top3_rate_pct": 61.88,
+                  "race_all_top3_rate_pct": 0.0
+                },
+                "3": {
+                  "selected": 33168,
+                  "finish_top3": 16997,
+                  "winner": 6713,
+                  "races_with_any_top3": 10220,
+                  "races_with_all_top3": 931,
+                  "finish_top3_precision_pct": 51.25,
+                  "winner_precision_pct": 20.24,
+                  "race_any_top3_rate_pct": 92.44,
+                  "race_all_top3_rate_pct": 8.42
+                },
+                "5": {
+                  "selected": 55269,
+                  "finish_top3": 24091,
+                  "winner": 8690,
+                  "races_with_any_top3": 10900,
+                  "races_with_all_top3": 4019,
+                  "finish_top3_precision_pct": 43.59,
+                  "winner_precision_pct": 15.72,
+                  "race_any_top3_rate_pct": 98.59,
+                  "race_all_top3_rate_pct": 36.35
+                },
+                "7": {
+                  "selected": 76942,
+                  "finish_top3": 29007,
+                  "winner": 9993,
+                  "races_with_any_top3": 11040,
+                  "races_with_all_top3": 7371,
+                  "finish_top3_precision_pct": 37.7,
+                  "winner_precision_pct": 12.99,
+                  "race_any_top3_rate_pct": 99.86,
+                  "race_all_top3_rate_pct": 66.67
+                }
               },
-              "3": {
-                "selected": 33168,
-                "finish_top3": 20070,
-                "winner": 8525,
-                "races_with_any_top3": 10723,
-                "races_with_all_top3": 1671,
-                "finish_top3_precision_pct": 60.51,
-                "winner_precision_pct": 25.7,
-                "race_any_top3_rate_pct": 96.99,
-                "race_all_top3_rate_pct": 15.11
-              },
-              "5": {
-                "selected": 55269,
-                "finish_top3": 27061,
-                "winner": 10010,
-                "races_with_any_top3": 11024,
-                "races_with_all_top3": 5834,
-                "finish_top3_precision_pct": 48.96,
-                "winner_precision_pct": 18.11,
-                "race_any_top3_rate_pct": 99.71,
-                "race_all_top3_rate_pct": 52.77
-              },
-              "7": {
-                "selected": 76942,
-                "finish_top3": 30861,
-                "winner": 10680,
-                "races_with_any_top3": 11052,
-                "races_with_all_top3": 8912,
-                "finish_top3_precision_pct": 40.11,
-                "winner_precision_pct": 13.88,
-                "race_any_top3_rate_pct": 99.96,
-                "race_all_top3_rate_pct": 80.61
+              "market": {
+                "1": {
+                  "selected": 11056,
+                  "finish_top3": 8319,
+                  "winner": 4912,
+                  "races_with_any_top3": 8319,
+                  "races_with_all_top3": 0,
+                  "finish_top3_precision_pct": 75.24,
+                  "winner_precision_pct": 44.43,
+                  "race_any_top3_rate_pct": 75.24,
+                  "race_all_top3_rate_pct": 0.0
+                },
+                "3": {
+                  "selected": 33168,
+                  "finish_top3": 20070,
+                  "winner": 8525,
+                  "races_with_any_top3": 10723,
+                  "races_with_all_top3": 1671,
+                  "finish_top3_precision_pct": 60.51,
+                  "winner_precision_pct": 25.7,
+                  "race_any_top3_rate_pct": 96.99,
+                  "race_all_top3_rate_pct": 15.11
+                },
+                "5": {
+                  "selected": 55269,
+                  "finish_top3": 27061,
+                  "winner": 10010,
+                  "races_with_any_top3": 11024,
+                  "races_with_all_top3": 5834,
+                  "finish_top3_precision_pct": 48.96,
+                  "winner_precision_pct": 18.11,
+                  "race_any_top3_rate_pct": 99.71,
+                  "race_all_top3_rate_pct": 52.77
+                },
+                "7": {
+                  "selected": 76942,
+                  "finish_top3": 30861,
+                  "winner": 10680,
+                  "races_with_any_top3": 11052,
+                  "races_with_all_top3": 8912,
+                  "finish_top3_precision_pct": 40.11,
+                  "winner_precision_pct": 13.88,
+                  "race_any_top3_rate_pct": 99.96,
+                  "race_all_top3_rate_pct": 80.61
+                }
               }
-            }
+            },
+            "comparison_policy": "LAB and market ranks are recomputed on the same horses with valid official final odds in each race; outcomes are official finishing positions."
           },
-          "comparison_policy": "LAB and market ranks are recomputed on the same horses with valid official final odds in each race; outcomes are official finishing positions."
+          "D4_jockey_venue_distance": {
+            "races": 11056,
+            "matched_horses": 111755,
+            "avg_top7_overlap": 5.96,
+            "rank_gap_definition": "market rank minus LAB rank; positive means LAB ranks the horse higher",
+            "rank_gap_bands": {
+              "lab_upgrade_5_plus": {
+                "horses": 3774,
+                "finish_top3": 462,
+                "winner": 82,
+                "finish_top3_rate_pct": 12.24,
+                "winner_rate_pct": 2.17
+              },
+              "lab_upgrade_3_4": {
+                "horses": 10544,
+                "finish_top3": 1743,
+                "winner": 310,
+                "finish_top3_rate_pct": 16.53,
+                "winner_rate_pct": 2.94
+              },
+              "lab_upgrade_1_2": {
+                "horses": 29193,
+                "finish_top3": 7205,
+                "winner": 1660,
+                "finish_top3_rate_pct": 24.68,
+                "winner_rate_pct": 5.69
+              },
+              "near_alignment_minus2_to_plus2": {
+                "horses": 53486,
+                "finish_top3": 17916,
+                "winner": 6781,
+                "finish_top3_rate_pct": 33.5,
+                "winner_rate_pct": 12.68
+              },
+              "market_upgrade_3_4": {
+                "horses": 10111,
+                "finish_top3": 3796,
+                "winner": 1374,
+                "finish_top3_rate_pct": 37.54,
+                "winner_rate_pct": 13.59
+              },
+              "market_upgrade_5_plus": {
+                "horses": 4647,
+                "finish_top3": 2058,
+                "winner": 868,
+                "finish_top3_rate_pct": 44.29,
+                "winner_rate_pct": 18.68
+              }
+            },
+            "top_k_selection": {
+              "lab": {
+                "1": {
+                  "selected": 11056,
+                  "finish_top3": 6879,
+                  "winner": 3320,
+                  "races_with_any_top3": 6879,
+                  "races_with_all_top3": 0,
+                  "finish_top3_precision_pct": 62.22,
+                  "winner_precision_pct": 30.03,
+                  "race_any_top3_rate_pct": 62.22,
+                  "race_all_top3_rate_pct": 0.0
+                },
+                "3": {
+                  "selected": 33168,
+                  "finish_top3": 17063,
+                  "winner": 6772,
+                  "races_with_any_top3": 10238,
+                  "races_with_all_top3": 927,
+                  "finish_top3_precision_pct": 51.44,
+                  "winner_precision_pct": 20.42,
+                  "race_any_top3_rate_pct": 92.6,
+                  "race_all_top3_rate_pct": 8.38
+                },
+                "5": {
+                  "selected": 55269,
+                  "finish_top3": 24213,
+                  "winner": 8736,
+                  "races_with_any_top3": 10919,
+                  "races_with_all_top3": 4102,
+                  "finish_top3_precision_pct": 43.81,
+                  "winner_precision_pct": 15.81,
+                  "race_any_top3_rate_pct": 98.76,
+                  "race_all_top3_rate_pct": 37.1
+                },
+                "7": {
+                  "selected": 76942,
+                  "finish_top3": 29055,
+                  "winner": 9988,
+                  "races_with_any_top3": 11041,
+                  "races_with_all_top3": 7409,
+                  "finish_top3_precision_pct": 37.76,
+                  "winner_precision_pct": 12.98,
+                  "race_any_top3_rate_pct": 99.86,
+                  "race_all_top3_rate_pct": 67.01
+                }
+              },
+              "market": {
+                "1": {
+                  "selected": 11056,
+                  "finish_top3": 8319,
+                  "winner": 4912,
+                  "races_with_any_top3": 8319,
+                  "races_with_all_top3": 0,
+                  "finish_top3_precision_pct": 75.24,
+                  "winner_precision_pct": 44.43,
+                  "race_any_top3_rate_pct": 75.24,
+                  "race_all_top3_rate_pct": 0.0
+                },
+                "3": {
+                  "selected": 33168,
+                  "finish_top3": 20070,
+                  "winner": 8525,
+                  "races_with_any_top3": 10723,
+                  "races_with_all_top3": 1671,
+                  "finish_top3_precision_pct": 60.51,
+                  "winner_precision_pct": 25.7,
+                  "race_any_top3_rate_pct": 96.99,
+                  "race_all_top3_rate_pct": 15.11
+                },
+                "5": {
+                  "selected": 55269,
+                  "finish_top3": 27061,
+                  "winner": 10010,
+                  "races_with_any_top3": 11024,
+                  "races_with_all_top3": 5834,
+                  "finish_top3_precision_pct": 48.96,
+                  "winner_precision_pct": 18.11,
+                  "race_any_top3_rate_pct": 99.71,
+                  "race_all_top3_rate_pct": 52.77
+                },
+                "7": {
+                  "selected": 76942,
+                  "finish_top3": 30861,
+                  "winner": 10680,
+                  "races_with_any_top3": 11052,
+                  "races_with_all_top3": 8912,
+                  "finish_top3_precision_pct": 40.11,
+                  "winner_precision_pct": 13.88,
+                  "race_any_top3_rate_pct": 99.96,
+                  "race_all_top3_rate_pct": 80.61
+                }
+              }
+            },
+            "comparison_policy": "LAB and market ranks are recomputed on the same horses with valid official final odds in each race; outcomes are official finishing positions."
+          }
         },
         "final_odds_market_comparison": {
           "C_model_top_pick": {
@@ -460388,7 +460700,7 @@
         "fold": {
           "fold": 3,
           "period_label": "recent_year",
-          "runtime_seconds": 1787.729,
+          "runtime_seconds": 1793.694,
           "train_start": "2022-11-05",
           "train_end": "2025-11-06",
           "test_start": "2025-11-07",
@@ -549483,9 +549795,9 @@
             "surface:ダート": {
               "dimension": "surface",
               "label": "ダート",
-              "races": 13672,
-              "winner_top1_rate": 32.45,
-              "winner_top3_rate": 63.8,
+              "races": 13660,
+              "winner_top1_rate": 32.47,
+              "winner_top3_rate": 63.82,
               "bet_types": {
                 "win": {
                   "tickets": 0,
@@ -549506,13 +549818,13 @@
                   "profit": 0
                 },
                 "wide": {
-                  "tickets": 41016,
-                  "hits": 9924,
-                  "stake": 4101600,
-                  "return": 2733220.0,
+                  "tickets": 40980,
+                  "hits": 9918,
+                  "stake": 4098000,
+                  "return": 2730920.0,
                   "hit_rate": 24.2,
                   "roi": 66.64,
-                  "profit": -1368380.0
+                  "profit": -1367080.0
                 },
                 "quinella": {
                   "tickets": 0,
@@ -549524,31 +549836,31 @@
                   "profit": 0
                 },
                 "exacta": {
-                  "tickets": 54688,
+                  "tickets": 54640,
                   "hits": 3323,
-                  "stake": 5468800,
+                  "stake": 5464000,
                   "return": 3399000.0,
                   "hit_rate": 6.08,
-                  "roi": 62.15,
-                  "profit": -2069800.0
+                  "roi": 62.21,
+                  "profit": -2065000.0
                 },
                 "trio": {
-                  "tickets": 136720,
-                  "hits": 5264,
-                  "stake": 13672000,
-                  "return": 8044380.0,
+                  "tickets": 136600,
+                  "hits": 5261,
+                  "stake": 13660000,
+                  "return": 8038260.0,
                   "hit_rate": 3.85,
-                  "roi": 58.84,
-                  "profit": -5627620.0
+                  "roi": 58.85,
+                  "profit": -5621740.0
                 },
                 "trifecta": {
-                  "tickets": 328128,
-                  "hits": 3278,
-                  "stake": 32812800,
-                  "return": 18020400.0,
+                  "tickets": 327840,
+                  "hits": 3277,
+                  "stake": 32784000,
+                  "return": 18007870.0,
                   "hit_rate": 1.0,
-                  "roi": 54.92,
-                  "profit": -14792400.0
+                  "roi": 54.93,
+                  "profit": -14776130.0
                 }
               }
             },
@@ -551179,14 +551491,14 @@
                   "profit": -178710.0
                 },
                 "surface:ダート": {
-                  "races": 13672,
-                  "tickets": 41016,
-                  "hits": 9584,
-                  "stake": 4101600,
-                  "return": 2686940.0,
-                  "roi": 65.51,
-                  "hit_rate": 23.37,
-                  "profit": -1414660.0
+                  "races": 13660,
+                  "tickets": 40980,
+                  "hits": 9580,
+                  "stake": 4098000,
+                  "return": 2685440.0,
+                  "roi": 65.53,
+                  "hit_rate": 23.38,
+                  "profit": -1412560.0
                 },
                 "surface:芝": {
                   "races": 26,
@@ -551821,14 +552133,14 @@
                   "profit": -180510.0
                 },
                 "surface:ダート": {
-                  "races": 13672,
-                  "tickets": 41016,
-                  "hits": 7024,
-                  "stake": 4101600,
-                  "return": 3065590.0,
-                  "roi": 74.74,
+                  "races": 13660,
+                  "tickets": 40980,
+                  "hits": 7021,
+                  "stake": 4098000,
+                  "return": 3064440.0,
+                  "roi": 74.78,
                   "hit_rate": 17.13,
-                  "profit": -1036010.0
+                  "profit": -1033560.0
                 },
                 "surface:芝": {
                   "races": 26,
@@ -552465,14 +552777,14 @@
                   "profit": -257590.0
                 },
                 "surface:ダート": {
-                  "races": 13672,
-                  "tickets": 54688,
+                  "races": 13660,
+                  "tickets": 54640,
                   "hits": 3173,
-                  "stake": 5468800,
+                  "stake": 5464000,
                   "return": 3337390.0,
-                  "roi": 61.03,
-                  "hit_rate": 5.8,
-                  "profit": -2131410.0
+                  "roi": 61.08,
+                  "hit_rate": 5.81,
+                  "profit": -2126610.0
                 },
                 "surface:芝": {
                   "races": 26,
@@ -553107,14 +553419,14 @@
                   "profit": -203260.0
                 },
                 "surface:ダート": {
-                  "races": 13672,
-                  "tickets": 54688,
-                  "hits": 2092,
-                  "stake": 5468800,
-                  "return": 3782100.0,
-                  "roi": 69.16,
+                  "races": 13660,
+                  "tickets": 54640,
+                  "hits": 2091,
+                  "stake": 5464000,
+                  "return": 3780540.0,
+                  "roi": 69.19,
                   "hit_rate": 3.83,
-                  "profit": -1686700.0
+                  "profit": -1683460.0
                 },
                 "surface:芝": {
                   "races": 26,
@@ -553751,14 +554063,14 @@
                   "profit": -813000.0
                 },
                 "surface:ダート": {
-                  "races": 13672,
-                  "tickets": 136720,
-                  "hits": 5114,
-                  "stake": 13672000,
-                  "return": 7682990.0,
-                  "roi": 56.2,
+                  "races": 13660,
+                  "tickets": 136600,
+                  "hits": 5110,
+                  "stake": 13660000,
+                  "return": 7669930.0,
+                  "roi": 56.15,
                   "hit_rate": 3.74,
-                  "profit": -5989010.0
+                  "profit": -5990070.0
                 },
                 "surface:芝": {
                   "races": 26,
@@ -554393,14 +554705,14 @@
                   "profit": -740240.0
                 },
                 "surface:ダート": {
-                  "races": 13672,
-                  "tickets": 136720,
-                  "hits": 3442,
-                  "stake": 13672000,
-                  "return": 8214260.0,
-                  "roi": 60.08,
+                  "races": 13660,
+                  "tickets": 136600,
+                  "hits": 3441,
+                  "stake": 13660000,
+                  "return": 8212500.0,
+                  "roi": 60.12,
                   "hit_rate": 2.52,
-                  "profit": -5457740.0
+                  "profit": -5447500.0
                 },
                 "surface:芝": {
                   "races": 26,
@@ -555037,14 +555349,14 @@
                   "profit": -1911730.0
                 },
                 "surface:ダート": {
-                  "races": 13672,
-                  "tickets": 328128,
-                  "hits": 3142,
-                  "stake": 32812800,
-                  "return": 17931020.0,
-                  "roi": 54.65,
+                  "races": 13660,
+                  "tickets": 327840,
+                  "hits": 3141,
+                  "stake": 32784000,
+                  "return": 17918490.0,
+                  "roi": 54.66,
                   "hit_rate": 0.96,
-                  "profit": -14881780.0
+                  "profit": -14865510.0
                 },
                 "surface:芝": {
                   "races": 26,
@@ -555679,14 +555991,14 @@
                   "profit": -1454340.0
                 },
                 "surface:ダート": {
-                  "races": 13672,
-                  "tickets": 328128,
+                  "races": 13660,
+                  "tickets": 327840,
                   "hits": 1868,
-                  "stake": 32812800,
+                  "stake": 32784000,
                   "return": 20702660.0,
-                  "roi": 63.09,
+                  "roi": 63.15,
                   "hit_rate": 0.57,
-                  "profit": -12110140.0
+                  "profit": -12081340.0
                 },
                 "surface:芝": {
                   "races": 26,
@@ -556607,19 +556919,19 @@
               },
               {
                 "segment": "surface:ダート",
-                "baseline_races": 13672,
-                "candidate_races": 13672,
-                "baseline_tickets": 41016,
-                "candidate_tickets": 41016,
-                "baseline_hits": 9584,
-                "candidate_hits": 7024,
-                "baseline_hit_rate": 23.37,
+                "baseline_races": 13660,
+                "candidate_races": 13660,
+                "baseline_tickets": 40980,
+                "candidate_tickets": 40980,
+                "baseline_hits": 9580,
+                "candidate_hits": 7021,
+                "baseline_hit_rate": 23.38,
                 "candidate_hit_rate": 17.13,
-                "baseline_roi": 65.51,
-                "candidate_roi": 74.74,
-                "roi_delta": 9.23,
-                "baseline_profit": -1414660.0,
-                "candidate_profit": -1036010.0
+                "baseline_roi": 65.53,
+                "candidate_roi": 74.78,
+                "roi_delta": 9.25,
+                "baseline_profit": -1412560.0,
+                "candidate_profit": -1033560.0
               },
               {
                 "segment": "surface:芝",
@@ -557633,19 +557945,19 @@
               },
               {
                 "segment": "surface:ダート",
-                "baseline_races": 13672,
-                "candidate_races": 13672,
-                "baseline_tickets": 54688,
-                "candidate_tickets": 54688,
+                "baseline_races": 13660,
+                "candidate_races": 13660,
+                "baseline_tickets": 54640,
+                "candidate_tickets": 54640,
                 "baseline_hits": 3173,
-                "candidate_hits": 2092,
-                "baseline_hit_rate": 5.8,
+                "candidate_hits": 2091,
+                "baseline_hit_rate": 5.81,
                 "candidate_hit_rate": 3.83,
-                "baseline_roi": 61.03,
-                "candidate_roi": 69.16,
-                "roi_delta": 8.13,
-                "baseline_profit": -2131410.0,
-                "candidate_profit": -1686700.0
+                "baseline_roi": 61.08,
+                "candidate_roi": 69.19,
+                "roi_delta": 8.11,
+                "baseline_profit": -2126610.0,
+                "candidate_profit": -1683460.0
               },
               {
                 "segment": "surface:芝",
@@ -558659,19 +558971,19 @@
               },
               {
                 "segment": "surface:ダート",
-                "baseline_races": 13672,
-                "candidate_races": 13672,
-                "baseline_tickets": 136720,
-                "candidate_tickets": 136720,
-                "baseline_hits": 5114,
-                "candidate_hits": 3442,
+                "baseline_races": 13660,
+                "candidate_races": 13660,
+                "baseline_tickets": 136600,
+                "candidate_tickets": 136600,
+                "baseline_hits": 5110,
+                "candidate_hits": 3441,
                 "baseline_hit_rate": 3.74,
                 "candidate_hit_rate": 2.52,
-                "baseline_roi": 56.2,
-                "candidate_roi": 60.08,
-                "roi_delta": 3.88,
-                "baseline_profit": -5989010.0,
-                "candidate_profit": -5457740.0
+                "baseline_roi": 56.15,
+                "candidate_roi": 60.12,
+                "roi_delta": 3.97,
+                "baseline_profit": -5990070.0,
+                "candidate_profit": -5447500.0
               },
               {
                 "segment": "surface:芝",
@@ -559685,19 +559997,19 @@
               },
               {
                 "segment": "surface:ダート",
-                "baseline_races": 13672,
-                "candidate_races": 13672,
-                "baseline_tickets": 328128,
-                "candidate_tickets": 328128,
-                "baseline_hits": 3142,
+                "baseline_races": 13660,
+                "candidate_races": 13660,
+                "baseline_tickets": 327840,
+                "candidate_tickets": 327840,
+                "baseline_hits": 3141,
                 "candidate_hits": 1868,
                 "baseline_hit_rate": 0.96,
                 "candidate_hit_rate": 0.57,
-                "baseline_roi": 54.65,
-                "candidate_roi": 63.09,
-                "roi_delta": 8.44,
-                "baseline_profit": -14881780.0,
-                "candidate_profit": -12110140.0
+                "baseline_roi": 54.66,
+                "candidate_roi": 63.15,
+                "roi_delta": 8.49,
+                "baseline_profit": -14865510.0,
+                "candidate_profit": -12081340.0
               },
               {
                 "segment": "surface:芝",
@@ -565131,107 +565443,107 @@
             "surface:ダート": {
               "1": {
                 "ordinary": {
-                  "races": 13672,
+                  "races": 13660,
                   "topk_hits": {
-                    "1": 4437,
-                    "2": 6955,
-                    "3": 8723,
-                    "5": 11050,
-                    "7": 12490
+                    "1": 4436,
+                    "2": 6952,
+                    "3": 8718,
+                    "5": 11042,
+                    "7": 12482
                   },
                   "topk_rate": {
-                    "1": 32.45,
-                    "2": 50.87,
-                    "3": 63.8,
-                    "5": 80.82,
-                    "7": 91.35
+                    "1": 32.47,
+                    "2": 50.89,
+                    "3": 63.82,
+                    "5": 80.83,
+                    "7": 91.38
                   }
                 },
                 "role_specific": {
-                  "races": 13672,
+                  "races": 13660,
                   "topk_hits": {
-                    "1": 4434,
-                    "2": 6961,
-                    "3": 8727,
-                    "5": 11064,
-                    "7": 12503
+                    "1": 4433,
+                    "2": 6959,
+                    "3": 8722,
+                    "5": 11056,
+                    "7": 12495
                   },
                   "topk_rate": {
-                    "1": 32.43,
-                    "2": 50.91,
-                    "3": 63.83,
-                    "5": 80.92,
-                    "7": 91.45
+                    "1": 32.45,
+                    "2": 50.94,
+                    "3": 63.85,
+                    "5": 80.94,
+                    "7": 91.47
                   }
                 }
               },
               "2": {
                 "ordinary": {
-                  "races": 13657,
+                  "races": 13645,
                   "topk_hits": {
-                    "1": 2576,
-                    "2": 5080,
-                    "3": 7035,
-                    "5": 10103,
-                    "7": 12054
+                    "1": 2575,
+                    "2": 5079,
+                    "3": 7031,
+                    "5": 10095,
+                    "7": 12042
                   },
                   "topk_rate": {
-                    "1": 18.86,
-                    "2": 37.2,
-                    "3": 51.51,
+                    "1": 18.87,
+                    "2": 37.22,
+                    "3": 51.53,
                     "5": 73.98,
-                    "7": 88.26
+                    "7": 88.25
                   }
                 },
                 "role_specific": {
-                  "races": 13657,
+                  "races": 13645,
                   "topk_hits": {
-                    "1": 2602,
-                    "2": 5078,
-                    "3": 7044,
-                    "5": 10106,
-                    "7": 12031
+                    "1": 2601,
+                    "2": 5077,
+                    "3": 7040,
+                    "5": 10098,
+                    "7": 12019
                   },
                   "topk_rate": {
-                    "1": 19.05,
-                    "2": 37.18,
-                    "3": 51.58,
-                    "5": 74.0,
-                    "7": 88.09
+                    "1": 19.06,
+                    "2": 37.21,
+                    "3": 51.59,
+                    "5": 74.01,
+                    "7": 88.08
                   }
                 }
               },
               "3": {
                 "ordinary": {
-                  "races": 13652,
+                  "races": 13640,
                   "topk_hits": {
-                    "1": 1733,
-                    "2": 3746,
-                    "3": 5715,
-                    "5": 9175,
-                    "7": 11503
+                    "1": 1730,
+                    "2": 3742,
+                    "3": 5707,
+                    "5": 9166,
+                    "7": 11492
                   },
                   "topk_rate": {
-                    "1": 12.69,
-                    "2": 27.44,
-                    "3": 41.86,
-                    "5": 67.21,
-                    "7": 84.26
+                    "1": 12.68,
+                    "2": 27.43,
+                    "3": 41.84,
+                    "5": 67.2,
+                    "7": 84.25
                   }
                 },
                 "role_specific": {
-                  "races": 13652,
+                  "races": 13640,
                   "topk_hits": {
-                    "1": 1750,
-                    "2": 3742,
-                    "3": 5723,
-                    "5": 9165,
-                    "7": 11509
+                    "1": 1747,
+                    "2": 3737,
+                    "3": 5715,
+                    "5": 9156,
+                    "7": 11498
                   },
                   "topk_rate": {
-                    "1": 12.82,
-                    "2": 27.41,
-                    "3": 41.92,
+                    "1": 12.81,
+                    "2": 27.4,
+                    "3": 41.9,
                     "5": 67.13,
                     "7": 84.3
                   }
@@ -567635,149 +567947,296 @@
             "policy": "Fixed 0.30 calibrated top-win probability gate; role-specific trifecta ranking blend 0.10; 2-3-4 formation. The reference uses the same qualifying races and formation with ordinary ranking, isolating the ranking change. Parameters are not selected on the holdout fold."
           },
           "market_rank_diagnostics": {
-            "races": 11056,
-            "matched_horses": 111755,
-            "avg_top7_overlap": 5.95,
-            "rank_gap_definition": "market rank minus LAB rank; positive means LAB ranks the horse higher",
-            "rank_gap_bands": {
-              "lab_upgrade_5_plus": {
-                "horses": 3869,
-                "finish_top3": 469,
-                "winner": 83,
-                "finish_top3_rate_pct": 12.12,
-                "winner_rate_pct": 2.15
-              },
-              "lab_upgrade_3_4": {
-                "horses": 10620,
-                "finish_top3": 1755,
-                "winner": 313,
-                "finish_top3_rate_pct": 16.53,
-                "winner_rate_pct": 2.95
-              },
-              "lab_upgrade_1_2": {
-                "horses": 29168,
-                "finish_top3": 7182,
-                "winner": 1656,
-                "finish_top3_rate_pct": 24.62,
-                "winner_rate_pct": 5.68
-              },
-              "near_alignment_minus2_to_plus2": {
-                "horses": 53228,
-                "finish_top3": 17812,
-                "winner": 6741,
-                "finish_top3_rate_pct": 33.46,
-                "winner_rate_pct": 12.66
-              },
-              "market_upgrade_3_4": {
-                "horses": 10086,
-                "finish_top3": 3813,
-                "winner": 1368,
-                "finish_top3_rate_pct": 37.8,
-                "winner_rate_pct": 13.56
-              },
-              "market_upgrade_5_plus": {
-                "horses": 4784,
-                "finish_top3": 2149,
-                "winner": 914,
-                "finish_top3_rate_pct": 44.92,
-                "winner_rate_pct": 19.11
-              }
-            },
-            "top_k_selection": {
-              "lab": {
-                "1": {
-                  "selected": 11056,
-                  "finish_top3": 6841,
-                  "winner": 3308,
-                  "races_with_any_top3": 6841,
-                  "races_with_all_top3": 0,
-                  "finish_top3_precision_pct": 61.88,
-                  "winner_precision_pct": 29.92,
-                  "race_any_top3_rate_pct": 61.88,
-                  "race_all_top3_rate_pct": 0.0
+            "C_performance_pace": {
+              "races": 11056,
+              "matched_horses": 111755,
+              "avg_top7_overlap": 5.95,
+              "rank_gap_definition": "market rank minus LAB rank; positive means LAB ranks the horse higher",
+              "rank_gap_bands": {
+                "lab_upgrade_5_plus": {
+                  "horses": 3869,
+                  "finish_top3": 469,
+                  "winner": 83,
+                  "finish_top3_rate_pct": 12.12,
+                  "winner_rate_pct": 2.15
                 },
-                "3": {
-                  "selected": 33168,
-                  "finish_top3": 16997,
-                  "winner": 6713,
-                  "races_with_any_top3": 10220,
-                  "races_with_all_top3": 931,
-                  "finish_top3_precision_pct": 51.25,
-                  "winner_precision_pct": 20.24,
-                  "race_any_top3_rate_pct": 92.44,
-                  "race_all_top3_rate_pct": 8.42
+                "lab_upgrade_3_4": {
+                  "horses": 10620,
+                  "finish_top3": 1755,
+                  "winner": 313,
+                  "finish_top3_rate_pct": 16.53,
+                  "winner_rate_pct": 2.95
                 },
-                "5": {
-                  "selected": 55269,
-                  "finish_top3": 24091,
-                  "winner": 8690,
-                  "races_with_any_top3": 10900,
-                  "races_with_all_top3": 4019,
-                  "finish_top3_precision_pct": 43.59,
-                  "winner_precision_pct": 15.72,
-                  "race_any_top3_rate_pct": 98.59,
-                  "race_all_top3_rate_pct": 36.35
+                "lab_upgrade_1_2": {
+                  "horses": 29168,
+                  "finish_top3": 7182,
+                  "winner": 1656,
+                  "finish_top3_rate_pct": 24.62,
+                  "winner_rate_pct": 5.68
                 },
-                "7": {
-                  "selected": 76942,
-                  "finish_top3": 29007,
-                  "winner": 9993,
-                  "races_with_any_top3": 11040,
-                  "races_with_all_top3": 7371,
-                  "finish_top3_precision_pct": 37.7,
-                  "winner_precision_pct": 12.99,
-                  "race_any_top3_rate_pct": 99.86,
-                  "race_all_top3_rate_pct": 66.67
+                "near_alignment_minus2_to_plus2": {
+                  "horses": 53228,
+                  "finish_top3": 17812,
+                  "winner": 6741,
+                  "finish_top3_rate_pct": 33.46,
+                  "winner_rate_pct": 12.66
+                },
+                "market_upgrade_3_4": {
+                  "horses": 10086,
+                  "finish_top3": 3813,
+                  "winner": 1368,
+                  "finish_top3_rate_pct": 37.8,
+                  "winner_rate_pct": 13.56
+                },
+                "market_upgrade_5_plus": {
+                  "horses": 4784,
+                  "finish_top3": 2149,
+                  "winner": 914,
+                  "finish_top3_rate_pct": 44.92,
+                  "winner_rate_pct": 19.11
                 }
               },
-              "market": {
-                "1": {
-                  "selected": 11056,
-                  "finish_top3": 8319,
-                  "winner": 4912,
-                  "races_with_any_top3": 8319,
-                  "races_with_all_top3": 0,
-                  "finish_top3_precision_pct": 75.24,
-                  "winner_precision_pct": 44.43,
-                  "race_any_top3_rate_pct": 75.24,
-                  "race_all_top3_rate_pct": 0.0
+              "top_k_selection": {
+                "lab": {
+                  "1": {
+                    "selected": 11056,
+                    "finish_top3": 6841,
+                    "winner": 3308,
+                    "races_with_any_top3": 6841,
+                    "races_with_all_top3": 0,
+                    "finish_top3_precision_pct": 61.88,
+                    "winner_precision_pct": 29.92,
+                    "race_any_top3_rate_pct": 61.88,
+                    "race_all_top3_rate_pct": 0.0
+                  },
+                  "3": {
+                    "selected": 33168,
+                    "finish_top3": 16997,
+                    "winner": 6713,
+                    "races_with_any_top3": 10220,
+                    "races_with_all_top3": 931,
+                    "finish_top3_precision_pct": 51.25,
+                    "winner_precision_pct": 20.24,
+                    "race_any_top3_rate_pct": 92.44,
+                    "race_all_top3_rate_pct": 8.42
+                  },
+                  "5": {
+                    "selected": 55269,
+                    "finish_top3": 24091,
+                    "winner": 8690,
+                    "races_with_any_top3": 10900,
+                    "races_with_all_top3": 4019,
+                    "finish_top3_precision_pct": 43.59,
+                    "winner_precision_pct": 15.72,
+                    "race_any_top3_rate_pct": 98.59,
+                    "race_all_top3_rate_pct": 36.35
+                  },
+                  "7": {
+                    "selected": 76942,
+                    "finish_top3": 29007,
+                    "winner": 9993,
+                    "races_with_any_top3": 11040,
+                    "races_with_all_top3": 7371,
+                    "finish_top3_precision_pct": 37.7,
+                    "winner_precision_pct": 12.99,
+                    "race_any_top3_rate_pct": 99.86,
+                    "race_all_top3_rate_pct": 66.67
+                  }
                 },
-                "3": {
-                  "selected": 33168,
-                  "finish_top3": 20070,
-                  "winner": 8525,
-                  "races_with_any_top3": 10723,
-                  "races_with_all_top3": 1671,
-                  "finish_top3_precision_pct": 60.51,
-                  "winner_precision_pct": 25.7,
-                  "race_any_top3_rate_pct": 96.99,
-                  "race_all_top3_rate_pct": 15.11
-                },
-                "5": {
-                  "selected": 55269,
-                  "finish_top3": 27061,
-                  "winner": 10010,
-                  "races_with_any_top3": 11024,
-                  "races_with_all_top3": 5834,
-                  "finish_top3_precision_pct": 48.96,
-                  "winner_precision_pct": 18.11,
-                  "race_any_top3_rate_pct": 99.71,
-                  "race_all_top3_rate_pct": 52.77
-                },
-                "7": {
-                  "selected": 76942,
-                  "finish_top3": 30861,
-                  "winner": 10680,
-                  "races_with_any_top3": 11052,
-                  "races_with_all_top3": 8912,
-                  "finish_top3_precision_pct": 40.11,
-                  "winner_precision_pct": 13.88,
-                  "race_any_top3_rate_pct": 99.96,
-                  "race_all_top3_rate_pct": 80.61
+                "market": {
+                  "1": {
+                    "selected": 11056,
+                    "finish_top3": 8319,
+                    "winner": 4912,
+                    "races_with_any_top3": 8319,
+                    "races_with_all_top3": 0,
+                    "finish_top3_precision_pct": 75.24,
+                    "winner_precision_pct": 44.43,
+                    "race_any_top3_rate_pct": 75.24,
+                    "race_all_top3_rate_pct": 0.0
+                  },
+                  "3": {
+                    "selected": 33168,
+                    "finish_top3": 20070,
+                    "winner": 8525,
+                    "races_with_any_top3": 10723,
+                    "races_with_all_top3": 1671,
+                    "finish_top3_precision_pct": 60.51,
+                    "winner_precision_pct": 25.7,
+                    "race_any_top3_rate_pct": 96.99,
+                    "race_all_top3_rate_pct": 15.11
+                  },
+                  "5": {
+                    "selected": 55269,
+                    "finish_top3": 27061,
+                    "winner": 10010,
+                    "races_with_any_top3": 11024,
+                    "races_with_all_top3": 5834,
+                    "finish_top3_precision_pct": 48.96,
+                    "winner_precision_pct": 18.11,
+                    "race_any_top3_rate_pct": 99.71,
+                    "race_all_top3_rate_pct": 52.77
+                  },
+                  "7": {
+                    "selected": 76942,
+                    "finish_top3": 30861,
+                    "winner": 10680,
+                    "races_with_any_top3": 11052,
+                    "races_with_all_top3": 8912,
+                    "finish_top3_precision_pct": 40.11,
+                    "winner_precision_pct": 13.88,
+                    "race_any_top3_rate_pct": 99.96,
+                    "race_all_top3_rate_pct": 80.61
+                  }
                 }
-              }
+              },
+              "comparison_policy": "LAB and market ranks are recomputed on the same horses with valid official final odds in each race; outcomes are official finishing positions."
             },
-            "comparison_policy": "LAB and market ranks are recomputed on the same horses with valid official final odds in each race; outcomes are official finishing positions."
+            "D4_jockey_venue_distance": {
+              "races": 11056,
+              "matched_horses": 111755,
+              "avg_top7_overlap": 5.96,
+              "rank_gap_definition": "market rank minus LAB rank; positive means LAB ranks the horse higher",
+              "rank_gap_bands": {
+                "lab_upgrade_5_plus": {
+                  "horses": 3774,
+                  "finish_top3": 462,
+                  "winner": 82,
+                  "finish_top3_rate_pct": 12.24,
+                  "winner_rate_pct": 2.17
+                },
+                "lab_upgrade_3_4": {
+                  "horses": 10544,
+                  "finish_top3": 1743,
+                  "winner": 310,
+                  "finish_top3_rate_pct": 16.53,
+                  "winner_rate_pct": 2.94
+                },
+                "lab_upgrade_1_2": {
+                  "horses": 29193,
+                  "finish_top3": 7205,
+                  "winner": 1660,
+                  "finish_top3_rate_pct": 24.68,
+                  "winner_rate_pct": 5.69
+                },
+                "near_alignment_minus2_to_plus2": {
+                  "horses": 53486,
+                  "finish_top3": 17916,
+                  "winner": 6781,
+                  "finish_top3_rate_pct": 33.5,
+                  "winner_rate_pct": 12.68
+                },
+                "market_upgrade_3_4": {
+                  "horses": 10111,
+                  "finish_top3": 3796,
+                  "winner": 1374,
+                  "finish_top3_rate_pct": 37.54,
+                  "winner_rate_pct": 13.59
+                },
+                "market_upgrade_5_plus": {
+                  "horses": 4647,
+                  "finish_top3": 2058,
+                  "winner": 868,
+                  "finish_top3_rate_pct": 44.29,
+                  "winner_rate_pct": 18.68
+                }
+              },
+              "top_k_selection": {
+                "lab": {
+                  "1": {
+                    "selected": 11056,
+                    "finish_top3": 6879,
+                    "winner": 3320,
+                    "races_with_any_top3": 6879,
+                    "races_with_all_top3": 0,
+                    "finish_top3_precision_pct": 62.22,
+                    "winner_precision_pct": 30.03,
+                    "race_any_top3_rate_pct": 62.22,
+                    "race_all_top3_rate_pct": 0.0
+                  },
+                  "3": {
+                    "selected": 33168,
+                    "finish_top3": 17063,
+                    "winner": 6772,
+                    "races_with_any_top3": 10238,
+                    "races_with_all_top3": 927,
+                    "finish_top3_precision_pct": 51.44,
+                    "winner_precision_pct": 20.42,
+                    "race_any_top3_rate_pct": 92.6,
+                    "race_all_top3_rate_pct": 8.38
+                  },
+                  "5": {
+                    "selected": 55269,
+                    "finish_top3": 24213,
+                    "winner": 8736,
+                    "races_with_any_top3": 10919,
+                    "races_with_all_top3": 4102,
+                    "finish_top3_precision_pct": 43.81,
+                    "winner_precision_pct": 15.81,
+                    "race_any_top3_rate_pct": 98.76,
+                    "race_all_top3_rate_pct": 37.1
+                  },
+                  "7": {
+                    "selected": 76942,
+                    "finish_top3": 29055,
+                    "winner": 9988,
+                    "races_with_any_top3": 11041,
+                    "races_with_all_top3": 7409,
+                    "finish_top3_precision_pct": 37.76,
+                    "winner_precision_pct": 12.98,
+                    "race_any_top3_rate_pct": 99.86,
+                    "race_all_top3_rate_pct": 67.01
+                  }
+                },
+                "market": {
+                  "1": {
+                    "selected": 11056,
+                    "finish_top3": 8319,
+                    "winner": 4912,
+                    "races_with_any_top3": 8319,
+                    "races_with_all_top3": 0,
+                    "finish_top3_precision_pct": 75.24,
+                    "winner_precision_pct": 44.43,
+                    "race_any_top3_rate_pct": 75.24,
+                    "race_all_top3_rate_pct": 0.0
+                  },
+                  "3": {
+                    "selected": 33168,
+                    "finish_top3": 20070,
+                    "winner": 8525,
+                    "races_with_any_top3": 10723,
+                    "races_with_all_top3": 1671,
+                    "finish_top3_precision_pct": 60.51,
+                    "winner_precision_pct": 25.7,
+                    "race_any_top3_rate_pct": 96.99,
+                    "race_all_top3_rate_pct": 15.11
+                  },
+                  "5": {
+                    "selected": 55269,
+                    "finish_top3": 27061,
+                    "winner": 10010,
+                    "races_with_any_top3": 11024,
+                    "races_with_all_top3": 5834,
+                    "finish_top3_precision_pct": 48.96,
+                    "winner_precision_pct": 18.11,
+                    "race_any_top3_rate_pct": 99.71,
+                    "race_all_top3_rate_pct": 52.77
+                  },
+                  "7": {
+                    "selected": 76942,
+                    "finish_top3": 30861,
+                    "winner": 10680,
+                    "races_with_any_top3": 11052,
+                    "races_with_all_top3": 8912,
+                    "finish_top3_precision_pct": 40.11,
+                    "winner_precision_pct": 13.88,
+                    "race_any_top3_rate_pct": 99.96,
+                    "race_all_top3_rate_pct": 80.61
+                  }
+                }
+              },
+              "comparison_policy": "LAB and market ranks are recomputed on the same horses with valid official final odds in each race; outcomes are official finishing positions."
+            }
           },
           "final_odds_market_comparison": {
             "C_model_top_pick": {
