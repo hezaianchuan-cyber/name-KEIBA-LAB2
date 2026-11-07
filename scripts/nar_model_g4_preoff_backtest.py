@@ -8,6 +8,7 @@ Each race contributes at most one snapshot per time bucket and one ticket.
 from __future__ import annotations
 
 import datetime as dt
+import bisect
 import gzip
 import json
 import math
@@ -16,6 +17,7 @@ import random
 import urllib.parse
 import urllib.request
 import unicodedata
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -323,6 +325,13 @@ def load_supabase_snapshots(model_rows):
             diagnostics["model_snapshot_table_error"] = str(model_exc)[:300]
         for values in models_by_race.values():
             values.sort(key=lambda item: item[0])
+        # Precompute capture timestamps once. The former per-odds-row list
+        # comprehension scanned every model snapshot; bisect makes the
+        # latest-prior-model lookup logarithmic without changing selection.
+        model_times_by_race = {
+            key: [item[0] for item in values]
+            for key, values in models_by_race.items()
+        }
         diagnostics["supabase_model_races"] = len(models_by_race)
         diagnostics["supabase_model_key_samples"] = sorted(models_by_race.keys())[:8]
         diagnostics["supabase_model_venues"] = sorted({key.split("|")[0] for key in models_by_race})
@@ -375,11 +384,12 @@ def load_supabase_snapshots(model_rows):
                     model_candidates = models_by_race.get(key, [])
                     if model_candidates:
                         diagnostics["supabase_race_key_matches"] += 1
-                    prior = [pair for pair in model_candidates if pair[0] <= captured]
-                    if not prior:
+                    model_times = model_times_by_race.get(key, [])
+                    prior_index = bisect.bisect_right(model_times, captured) - 1
+                    if prior_index < 0:
                         diagnostics["supabase_no_prior_model"] += 1
                         continue
-                    model_time, model = prior[-1]
+                    model_time, model = model_candidates[prior_index]
                     age_minutes = (captured - model_time).total_seconds() / 60.0
                     if age_minutes < 0 or age_minutes > MAX_MODEL_AGE_MINUTES:
                         diagnostics["supabase_model_too_old"] += 1
@@ -1128,12 +1138,20 @@ def choose_bucket(rows, name):
 
 
 def main():
+    run_started = time.perf_counter()
+    stage_timings = {}
+    stage_started = time.perf_counter()
     g1 = json.loads(G1_FILE.read_text(encoding="utf-8"))
     if g1.get("status") != "G1_improved_on_untouched_holdout":
         raise RuntimeError("G1 calibrated baseline is not validated; G4 will not use an unvalidated model.")
     temperature = float(g1["selected_temperature"])
+    stage_timings["g1_load_seconds"] = round(time.perf_counter() - stage_started, 3)
+    stage_started = time.perf_counter()
     outcomes = load_outcomes()
+    stage_timings["official_outcomes_load_seconds"] = round(time.perf_counter() - stage_started, 3)
+    stage_started = time.perf_counter()
     snapshots, diagnostics = load_snapshots()
+    stage_timings["snapshots_load_and_supabase_join_seconds"] = round(time.perf_counter() - stage_started, 3)
     diagnostics.update(OUTCOME_DIAGNOSTICS)
     diagnostics["snapshots_with_official_result"] = 0
     diagnostics["snapshots_missing_official_result"] = 0
@@ -1154,6 +1172,8 @@ def main():
         joined.append(evaluated)
         diagnostics["recalibrated_with_g1_temperature"] += 1
     diagnostics["valid_snapshots"] = len(joined)
+    stage_timings["snapshot_outcome_evaluation_seconds"] = round(time.perf_counter() - stage_started, 3)
+    stage_started = time.perf_counter()
 
     dates = sorted({row["date"] for row in joined})
     if len(dates) >= 2:
@@ -1265,8 +1285,15 @@ def main():
     enough = len(latest_hold) >= 100 and len(value_hold) >= 100
     g4_pass = bool(enough and hold_ci and hold_ci[0] > 100.0)
 
+    stage_timings["report_aggregation_seconds"] = round(time.perf_counter() - stage_started, 3)
+    stage_timings["total_seconds_before_write"] = round(time.perf_counter() - run_started, 3)
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "performance": {
+            "stage_seconds": stage_timings,
+            "total_seconds": round(time.perf_counter() - run_started, 3),
+            "optimization": "bisect_right latest-prior model snapshot lookup; outputs and selection rules unchanged",
+        },
         "feature": "G4_real_preoff_odds_evaluation",
         "status": "G4_passed" if g4_pass else (
             "insufficient_prospective_sample" if len(latest_rows) < 100 or len(value_hold) < 30
