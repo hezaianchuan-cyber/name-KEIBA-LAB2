@@ -609,13 +609,57 @@ def build_capture_audit(now, races, horses_by_race, odds):
     return audit, candidates, window_races, window_with_field, window_with_positive_odds
 
 
+def merge_race_audit(now, audit, previous):
+    """Keep successful local/Supabase saves visible across later polling runs."""
+    today = now.strftime("%Y%m%d")
+    old_rows = {
+        str(item.get("race_id")): item
+        for item in (previous.get("race_audit") or [])
+        if str(item.get("date") or "") == today and item.get("race_id")
+    }
+    merged = []
+    seen = set()
+    for source in audit:
+        item = dict(source)
+        race_id = str(item.get("race_id") or "")
+        old = old_rows.get(race_id, {})
+        seen.add(race_id)
+        item["first_seen_at"] = old.get("first_seen_at") or now.isoformat()
+        item["last_checked_at"] = now.isoformat()
+        for flag in ("snapshot_saved", "supabase_saved"):
+            item[flag] = bool(item.get(flag) or old.get(flag))
+        for field in ("snapshot_saved_at", "supabase_saved_at", "supabase_error"):
+            if not item.get(field) and old.get(field):
+                item[field] = old[field]
+        if source.get("snapshot_saved"):
+            item["snapshot_saved_at"] = now.isoformat()
+        merged.append(item)
+    # If the source archive is temporarily unavailable, do not erase the last
+    # known race-by-race state for today's card.
+    if not audit:
+        merged = [dict(item) for item in old_rows.values()]
+        for item in merged:
+            item["last_checked_at"] = now.isoformat()
+    else:
+        merged.extend(dict(item) for race_id, item in old_rows.items() if race_id not in seen)
+    return merged
+
+
 def write_capture_status(now, races, horses_by_race, odds, **extra):
     audit = extra.pop("race_audit", [])
+    path = DATA / "odds-capture-status.json"
+    try:
+        previous = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        previous = {}
+    audit = merge_race_audit(now, audit, previous)
     status_counts = {}
     for item in audit:
-        status_counts[item.get("status", "unknown")] = status_counts.get(item.get("status", "unknown"), 0) + 1
+        state = item.get("status", "unknown")
+        status_counts[state] = status_counts.get(state, 0) + 1
     status = {
-        "schema_version": 2,
+        "schema_version": 3,
+        "audit_date": now.strftime("%Y%m%d"),
         "updated_at": now.isoformat(),
         "capture_window_minutes": [CAPTURE_WINDOW_MINUTES, STOP_BEFORE_POST_MINUTES],
         "race_rows": len(races),
@@ -627,7 +671,6 @@ def write_capture_status(now, races, horses_by_race, odds, **extra):
         "race_audit": audit,
         **extra,
     }
-    path = DATA / "odds-capture-status.json"
     path.write_text(json.dumps(status, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("Capture status:", json.dumps(status, ensure_ascii=False), flush=True)
 
