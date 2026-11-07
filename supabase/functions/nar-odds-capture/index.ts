@@ -455,6 +455,7 @@ Deno.serve(async (request) => {
             }
           } catch (error) {
             lastAttachError = String(error);
+            if (lastAttachError.includes("PERMANENT_HTTP_")) throw error;
             if (attempt === 3) throw new Error("Could not attach auto ticket plan after 3 attempts: " + lastAttachError);
           }
           if (!attached && attempt < 3) await new Promise(resolve => setTimeout(resolve, 350 * attempt));
