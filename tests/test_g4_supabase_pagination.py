@@ -114,7 +114,7 @@ class G4SupabasePaginationTests(unittest.TestCase):
             {"eq.2026-11-04", "eq.2026-11-05"},
         )
         for query, timeout in odds_requests:
-            self.assertEqual(query["limit"], ["20"])
+            self.assertEqual(query["limit"], ["10"])
             self.assertEqual(query["order"], ["captured_at.desc,id.desc"])
             self.assertEqual(query["offset"], ["0"])
             self.assertGreaterEqual(timeout, 45)
