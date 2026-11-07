@@ -23,8 +23,11 @@ on:
 permissions:
   contents: write
 
+# Keep the two staggered schedules independent so a slow run from one
+# schedule cannot queue or replace the other schedule's capture opportunity.
+# Push-triggered runs use their own group; the commit loop safely retries races.
 concurrency:
-  group: nar-preoff-odds-capture
+  group: nar-preoff-odds-capture-${{ github.event.schedule || github.ref }}
   cancel-in-progress: false
 
 jobs:
