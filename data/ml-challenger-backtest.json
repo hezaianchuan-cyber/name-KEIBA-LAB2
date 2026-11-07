@@ -1,0 +1,315 @@
+{
+  "generated_at": "2026-11-07T16:48:04.214367+00:00",
+  "status": "evaluated",
+  "period": {
+    "start": "2022-11-07",
+    "end": "2026-11-06"
+  },
+  "split": {
+    "train_end": "2025-08-24",
+    "development_start": "2025-08-25",
+    "development_end": "2026-01-17",
+    "holdout_start": "2026-01-18",
+    "holdout_end": "2026-11-06",
+    "policy": "70% earliest dates train, next 10% development for early stopping, final 20% untouched holdout"
+  },
+  "data": {
+    "races": 61729,
+    "runner_rows": 616204,
+    "dates": 1459,
+    "downloaded_months": [
+      {
+        "month": "2022-11",
+        "bytes": 1232537,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2022-12",
+        "bytes": 1243445,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2023-01",
+        "bytes": 1046317,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2023-02",
+        "bytes": 922882,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2023-03",
+        "bytes": 1194980,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2023-04",
+        "bytes": 1124605,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2023-05",
+        "bytes": 1324489,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2023-06",
+        "bytes": 1286027,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2023-07",
+        "bytes": 1291848,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2023-08",
+        "bytes": 1283029,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2023-09",
+        "bytes": 1221968,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2023-10",
+        "bytes": 1364759,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2023-11",
+        "bytes": 1262423,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2023-12",
+        "bytes": 1290058,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2024-01",
+        "bytes": 1061092,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2024-02",
+        "bytes": 989054,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2024-03",
+        "bytes": 1111564,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2024-04",
+        "bytes": 1223169,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2024-05",
+        "bytes": 1313171,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2024-06",
+        "bytes": 1310361,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2024-07",
+        "bytes": 1359530,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2024-08",
+        "bytes": 1191409,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2024-09",
+        "bytes": 1284270,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2024-10",
+        "bytes": 1376249,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2024-11",
+        "bytes": 1251638,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2024-12",
+        "bytes": 1340706,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2025-01",
+        "bytes": 1110135,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2025-02",
+        "bytes": 943736,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2025-03",
+        "bytes": 1172720,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2025-04",
+        "bytes": 1165538,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2025-05",
+        "bytes": 1273529,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2025-06",
+        "bytes": 1321842,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2025-07",
+        "bytes": 1261231,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2025-08",
+        "bytes": 1100309,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2025-09",
+        "bytes": 1322983,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2025-10",
+        "bytes": 1404534,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2025-11",
+        "bytes": 1272919,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2025-12",
+        "bytes": 1305598,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2026-01",
+        "bytes": 1059227,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2026-02",
+        "bytes": 941511,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2026-03",
+        "bytes": 1262890,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2026-04",
+        "bytes": 1235458,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2026-05",
+        "bytes": 1360810,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2026-06",
+        "bytes": 1321050,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2026-07",
+        "bytes": 1357657,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2026-08",
+        "bytes": 1211113,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2026-09",
+        "bytes": 1359705,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2026-10",
+        "bytes": 1420092,
+        "parsed_cache": "miss"
+      },
+      {
+        "month": "2026-11",
+        "bytes": 390942,
+        "parsed_cache": "current_month_refresh"
+      }
+    ]
+  },
+  "features": [
+    "lab_score",
+    "form",
+    "venue_score",
+    "distance_score",
+    "sire_score",
+    "jockey_score",
+    "age_score",
+    "field_size",
+    "distance_m",
+    "venue",
+    "surface",
+    "going"
+  ],
+  "models": [
+    {
+      "name": "LAB_frozen_baseline",
+      "races": 12509,
+      "top1_hits": 3764,
+      "top3_hits": 7596,
+      "top1_rate": 30.09,
+      "top3_capture_rate": 60.724
+    },
+    {
+      "name": "CatBoost",
+      "races": 12509,
+      "top1_rate": 32.672,
+      "top3_capture_rate": 64.825,
+      "top1_hits": 4087,
+      "top3_hits": 8109
+    },
+    {
+      "name": "LightGBM",
+      "races": 12509,
+      "top1_rate": 32.688,
+      "top3_capture_rate": 64.729,
+      "top1_hits": 4089,
+      "top3_hits": 8097
+    }
+  ],
+  "limitations": [
+    "Research-only runner ranking; no production code or tickets changed.",
+    "Winner classification is trained per runner; top-k is evaluated within race.",
+    "LAB reference is a frozen baseline feature score, not the adaptive production B/C model.",
+    "No profitability claim: this first experiment tests ranking skill only.",
+    "CatBoost and LightGBM parameters were fixed before holdout; no tuning on holdout."
+  ]
+}
