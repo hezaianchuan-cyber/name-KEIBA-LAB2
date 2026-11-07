@@ -136,6 +136,31 @@ class ShadowTicketPlanTests(unittest.TestCase):
         self.assertEqual(plans.market_favorite(odds), "2")
         self.assertIsNone(plans.market_favorite([]))
 
+    def test_low_quality_race_is_skipped_but_shadow_tickets_remain_settleable(self):
+        race = {
+            "date": "20261107", "venue": "佐賀", "race": "1",
+            "race_key": "佐賀|20261107|1", "model_version": "test",
+            "captured_at": "2026-11-07T10:00:00+09:00",
+            "predictions": self.predictions,
+            "odds": [{"type": "3連複", "n1": "1", "n2": "2", "n3": "3", "odds": 3.0}],
+            "candidate_combinations": [
+                {"bet_type": "trio", "numbers": ["2", "1", "3"],
+                 "odds": 3.0, "probability": 0.7}
+            ],
+            "race_readiness": {
+                "status": "skip_insufficient_evidence",
+                "reasons": ["historical_form_coverage_below_50pct"],
+            },
+        }
+        plan = plans.make_plan(race, {"trio": 1.05})
+        self.assertEqual(plan["decision"], "SKIP")
+        self.assertEqual(plan["skipReasonCode"], "RACE_QUALITY_GATE")
+        self.assertEqual(plan["raceReadinessStatus"], "skip_insufficient_evidence")
+        self.assertEqual(plan["raceReadinessReasons"], ["historical_form_coverage_below_50pct"])
+        self.assertEqual(plan["tickets"], [])
+        self.assertGreaterEqual(len(plan["shadowTickets"]), 1)
+        self.assertEqual(plan["totalStake"], 0)
+
     def test_skip_without_validated_threshold_still_keeps_shadow_picks(self):
         race = {
             "date": "20261105", "venue": "大井", "race": "10",
