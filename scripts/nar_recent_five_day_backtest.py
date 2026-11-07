@@ -77,7 +77,13 @@ def main() -> None:
     # Use yesterday in Asia/Tokyo, not nb.END (which is based on the runner's UTC date).
     end = dt.datetime.now(ZoneInfo("Asia/Tokyo")).date() - dt.timedelta(days=1)
     start = end - dt.timedelta(days=4)
-    print(f"RECENT_WINDOW start={start} end={end} (five completed calendar days)", flush=True)
+    # nar_backtest.py defaults START/END from the runner's UTC date. Override
+    # both bounds with the Japan-local window before archive parsing; otherwise
+    # the final JST race date can be silently excluded while the runner is still
+    # on the previous UTC date.
+    nb.END = end
+    nb.START = end - dt.timedelta(days=1460)
+    print(f"RECENT_WINDOW start={start} end={end} archive_start={nb.START} archive_end={nb.END} (Japan-local)", flush=True)
 
     races, horses, payouts, months = nb.load_archives()
     all_dates = sorted({race["date"] for race in races.values()})
