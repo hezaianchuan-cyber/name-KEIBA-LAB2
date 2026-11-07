@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-06T21:40:53.386195+00:00",
+  "generated_at": "2026-11-07T07:20:51.948814+00:00",
   "feature": "G4_real_preoff_odds_evaluation",
   "status": "evaluated_not_profitable_or_not_confirmed",
   "g1_temperature": 0.115,
@@ -711,8 +711,8 @@
     "thresholds": "Fixed before G4 evaluation; no tuning on holdout."
   },
   "diagnostics": {
-    "files": 4,
-    "lines": 132,
+    "files": 5,
+    "lines": 201,
     "invalid_json": 0,
     "outside_window": 0,
     "missing_predictions": 0,
@@ -720,28 +720,29 @@
     "missing_result": 0,
     "temperature_mismatch": 0,
     "valid_snapshots": 891,
-    "supabase_query_rows": 3258,
-    "supabase_snapshots_joined": 769,
-    "supabase_model_races": 101,
-    "supabase_race_key_matches": 1983,
-    "supabase_no_prior_model": 2183,
-    "supabase_model_too_old": 306,
+    "supabase_query_rows": 3935,
+    "supabase_snapshots_joined": 1031,
+    "supabase_model_races": 113,
+    "supabase_race_key_matches": 2628,
+    "supabase_no_prior_model": 2446,
+    "supabase_model_too_old": 458,
     "supabase_empty_odds": 0,
     "supabase_model_dates": [
       "20261103",
       "20261104",
       "20261105",
-      "20261106"
+      "20261106",
+      "20261107"
     ],
     "supabase_model_key_samples": [
+      "佐賀|20261107|1",
+      "佐賀|20261107|2",
+      "佐賀|20261107|3",
       "園田|20261104|1",
       "園田|20261104|11",
       "園田|20261104|3",
       "園田|20261104|4",
-      "園田|20261104|6",
-      "園田|20261104|9",
-      "園田|20261105|11",
-      "園田|20261105|2"
+      "園田|20261104|6"
     ],
     "supabase_odds_key_samples": [
       "船橋|20261104|12",
@@ -756,16 +757,19 @@
     "supabase_odds_dates": [
       "20261104",
       "20261105",
-      "20261106"
+      "20261106",
+      "20261107"
     ],
     "supabase_model_venues": [
+      "佐賀",
       "園田",
       "帯広ば",
       "盛岡",
       "笠松",
       "船橋",
       "金沢",
-      "門別"
+      "門別",
+      "高知"
     ],
     "supabase_odds_venues": [
       "船橋",
@@ -773,29 +777,33 @@
       "金沢",
       "園田",
       "笠松",
-      "帯広ば"
+      "帯広ば",
+      "佐賀",
+      "高知"
     ],
     "supabase_common_venues": [
+      "佐賀",
       "園田",
       "帯広ば",
       "笠松",
       "船橋",
       "金沢",
-      "門別"
+      "門別",
+      "高知"
     ],
-    "model_snapshot_table_rows": 90,
+    "model_snapshot_table_rows": 142,
     "model_snapshot_table_status": "loaded_merged_with_github_fallback",
-    "github_model_snapshot_rows": 132,
-    "github_model_snapshot_races": 100,
-    "supabase_model_snapshot_rows": 90,
-    "supabase_model_snapshot_races": 37,
+    "github_model_snapshot_rows": 201,
+    "github_model_snapshot_races": 112,
+    "supabase_model_snapshot_rows": 142,
+    "supabase_model_snapshot_races": 49,
     "github_fallback_only_races": 64,
-    "merged_model_snapshot_rows": 174,
+    "merged_model_snapshot_rows": 259,
     "supabase_status": "loaded",
-    "snapshots_from_github_five_minute": 132,
-    "snapshots_from_supabase_one_minute": 769,
+    "snapshots_from_github_five_minute": 201,
+    "snapshots_from_supabase_one_minute": 1031,
     "snapshots_with_official_result": 901,
-    "snapshots_missing_official_result": 0,
+    "snapshots_missing_official_result": 331,
     "recalibrated_with_g1_temperature": 891,
     "insufficient_odds_coverage": 10
   },
