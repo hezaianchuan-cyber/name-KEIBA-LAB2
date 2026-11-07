@@ -1,6 +1,8 @@
 import csv
 import io
+import json
 import sys
+import urllib.error
 import tempfile
 import unittest
 import zipfile
@@ -9,6 +11,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import build_auto_ticket_plans as plans
+import publish_model_snapshots as publisher
 
 
 class ShadowTicketPlanTests(unittest.TestCase):
@@ -243,6 +246,35 @@ class CompetitorBenchmarkDataTests(unittest.TestCase):
             __import__("datetime").datetime.fromisoformat(example["cutoff_at"])
         )
 
+
+class ModelSnapshotPublishRetryTests(unittest.TestCase):
+    def test_transient_502_retries_same_idempotent_batch(self):
+        class Response:
+            status = 200
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def read(self):
+                return json.dumps({"ok": True, "upserted": 1, "received": 1}).encode("utf-8")
+
+        failures = [
+            urllib.error.HTTPError("https://example.invalid/archive", 502, "Bad Gateway", None, None),
+            Response(),
+        ]
+        with patch.object(publisher.urllib.request, "urlopen", side_effect=failures) as mocked, \
+             patch.object(publisher.time, "sleep") as sleep:
+            published = publisher.publish(
+                [{"race_id": "佐賀|20261107|1", "captured_at": "2026-11-07T10:00:00Z"}],
+                "https://example.invalid/archive", "capture-token", "anon-key", batch_size=1,
+            )
+
+        self.assertEqual(published, 1)
+        self.assertEqual(mocked.call_count, 2)
+        sleep.assert_called_once_with(2)
 
 if __name__ == "__main__":
     unittest.main()
