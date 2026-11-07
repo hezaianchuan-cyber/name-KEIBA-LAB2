@@ -445,7 +445,7 @@ def parse_month_archive(blob, y, m):
                         "frame_no": rank_value(row[4]) if len(row) > 4 else None,
                         "sex": norm(row[7]) if len(row) > 7 else "",
                         "age": number(row[8]),
-                        "birth_date": re.sub(r"\\D", "", str(row[10] or "")) if len(row) > 10 else "",
+                        "birth_date": re.sub(r"\D", "", str(row[10] or "")) if len(row) > 10 else "",
                         "sire": norm(row[11]),
                         "dam": norm(row[12]) if len(row) > 12 else "",
                         "damsire": norm(row[13]) if len(row) > 13 else "",
