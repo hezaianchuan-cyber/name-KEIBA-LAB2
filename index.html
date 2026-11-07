@@ -898,6 +898,16 @@ function labLedgerIsTrioType(type){
  const value=String(type??"").normalize("NFKC").replace(/\s/g,"");
  return value==="3連複"||value==="三連複";
 }
+function labLedgerNormalizeTicket(ticket){
+ if(!ticket||typeof ticket!=="object")return ticket;
+ const normalizedType=String(ticket.type??"").normalize("NFKC").replace(/\s/g,"");
+ const type=labLedgerIsTrioType(normalizedType)?"3連複":normalizedType;
+ const comb=type==="3連複"?labLedgerComb(ticket.comb,type):String(ticket.comb??"");
+ return {...ticket,type,comb};
+}
+function labLedgerNormalizeTicketList(tickets){
+ return (Array.isArray(tickets)?tickets:[]).map(labLedgerNormalizeTicket).filter(Boolean);
+}
 function labLedgerComb(value,type){
  const raw=Array.isArray(value)?value.join('-'):String(value??'');
  const parts=raw.replace(/[／/,・\s]+/g,'-').split('-').map(x=>x.trim()).filter(Boolean);
@@ -1128,8 +1138,9 @@ function loadLabTicketPlans(){
    const plan=item.plan,key=String(plan.raceId)+'|'+labLedgerDateKey(plan.date),previous=map.get(key);
    const incomingAt=String(plan.modifiedAt||plan.createdAt||''),previousAt=String(previous?.plan?.modifiedAt||previous?.plan?.createdAt||'');
    let nextPlan={...plan,
-   tickets:(Array.isArray(plan.tickets)?plan.tickets:[]).filter(t=>labLedgerIsTrioType(t?.type)),
-   shadowTickets:(Array.isArray(plan.shadowTickets)?plan.shadowTickets:[]).filter(t=>labLedgerIsTrioType(t?.type))
+   userTickets:labLedgerNormalizeTicketList(plan.userTickets),
+   tickets:labLedgerNormalizeTicketList(plan.tickets).filter(t=>labLedgerIsTrioType(t?.type)),
+   shadowTickets:labLedgerNormalizeTicketList(plan.shadowTickets).filter(t=>labLedgerIsTrioType(t?.type))
   };
    // Keep market/model comparison fields when a newer local manual-ticket edit
    // is merged over the enriched, read-only comparison view.
@@ -1141,8 +1152,8 @@ function loadLabTicketPlans(){
      if(empty&&prior!=null&&(!Array.isArray(prior)||prior.length>0))nextPlan[field]=prior;
     }
    }
-   const previousUser=Array.isArray(previous?.plan?.userTickets)?previous.plan.userTickets:null;
-   const incomingUser=Array.isArray(plan.userTickets)?plan.userTickets:null;
+   const previousUser=Array.isArray(previous?.plan?.userTickets)?labLedgerNormalizeTicketList(previous.plan.userTickets):null;
+   const incomingUser=Array.isArray(plan.userTickets)?labLedgerNormalizeTicketList(plan.userTickets):null;
    if(previousUser&&(!incomingUser||(incomingUser.length===0&&previousUser.length>0&&(!plan.modifiedAt||incomingAt<previousAt))))nextPlan.userTickets=previousUser;
    if(!previous||incomingAt>=previousAt)map.set(key,{...item,plan:nextPlan});
    else if(previousUser&&nextPlan.userTickets!==plan.userTickets)map.set(key,{...previous,plan:{...previous.plan,userTickets:previousUser}});
@@ -1574,6 +1585,8 @@ function renderManualTicketEditor(plan,field){
    const ticketDetails=editor.querySelector('details.manual-ticket-form');if(ticketDetails)ticketDetails.open=editorState.formOpen;
    const formationDetails=editor.querySelector('details.manual-trio-formation');if(formationDetails)formationDetails.open=editorState.formationOpen;
   }
+  // Default saved-ticket entry to trio after every redraw; preserve horse/stake inputs.
+  if($('manualTicketType'))$('manualTicketType').value='3連複';
   updateTrioPreview();
   if(focusedId){const focused=$(focusedId);if(focused){focused.focus({preventScroll:true});if(typeof focused.setSelectionRange==='function'&&editorState.values[focusedId]!=null){try{focused.setSelectionRange(editorState.values[focusedId].length,editorState.values[focusedId].length);}catch(_){}}}}
 const updateFields=()=>{const type=$('manualTicketType')?.value||'単勝';if($('manualHorse2Wrap'))$('manualHorse2Wrap').classList.toggle('hidden',type==='単勝');if($('manualHorse3Wrap'))$('manualHorse3Wrap').classList.toggle('hidden',type!=='3連単'&&type!=='3連複');updateOddsPreview();};
@@ -1589,7 +1602,7 @@ const updateFields=()=>{const type=$('manualTicketType')?.value||'単勝';if($('
 function updateManualTicketPlan(mutator){
  const records=loadLabTicketPlans(),item=records.find(x=>String(x.plan?.raceId)===manualTicketCurrentRaceId);
  if(!item)return false;
- const plan={...item.plan,userTickets:[...(Array.isArray(item.plan.userTickets)?item.plan.userTickets:[])]};
+ const plan={...item.plan,userTickets:labLedgerNormalizeTicketList(item.plan.userTickets)};
  mutator(plan.userTickets);
  plan.modifiedAt=new Date().toISOString();
  const prediction=(db.predictions||[]).find(p=>String(p.id)===manualTicketCurrentRaceId&&labLedgerDateKey(p.date)===labLedgerDateKey(plan.date))||{id:manualTicketCurrentRaceId,date:labLedgerDateKey(plan.date),top:[],runners:[],learned:false};
