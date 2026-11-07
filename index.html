@@ -863,6 +863,11 @@ function renderDailyPayoutDay(date){
 // Ledger v2: only exact saved-ticket matches against official payouts count as hits. Refresh after cloud restore, payout load, or a newly frozen plan.
 function labLedgerDateKey(value){return String(value||'').replace(/[^0-9]/g,'').slice(0,8);}
 function labLedgerVenueKey(value){const raw=String(value||'').normalize('NFKC').replace(/競馬場/g,'').replace(/\s|　/g,'').trim();return canonicalVenue(raw)||raw;}
+function labLedgerRaceIdKey(value,date,venue,raceNo){
+ const parts=String(value||'').split('|');
+ if(parts.length===3)return [labLedgerVenueKey(parts[0]),labLedgerDateKey(parts[1]),normalizeRaceNo(parts[2])].join('|');
+ return [labLedgerVenueKey(venue),labLedgerDateKey(date),normalizeRaceNo(raceNo)].join('|');
+}
 function labLedgerIsTrioType(type){
  const value=String(type??"").normalize("NFKC").replace(/\s/g,"");
  return value==="3連複"||value==="三連複";
@@ -879,7 +884,13 @@ function labLedgerRecordsForDate(plans,date){
  const keyByType={'単勝':'win','複勝':'place','ワイド':'wide','馬連':'quinella','馬単':'exacta','3連複':'trio','3連単':'trifecta'};
  return plans.filter(x=>x.date===date).map(({p,plan})=>{
   const planDate=labLedgerDateKey(plan.date),venue=labLedgerVenueKey(plan.venue),raceNo=normalizeRaceNo(plan.raceNo);
-  const matches=dayRaces.filter(r=>labLedgerDateKey(day?.date)===planDate&&labLedgerVenueKey(r.venue)===venue&&normalizeRaceNo(r.race)===raceNo);
+  const planRaceId=String(plan.raceId||p.id||'');
+  const planRaceKey=labLedgerRaceIdKey(planRaceId,planDate,venue,raceNo);
+  const matches=dayRaces.filter(r=>{
+   if(labLedgerDateKey(day?.date)!==planDate)return false;
+   if(r.race_id)return labLedgerRaceIdKey(r.race_id)===planRaceKey;
+   return labLedgerVenueKey(r.venue)===venue&&normalizeRaceNo(r.race)===raceNo;
+  });
   const race=planDate===date&&matches.length===1?matches[0]:null,decision=String(plan.decision||'').toUpperCase();
   const labTickets=(Array.isArray(plan.tickets)?plan.tickets:[]).filter(t=>labLedgerIsTrioType(t?.type));
   const userTickets=Array.isArray(plan.userTickets)?plan.userTickets:[];
