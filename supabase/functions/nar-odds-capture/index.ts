@@ -87,14 +87,23 @@ function postTime(value: string): { hour: number; minute: number } | null {
 }
 
 async function fetchZip(url: string): Promise<Record<string, Uint8Array>> {
-  const response = await fetch(url, {
-    headers: { "User-Agent": "KEIBA-LAB/1.0", "Referer": "https://www.keiba.go.jp/" },
-    signal: AbortSignal.timeout(45000),
-  });
-  if (!response.ok) throw new Error(`NAR archive HTTP ${response.status}`);
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) throw new Error("NAR response was not a ZIP archive");
-  return unzipSync(bytes);
+  let lastError: unknown = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const response = await fetch(url, {
+        headers: { "User-Agent": "KEIBA-LAB/1.0", "Referer": "https://www.keiba.go.jp/" },
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!response.ok) throw new Error(`NAR archive HTTP ${response.status}`);
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) throw new Error("NAR response was not a ZIP archive");
+      return unzipSync(bytes);
+    } catch (error) {
+      lastError = error;
+      if (attempt < 3) await new Promise(resolve => setTimeout(resolve, 400 * attempt));
+    }
+  }
+  throw new Error(`NAR archive fetch failed after 3 attempts: ${String(lastError)}`);
 }
 
 
@@ -159,6 +168,10 @@ async function loadModelSnapshot(raceId:string,raceDate:string,capturedAt:string
       captured_at:stamp,model_version:String(plan.modelVersion||"published_all_race_model"),
       predictions,candidate_combinations:[],market_favorite_horse:plan.marketFavoriteHorse||null,
       market_top3:Array.isArray(plan.marketTop3)?plan.marketTop3:[],
+      race_readiness:plan.raceReadinessStatus?{
+        status:String(plan.raceReadinessStatus),
+        reasons:Array.isArray(plan.raceReadinessReasons)?plan.raceReadinessReasons:[],
+      }:null,
       snapshot_source:"published_auto_ticket_plans_fallback",
     };
   }catch{return null;}
@@ -209,7 +222,14 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>):Pro
   base.marketCoverage=Number(raceStrategy.marketCoverage)||0;
   base.adaptivePoolSize=raceStrategy.poolSize;
   base.top7=top.map((x:any)=>horseNo(x.horseNo));
+  base.modelTop7=[...base.top7];
   base.modelCapturedAt=model.captured_at||null;
+  const readiness=model.race_readiness||null;
+  const readinessStatus=String(readiness?.status||"");
+  const readinessReasons=Array.isArray(readiness?.reasons)?readiness.reasons:[];
+  const readinessBlocked=!!readinessStatus&&readinessStatus!=="eligible_for_research_evaluation";
+  base.raceReadinessStatus=readinessStatus||null;
+  base.raceReadinessReasons=readinessReasons;
   base.modelVersion=model.model_version||base.modelVersion||null;
   base.snapshotSource=model.snapshot_source||"timestamped_preoff_archive";
   base.runnerDraws=predictions.map((x:any)=>({
@@ -221,10 +241,36 @@ async function buildAutoTicketPlan(row:any,thresholds:Record<string,number>):Pro
     kind:"trio",type:"3連複",comb:item.comb,odds:item.odds,
     probability:Number(item.probability)||0,ev:item.ev==null?null:Number(item.ev),
   }));
-  const shadowTickets=candidates.map((x:any)=>({
-    type:"3連複",comb:x.comb,odds:x.odds,probability:x.probability,ev:x.ev,virtualStake:100,
+  const probabilityOrder=[...candidates].sort((a:any,b:any)=>
+    b.probability-a.probability||(Number(b.ev)||-1)-(Number(a.ev)||-1)||a.comb.localeCompare(b.comb));
+  const pricedCandidates=candidates.filter((x:any)=>Number.isFinite(Number(x.ev))&&x.ev>0);
+  const balancedShadow=pricedCandidates.length
+    ? strategy.selectTickets(pricedCandidates,12,0.5,0)
+    : [];
+  const selectedShadow=[...balancedShadow];
+  const selectedShadowKeys=new Set(selectedShadow.map((x:any)=>x.comb));
+  for(const candidate of probabilityOrder){
+    if(selectedShadow.length>=12)break;
+    if(!selectedShadowKeys.has(candidate.comb)){
+      selectedShadow.push(candidate);
+      selectedShadowKeys.add(candidate.comb);
+    }
+  }
+  const shadowBasis=pricedCandidates.length?"probability_ev_rank_fusion":"model_probability_only";
+  const shadowTickets=selectedShadow.slice(0,12).map((x:any)=>({
+    type:"3連複",comb:x.comb,odds:x.odds,probability:x.probability,ev:x.ev,
+    stake:100,virtualStake:100,basis:shadowBasis,
   }));
+  base.shadowTicketSets=Object.fromEntries([3,6,9,12].map((n:number)=>
+    [String(n),shadowTickets.slice(0,n).map((x:any)=>x.comb)]));
   const eligible:any[]=[];
+  if(readinessBlocked){
+    return {...base,decision:"SKIP",skipReason:"レース品質条件を満たさないため見送り",
+      skipReasonCode:"RACE_QUALITY_GATE",totalStake:0,tickets:[],shadowTickets,
+      modelCapturedAt:model.captured_at,modelVersion:model.model_version,
+      oddsRows:oddsRows.length,oddsMatchedCandidates:candidates.filter((x:any)=>x.ev!=null).length,
+      validatedBetTypes:Object.keys(thresholds).length};
+  }
   for(const [kind,threshold] of Object.entries(thresholds)){
     if(kind!=="trio")continue;
     const rows=(globalThis as any).KEIBALAB_TRIO_STRATEGY.selectTickets(candidates.filter(x=>x.kind===kind),12,0.5,Math.max(1.05,threshold));
@@ -387,17 +433,33 @@ Deno.serve(async (request) => {
       const thresholds = await loadValidatedThresholds();
       for (const savedRow of Array.isArray(insertedRows) ? insertedRows : []) {
         const plan = await buildAutoTicketPlan(savedRow, thresholds);
-        const update = await fetch(serviceUrl + "/rest/v1/odds_snapshots?id=eq." + encodeURIComponent(String(savedRow.id)), {
-          method: "PATCH",
-          headers: {
-            "apikey": serviceKey,
-            "Authorization": "Bearer " + serviceKey,
-            "Content-Type": "application/json",
-            "Prefer": "return=minimal",
-          },
-          body: JSON.stringify({ odds_data: { ...(savedRow.odds_data || {}), auto_ticket_plan: plan } }),
-        });
-        if (!update.ok) throw new Error("Could not attach auto ticket plan: HTTP " + update.status + " " + (await update.text()).slice(0, 300));
+        let attached = false;
+        let lastAttachError = "";
+        for (let attempt = 1; attempt <= 3 && !attached; attempt++) {
+          try {
+            const update = await fetch(serviceUrl + "/rest/v1/odds_snapshots?id=eq." + encodeURIComponent(String(savedRow.id)), {
+              method: "PATCH",
+              headers: {
+                "apikey": serviceKey,
+                "Authorization": "Bearer " + serviceKey,
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal",
+              },
+              body: JSON.stringify({ odds_data: { ...(savedRow.odds_data || {}), auto_ticket_plan: plan } }),
+              signal: AbortSignal.timeout(12000),
+            });
+            if (update.ok) attached = true;
+            else {
+              lastAttachError = "HTTP " + update.status + " " + (await update.text()).slice(0, 300);
+              if (update.status < 500 && update.status !== 429) throw new Error(lastAttachError);
+            }
+          } catch (error) {
+            lastAttachError = String(error);
+            if (attempt === 3) throw new Error("Could not attach auto ticket plan after 3 attempts: " + lastAttachError);
+          }
+          if (!attached && attempt < 3) await new Promise(resolve => setTimeout(resolve, 350 * attempt));
+        }
+        if (!attached) throw new Error("Could not attach auto ticket plan after 3 attempts: " + lastAttachError);
         ticketPlansSaved++;
       }
     }
