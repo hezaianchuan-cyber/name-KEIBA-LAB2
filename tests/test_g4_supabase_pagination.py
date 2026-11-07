@@ -202,7 +202,7 @@ class G4SupabasePaginationTests(unittest.TestCase):
             self.assertGreaterEqual(timeout, 45)
         self.assertEqual(diagnostics["supabase_status"], "loaded")
         self.assertEqual(diagnostics["supabase_query_rows"], 0)
-        self.assertEqual(diagnostics["supabase_odds_fetch_parallelism"], 2)
+        self.assertEqual(diagnostics["supabase_odds_fetch_parallelism"], 1)
         self.assertEqual(diagnostics["supabase_odds_days_requested"], 2)
 
 
