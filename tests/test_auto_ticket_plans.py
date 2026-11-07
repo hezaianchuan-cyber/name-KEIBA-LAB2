@@ -26,6 +26,72 @@ class ShadowTicketPlanTests(unittest.TestCase):
         self.assertEqual(tickets[0]["type"], "3連複")
         self.assertEqual(tickets[0]["comb"], "1-2-3")
 
+    def test_top_seven_shadow_plan_generates_twelve_unique_probability_ev_ranked_tickets(self):
+        import itertools
+        weights = [0.24, 0.18, 0.15, 0.12, 0.10, 0.08, 0.07, 0.06]
+        predictions = [
+            {"horse_no": str(i + 1), "name": f"horse-{i + 1}",
+             "score": 1.0 - i * 0.1, "win_probability": probability}
+            for i, probability in enumerate(weights)
+        ]
+        odds = [
+            {"type": "3連複", "n1": a, "n2": b, "n3": c,
+             "odds": 4.0 + int(a) + int(b) + int(c)}
+            for a, b, c in itertools.combinations([str(i) for i in range(1, 8)], 3)
+        ]
+        tickets = plans.shadow_tickets(predictions, odds)
+        self.assertEqual(len(tickets), 12)
+        self.assertEqual(len({item["comb"] for item in tickets}), 12)
+        self.assertTrue(all(set(item["comb"].split("-")) <= set("1234567") for item in tickets))
+        self.assertTrue(all(item["basis"] == "probability_ev_rank_fusion" for item in tickets))
+        self.assertTrue(all(item["odds"] is not None and item["ev"] > 0 for item in tickets))
+
+    def test_top_seven_plan_exposes_partial_sets_and_preserves_skip_records(self):
+        import itertools
+        weights = [0.24, 0.18, 0.15, 0.12, 0.10, 0.08, 0.07, 0.06]
+        predictions = [
+            {"horse_no": str(i + 1), "name": f"horse-{i + 1}",
+             "score": 1.0 - i * 0.1, "win_probability": probability}
+            for i, probability in enumerate(weights)
+        ]
+        odds = [
+            {"type": "3連複", "n1": a, "n2": b, "n3": c, "odds": 10.0}
+            for a, b, c in itertools.combinations([str(i) for i in range(1, 8)], 3)
+        ]
+        plan = plans.base_plan("20261107", "佐賀", "1", "佐賀|20261107|1",
+                               predictions, "test-model", "2026-11-07T10:00:00+09:00", odds)
+        self.assertEqual(plan["decision"], "SKIP")
+        self.assertEqual(plan["tickets"], [])
+        self.assertEqual(plan["modelTop7"], ["1", "2", "3", "4", "5", "6", "7"])
+        self.assertEqual({key: len(value) for key, value in plan["shadowTicketSets"].items()},
+                         {"3": 3, "6": 6, "9": 9, "12": 12})
+        self.assertEqual(len(plan["shadowTickets"]), 12)
+
+    def test_real_ticket_allocation_never_exceeds_twelve_trio_tickets(self):
+        import itertools
+        weights = [0.24, 0.18, 0.15, 0.12, 0.10, 0.08, 0.07, 0.06]
+        predictions = [
+            {"horse_no": str(i + 1), "name": f"horse-{i + 1}",
+             "score": 1.0 - i * 0.1, "win_probability": probability}
+            for i, probability in enumerate(weights)
+        ]
+        combos = list(itertools.combinations([str(i) for i in range(1, 8)], 3))
+        race = {
+            "date": "20261107", "venue": "佐賀", "race": "1",
+            "race_key": "佐賀|20261107|1", "model_version": "test",
+            "captured_at": "2026-11-07T10:00:00+09:00",
+            "predictions": predictions,
+            "odds": [{"type": "3連複", "n1": "1", "n2": "2", "n3": "3", "odds": 10.0}],
+            "candidate_combinations": [
+                {"bet_type": "trio", "numbers": list(combo), "odds": 10.0, "probability": 0.2}
+                for combo in combos
+            ],
+        }
+        plan = plans.make_plan(race, {"trio": 1.05})
+        self.assertLessEqual(len(plan["tickets"]), 12)
+        self.assertLessEqual(plan["totalStake"], 1200)
+        self.assertTrue(all(ticket["type"] == "3連複" for ticket in plan["tickets"]))
+
     def test_real_auto_plan_never_selects_non_trio_even_if_other_thresholds_pass(self):
         race = {
             "date": "20261105", "venue": "大井", "race": "10",
@@ -82,9 +148,14 @@ class ShadowTicketPlanTests(unittest.TestCase):
         self.assertEqual(plan["decision"], "SKIP")
         self.assertEqual(plan["skipReasonCode"], "NO_VALIDATED_TICKET_THRESHOLD")
         self.assertEqual(plan["tickets"], [])
-        self.assertEqual(plan["shadowTickets"], [{"type": "3連複", "comb": "1-2-3", "stake": 100, "basis": "model_top_3"}])
+        self.assertEqual(len(plan["shadowTickets"]), 1)
+        self.assertEqual(plan["shadowTickets"][0]["type"], "3連複")
+        self.assertEqual(plan["shadowTickets"][0]["comb"], "1-2-3")
+        self.assertEqual(plan["shadowTickets"][0]["basis"], "model_probability_only")
         self.assertEqual(plan["modelTopHorse"], "2")
         self.assertEqual(plan["modelTop3"], ["2", "1", "3"])
+        self.assertEqual(plan["modelTop7"], ["2", "1", "3"])
+        self.assertEqual(plan["shadowTicketSets"]["12"], ["1-2-3"])
 
     def test_missing_odds_does_not_remove_virtual_candidates(self):
         race = {
