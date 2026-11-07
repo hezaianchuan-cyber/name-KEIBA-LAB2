@@ -57,11 +57,13 @@ class G4SupabasePaginationTests(unittest.TestCase):
                 requested.append((parsed.path, urllib.parse.parse_qs(parsed.query), timeout))
                 return ResultResponse()
 
-            with patch.object(g4, "PAYOUTS_FILE", payouts_file), \\
-                 patch.object(g4, "SNAPSHOT_DIR", snapshot_dir), \\
-                 patch.object(g4, "SUPABASE_URL", "https://example.supabase.co"), \\
-                 patch.object(g4, "SUPABASE_KEY", "test-key"), \\
-                 patch.object(g4.urllib.request, "urlopen", side_effect=fake_urlopen):
+            with (
+                patch.object(g4, "PAYOUTS_FILE", payouts_file),
+                patch.object(g4, "SNAPSHOT_DIR", snapshot_dir),
+                patch.object(g4, "SUPABASE_URL", "https://example.supabase.co"),
+                patch.object(g4, "SUPABASE_KEY", "test-key"),
+                patch.object(g4.urllib.request, "urlopen", side_effect=fake_urlopen),
+            ):
                 outcomes = g4.load_outcomes()
 
             self.assertIn("佐賀|20261107|1", outcomes)
