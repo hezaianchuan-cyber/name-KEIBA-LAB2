@@ -22,6 +22,35 @@ import capture_nar_odds as capture
 
 
 
+class NARMarketOddsBoundaryTests(unittest.TestCase):
+    def test_market_odds_start_excludes_pre_archive_period(self):
+        self.assertEqual(
+            ml.market_odds_start_date(nb.dt.date(2026, 1, 18)),
+            nb.dt.date(2026, 3, 1),
+        )
+        self.assertEqual(
+            ml.market_odds_start_date(nb.dt.date(2026, 4, 1)),
+            nb.dt.date(2026, 4, 1),
+        )
+
+    def test_stratified_comparison_uses_identical_race_subset(self):
+        group = [
+            {"winner": 1, "horse_no": "1", "venue": "大井", "going": "良",
+             "distance_m": 1600, "field_size": 12},
+            {"winner": 0, "horse_no": "2", "venue": "大井", "going": "良",
+             "distance_m": 1600, "field_size": 12},
+            {"winner": 0, "horse_no": "3", "venue": "大井", "going": "良",
+             "distance_m": 1600, "field_size": 12},
+        ]
+        result = ml.summarize_stratified_comparison(
+            [(group, {"LAB": [3, 2, 1], "Market": [1, 3, 2]})],
+            ("venue", "distance_band", "field_size_band", "going"),
+        )
+        self.assertEqual(result["venue"]["大井"]["races"], 1)
+        self.assertEqual(result["distance_band"]["1600-1999m"]["models"][0]["races"], 1)
+        self.assertEqual(result["field_size_band"]["9-12頭"]["races"], 1)
+
+
 class HorseIdentityIsolationTests(unittest.TestCase):
     def test_composite_identity_separates_same_name_horses(self):
         first = {"name":"同名馬", "birth_date":"20200101", "sex":"牡",
