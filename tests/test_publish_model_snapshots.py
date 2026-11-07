@@ -3,7 +3,9 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from publish_model_snapshots import (\n    fetch_existing_keys, filter_unpublished_rows, lock_digest, record_to_row, verify_record,\n)
+from publish_model_snapshots import (
+    fetch_existing_keys, filter_unpublished_rows, lock_digest, record_to_row, verify_record,
+)
 
 
 def valid_record():
