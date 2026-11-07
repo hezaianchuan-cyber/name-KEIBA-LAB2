@@ -51,6 +51,35 @@ class NARMarketOddsBoundaryTests(unittest.TestCase):
         self.assertEqual(result["field_size_band"]["9-12頭"]["races"], 1)
 
 
+class ChallengerBettingReturnTests(unittest.TestCase):
+    def test_fixed_stake_win_and_trio_returns_use_official_payouts(self):
+        group = [
+            {"winner": int(i == 1), "horse_no": str(i), "race_key": "大井|20260301|1"}
+            for i in range(1, 8)
+        ]
+        payouts = {
+            nb.race_key("大井", "20260301", "1"): {
+                "win": [(["1"], 300)],
+                "trio": [(["1", "2", "3"], 5000)],
+            }
+        }
+        scores = {
+            "LAB": [7, 6, 5, 4, 3, 2, 1],
+            "CatBoost_independent": [7, 6, 5, 4, 3, 2, 1],
+            "LightGBM_independent": [7, 6, 5, 4, 3, 2, 1],
+            "LambdaRank": [7, 6, 5, 4, 3, 2, 1],
+            "Market_favorite": [1, 2, 3, 4, 5, 6, 7],
+        }
+        report = ml.evaluate_betting_returns([(group, scores)], payouts)
+        lab = report["strategies"]["LAB"]
+        self.assertEqual(lab["win"]["stake_jpy"], 100)
+        self.assertEqual(lab["win"]["return_jpy"], 300)
+        self.assertEqual(lab["win"]["roi_pct"], 300.0)
+        self.assertEqual(lab["trio_2_4_5_narrow12"]["stake_jpy"], 1900)
+        self.assertGreater(lab["trio_2_4_5_narrow12"]["return_jpy"], 0)
+        self.assertEqual(report["strategies"]["Market_favorite"]["win"]["hits"], 0)
+
+
 class HorseIdentityIsolationTests(unittest.TestCase):
     def test_composite_identity_separates_same_name_horses(self):
         first = {"name":"同名馬", "birth_date":"20200101", "sex":"牡",
