@@ -100,6 +100,9 @@ test("Web and Supabase both load the same shared strategy implementation", () =>
   assert.ok(web.includes("strategy.selectTickets(rows,12,0.5,Math.max(1.05,threshold))"));
   assert.ok(edge.includes("strategy.build(modelRows,oddsRows,0.5,0.60)"));
   assert.ok(edge.includes("KEIBALAB_TRIO_STRATEGY.selectTickets(candidates.filter(x=>x.kind===kind),12,0.5,Math.max(1.05,threshold))"));
-  assert.ok(edge.includes("const shadowTickets=candidates.map("));
+  assert.ok(edge.includes("const probabilityOrder=[...candidates].sort("));
+  assert.ok(edge.includes("strategy.selectTickets(pricedCandidates,12,0.5,0)"));
+  assert.ok(edge.includes("selectedShadow.slice(0,12)"));
+  assert.ok(edge.includes('skipReasonCode:"RACE_QUALITY_GATE"'));
   assert.ok(web.includes("shadowTickets:ranked('3連複').map("));
 });
