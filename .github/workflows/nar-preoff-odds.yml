@@ -12,7 +12,11 @@ on:
       - '.github/workflows/nar-preoff-odds.yml'
   workflow_dispatch:
   schedule:
+    # Two staggered schedules reduce the chance that a single delayed or
+    # dropped GitHub scheduled event leaves a race's 60-to-2 minute window
+    # uncovered. The capture job remains serialized by the concurrency group.
     - cron: "*/5 * * * *"
+    - cron: "2-59/5 * * * *"
 
 permissions:
   contents: write
