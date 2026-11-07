@@ -103,6 +103,6 @@ test("Web and Supabase both load the same shared strategy implementation", () =>
   assert.ok(edge.includes("const probabilityOrder=[...candidates].sort("));
   assert.ok(edge.includes("strategy.selectTickets(pricedCandidates,12,0.5,0)"));
   assert.ok(edge.includes("selectedShadow.slice(0,12)"));
-  assert.ok(edge.includes('skipReasonCode:"RACE_QUALITY_GATE"'));
+  assert.ok(edge.includes('const skipReasonCode=readinessBlocked?"RACE_QUALITY_GATE":"MODEL_SNAPSHOT_STALE";'));
   assert.ok(web.includes("shadowTickets:ranked('3連複').map("));
 });
