@@ -120,6 +120,8 @@ class CaptureAuditTests(unittest.TestCase):
         self.assertIn("selectedShadow.slice(0,12)", source)
         self.assertIn("base.shadowTicketSets", source)
         self.assertIn('"RACE_QUALITY_GATE"', source)
+        self.assertIn("const modelFresh=modelAgeMinutes!==null&&modelAgeMinutes<=15", source)
+        self.assertIn('"MODEL_SNAPSHOT_STALE"', source)
 
     def test_capture_script_has_exactly_one_main_entrypoint(self):
         source = Path(capture.__file__).read_text(encoding="utf-8")
