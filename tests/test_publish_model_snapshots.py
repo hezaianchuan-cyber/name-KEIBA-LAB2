@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from publish_model_snapshots import (
-    fetch_existing_keys, filter_unpublished_rows, lock_digest, record_to_row, verify_record,
+    fetch_existing_keys, filter_unpublished_rows, lock_digest, publish, record_to_row, verify_record,
 )
 
 
@@ -78,6 +78,39 @@ class PublishModelSnapshotsTests(unittest.TestCase):
         pending = filter_unpublished_rows(rows, existing)
         self.assertEqual(len(pending), 1)
         self.assertEqual(pending[0]["captured_at"], "2026-11-06T09:35:00+09:00")
+
+    def test_publish_uses_small_two_row_batches(self):
+        import json
+        from unittest.mock import patch
+
+        batches = []
+
+        class Response:
+            status = 200
+            def __init__(self, payload):
+                self.payload = payload
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                return False
+            def read(self):
+                return json.dumps(self.payload).encode("utf-8")
+
+        def fake_urlopen(request, timeout=0):
+            body = json.loads(request.data.decode("utf-8"))
+            count = len(body["snapshots"])
+            batches.append(count)
+            return Response({"ok": True, "received": count, "upserted": count})
+
+        rows = [
+            {"race_id": f"園田|20261106|{i}", "captured_at": f"2026-11-06T09:{i:02d}:00+09:00"}
+            for i in range(1, 6)
+        ]
+        with patch("publish_model_snapshots.urllib.request.urlopen", side_effect=fake_urlopen):
+            published = publish(rows, "https://example.supabase.co/functions/v1/archive", "token", "anon")
+
+        self.assertEqual(batches, [2, 2, 1])
+        self.assertEqual(published, 5)
 
     def test_existing_key_lookup_reads_only_race_and_capture_columns(self):
         import json
