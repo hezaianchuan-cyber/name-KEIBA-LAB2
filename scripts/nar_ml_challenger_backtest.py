@@ -261,6 +261,70 @@ def summarize_stratified_comparison(scored_groups, dimensions):
     return report
 
 
+def evaluate_betting_returns(scored_groups, payouts):
+    """Fixed-stake retrospective win and trio returns on identical odds-matched races."""
+    strategies = ("LAB", "CatBoost_independent", "LightGBM_independent",
+                  "LambdaRank", "Market_favorite")
+    stats = {
+        name: {
+            "win": {"races": 0, "hits": 0, "stake_jpy": 0, "return_jpy": 0},
+            "trio_2_4_5_narrow12": {"races": 0, "hits": 0, "tickets": 0,
+                                    "stake_jpy": 0, "return_jpy": 0},
+        } for name in strategies
+    }
+    for group, strategy_scores in scored_groups:
+        parts = str(group[0]["race_key"]).split("|")
+        if len(parts) != 3:
+            continue
+        race_key = nb.race_key(parts[0], parts[1], parts[2])
+        payout = payouts.get(race_key)
+        if not payout or not payout.get("win"):
+            continue
+        for name in strategies:
+            scores = strategy_scores.get(name)
+            if scores is None:
+                continue
+            order = sorted(range(len(group)),
+                           key=lambda i: (-float(scores[i]), int(group[i]["horse_no"])))
+            ranked = [{"no": group[i]["horse_no"]} for i in order]
+            win = stats[name]["win"]
+            win["races"] += 1
+            win["stake_jpy"] += 100
+            win["return_jpy"] += nb.payout_for("win", [ranked[0]["no"]], payout)
+            win["hits"] += int(nb.payout_for("win", [ranked[0]["no"]], payout) > 0)
+
+            trio = stats[name]["trio_2_4_5_narrow12"]
+            if len(ranked) < 3:
+                continue
+            tickets = nb.build_trio_formation_2_4_5(ranked)
+            tickets = nb.narrow_trio_by_rank_sum(tickets, ranked, 12)
+            units = nb.allocate_formation_units(tickets, ranked, "equal", budget_units=19)
+            trio["races"] += 1
+            trio["tickets"] += len(tickets)
+            trio["stake_jpy"] += sum(units) * 100
+            returned = sum(unit * nb.payout_for("trio", ticket, payout)
+                           for ticket, unit in zip(tickets, units))
+            trio["return_jpy"] += returned
+            trio["hits"] += int(returned > 0)
+
+    for name in strategies:
+        for bet_type, values in stats[name].items():
+            values["hit_rate_pct"] = round(100 * values["hits"] / values["races"], 3) if values["races"] else None
+            values["roi_pct"] = round(100 * values["return_jpy"] / values["stake_jpy"], 3) if values["stake_jpy"] else None
+            values["profit_jpy"] = values["return_jpy"] - values["stake_jpy"]
+            values["stake_per_race_jpy"] = round(values["stake_jpy"] / values["races"], 2) if values["races"] else None
+    return {
+        "odds_matched_races_with_official_payouts": max(
+            (stats[name]["win"]["races"] for name in strategies), default=0),
+        "fixed_stake_methods": {
+            "win": "100 yen on each strategy's top-ranked runner",
+            "trio_2_4_5_narrow12": "2-4-5 formation narrowed to 12 combinations; equal allocation totaling 1,900 yen per race",
+        },
+        "strategies": stats,
+        "caveat": "Retrospective ranking and official payout simulation; market favorite uses final odds, not executable pre-off odds. No slippage or operational constraints modeled."
+    }
+
+
 def score_model(name, model, test_groups, feature_names, category_maps=None, categorical=False):
     output = []
     for group in test_groups:
@@ -490,6 +554,8 @@ def main():
     stratified_comparison = summarize_stratified_comparison(
         stratified_inputs, ("venue", "distance_band", "field_size_band", "going"))
 
+    betting_returns = evaluate_betting_returns(stratified_inputs, payouts)
+
     market_comparison = {
         "odds_source": "NAR official monthly confirmed final win odds; retrospective only, not pre-off odds",
         "holdout_period": {"start": holdout_start.isoformat(), "end": holdout_end.isoformat()},
@@ -507,6 +573,7 @@ def main():
         "races_without_eligible_odds": len(test_groups) - len(market_groups),
         "models": market_models,
         "stratified_comparison": stratified_comparison,
+        "betting_returns": betting_returns,
         "odds_downloads": final_odds_downloads,
         "policy": "Every listed model and final-odds favorite is evaluated on exactly the same holdout races and the same matched runner subset. Market odds are used only as a retrospective benchmark, never as model input or a live betting price."
     }
