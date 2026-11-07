@@ -59,7 +59,7 @@ def shadow_tickets(predictions, odds_rows=None, count=12):
     pool=unique[:7]
     numbers=[no(x.get("horse_no")) for x in pool]
     if len(numbers)<3:return []
-    probabilities={no(x.get("horse_no")):max(0.0,float(x.get("win_probability") or 0)) for x in pool}
+    # Keep the full-field probability mass in the denominator; using only the top seven\n    # would incorrectly inflate every shadow-ticket probability.\n    probabilities={no(x.get("horse_no")):max(0.0,float(x.get("win_probability") or 0)) for x in unique}
     odds_by_combo={}
     for item in odds_rows or []:
         label=str(item.get("type") or "").replace(" ","")
@@ -127,11 +127,11 @@ def base_plan(date,venue,race_no,race_id,predictions,model_version,created_at,od
     return {
         "version":2,"createdAt":created_at,"date":date,"raceId":race_id,"venue":venue,"raceNo":str(race_no),
         "decision":"SKIP","skipReason":"仮想買い目は検証専用。購入推奨は締切前オッズと検証済み基準で別判定",
-        "skipReasonCode":"SHADOW_ONLY","totalStake":0,"tickets":[],"shadowTickets":shadow_tickets(unique,odds or []),
+        "skipReasonCode":"SHADOW_ONLY","totalStake":0,"tickets":[],"shadowTickets":shadow,
         "modelTopHorse":no(top[0].get("horse_no")) if top else None,
         "modelTop3":[no(x.get("horse_no")) for x in top[:3]],
         "modelTop7":[no(x.get("horse_no")) for x in top[:7]],
-        "shadowTicketSets":{str(n):[x["comb"] for x in shadow_tickets(unique,odds or [])[:n]] for n in (3,6,9,12)},
+        "shadowTicketSets":{str(n):[x["comb"] for x in shadow[:n]] for n in (3,6,9,12)},
         "modelPredictions":[{"horseNo":no(x.get("horse_no")),"name":str(x.get("name") or ""),
                              "score":float(x.get("score") or 0),
                              "winProbability":float(x.get("win_probability") or 0)}
