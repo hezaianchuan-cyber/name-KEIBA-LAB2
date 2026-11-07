@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-07T17:26:57.912467+00:00",
+  "generated_at": "2026-11-07T17:42:06.286409+00:00",
   "status": "evaluated",
   "period": {
     "start": "2022-11-07",
@@ -12,6 +12,12 @@
     "holdout_start": "2026-01-18",
     "holdout_end": "2026-11-06",
     "policy": "Chronological 70/10/20 split; early stopping uses development only; holdout untouched."
+  },
+  "identity_audit": {
+    "strong_identity_rows": 616204,
+    "partial_identity_rows": 0,
+    "isolated_identity_rows": 0,
+    "policy": "No permanent NAR horse ID is present in the published monthly runner CSV; complete composite identities are used where possible and incomplete identities are isolated per race to prevent cross-horse history contamination."
   },
   "data": {
     "races": 61729,
@@ -316,58 +322,58 @@
     {
       "name": "LAB_frozen_baseline",
       "races": 12509,
-      "top1_hits": 3764,
-      "top3_hits": 7596,
-      "top1_rate": 30.09,
-      "top3_capture_rate": 60.724
+      "top1_hits": 3772,
+      "top3_hits": 7600,
+      "top1_rate": 30.154,
+      "top3_capture_rate": 60.756
     },
     {
       "name": "LAB_feature_enhanced_CatBoost",
       "races": 12509,
-      "top1_hits": 4091,
-      "top3_hits": 8123,
-      "top1_rate": 32.704,
-      "top3_capture_rate": 64.937
+      "top1_hits": 4067,
+      "top3_hits": 8141,
+      "top1_rate": 32.513,
+      "top3_capture_rate": 65.081
     },
     {
       "name": "LAB_feature_enhanced_LightGBM",
       "races": 12509,
-      "top1_hits": 4087,
-      "top3_hits": 8105,
-      "top1_rate": 32.672,
-      "top3_capture_rate": 64.793
+      "top1_hits": 4079,
+      "top3_hits": 8115,
+      "top1_rate": 32.609,
+      "top3_capture_rate": 64.873
     },
     {
       "name": "independent_raw_CatBoost",
       "races": 12509,
-      "top1_hits": 4148,
-      "top3_hits": 8227,
-      "top1_rate": 33.16,
-      "top3_capture_rate": 65.769
+      "top1_hits": 4126,
+      "top3_hits": 8244,
+      "top1_rate": 32.984,
+      "top3_capture_rate": 65.905
     },
     {
       "name": "independent_raw_LightGBM",
       "races": 12509,
-      "top1_hits": 4221,
-      "top3_hits": 8333,
-      "top1_rate": 33.744,
-      "top3_capture_rate": 66.616
+      "top1_hits": 4246,
+      "top3_hits": 8317,
+      "top1_rate": 33.944,
+      "top3_capture_rate": 66.488
     },
     {
       "name": "LambdaRank_independent_raw",
       "races": 12509,
-      "top1_hits": 4304,
-      "top3_hits": 8403,
-      "top1_rate": 34.407,
-      "top3_capture_rate": 67.176
+      "top1_hits": 4315,
+      "top3_hits": 8402,
+      "top1_rate": 34.495,
+      "top3_capture_rate": 67.168
     },
     {
       "name": "PlackettLuce_independent_raw",
       "races": 12509,
-      "top1_hits": 4208,
-      "top3_hits": 8277,
-      "top1_rate": 33.64,
-      "top3_capture_rate": 66.168
+      "top1_hits": 4199,
+      "top3_hits": 8279,
+      "top1_rate": 33.568,
+      "top3_capture_rate": 66.184
     }
   ],
   "market_comparison": {
@@ -392,57 +398,57 @@
       {
         "name": "LAB_frozen_baseline_same_odds_races",
         "races": 11976,
-        "top1_hits": 3582,
-        "top3_hits": 7252,
-        "top1_rate": 29.91,
-        "top3_capture_rate": 60.554
+        "top1_hits": 3592,
+        "top3_hits": 7255,
+        "top1_rate": 29.993,
+        "top3_capture_rate": 60.579
       },
       {
         "name": "LAB_feature_enhanced_CatBoost_same_odds_races",
         "races": 11976,
-        "top1_hits": 3921,
-        "top3_hits": 7782,
-        "top1_rate": 32.74,
-        "top3_capture_rate": 64.98
+        "top1_hits": 3888,
+        "top3_hits": 7794,
+        "top1_rate": 32.465,
+        "top3_capture_rate": 65.08
       },
       {
         "name": "LAB_feature_enhanced_LightGBM_same_odds_races",
         "races": 11976,
-        "top1_hits": 3904,
-        "top3_hits": 7751,
-        "top1_rate": 32.599,
-        "top3_capture_rate": 64.721
+        "top1_hits": 3900,
+        "top3_hits": 7762,
+        "top1_rate": 32.565,
+        "top3_capture_rate": 64.813
       },
       {
         "name": "independent_raw_CatBoost_same_odds_races",
         "races": 11976,
-        "top1_hits": 3973,
-        "top3_hits": 7872,
-        "top1_rate": 33.175,
-        "top3_capture_rate": 65.731
+        "top1_hits": 3944,
+        "top3_hits": 7885,
+        "top1_rate": 32.933,
+        "top3_capture_rate": 65.84
       },
       {
         "name": "independent_raw_LightGBM_same_odds_races",
         "races": 11976,
-        "top1_hits": 4017,
-        "top3_hits": 7976,
-        "top1_rate": 33.542,
-        "top3_capture_rate": 66.6
+        "top1_hits": 4052,
+        "top3_hits": 7958,
+        "top1_rate": 33.834,
+        "top3_capture_rate": 66.45
       },
       {
         "name": "LambdaRank_independent_raw_same_odds_races",
         "races": 11976,
-        "top1_hits": 4106,
-        "top3_hits": 8040,
-        "top1_rate": 34.285,
-        "top3_capture_rate": 67.134
+        "top1_hits": 4113,
+        "top3_hits": 8036,
+        "top1_rate": 34.344,
+        "top3_capture_rate": 67.101
       },
       {
         "name": "PlackettLuce_independent_raw_same_odds_races",
         "races": 11976,
-        "top1_hits": 4014,
+        "top1_hits": 4007,
         "top3_hits": 7912,
-        "top1_rate": 33.517,
+        "top1_rate": 33.459,
         "top3_capture_rate": 66.065
       }
     ],
@@ -520,354 +526,354 @@
     "LAB_feature_enhanced_CatBoost": [
       {
         "feature": "jockey_score",
-        "importance": 20.708374
-      },
-      {
-        "feature": "venue_score",
-        "importance": 17.809186
+        "importance": 21.269698
       },
       {
         "feature": "lab_score",
-        "importance": 16.91793
+        "importance": 18.194728
+      },
+      {
+        "feature": "venue_score",
+        "importance": 17.835216
       },
       {
         "feature": "form",
-        "importance": 14.332282
-      },
-      {
-        "feature": "field_size",
-        "importance": 7.318406
+        "importance": 10.872111
       },
       {
         "feature": "distance_score",
-        "importance": 7.007915
+        "importance": 7.947771
+      },
+      {
+        "feature": "field_size",
+        "importance": 7.760149
       },
       {
         "feature": "sire_score",
-        "importance": 5.065144
+        "importance": 5.142781
       },
       {
         "feature": "distance_m",
-        "importance": 4.025877
+        "importance": 4.406379
       },
       {
         "feature": "venue",
-        "importance": 2.430771
+        "importance": 2.491593
       },
       {
         "feature": "age_score",
-        "importance": 2.0953
+        "importance": 2.191257
       },
       {
         "feature": "surface",
-        "importance": 1.574619
+        "importance": 1.149144
       },
       {
         "feature": "going",
-        "importance": 0.714198
+        "importance": 0.739173
       }
     ],
     "LAB_feature_enhanced_LightGBM": [
       {
         "feature": "lab_score",
-        "importance": 246349.126754
+        "importance": 245652.063669
       },
       {
         "feature": "jockey_score",
-        "importance": 69188.845768
+        "importance": 68332.219164
       },
       {
         "feature": "venue_score",
-        "importance": 57752.267633
+        "importance": 57435.538113
       },
       {
         "feature": "form",
-        "importance": 46000.133579
+        "importance": 45857.187167
       },
       {
         "feature": "field_size",
-        "importance": 22349.891111
+        "importance": 22242.613807
       },
       {
         "feature": "distance_score",
-        "importance": 13017.038023
+        "importance": 12896.360319
       },
       {
         "feature": "distance_m",
-        "importance": 12152.591147
+        "importance": 11708.096617
       },
       {
         "feature": "sire_score",
-        "importance": 11991.443803
+        "importance": 11499.96639
       },
       {
         "feature": "venue",
-        "importance": 7864.03298
+        "importance": 8383.715379
       },
       {
         "feature": "age_score",
-        "importance": 3670.923257
+        "importance": 3475.43987
       },
       {
         "feature": "going",
-        "importance": 3115.717505
+        "importance": 3145.065507
       },
       {
         "feature": "surface",
-        "importance": 92.33918
+        "importance": 57.379771
       }
     ],
     "independent_raw_CatBoost": [
       {
         "feature": "recent_finish_pct",
-        "importance": 22.110528
+        "importance": 21.896067
       },
       {
         "feature": "jockey_top3_rate",
-        "importance": 10.029438
+        "importance": 9.701128
       },
       {
         "feature": "venue_top3_rate",
-        "importance": 7.579925
-      },
-      {
-        "feature": "jockey",
-        "importance": 5.879047
+        "importance": 7.433651
       },
       {
         "feature": "recent_top3_rate",
-        "importance": 5.435095
+        "importance": 5.933913
+      },
+      {
+        "feature": "jockey",
+        "importance": 5.836765
       },
       {
         "feature": "field_size",
-        "importance": 5.385739
+        "importance": 5.235697
       },
       {
         "feature": "venue_runs",
-        "importance": 4.444932
+        "importance": 4.321695
       },
       {
         "feature": "career_win_rate",
-        "importance": 4.027754
+        "importance": 3.903286
       },
       {
         "feature": "distance_top3_rate",
-        "importance": 3.97371
-      },
-      {
-        "feature": "sire",
-        "importance": 3.179101
-      },
-      {
-        "feature": "jockey_runs",
-        "importance": 3.160253
-      },
-      {
-        "feature": "age",
-        "importance": 3.123345
-      },
-      {
-        "feature": "recent_last3f_rank",
-        "importance": 3.121404
-      },
-      {
-        "feature": "distance_m",
-        "importance": 3.095223
-      },
-      {
-        "feature": "venue",
-        "importance": 2.904117
+        "importance": 3.581239
       },
       {
         "feature": "career_top3_rate",
-        "importance": 2.860491
+        "importance": 3.248214
       },
       {
-        "feature": "recent_margin_quality",
-        "importance": 1.647339
+        "feature": "age",
+        "importance": 3.247388
+      },
+      {
+        "feature": "sire",
+        "importance": 3.222558
+      },
+      {
+        "feature": "venue",
+        "importance": 3.188571
+      },
+      {
+        "feature": "distance_m",
+        "importance": 3.167205
+      },
+      {
+        "feature": "jockey_runs",
+        "importance": 3.018622
+      },
+      {
+        "feature": "recent_last3f_rank",
+        "importance": 3.005471
       },
       {
         "feature": "recent_time_per_km",
-        "importance": 1.383569
+        "importance": 1.643501
       },
       {
-        "feature": "surface",
-        "importance": 1.270799
+        "feature": "recent_margin_quality",
+        "importance": 1.636074
+      },
+      {
+        "feature": "prior_runs",
+        "importance": 1.525276
       },
       {
         "feature": "sire_top3_rate",
-        "importance": 1.239136
+        "importance": 1.223012
       }
     ],
     "independent_raw_LightGBM": [
       {
         "feature": "venue_top3_rate",
-        "importance": 131129.072643
+        "importance": 131518.694032
       },
       {
         "feature": "recent_finish_pct",
-        "importance": 110782.222984
+        "importance": 108803.674655
       },
       {
         "feature": "recent_top3_rate",
-        "importance": 69686.190653
+        "importance": 72507.764146
       },
       {
         "feature": "jockey_top3_rate",
-        "importance": 64191.649109
+        "importance": 63450.121702
       },
       {
         "feature": "career_win_rate",
-        "importance": 25769.442207
+        "importance": 24892.406803
       },
       {
         "feature": "field_size",
-        "importance": 19335.996741
+        "importance": 19439.894829
       },
       {
         "feature": "jockey_runs",
-        "importance": 15875.384737
+        "importance": 15459.710356
       },
       {
         "feature": "distance_m",
-        "importance": 14139.087326
+        "importance": 14749.323191
       },
       {
         "feature": "age",
-        "importance": 10902.50946
+        "importance": 11322.864633
       },
       {
         "feature": "venue_runs",
-        "importance": 10407.040339
+        "importance": 10541.910033
       },
       {
         "feature": "recent_last3f_rank",
-        "importance": 8860.322186
+        "importance": 9019.314504
       },
       {
         "feature": "recent_time_per_km",
-        "importance": 8216.747384
-      },
-      {
-        "feature": "sire_top3_rate",
-        "importance": 7256.167045
+        "importance": 7686.317669
       },
       {
         "feature": "venue",
-        "importance": 7152.491135
+        "importance": 7171.603063
       },
       {
-        "feature": "distance_top3_rate",
-        "importance": 5580.379443
+        "feature": "sire_top3_rate",
+        "importance": 7122.871474
       },
       {
         "feature": "sire_runs",
-        "importance": 5250.356864
-      },
-      {
-        "feature": "going",
-        "importance": 5238.690802
-      },
-      {
-        "feature": "jockey",
-        "importance": 4988.617051
+        "importance": 5418.408102
       },
       {
         "feature": "career_top3_rate",
-        "importance": 4911.581169
+        "importance": 5009.809549
+      },
+      {
+        "feature": "distance_top3_rate",
+        "importance": 4757.356586
+      },
+      {
+        "feature": "recent_margin_quality",
+        "importance": 4726.555426
       },
       {
         "feature": "sire",
-        "importance": 4739.810897
+        "importance": 4669.995681
+      },
+      {
+        "feature": "jockey",
+        "importance": 4638.454383
       }
     ],
     "LambdaRank_independent_raw": [
       {
         "feature": "recent_finish_pct",
-        "importance": 186070.850319
+        "importance": 185628.87047
       },
       {
         "feature": "venue_top3_rate",
-        "importance": 165620.214383
+        "importance": 172453.983665
       },
       {
         "feature": "jockey_top3_rate",
-        "importance": 73562.828193
+        "importance": 73239.17746
       },
       {
         "feature": "career_win_rate",
-        "importance": 43445.532209
+        "importance": 40971.560531
       },
       {
         "feature": "recent_top3_rate",
-        "importance": 33187.618276
+        "importance": 31069.310719
       },
       {
         "feature": "distance_top3_rate",
-        "importance": 26958.969691
+        "importance": 28723.371817
       },
       {
         "feature": "recent_time_per_km",
-        "importance": 15378.647615
+        "importance": 17461.130282
       },
       {
         "feature": "venue_runs",
-        "importance": 10491.810153
+        "importance": 9594.664716
       },
       {
         "feature": "recent_last3f_rank",
-        "importance": 9205.112274
+        "importance": 9194.357018
       },
       {
         "feature": "distance_m",
-        "importance": 9085.791879
+        "importance": 8316.295331
       },
       {
         "feature": "sire_top3_rate",
-        "importance": 7522.97571
+        "importance": 7816.886994
       },
       {
         "feature": "career_top3_rate",
-        "importance": 6468.818951
+        "importance": 6305.571928
       },
       {
         "feature": "age",
-        "importance": 5716.785615
+        "importance": 6175.330502
       },
       {
         "feature": "going",
-        "importance": 5693.985899
+        "importance": 5627.922278
       },
       {
         "feature": "recent_margin_quality",
-        "importance": 5028.123542
+        "importance": 5233.166246
       },
       {
         "feature": "jockey_runs",
-        "importance": 4757.358862
-      },
-      {
-        "feature": "sire_runs",
-        "importance": 2345.642837
+        "importance": 5173.787133
       },
       {
         "feature": "sire",
-        "importance": 2238.056732
+        "importance": 2650.119253
+      },
+      {
+        "feature": "sire_runs",
+        "importance": 2542.577901
       },
       {
         "feature": "venue",
-        "importance": 2214.388453
+        "importance": 2298.638886
       },
       {
         "feature": "jockey",
-        "importance": 1426.664065
+        "importance": 1571.222418
       }
     ]
   },
   "plackett_luce_fit": {
     "converged": true,
-    "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
-    "iterations": 23
+    "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+    "iterations": 22
   },
   "limitations": [
     "Research-only ranking; no production model or ticket logic changed.",
@@ -875,7 +881,7 @@
     "LambdaRank and Plackett-Luce use independent_raw features only.",
     "Top1/Top3 are ranking metrics, not profitability or betting-return evidence.",
     "Market benchmark uses official confirmed final odds retrospectively, not odds available before the race.",
-    "Horse history is currently keyed by normalized horse name; same-name horse identity collisions require a source-level identifier audit.",
+    "NAR monthly CSV has no permanent horse ID; history uses a conservative composite of birth date, sex, sire, dam and name, isolating incomplete identities per race.",
     "Feature importance is model-native gain/importance, not causal attribution.",
     "All same-day race results are withheld until that date's feature generation is complete.",
     "All category mappings and PL scaling are fit on training data only; early stopping uses development only."
