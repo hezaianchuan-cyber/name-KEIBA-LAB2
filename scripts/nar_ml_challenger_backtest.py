@@ -147,10 +147,19 @@ def main():
     from catboost import CatBoostClassifier
     from lightgbm import LGBMClassifier
     # Development period is reported separately; parameters are fixed in advance.
+    category_maps = {
+        key: {value: index for index, value in enumerate(sorted({r[key] for r in train}))}
+        for key in CATEGORICAL
+    }
     def matrix(data, cat=False):
         if cat:
             return [[r[k] if k in CATEGORICAL else r[k] for k in FEATURES] for r in data]
-        return np.asarray([[r[k] if k in NUMERIC else 0.0 for k in FEATURES] for r in data], dtype=float)
+        # Train-only category dictionaries prevent unseen holdout categories from
+        # influencing the feature vocabulary; unknown categories map to -1.
+        return np.asarray([
+            [r[k] if k in NUMERIC else category_maps[k].get(r[k], -1) for k in FEATURES]
+            for r in data
+        ], dtype=float)
     y_train = np.asarray([r["winner"] for r in train], dtype=int)
     cat = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.04,
         loss_function="Logloss", eval_metric="AUC", verbose=False,
