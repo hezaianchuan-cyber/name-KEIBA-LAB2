@@ -349,6 +349,61 @@ def main():
     pl_output = [(g, pl_scores(pl, g, RAW_FEATURES, category_maps, scale)) for g in test_groups]
     models.append(evaluate_scores("PlackettLuce_independent_raw", pl_output))
 
+    # Retrospective market benchmark: compare all challengers on the exact same
+    # holdout races and runner subset with official NAR confirmed final win odds.
+    # These odds are NOT pre-off prices and are never used as model inputs.
+    holdout_start = min(test_dates)
+    holdout_end = max(test_dates)
+    final_odds, final_odds_downloads = nb.load_final_odds_archives(holdout_start, holdout_end)
+    market_groups = []
+    market_output = []
+    for group in test_groups:
+        parts = str(group[0]["race_key"]).split("|")
+        if len(parts) != 3:
+            continue
+        key = nb.race_key(parts[0], parts[1], parts[2])
+        odds_for_race = final_odds.get(key, {})
+        eligible = [r for r in group if r["horse_no"] in odds_for_race]
+        if len(eligible) < 3 or not any(r["winner"] for r in eligible):
+            continue
+        market_groups.append(eligible)
+        market_output.append((eligible, [-float(odds_for_race[r["horse_no"]]) for r in eligible]))
+    market_models = []
+    if market_groups:
+        market_models.append(evaluate_scores("final_odds_market_favorite", market_output))
+        market_models.append(evaluate_scores(
+            "LAB_frozen_baseline_same_odds_races",
+            [(g, [r["lab_score"] for r in g]) for g in market_groups]))
+        for feature_set, features in (("LAB_feature_enhanced", LAB_FEATURES),
+                                      ("independent_raw", RAW_FEATURES)):
+            for kind in ("CatBoost", "LightGBM"):
+                name = f"{feature_set}_{kind}"
+                market_models.append(score_model(
+                    name + "_same_odds_races", model_objects[name], market_groups,
+                    features, category_maps, categorical=(kind == "CatBoost")))
+        rank_output_market = []
+        for group in market_groups:
+            x = [[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
+                  for k in RAW_FEATURES] for r in group]
+            rank_output_market.append((group, ranker.predict(x)))
+        market_models.append(evaluate_scores("LambdaRank_independent_raw_same_odds_races",
+                                             rank_output_market))
+        pl_output_market = [(g, pl_scores(pl, g, RAW_FEATURES, category_maps, scale))
+                            for g in market_groups]
+        market_models.append(evaluate_scores("PlackettLuce_independent_raw_same_odds_races",
+                                             pl_output_market))
+    market_comparison = {
+        "odds_source": "NAR official monthly confirmed final win odds; retrospective only, not pre-off odds",
+        "holdout_period": {"start": holdout_start.isoformat(), "end": holdout_end.isoformat()},
+        "holdout_races_total": len(test_groups),
+        "races_with_at_least_3_odds_matched_runners_and_winner": len(market_groups),
+        "coverage_pct": round(100 * len(market_groups) / len(test_groups), 2) if test_groups else None,
+        "races_without_eligible_odds": len(test_groups) - len(market_groups),
+        "models": market_models,
+        "odds_downloads": final_odds_downloads,
+        "policy": "Every listed model and final-odds favorite is evaluated on exactly the same holdout races and the same matched runner subset. Market odds are used only as a retrospective benchmark, never as model input or a live betting price."
+    }
+
     # Native model importance is computed without consulting holdout outcomes.
     importance = {}
     for name, model in model_objects.items():
@@ -378,6 +433,7 @@ def main():
                  "holdout_races": len(test_groups), "downloaded_months": downloads},
         "feature_sets": {"LAB_feature_enhanced": LAB_FEATURES, "independent_raw": RAW_FEATURES},
         "models": models,
+        "market_comparison": market_comparison,
         "feature_importance": importance,
         "plackett_luce_fit": {"converged": pl["converged"], "message": pl["message"],
                               "iterations": pl["iterations"]},
@@ -386,6 +442,8 @@ def main():
             "LAB_feature_enhanced includes LAB score components; independent_raw excludes all LAB-derived scores.",
             "LambdaRank and Plackett-Luce use independent_raw features only.",
             "Top1/Top3 are ranking metrics, not profitability or betting-return evidence.",
+            "Market benchmark uses official confirmed final odds retrospectively, not odds available before the race.",
+            "Horse history is currently keyed by normalized horse name; same-name horse identity collisions require a source-level identifier audit.",
             "Feature importance is model-native gain/importance, not causal attribution.",
             "All same-day race results are withheld until that date's feature generation is complete.",
             "All category mappings and PL scaling are fit on training data only; early stopping uses development only."
