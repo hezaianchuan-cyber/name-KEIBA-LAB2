@@ -8,6 +8,8 @@ import hashlib
 import json
 import os
 import re
+import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -127,12 +129,30 @@ def publish(rows: list[dict], endpoint: str, token: str, anon_key: str, batch_si
             },
             method="POST",
         )
-        with urllib.request.urlopen(request, timeout=45) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-            if (response.status < 200 or response.status >= 300 or not payload.get("ok")
-                    or "upserted" not in payload or "received" not in payload):
-                raise RuntimeError("Model snapshot archive endpoint did not confirm the archive action: " + str(payload)[:500])
-            published += int(payload.get("upserted", 0))
+        # The archive endpoint uses idempotent upserts keyed by race/time.
+        # A transient 5xx can happen after the database committed the batch but
+        # before the gateway returned its response, so retrying is safe.
+        for attempt in range(4):
+            try:
+                with urllib.request.urlopen(request, timeout=45) as response:
+                    payload = json.loads(response.read().decode("utf-8"))
+                    if (response.status < 200 or response.status >= 300 or not payload.get("ok")
+                            or "upserted" not in payload or "received" not in payload):
+                        raise RuntimeError("Model snapshot archive endpoint did not confirm the archive action: " + str(payload)[:500])
+                    published += int(payload.get("upserted", 0))
+                break
+            except urllib.error.HTTPError as exc:
+                if exc.code not in (408, 425, 429, 500, 502, 503, 504) or attempt == 3:
+                    raise
+                delay = min(2 ** (attempt + 1), 12)
+                print(f"Transient archive HTTP {exc.code}; retrying batch in {delay}s (attempt {attempt + 2}/4)", flush=True)
+                time.sleep(delay)
+            except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
+                if attempt == 3:
+                    raise
+                delay = min(2 ** (attempt + 1), 12)
+                print(f"Transient archive connection error; retrying batch in {delay}s (attempt {attempt + 2}/4): {exc}", flush=True)
+                time.sleep(delay)
     return published
 
 
