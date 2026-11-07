@@ -147,15 +147,16 @@ class PublishModelSnapshotsTests(unittest.TestCase):
             requested.append((parsed.path, urllib.parse.parse_qs(parsed.query), timeout))
             return Response()
 
-        rows = [{"race_date": "2026-11-06"}]
+        rows = [{"race_id": "園田|20261106|1", "captured_at": "2026-11-06T09:30:00+09:00"}]
         with patch("publish_model_snapshots.urllib.request.urlopen", side_effect=fake_urlopen):
             keys = fetch_existing_keys(rows, "https://example.supabase.co", "test-key")
 
         self.assertEqual(keys, {("園田|20261106|1", "2026-11-06T09:30:00+09:00")})
         self.assertEqual(requested[0][0], "/rest/v1/model_prediction_snapshots")
         self.assertEqual(requested[0][1]["select"], ["race_id,captured_at"])
-        self.assertEqual(requested[0][1]["race_date"], ["gte.2026-11-06", "lte.2026-11-06"])
-        self.assertEqual(requested[0][2], 30)
+        self.assertIn("or", requested[0][1])
+        self.assertIn("and(race_id.eq.", requested[0][1]["or"][0])
+        self.assertEqual(requested[0][2], 20)
 
     def test_missing_lock_is_rejected(self):
         record = valid_record()
