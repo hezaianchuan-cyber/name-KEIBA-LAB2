@@ -5,7 +5,7 @@ Raw NAR CSV/ZIP files are processed in the ephemeral runner only. Only aggregate
 metrics and a small set of race-level examples are written to data/backtest-summary.json.
 """
 from __future__ import annotations
-import base64, csv, datetime as dt, gzip, io, json, math, os, pickle, random, re, sys, time, urllib.parse, urllib.request, zipfile
+import base64, csv, hashlib, datetime as dt, gzip, io, json, math, os, pickle, random, re, sys, time, urllib.parse, urllib.request, zipfile
 from collections import defaultdict
 try:
     from .horse_evaluation_model import evaluate_field
@@ -29,7 +29,7 @@ UA = "Mozilla/5.0 (compatible; KEIBA-LAB-backtest/1.0)"
 # be reused after a runner timeout or a failed workflow.
 # Increment only when checkpoint payload semantics or model evaluation logic become incompatible.
 # Ordinary code commits must not invalidate expensive completed stages.
-BACKTEST_CHECKPOINT_VERSION = "nar-four-year-stage-checkpoint-v2"
+BACKTEST_CHECKPOINT_VERSION = "nar-four-year-daily-resume-v3"
 BACKTEST_CHECKPOINT_BRANCH = "nar-backtest-checkpoints"
 BACKTEST_CHECKPOINT_PATH = "nar-backtest-checkpoint.pkl.gz"
 
@@ -2319,7 +2319,7 @@ def summarize_race_cluster_roi(stats):
         "profit": returned - stake,
     }
 
-def run_backtest(races, horses, payouts, training_only=False, learning_trace=None):
+def run_backtest(races, horses, payouts, training_only=False, learning_trace=None, resume_state=None, checkpoint_callback=None):
     history = defaultdict(list)
     sire_stats = defaultdict(lambda: {"runs":0,"top3":0})
     jockey_stats = defaultdict(lambda: {"runs":0,"top3":0})
@@ -2337,8 +2337,40 @@ def run_backtest(races, horses, payouts, training_only=False, learning_trace=Non
                       for kind in ("win", "place", "wide", "trio")}
     shadow_races = 0
     ordered = sorted((r for r in races.values()), key=lambda r:(r["date"],r["venue"],int(r["race"])))
+    dataset_signature = hashlib.sha256(json.dumps(
+        [(r["date"].isoformat(), r["venue"], str(r["race"]), "|".join(map(str, r["key"])))
+         for r in ordered], ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")).hexdigest()
+    start_race_index = 1
+    if resume_state:
+        if resume_state.get("state_version") != 1:
+            raise ValueError("Unsupported chronological resume-state version")
+        if resume_state.get("dataset_signature") != dataset_signature:
+            raise ValueError("Chronological resume checkpoint does not match the current race dataset")
+        history = defaultdict(list, resume_state["history"])
+        sire_stats = defaultdict(lambda: {"runs": 0, "top3": 0}, resume_state["sire_stats"])
+        jockey_stats = defaultdict(lambda: {"runs": 0, "top3": 0}, resume_state["jockey_stats"])
+        horse_jockey_stats = defaultdict(lambda: {"runs": 0, "top3": 0}, resume_state["horse_jockey_stats"])
+        frame_stats = defaultdict(lambda: {"runs": 0, "top3": 0}, resume_state["frame_stats"])
+        metrics = resume_state["metrics"]
+        examples = resume_state["examples"]
+        calibration_records = resume_state["calibration_records"]
+        model_weights = resume_state["model_weights"]
+        learning_updates = resume_state["learning_updates"]
+        horse_model_metrics = resume_state["horse_model_metrics"]
+        shadow_metrics = resume_state["shadow_metrics"]
+        shadow_races = resume_state["shadow_races"]
+        start_race_index = int(resume_state["next_race_index"])
+        if learning_trace is not None:
+            learning_trace[:] = resume_state.get("learning_trace", [])
+        print(
+            f"CHRONOLOGICAL_RESUME date={resume_state.get('last_completed_date')} "
+            f"next_race={start_race_index}/{len(ordered)}",
+            flush=True,
+        )
     progress_every = max(1, len(ordered) // 10)
-    print(f"CHRONOLOGICAL_PROGRESS start races={len(ordered)} dates={len({r['date'] for r in ordered})}", flush=True)
+    print(f"CHRONOLOGICAL_PROGRESS start races={len(ordered)} dates={len({r['date'] for r in ordered})} "
+          f"resume_from={start_race_index}", flush=True)
     daily_pending = []
     current_date = None
 
@@ -2390,12 +2422,46 @@ def run_backtest(races, horses, payouts, training_only=False, learning_trace=Non
                 "weights": {key: round(value, 8) for key, value in model_weights.items()},
             })
 
+    def save_daily_progress(next_race_index, completed_date):
+        if checkpoint_callback is None:
+            return
+        state = {
+            "state_version": 1,
+            "dataset_signature": dataset_signature,
+            "next_race_index": next_race_index,
+            "last_completed_date": completed_date.isoformat() if completed_date else None,
+            "history": dict(history),
+            "sire_stats": dict(sire_stats),
+            "jockey_stats": dict(jockey_stats),
+            "horse_jockey_stats": dict(horse_jockey_stats),
+            "frame_stats": dict(frame_stats),
+            "metrics": metrics,
+            "examples": examples,
+            "calibration_records": calibration_records,
+            "model_weights": model_weights,
+            "learning_updates": learning_updates,
+            "horse_model_metrics": horse_model_metrics,
+            "shadow_metrics": shadow_metrics,
+            "shadow_races": shadow_races,
+            "learning_trace": list(learning_trace or []),
+        }
+        checkpoint_callback(state, completed_date)
+        print(
+            f"CHRONOLOGICAL_DAY_CHECKPOINT date={state['last_completed_date']} "
+            f"next_race={next_race_index}/{len(ordered)+1}",
+            flush=True,
+        )
+
     for race_index, race in enumerate(ordered, 1):
+        if race_index < start_race_index:
+            continue
         if race_index == 1 or race_index % progress_every == 0 or race_index == len(ordered):
             print(f"CHRONOLOGICAL_PROGRESS {race_index}/{len(ordered)} ({100*race_index/max(1,len(ordered)):.0f}%) date={race['date']}", flush=True)
         if current_date is not None and race["date"] != current_date:
+            completed_date = current_date
             commit_day(daily_pending)
             daily_pending = []
+            save_daily_progress(race_index, completed_date)
         current_date = race["date"]
         key = race["key"]
         field = horses.get(key, [])
@@ -2513,8 +2579,9 @@ def run_backtest(races, horses, payouts, training_only=False, learning_trace=Non
                 })
         # Keep today's results buffered: no race on the same date can learn from another race's result.
         daily_pending.append((field, parts_by_no, race))
-    if daily_pending:
+    if current_date is not None:
         commit_day(daily_pending)
+        save_daily_progress(len(ordered) + 1, current_date)
     summary = {}
     for kind,m in metrics.items():
         summary[kind] = {**m, "hit_rate": round(100*m["hits"]/m["tickets"],2) if m["tickets"] else None,
@@ -4620,7 +4687,17 @@ def main():
         calibration_records = saved_chronological["calibration_records"]
         print("CHECKPOINT_RESUME stage=chronological_run_backtest reused=true", flush=True)
     else:
-        metrics, examples, race_count, learned_weights, learning_updates, calibration_records = run_backtest(races, horses, payouts)
+        def persist_chronological_day(progress_state, completed_date):
+            checkpoint_state["chronological_progress"] = progress_state
+            date_label = completed_date.isoformat() if completed_date else "start"
+            save_backtest_checkpoint(checkpoint_state, f"chronological-day-{date_label}")
+
+        metrics, examples, race_count, learned_weights, learning_updates, calibration_records = run_backtest(
+            races, horses, payouts,
+            resume_state=checkpoint_state.get("chronological_progress"),
+            checkpoint_callback=persist_chronological_day,
+        )
+        checkpoint_state.pop("chronological_progress", None)
         checkpoint_state["chronological"] = {
             "metrics": metrics, "examples": examples, "race_count": race_count,
             "learned_weights": learned_weights, "learning_updates": learning_updates,
