@@ -2989,15 +2989,20 @@ class DailyLearningTraceTests(unittest.TestCase):
             ],
         }
         trace = []
+        output = io.StringIO()
         with (
             mock.patch.object(nb, "score_runner_performance", side_effect=fake_score),
             mock.patch.object(nb, "evaluate_field", return_value=fake_challenger),
             mock.patch.object(nb, "update_model", return_value=True),
+            __import__("contextlib").redirect_stdout(output),
         ):
             result = nb.run_backtest(
                 races, horses, {}, training_only=True, learning_trace=trace
             )
 
+        self.assertEqual(output.getvalue().count("CHRONOLOGICAL_DAY_COMPLETE"), 3)
+        self.assertIn("date=2026-01-01 completed_dates=1/3", output.getvalue())
+        self.assertIn("date=2026-01-03 completed_dates=3/3", output.getvalue())
         self.assertEqual(len(trace), 3)
         self.assertEqual([row["date"] for row in trace], [day.isoformat() for day in dates])
         self.assertEqual([row["training_updates"] for row in trace], [1, 1, 1])
