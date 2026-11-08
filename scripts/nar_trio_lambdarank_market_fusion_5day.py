@@ -16,11 +16,13 @@ from pathlib import Path
 import nar_backtest as nb
 import nar_ml_challenger_backtest as ml
 import nar_trio_compatibility as tc
+import nar_trio_learned_compatibility as learned_tc
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "nar-trio-lambdarank-market-fusion-5day.json"
 BLEND_WEIGHTS = (0.00, 0.25, 0.50, 0.75, 1.00)
 COMPATIBILITY_WEIGHTS = (0.00, 0.10, 0.20, 0.35, 0.50, 0.75, 1.00)
+LEARNED_COMPATIBILITY_WEIGHTS = (0.00, 0.05, 0.10, 0.20, 0.35, 0.50, 0.75, 1.00)
 TICKETS_PER_RACE = 12
 
 
@@ -172,6 +174,67 @@ def evaluate_races(races, weight, compatibility_weight=0.0):
     return totals
 
 
+
+def build_trio_tickets_learned(group, scores, pair_scores, limit=TICKETS_PER_RACE, compatibility_weight=0.0):
+    candidates = []
+    for combo in itertools.combinations((str(row["horse_no"]) for row in group), 3):
+        score = learned_tc.learned_trio_score(combo, scores, pair_scores, compatibility_weight)
+        candidates.append((score, tuple(sorted(combo, key=int))))
+    candidates.sort(key=lambda item: (-item[0], tuple(map(int, item[1]))))
+    return [list(key) for _, key in candidates[:limit]]
+
+
+def evaluate_learned_compatibility(races, market_weight, compatibility_weight):
+    totals = {
+        "races": 0, "winner_top1_hits": 0, "winner_top3_hits": 0,
+        "podium_horses_captured": 0, "podium_horses_total": 0,
+        "trio_hit_races": 0, "tickets": 0, "stake_jpy": 0,
+        "return_jpy": 0, "compatibility_changed_races": 0,
+        "top12_overlap_tickets": 0, "top12_overlap_denominator": 0,
+    }
+    for item in races:
+        scores = blend_rank_scores(item["model_rank_scores"], item["market_rank_scores"], market_weight)
+        ranked = rank_horses(item["group"], scores)
+        winner = {str(row["horse_no"]) for row in item["group"] if row["finish"] == 1}
+        podium = {str(row["horse_no"]) for row in item["group"] if row["finish"] in (1, 2, 3)}
+        if not winner or len(podium) != 3:
+            continue
+        totals["races"] += 1
+        totals["winner_top1_hits"] += int(str(ranked[0]["horse_no"]) in winner)
+        totals["winner_top3_hits"] += int(any(str(row["horse_no"]) in winner for row in ranked[:3]))
+        totals["podium_horses_captured"] += len({str(row["horse_no"]) for row in ranked[:3]} & podium)
+        totals["podium_horses_total"] += 3
+        tickets = build_trio_tickets_learned(
+            item["group"], scores, item["learned_pair_scores"],
+            compatibility_weight=compatibility_weight,
+        )
+        baseline = build_trio_tickets_learned(
+            item["group"], scores, item["learned_pair_scores"], compatibility_weight=0.0,
+        )
+        baseline_set, current_set = {tuple(x) for x in baseline}, {tuple(x) for x in tickets}
+        totals["compatibility_changed_races"] += int(current_set != baseline_set)
+        totals["top12_overlap_tickets"] += len(baseline_set & current_set)
+        totals["top12_overlap_denominator"] += len(baseline_set)
+        totals["tickets"] += len(tickets)
+        totals["stake_jpy"] += len(tickets) * 100
+        returned = sum(nb.payout_for("trio", ticket, item["payout"]) or 0 for ticket in tickets)
+        totals["return_jpy"] += returned
+        totals["trio_hit_races"] += int(returned > 0)
+    count, stake = totals["races"], totals["stake_jpy"]
+    totals.update({
+        "winner_top1_rate_pct": round(100 * totals["winner_top1_hits"] / count, 2) if count else None,
+        "winner_top3_capture_rate_pct": round(100 * totals["winner_top3_hits"] / count, 2) if count else None,
+        "podium_capture_rate_pct": round(100 * totals["podium_horses_captured"] / totals["podium_horses_total"], 2) if totals["podium_horses_total"] else None,
+        "trio_hit_rate_pct": round(100 * totals["trio_hit_races"] / count, 2) if count else None,
+        "roi_pct": round(100 * totals["return_jpy"] / stake, 2) if stake else None,
+        "profit_jpy": totals["return_jpy"] - stake,
+        "tickets_per_race": round(totals["tickets"] / count, 2) if count else None,
+        "top12_overlap_pct": round(100 * totals["top12_overlap_tickets"] / totals["top12_overlap_denominator"], 2)
+            if totals["top12_overlap_denominator"] else None,
+    })
+    return totals
+
+
 def select_market_weight(dev_races):
     """Tune only on the first three dates; never inspect final two-day holdout results."""
     results = {f"{weight:.2f}": evaluate_races(dev_races, weight) for weight in BLEND_WEIGHTS}
@@ -238,6 +301,8 @@ def main():
     print(f"TRIO_FUSION_LAMBDARANK fit_races={len(fit_groups)} dev_races={len(dev_groups)}", flush=True)
     ranker = ml.fit_lambdarank(fit_groups, dev_groups, ml.RAW_FEATURES, category_maps)
 
+    training_groups_for_pairs = ml.group_rows(training_rows)
+    learned_pair_model = learned_tc.fit_pair_model(training_groups_for_pairs)
     test_rows = [row for row in rows if dt.date.fromisoformat(row["date"]) in test_date_set]
     test_groups = ml.group_rows(test_rows)
     matched = []
@@ -265,6 +330,7 @@ def main():
             "market_rank_scores": {horse: market_ranks[horse] for horse in horse_numbers},
             "snapshot_minutes_to_post": snapshot.get("minutes_to_post"),
             "snapshot_model_version": snapshot.get("model_version"),
+            "learned_pair_scores": learned_tc.predict_pair_compatibility(group, learned_pair_model),
         })
     matched.sort(key=lambda item: (item["date"], item["race_key"]))
     if len(matched) < 20:
@@ -292,6 +358,24 @@ def main():
     ))
     holdout_results = {f"{weight:.2f}": evaluate_races(holdout_races, weight) for weight in BLEND_WEIGHTS}
     holdout_results["selected_from_development"] = evaluate_races(holdout_races, selected_weight)
+    development_learned_compatibility = {
+        f"{cw:.2f}": evaluate_learned_compatibility(dev_races, selected_weight, cw)
+        for cw in LEARNED_COMPATIBILITY_WEIGHTS
+    }
+    selected_learned_compatibility_weight = max(LEARNED_COMPATIBILITY_WEIGHTS, key=lambda cw: (
+        development_learned_compatibility[f"{cw:.2f}"]["trio_hit_rate_pct"]
+        if development_learned_compatibility[f"{cw:.2f}"]["trio_hit_rate_pct"] is not None else -1,
+        development_learned_compatibility[f"{cw:.2f}"]["podium_capture_rate_pct"]
+        if development_learned_compatibility[f"{cw:.2f}"]["podium_capture_rate_pct"] is not None else -1,
+        -cw,
+    ))
+    holdout_learned_compatibility = {
+        f"{cw:.2f}": evaluate_learned_compatibility(holdout_races, selected_weight, cw)
+        for cw in LEARNED_COMPATIBILITY_WEIGHTS
+    }
+    holdout_learned_compatibility["selected_from_development"] = evaluate_learned_compatibility(
+        holdout_races, selected_weight, selected_learned_compatibility_weight
+    )
     holdout_compatibility_results = {
         f"{cw:.2f}": evaluate_races(holdout_races, selected_weight, cw)
         for cw in compatibility_weights
@@ -336,6 +420,20 @@ def main():
             "fusion_learning": "Select market percentile weight from {0,.25,.50,.75,1.00} using only the first three test dates; maximize trio 12-ticket race-hit rate, then podium capture; ties prefer lower market weight.",
         },
         "development_weight_selection": {"selected_market_weight": round(selected_weight, 2), "selection_results": dev_results},
+        "learned_pair_compatibility_training": {
+            "training_races": len(training_groups_for_pairs),
+            "training_pairs": learned_pair_model["training_pairs"],
+            "positive_pairs": learned_pair_model["positive_pairs"],
+            "negative_pairs": learned_pair_model["negative_pairs"],
+            "features": learned_pair_model["features"],
+            "method": "balanced logistic regression on pre-race pair features; negative pairs deterministically capped per race",
+        },
+        "development_learned_compatibility_selection": {
+            "selected_compatibility_weight": round(selected_learned_compatibility_weight, 2),
+            "candidate_weights": list(LEARNED_COMPATIBILITY_WEIGHTS),
+            "selection_results": development_learned_compatibility,
+        },
+        "untouched_holdout_learned_compatibility": holdout_learned_compatibility,
         "development_compatibility_selection": {
             "selected_compatibility_weight": round(selected_compatibility_weight, 2),
             "candidate_weights": list(compatibility_weights),
@@ -358,6 +456,7 @@ def main():
                 "No live-model.json, live-history.json, or production ticket logic is changed.",
                 "Compatibility weights are swept broadly and top-12 ticket overlap is reported to detect inert adjustments.",
                 "Front-count segment results are exploratory; predicted_front_count is a historical proxy, not observed in-race pace.",
+                "A separate supervised pair model is trained only on races before the five-day evaluation window; its selected weight is chosen on development dates and measured on untouched holdout dates.",
             ],
         },
         "data_source": {"archive_months": downloads, "snapshot_records_considered": len(snapshot_by_key)},
