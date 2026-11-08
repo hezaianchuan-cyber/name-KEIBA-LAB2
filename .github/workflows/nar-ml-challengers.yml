@@ -26,7 +26,8 @@ jobs:
       - name: Compile and test research script
         run: |
           python -m py_compile scripts/nar_ml_challenger_backtest.py scripts/nar_bet_type_comparison.py scripts/nar_backtest.py
-          python -m unittest discover -s tests -p 'test_nar_ml_challenger_backtest.py'\n          python -m unittest discover -s tests -p 'test_nar_bet_type_comparison.py'
+          python -m unittest discover -s tests -p 'test_nar_ml_challenger_backtest.py'
+          python -m unittest discover -s tests -p 'test_nar_bet_type_comparison.py'
       - name: Run NAR ML challenger suite
         env:
           NAR_CACHE_DIR: .cache/nar-monthly
