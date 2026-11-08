@@ -31,7 +31,12 @@ RAW_NUMERIC = [
     "recent_first_corner_pct", "recent_last_corner_pct", "recent_position_gain",
     "prior_body_weight_avg", "body_weight_delta_pct", "body_weight",
     "body_weight_change", "frame_no", "carried_weight", "predicted_front_count",
-    "front_crowding_ratio", "venue_runs", "venue_top3_rate", "distance_runs",
+    "front_crowding_ratio", "race_rel_recent_finish_pct",
+    "race_rel_recent_top3_rate", "race_rel_recent_last_corner_pct",
+    "race_rel_recent_last3f_rank", "race_rel_recent_opponent_strength",
+    "race_rel_recent_time_per_km", "race_rel_venue_top3_rate",
+    "race_rel_distance_top3_rate", "race_rel_jockey_top3_rate",
+    "race_rel_body_weight_delta_pct", "venue_runs", "venue_top3_rate", "distance_runs",
     "distance_top3_rate", "going_runs", "going_top3_rate", "jockey_runs",
     "jockey_top3_rate", "sire_runs", "sire_top3_rate", "age", "field_size",
     "distance_m"
@@ -72,6 +77,36 @@ def rate(rows, prior=0.5, strength=8.0):
     return (hits + prior * strength) / (len(rows) + strength)
 
 
+def add_race_relative_features(race_rows):
+    """Add field-relative z-scores using only pre-race runner features."""
+    source_features = {
+        "recent_finish_pct": "race_rel_recent_finish_pct",
+        "recent_top3_rate": "race_rel_recent_top3_rate",
+        "recent_last_corner_pct": "race_rel_recent_last_corner_pct",
+        "recent_last3f_rank": "race_rel_recent_last3f_rank",
+        "recent_opponent_strength": "race_rel_recent_opponent_strength",
+        "recent_time_per_km": "race_rel_recent_time_per_km",
+        "venue_top3_rate": "race_rel_venue_top3_rate",
+        "distance_top3_rate": "race_rel_distance_top3_rate",
+        "jockey_top3_rate": "race_rel_jockey_top3_rate",
+        "body_weight_delta_pct": "race_rel_body_weight_delta_pct",
+    }
+    for source, target in source_features.items():
+        values = []
+        for row in race_rows:
+            value = float(row.get(source) or 0.0)
+            if math.isfinite(value) and (source != "recent_time_per_km" or value > 0):
+                values.append(value)
+        center = mean_or(values, 0.0)
+        variance = mean_or([(value - center) ** 2 for value in values], 0.0)
+        scale = math.sqrt(variance) if variance > 1e-12 else 0.0
+        for row in race_rows:
+            value = float(row.get(source) or 0.0)
+            z = (value - center) / scale if scale > 1e-6 and math.isfinite(value) else 0.0
+            row[target] = max(-5.0, min(5.0, z))
+    return race_rows
+
+
 def build_rows(races, horses):
     history = defaultdict(list)
     sire_stats = defaultdict(lambda: {"runs": 0, "top3": 0, "wins": 0})
@@ -103,6 +138,7 @@ def build_rows(races, horses):
                 if prior and mean_or([x.get("first_corner_pct") for x in prior], 1.0) <= 0.12
             )
             front_ratio = front_count / max(len(field), 1)
+            race_rows = []
             for h in field:
                 history_key, identity_quality = horse_history_key({**h, "race_key": "|".join(map(str, race["key"]))})
                 _, parts = nb.score_runner({**h, "name": history_key}, history, sire_stats, jockey_stats, race, BASE_WEIGHTS)
@@ -212,7 +248,10 @@ def build_rows(races, horses):
                     "predicted_front_count": float(front_count),
                     "front_crowding_ratio": float(front_ratio),
                 }
-                rows.append(row)
+                race_rows.append(row)
+            # Relative-to-field signals let LambdaRank judge whether a horse's
+            # form, pace profile and suitability are strong versus today's rivals.
+            rows.extend(add_race_relative_features(race_rows))
 
         # Update each race exactly once, only after all races on this date are scored.
         for race in day_races:
