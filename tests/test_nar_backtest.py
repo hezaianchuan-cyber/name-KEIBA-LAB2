@@ -81,6 +81,23 @@ class ChallengerBettingReturnTests(unittest.TestCase):
         self.assertEqual(report["strategies"]["Market_favorite"]["win"]["hits"], 0)
 
 
+class NARHorseFeatureParsingTests(unittest.TestCase):
+    def test_official_horselist_frame_and_body_weight_columns(self):
+        row = ["大井", "20261101", "1", "6", "緑", "8", "テスト馬",
+               "牡", "5", "鹿毛", "20210101", "父", "母", "母父",
+               "騎手", "大井", "56", "0-0-0-0", "調教師", "大井",
+               "馬主", "牧場", "482", "-4"] + [""] * 12
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = Path(tmp) / "sample.zip"
+            with zipfile.ZipFile(archive, "w") as zf:
+                zf.writestr("202611_horselist.csv", ",".join(row))
+            _, horses, _ = nb.parse_month_archive(archive.read_bytes(), 2026, 11)
+        runner = horses[nb.race_key("大井", "20261101", "1")][0]
+        self.assertEqual(runner["frame_no"], 6)
+        self.assertEqual(runner["body_weight"], 482)
+        self.assertEqual(runner["body_weight_change"], -4)
+
+
 class HorseIdentityIsolationTests(unittest.TestCase):
     def test_composite_identity_separates_same_name_horses(self):
         first = {"name":"同名馬", "birth_date":"20200101", "sex":"牡",
