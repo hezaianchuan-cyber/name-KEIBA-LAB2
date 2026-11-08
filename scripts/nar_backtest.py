@@ -2332,7 +2332,9 @@ def run_backtest(races, horses, payouts, training_only=False, learning_trace=Non
     shadow_races = 0
     ordered = sorted((r for r in races.values()), key=lambda r:(r["date"],r["venue"],int(r["race"])))
     progress_every = max(1, len(ordered) // 10)
-    print(f"CHRONOLOGICAL_PROGRESS start races={len(ordered)} dates={len({r['date'] for r in ordered})}", flush=True)
+    total_dates = len({r["date"] for r in ordered})
+    completed_dates = 0
+    print(f"CHRONOLOGICAL_PROGRESS start races={len(ordered)} dates={total_dates}", flush=True)
     daily_pending = []
     current_date = None
 
@@ -2389,6 +2391,14 @@ def run_backtest(races, horses, payouts, training_only=False, learning_trace=Non
             print(f"CHRONOLOGICAL_PROGRESS {race_index}/{len(ordered)} ({100*race_index/max(1,len(ordered)):.0f}%) date={race['date']}", flush=True)
         if current_date is not None and race["date"] != current_date:
             commit_day(daily_pending)
+            completed_dates += 1
+            print(
+                f"CHRONOLOGICAL_DAY_COMPLETE date={current_date.isoformat()} "
+                f"completed_dates={completed_dates}/{total_dates} "
+                f"races_processed={race_index - 1}/{len(ordered)} "
+                f"learning_updates={learning_updates}",
+                flush=True,
+            )
             daily_pending = []
         current_date = race["date"]
         key = race["key"]
@@ -2509,6 +2519,14 @@ def run_backtest(races, horses, payouts, training_only=False, learning_trace=Non
         daily_pending.append((field, parts_by_no, race))
     if daily_pending:
         commit_day(daily_pending)
+        completed_dates += 1
+        print(
+            f"CHRONOLOGICAL_DAY_COMPLETE date={current_date.isoformat()} "
+            f"completed_dates={completed_dates}/{total_dates} "
+            f"races_processed={len(ordered)}/{len(ordered)} "
+            f"learning_updates={learning_updates}",
+            flush=True,
+        )
     summary = {}
     for kind,m in metrics.items():
         summary[kind] = {**m, "hit_rate": round(100*m["hits"]/m["tickets"],2) if m["tickets"] else None,
