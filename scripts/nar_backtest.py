@@ -16,7 +16,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "backtest-summary.json"
-END = dt.date.today() - dt.timedelta(days=1)
+# Monthly NAR archives are published after a month closes. Anchor this four-year
+# archive backtest to the last completed month so the current partial month (404)
+# is never requested; recent-day evaluation is handled by its dedicated workflow.
+END = dt.date.today().replace(day=1) - dt.timedelta(days=1)
 START = END - dt.timedelta(days=1460)  # four-year source window for the independent 3-year-train / 1-year-holdout audit
 UA = "Mozilla/5.0 (compatible; KEIBA-LAB-backtest/1.0)"
 
