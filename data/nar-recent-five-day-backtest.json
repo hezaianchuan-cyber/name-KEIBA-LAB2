@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-08T03:57:06.743254+00:00",
+  "generated_at": "2026-11-08T04:42:31.792790+00:00",
   "status": "evaluated",
   "diagnostic_version": 2,
   "evaluation_window": {
@@ -1796,6 +1796,814 @@
       }
     }
   },
+  "sequential_learning_evaluation": {
+    "status": "evaluated",
+    "policy": "Walk-forward by Japan-local race date. Each day's model is refit using only official race results strictly before that date. Prior test-day results are added to the next day's training set; same-day results are not used until the next date.",
+    "model_names": [
+      "C_performance_pace",
+      "D4_jockey_venue_distance",
+      "ablate_form"
+    ],
+    "daily_and_cumulative": [
+      {
+        "date": "2026-11-03",
+        "daily": {
+          "C_performance_pace": {
+            "races": 36,
+            "winner_top1_hits": 8,
+            "winner_top1_rate_pct": 22.22,
+            "winner_top3_hits": 20,
+            "winner_top3_rate_pct": 55.56,
+            "win": {
+              "stake_jpy": 0,
+              "return_jpy": 0.0,
+              "roi_pct": null
+            },
+            "trio_12": {
+              "races": 36,
+              "hit_races": 13,
+              "stake_jpy": 68400,
+              "return_jpy": 45170.0,
+              "profit_jpy": -23230.0,
+              "roi_pct": 66.04,
+              "race_hit_rate_pct": 36.11
+            },
+            "market_comparison": {
+              "same_races": 36,
+              "model_top1_hits": 8,
+              "model_top1_rate_pct": 22.22,
+              "market_favorite_top1_hits": 11,
+              "market_favorite_top1_rate_pct": 30.56,
+              "top1_gap_percentage_points": -8.33,
+              "model_top1_roi_pct": 61.94,
+              "market_favorite_roi_pct": 59.72
+            }
+          },
+          "D4_jockey_venue_distance": {
+            "races": 36,
+            "winner_top1_hits": 9,
+            "winner_top1_rate_pct": 25.0,
+            "winner_top3_hits": 19,
+            "winner_top3_rate_pct": 52.78,
+            "win": {
+              "stake_jpy": 0,
+              "return_jpy": 0.0,
+              "roi_pct": null
+            },
+            "trio_12": {
+              "races": 36,
+              "hit_races": 11,
+              "stake_jpy": 68400,
+              "return_jpy": 27270.0,
+              "profit_jpy": -41130.0,
+              "roi_pct": 39.87,
+              "race_hit_rate_pct": 30.56
+            },
+            "market_comparison": {
+              "same_races": 36,
+              "model_top1_hits": 9,
+              "model_top1_rate_pct": 25.0,
+              "market_favorite_top1_hits": 11,
+              "market_favorite_top1_rate_pct": 30.56,
+              "top1_gap_percentage_points": -5.56,
+              "model_top1_roi_pct": 71.11,
+              "market_favorite_roi_pct": 59.72
+            }
+          },
+          "ablate_form": {
+            "races": 36,
+            "winner_top1_hits": 8,
+            "winner_top1_rate_pct": 22.22,
+            "winner_top3_hits": 21,
+            "winner_top3_rate_pct": 58.33,
+            "win": {
+              "stake_jpy": 0,
+              "return_jpy": 0.0,
+              "roi_pct": null
+            },
+            "trio_12": {
+              "races": 36,
+              "hit_races": 13,
+              "stake_jpy": 68400,
+              "return_jpy": 59390.0,
+              "profit_jpy": -9010.0,
+              "roi_pct": 86.83,
+              "race_hit_rate_pct": 36.11
+            },
+            "market_comparison": {
+              "same_races": 36,
+              "model_top1_hits": 8,
+              "model_top1_rate_pct": 22.22,
+              "market_favorite_top1_hits": 11,
+              "market_favorite_top1_rate_pct": 30.56,
+              "top1_gap_percentage_points": -8.33,
+              "model_top1_roi_pct": 48.89,
+              "market_favorite_roi_pct": 59.72
+            }
+          }
+        },
+        "cumulative": {
+          "C_performance_pace": {
+            "races": 36,
+            "winner_top1_hits": 8,
+            "winner_top1_rate_pct": 22.22,
+            "winner_top3_hits": 20,
+            "winner_top3_rate_pct": 55.56,
+            "trio_12": {
+              "races": 36,
+              "hit_races": 13,
+              "race_hit_rate_pct": 36.11,
+              "stake_jpy": 68400,
+              "return_jpy": 45170.0,
+              "profit_jpy": -23230.0,
+              "roi_pct": 66.04
+            },
+            "market_favorite_top1_rate_pct": 30.56,
+            "market_top1_gap_percentage_points": -8.33
+          },
+          "D4_jockey_venue_distance": {
+            "races": 36,
+            "winner_top1_hits": 9,
+            "winner_top1_rate_pct": 25.0,
+            "winner_top3_hits": 19,
+            "winner_top3_rate_pct": 52.78,
+            "trio_12": {
+              "races": 36,
+              "hit_races": 11,
+              "race_hit_rate_pct": 30.56,
+              "stake_jpy": 68400,
+              "return_jpy": 27270.0,
+              "profit_jpy": -41130.0,
+              "roi_pct": 39.87
+            },
+            "market_favorite_top1_rate_pct": 30.56,
+            "market_top1_gap_percentage_points": -5.56
+          },
+          "ablate_form": {
+            "races": 36,
+            "winner_top1_hits": 8,
+            "winner_top1_rate_pct": 22.22,
+            "winner_top3_hits": 21,
+            "winner_top3_rate_pct": 58.33,
+            "trio_12": {
+              "races": 36,
+              "hit_races": 13,
+              "race_hit_rate_pct": 36.11,
+              "stake_jpy": 68400,
+              "return_jpy": 59390.0,
+              "profit_jpy": -9010.0,
+              "roi_pct": 86.83
+            },
+            "market_favorite_top1_rate_pct": 30.56,
+            "market_top1_gap_percentage_points": -8.33
+          }
+        }
+      },
+      {
+        "date": "2026-11-04",
+        "daily": {
+          "C_performance_pace": {
+            "races": 59,
+            "winner_top1_hits": 19,
+            "winner_top1_rate_pct": 32.2,
+            "winner_top3_hits": 31,
+            "winner_top3_rate_pct": 52.54,
+            "win": {
+              "stake_jpy": 0,
+              "return_jpy": 0.0,
+              "roi_pct": null
+            },
+            "trio_12": {
+              "races": 59,
+              "hit_races": 30,
+              "stake_jpy": 112100,
+              "return_jpy": 79480.0,
+              "profit_jpy": -32620.0,
+              "roi_pct": 70.9,
+              "race_hit_rate_pct": 50.85
+            },
+            "market_comparison": {
+              "same_races": 59,
+              "model_top1_hits": 19,
+              "model_top1_rate_pct": 32.2,
+              "market_favorite_top1_hits": 26,
+              "market_favorite_top1_rate_pct": 44.07,
+              "top1_gap_percentage_points": -11.86,
+              "model_top1_roi_pct": 83.39,
+              "market_favorite_roi_pct": 73.39
+            }
+          },
+          "D4_jockey_venue_distance": {
+            "races": 59,
+            "winner_top1_hits": 20,
+            "winner_top1_rate_pct": 33.9,
+            "winner_top3_hits": 36,
+            "winner_top3_rate_pct": 61.02,
+            "win": {
+              "stake_jpy": 0,
+              "return_jpy": 0.0,
+              "roi_pct": null
+            },
+            "trio_12": {
+              "races": 59,
+              "hit_races": 35,
+              "stake_jpy": 112100,
+              "return_jpy": 93140.0,
+              "profit_jpy": -18960.0,
+              "roi_pct": 83.09,
+              "race_hit_rate_pct": 59.32
+            },
+            "market_comparison": {
+              "same_races": 59,
+              "model_top1_hits": 20,
+              "model_top1_rate_pct": 33.9,
+              "market_favorite_top1_hits": 26,
+              "market_favorite_top1_rate_pct": 44.07,
+              "top1_gap_percentage_points": -10.17,
+              "model_top1_roi_pct": 71.86,
+              "market_favorite_roi_pct": 73.39
+            }
+          },
+          "ablate_form": {
+            "races": 59,
+            "winner_top1_hits": 20,
+            "winner_top1_rate_pct": 33.9,
+            "winner_top3_hits": 34,
+            "winner_top3_rate_pct": 57.63,
+            "win": {
+              "stake_jpy": 0,
+              "return_jpy": 0.0,
+              "roi_pct": null
+            },
+            "trio_12": {
+              "races": 59,
+              "hit_races": 31,
+              "stake_jpy": 112100,
+              "return_jpy": 77770.0,
+              "profit_jpy": -34330.0,
+              "roi_pct": 69.38,
+              "race_hit_rate_pct": 52.54
+            },
+            "market_comparison": {
+              "same_races": 59,
+              "model_top1_hits": 20,
+              "model_top1_rate_pct": 33.9,
+              "market_favorite_top1_hits": 26,
+              "market_favorite_top1_rate_pct": 44.07,
+              "top1_gap_percentage_points": -10.17,
+              "model_top1_roi_pct": 91.53,
+              "market_favorite_roi_pct": 73.39
+            }
+          }
+        },
+        "cumulative": {
+          "C_performance_pace": {
+            "races": 95,
+            "winner_top1_hits": 27,
+            "winner_top1_rate_pct": 28.42,
+            "winner_top3_hits": 51,
+            "winner_top3_rate_pct": 53.68,
+            "trio_12": {
+              "races": 95,
+              "hit_races": 43,
+              "race_hit_rate_pct": 45.26,
+              "stake_jpy": 180500,
+              "return_jpy": 124650.0,
+              "profit_jpy": -55850.0,
+              "roi_pct": 69.06
+            },
+            "market_favorite_top1_rate_pct": 38.95,
+            "market_top1_gap_percentage_points": -10.53
+          },
+          "D4_jockey_venue_distance": {
+            "races": 95,
+            "winner_top1_hits": 29,
+            "winner_top1_rate_pct": 30.53,
+            "winner_top3_hits": 55,
+            "winner_top3_rate_pct": 57.89,
+            "trio_12": {
+              "races": 95,
+              "hit_races": 46,
+              "race_hit_rate_pct": 48.42,
+              "stake_jpy": 180500,
+              "return_jpy": 120410.0,
+              "profit_jpy": -60090.0,
+              "roi_pct": 66.71
+            },
+            "market_favorite_top1_rate_pct": 38.95,
+            "market_top1_gap_percentage_points": -8.42
+          },
+          "ablate_form": {
+            "races": 95,
+            "winner_top1_hits": 28,
+            "winner_top1_rate_pct": 29.47,
+            "winner_top3_hits": 55,
+            "winner_top3_rate_pct": 57.89,
+            "trio_12": {
+              "races": 95,
+              "hit_races": 44,
+              "race_hit_rate_pct": 46.32,
+              "stake_jpy": 180500,
+              "return_jpy": 137160.0,
+              "profit_jpy": -43340.0,
+              "roi_pct": 75.99
+            },
+            "market_favorite_top1_rate_pct": 38.95,
+            "market_top1_gap_percentage_points": -9.47
+          }
+        }
+      },
+      {
+        "date": "2026-11-05",
+        "daily": {
+          "C_performance_pace": {
+            "races": 48,
+            "winner_top1_hits": 17,
+            "winner_top1_rate_pct": 35.42,
+            "winner_top3_hits": 28,
+            "winner_top3_rate_pct": 58.33,
+            "win": {
+              "stake_jpy": 0,
+              "return_jpy": 0.0,
+              "roi_pct": null
+            },
+            "trio_12": {
+              "races": 48,
+              "hit_races": 25,
+              "stake_jpy": 91200,
+              "return_jpy": 57980.0,
+              "profit_jpy": -33220.0,
+              "roi_pct": 63.57,
+              "race_hit_rate_pct": 52.08
+            },
+            "market_comparison": {
+              "same_races": 48,
+              "model_top1_hits": 17,
+              "model_top1_rate_pct": 35.42,
+              "market_favorite_top1_hits": 23,
+              "market_favorite_top1_rate_pct": 47.92,
+              "top1_gap_percentage_points": -12.5,
+              "model_top1_roi_pct": 94.79,
+              "market_favorite_roi_pct": 91.25
+            }
+          },
+          "D4_jockey_venue_distance": {
+            "races": 48,
+            "winner_top1_hits": 19,
+            "winner_top1_rate_pct": 39.58,
+            "winner_top3_hits": 29,
+            "winner_top3_rate_pct": 60.42,
+            "win": {
+              "stake_jpy": 0,
+              "return_jpy": 0.0,
+              "roi_pct": null
+            },
+            "trio_12": {
+              "races": 48,
+              "hit_races": 24,
+              "stake_jpy": 91200,
+              "return_jpy": 54810.0,
+              "profit_jpy": -36390.0,
+              "roi_pct": 60.1,
+              "race_hit_rate_pct": 50.0
+            },
+            "market_comparison": {
+              "same_races": 48,
+              "model_top1_hits": 19,
+              "model_top1_rate_pct": 39.58,
+              "market_favorite_top1_hits": 23,
+              "market_favorite_top1_rate_pct": 47.92,
+              "top1_gap_percentage_points": -8.33,
+              "model_top1_roi_pct": 123.33,
+              "market_favorite_roi_pct": 91.25
+            }
+          },
+          "ablate_form": {
+            "races": 48,
+            "winner_top1_hits": 19,
+            "winner_top1_rate_pct": 39.58,
+            "winner_top3_hits": 28,
+            "winner_top3_rate_pct": 58.33,
+            "win": {
+              "stake_jpy": 0,
+              "return_jpy": 0.0,
+              "roi_pct": null
+            },
+            "trio_12": {
+              "races": 48,
+              "hit_races": 22,
+              "stake_jpy": 91200,
+              "return_jpy": 64920.0,
+              "profit_jpy": -26280.0,
+              "roi_pct": 71.18,
+              "race_hit_rate_pct": 45.83
+            },
+            "market_comparison": {
+              "same_races": 48,
+              "model_top1_hits": 19,
+              "model_top1_rate_pct": 39.58,
+              "market_favorite_top1_hits": 23,
+              "market_favorite_top1_rate_pct": 47.92,
+              "top1_gap_percentage_points": -8.33,
+              "model_top1_roi_pct": 123.96,
+              "market_favorite_roi_pct": 91.25
+            }
+          }
+        },
+        "cumulative": {
+          "C_performance_pace": {
+            "races": 143,
+            "winner_top1_hits": 44,
+            "winner_top1_rate_pct": 30.77,
+            "winner_top3_hits": 79,
+            "winner_top3_rate_pct": 55.24,
+            "trio_12": {
+              "races": 143,
+              "hit_races": 68,
+              "race_hit_rate_pct": 47.55,
+              "stake_jpy": 271700,
+              "return_jpy": 182630.0,
+              "profit_jpy": -89070.0,
+              "roi_pct": 67.22
+            },
+            "market_favorite_top1_rate_pct": 41.96,
+            "market_top1_gap_percentage_points": -11.19
+          },
+          "D4_jockey_venue_distance": {
+            "races": 143,
+            "winner_top1_hits": 48,
+            "winner_top1_rate_pct": 33.57,
+            "winner_top3_hits": 84,
+            "winner_top3_rate_pct": 58.74,
+            "trio_12": {
+              "races": 143,
+              "hit_races": 70,
+              "race_hit_rate_pct": 48.95,
+              "stake_jpy": 271700,
+              "return_jpy": 175220.0,
+              "profit_jpy": -96480.0,
+              "roi_pct": 64.49
+            },
+            "market_favorite_top1_rate_pct": 41.96,
+            "market_top1_gap_percentage_points": -8.39
+          },
+          "ablate_form": {
+            "races": 143,
+            "winner_top1_hits": 47,
+            "winner_top1_rate_pct": 32.87,
+            "winner_top3_hits": 83,
+            "winner_top3_rate_pct": 58.04,
+            "trio_12": {
+              "races": 143,
+              "hit_races": 66,
+              "race_hit_rate_pct": 46.15,
+              "stake_jpy": 271700,
+              "return_jpy": 202080.0,
+              "profit_jpy": -69620.0,
+              "roi_pct": 74.38
+            },
+            "market_favorite_top1_rate_pct": 41.96,
+            "market_top1_gap_percentage_points": -9.09
+          }
+        }
+      },
+      {
+        "date": "2026-11-06",
+        "daily": {
+          "C_performance_pace": {
+            "races": 48,
+            "winner_top1_hits": 16,
+            "winner_top1_rate_pct": 33.33,
+            "winner_top3_hits": 28,
+            "winner_top3_rate_pct": 58.33,
+            "win": {
+              "stake_jpy": 0,
+              "return_jpy": 0.0,
+              "roi_pct": null
+            },
+            "trio_12": {
+              "races": 48,
+              "hit_races": 18,
+              "stake_jpy": 91200,
+              "return_jpy": 68380.0,
+              "profit_jpy": -22820.0,
+              "roi_pct": 74.98,
+              "race_hit_rate_pct": 37.5
+            },
+            "market_comparison": {
+              "same_races": 48,
+              "model_top1_hits": 16,
+              "model_top1_rate_pct": 33.33,
+              "market_favorite_top1_hits": 21,
+              "market_favorite_top1_rate_pct": 43.75,
+              "top1_gap_percentage_points": -10.42,
+              "model_top1_roi_pct": 85.0,
+              "market_favorite_roi_pct": 83.33
+            }
+          },
+          "D4_jockey_venue_distance": {
+            "races": 48,
+            "winner_top1_hits": 17,
+            "winner_top1_rate_pct": 35.42,
+            "winner_top3_hits": 26,
+            "winner_top3_rate_pct": 54.17,
+            "win": {
+              "stake_jpy": 0,
+              "return_jpy": 0.0,
+              "roi_pct": null
+            },
+            "trio_12": {
+              "races": 48,
+              "hit_races": 17,
+              "stake_jpy": 91200,
+              "return_jpy": 63700.0,
+              "profit_jpy": -27500.0,
+              "roi_pct": 69.85,
+              "race_hit_rate_pct": 35.42
+            },
+            "market_comparison": {
+              "same_races": 48,
+              "model_top1_hits": 17,
+              "model_top1_rate_pct": 35.42,
+              "market_favorite_top1_hits": 21,
+              "market_favorite_top1_rate_pct": 43.75,
+              "top1_gap_percentage_points": -8.33,
+              "model_top1_roi_pct": 91.25,
+              "market_favorite_roi_pct": 83.33
+            }
+          },
+          "ablate_form": {
+            "races": 48,
+            "winner_top1_hits": 17,
+            "winner_top1_rate_pct": 35.42,
+            "winner_top3_hits": 24,
+            "winner_top3_rate_pct": 50.0,
+            "win": {
+              "stake_jpy": 0,
+              "return_jpy": 0.0,
+              "roi_pct": null
+            },
+            "trio_12": {
+              "races": 48,
+              "hit_races": 19,
+              "stake_jpy": 91200,
+              "return_jpy": 73870.0,
+              "profit_jpy": -17330.0,
+              "roi_pct": 81.0,
+              "race_hit_rate_pct": 39.58
+            },
+            "market_comparison": {
+              "same_races": 48,
+              "model_top1_hits": 17,
+              "model_top1_rate_pct": 35.42,
+              "market_favorite_top1_hits": 21,
+              "market_favorite_top1_rate_pct": 43.75,
+              "top1_gap_percentage_points": -8.33,
+              "model_top1_roi_pct": 95.21,
+              "market_favorite_roi_pct": 83.33
+            }
+          }
+        },
+        "cumulative": {
+          "C_performance_pace": {
+            "races": 191,
+            "winner_top1_hits": 60,
+            "winner_top1_rate_pct": 31.41,
+            "winner_top3_hits": 107,
+            "winner_top3_rate_pct": 56.02,
+            "trio_12": {
+              "races": 191,
+              "hit_races": 86,
+              "race_hit_rate_pct": 45.03,
+              "stake_jpy": 362900,
+              "return_jpy": 251010.0,
+              "profit_jpy": -111890.0,
+              "roi_pct": 69.17
+            },
+            "market_favorite_top1_rate_pct": 42.41,
+            "market_top1_gap_percentage_points": -10.99
+          },
+          "D4_jockey_venue_distance": {
+            "races": 191,
+            "winner_top1_hits": 65,
+            "winner_top1_rate_pct": 34.03,
+            "winner_top3_hits": 110,
+            "winner_top3_rate_pct": 57.59,
+            "trio_12": {
+              "races": 191,
+              "hit_races": 87,
+              "race_hit_rate_pct": 45.55,
+              "stake_jpy": 362900,
+              "return_jpy": 238920.0,
+              "profit_jpy": -123980.0,
+              "roi_pct": 65.84
+            },
+            "market_favorite_top1_rate_pct": 42.41,
+            "market_top1_gap_percentage_points": -8.38
+          },
+          "ablate_form": {
+            "races": 191,
+            "winner_top1_hits": 64,
+            "winner_top1_rate_pct": 33.51,
+            "winner_top3_hits": 107,
+            "winner_top3_rate_pct": 56.02,
+            "trio_12": {
+              "races": 191,
+              "hit_races": 85,
+              "race_hit_rate_pct": 44.5,
+              "stake_jpy": 362900,
+              "return_jpy": 275950.0,
+              "profit_jpy": -86950.0,
+              "roi_pct": 76.04
+            },
+            "market_favorite_top1_rate_pct": 42.41,
+            "market_top1_gap_percentage_points": -8.9
+          }
+        }
+      },
+      {
+        "date": "2026-11-07",
+        "daily": {
+          "C_performance_pace": {
+            "races": 35,
+            "winner_top1_hits": 7,
+            "winner_top1_rate_pct": 20.0,
+            "winner_top3_hits": 22,
+            "winner_top3_rate_pct": 62.86,
+            "win": {
+              "stake_jpy": 0,
+              "return_jpy": 0.0,
+              "roi_pct": null
+            },
+            "trio_12": {
+              "races": 35,
+              "hit_races": 13,
+              "stake_jpy": 66500,
+              "return_jpy": 18100.0,
+              "profit_jpy": -48400.0,
+              "roi_pct": 27.22,
+              "race_hit_rate_pct": 37.14
+            },
+            "market_comparison": {
+              "same_races": 35,
+              "model_top1_hits": 7,
+              "model_top1_rate_pct": 20.0,
+              "market_favorite_top1_hits": 15,
+              "market_favorite_top1_rate_pct": 42.86,
+              "top1_gap_percentage_points": -22.86,
+              "model_top1_roi_pct": 28.57,
+              "market_favorite_roi_pct": 69.43
+            }
+          },
+          "D4_jockey_venue_distance": {
+            "races": 35,
+            "winner_top1_hits": 7,
+            "winner_top1_rate_pct": 20.0,
+            "winner_top3_hits": 21,
+            "winner_top3_rate_pct": 60.0,
+            "win": {
+              "stake_jpy": 0,
+              "return_jpy": 0.0,
+              "roi_pct": null
+            },
+            "trio_12": {
+              "races": 35,
+              "hit_races": 13,
+              "stake_jpy": 66500,
+              "return_jpy": 21150.0,
+              "profit_jpy": -45350.0,
+              "roi_pct": 31.8,
+              "race_hit_rate_pct": 37.14
+            },
+            "market_comparison": {
+              "same_races": 35,
+              "model_top1_hits": 7,
+              "model_top1_rate_pct": 20.0,
+              "market_favorite_top1_hits": 15,
+              "market_favorite_top1_rate_pct": 42.86,
+              "top1_gap_percentage_points": -22.86,
+              "model_top1_roi_pct": 28.57,
+              "market_favorite_roi_pct": 69.43
+            }
+          },
+          "ablate_form": {
+            "races": 35,
+            "winner_top1_hits": 8,
+            "winner_top1_rate_pct": 22.86,
+            "winner_top3_hits": 21,
+            "winner_top3_rate_pct": 60.0,
+            "win": {
+              "stake_jpy": 0,
+              "return_jpy": 0.0,
+              "roi_pct": null
+            },
+            "trio_12": {
+              "races": 35,
+              "hit_races": 13,
+              "stake_jpy": 66500,
+              "return_jpy": 21270.0,
+              "profit_jpy": -45230.0,
+              "roi_pct": 31.98,
+              "race_hit_rate_pct": 37.14
+            },
+            "market_comparison": {
+              "same_races": 35,
+              "model_top1_hits": 8,
+              "model_top1_rate_pct": 22.86,
+              "market_favorite_top1_hits": 15,
+              "market_favorite_top1_rate_pct": 42.86,
+              "top1_gap_percentage_points": -20.0,
+              "model_top1_roi_pct": 34.57,
+              "market_favorite_roi_pct": 69.43
+            }
+          }
+        },
+        "cumulative": {
+          "C_performance_pace": {
+            "races": 226,
+            "winner_top1_hits": 67,
+            "winner_top1_rate_pct": 29.65,
+            "winner_top3_hits": 129,
+            "winner_top3_rate_pct": 57.08,
+            "trio_12": {
+              "races": 226,
+              "hit_races": 99,
+              "race_hit_rate_pct": 43.81,
+              "stake_jpy": 429400,
+              "return_jpy": 269110.0,
+              "profit_jpy": -160290.0,
+              "roi_pct": 62.67
+            },
+            "market_favorite_top1_rate_pct": 42.48,
+            "market_top1_gap_percentage_points": -12.83
+          },
+          "D4_jockey_venue_distance": {
+            "races": 226,
+            "winner_top1_hits": 72,
+            "winner_top1_rate_pct": 31.86,
+            "winner_top3_hits": 131,
+            "winner_top3_rate_pct": 57.96,
+            "trio_12": {
+              "races": 226,
+              "hit_races": 100,
+              "race_hit_rate_pct": 44.25,
+              "stake_jpy": 429400,
+              "return_jpy": 260070.0,
+              "profit_jpy": -169330.0,
+              "roi_pct": 60.57
+            },
+            "market_favorite_top1_rate_pct": 42.48,
+            "market_top1_gap_percentage_points": -10.62
+          },
+          "ablate_form": {
+            "races": 226,
+            "winner_top1_hits": 72,
+            "winner_top1_rate_pct": 31.86,
+            "winner_top3_hits": 128,
+            "winner_top3_rate_pct": 56.64,
+            "trio_12": {
+              "races": 226,
+              "hit_races": 98,
+              "race_hit_rate_pct": 43.36,
+              "stake_jpy": 429400,
+              "return_jpy": 297220.0,
+              "profit_jpy": -132180.0,
+              "roi_pct": 69.22
+            },
+            "market_favorite_top1_rate_pct": 42.48,
+            "market_top1_gap_percentage_points": -10.62
+          }
+        }
+      }
+    ],
+    "training_races_by_day": [
+      {
+        "date": "2026-11-03",
+        "training_races": 61492,
+        "training_updates": 61051
+      },
+      {
+        "date": "2026-11-04",
+        "training_races": 61528,
+        "training_updates": 61087
+      },
+      {
+        "date": "2026-11-05",
+        "training_races": 61587,
+        "training_updates": 61146
+      },
+      {
+        "date": "2026-11-06",
+        "training_races": 61635,
+        "training_updates": 61194
+      },
+      {
+        "date": "2026-11-07",
+        "training_races": 61683,
+        "training_updates": 61242
+      }
+    ]
+  },
   "independent_adjacent_window_comparison": {
     "evaluation_window": {
       "start": "2026-10-29",
@@ -2262,6 +3070,113 @@
             "profit": -351350.0
           }
         }
+      },
+      "ablate_form": {
+        "eligible_races": 227,
+        "winner_top1": 59,
+        "winner_top1_rate_pct": 25.99,
+        "winner_top3": 137,
+        "winner_top3_rate_pct": 60.35,
+        "trio_top5_fixed": {
+          "tickets": 2270,
+          "hits": 66,
+          "hit_rate_pct": 2.91,
+          "stake_jpy": 227000,
+          "return_jpy": 92040.0,
+          "roi_pct": 40.55,
+          "profit_jpy": -134960.0
+        },
+        "trio_12_ticket_formation_2_4_5": {
+          "races": 227,
+          "tickets": 2721,
+          "funded_tickets": 2721,
+          "hits": 77,
+          "hit_races": 77,
+          "ticket_hit_rate": 2.8298,
+          "race_hit_rate": 33.92,
+          "stake": 431300,
+          "return": 126150.0,
+          "roi": 29.25,
+          "profit": -305150.0,
+          "budget_per_race_jpy": 1900
+        },
+        "trio_pool_structures": {
+          "top4": {
+            "races": 227,
+            "tickets": 908,
+            "hits": 44,
+            "hit_races": 44,
+            "stake": 90800,
+            "return": 31770.0,
+            "roi": 34.99,
+            "profit": -59030.0
+          },
+          "top5": {
+            "races": 227,
+            "tickets": 2270,
+            "hits": 66,
+            "hit_races": 66,
+            "stake": 227000,
+            "return": 92040.0,
+            "roi": 40.55,
+            "profit": -134960.0
+          },
+          "top6": {
+            "races": 227,
+            "tickets": 4530,
+            "hits": 102,
+            "hit_races": 102,
+            "stake": 453000,
+            "return": 210570.0,
+            "roi": 46.48,
+            "profit": -242430.0
+          },
+          "top7": {
+            "races": 227,
+            "tickets": 7875,
+            "hits": 134,
+            "hit_races": 134,
+            "stake": 787500,
+            "return": 413870.0,
+            "roi": 52.55,
+            "profit": -373630.0
+          }
+        }
+      }
+    },
+    "market_benchmark_same_final_odds_coverage": {
+      "baseline_model_top_pick": {
+        "races": 227,
+        "top1_hits": 61,
+        "top1_rate": 26.87,
+        "hits": 61,
+        "tickets": 227,
+        "stake": 22700,
+        "return": 16090.0,
+        "roi": 70.88,
+        "profit": -6610.0
+      },
+      "D4_model_top_pick": {
+        "races": 227,
+        "top1_hits": 63,
+        "top1_rate": 27.75,
+        "hits": 63,
+        "tickets": 227,
+        "stake": 22700,
+        "return": 16390.0,
+        "roi": 72.2,
+        "profit": -6310.0
+      },
+      "market_favorite": {
+        "races": 227,
+        "top1_hits": 93,
+        "top1_rate": 40.97,
+        "hits": 93,
+        "tickets": 227,
+        "stake": 22700,
+        "return": 16920.0,
+        "roi": 74.54,
+        "profit": -5780.0
       }
     },
     "market_rank_diagnostics": {
