@@ -2264,7 +2264,7 @@ def summarize_race_cluster_roi(stats):
         "profit": returned - stake,
     }
 
-def run_backtest(races, horses, payouts, training_only=False):
+def run_backtest(races, horses, payouts, training_only=False, learning_trace=None):
     history = defaultdict(list)
     sire_stats = defaultdict(lambda: {"runs":0,"top3":0})
     jockey_stats = defaultdict(lambda: {"runs":0,"top3":0})
@@ -2289,6 +2289,7 @@ def run_backtest(races, horses, payouts, training_only=False):
 
     def commit_day(items):
         nonlocal learning_updates
+        day_updates_before = learning_updates
         # Freeze all opponent-strength estimates against history available before
         # this date is committed. No race on the same date can influence another.
         prepared = []
@@ -2324,6 +2325,15 @@ def run_backtest(races, horses, payouts, training_only=False):
                         pair["runs"] += 1
                         pair["top3"] += int(runner["finish"] <= 3)
             update_frame_stats(pending_race, pending_field, frame_stats)
+        if learning_trace is not None and items:
+            race_date = items[-1][2]["date"]
+            learning_trace.append({
+                "date": race_date.isoformat(),
+                "races": len(items),
+                "training_updates": learning_updates - day_updates_before,
+                "cumulative_updates": learning_updates,
+                "weights": {key: round(value, 8) for key, value in model_weights.items()},
+            })
 
     for race_index, race in enumerate(ordered, 1):
         if race_index == 1 or race_index % progress_every == 0 or race_index == len(ordered):
