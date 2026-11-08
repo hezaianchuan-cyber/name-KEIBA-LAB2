@@ -49,6 +49,51 @@ class TrioLambdaRankMarketFusionTests(unittest.TestCase):
         self.assertEqual(len(tickets), 4)
         self.assertEqual(len({tuple(x) for x in tickets}), 4)
 
+    def test_axis_strategy_builds_two_wide_and_six_ev_proxy_trios(self):
+        group = [{"horse_no": str(i), "finish": i} for i in range(1, 8)]
+        scores = {str(i): 1.0 - (i - 1) * 0.1 for i in range(1, 8)}
+        pair_scores = {
+            (str(a), str(b)): 0.2 + 0.05 * (8 - a - b)
+            for a in range(1, 8) for b in range(a + 1, 8)
+        }
+        market_probs = {str(i): (8 - i) / 28 for i in range(1, 8)}
+        strategy = fusion.build_axis_wide_trio_strategy(
+            group, scores, pair_scores, market_probs, compatibility_weight=0.5
+        )
+        self.assertEqual(strategy["axis"], "1")
+        self.assertEqual(strategy["wide_tickets"], [["1", "2"], ["1", "3"]])
+        self.assertEqual(len(strategy["trio_opponents"]), 4)
+        self.assertNotIn("1", strategy["trio_opponents"])
+        self.assertEqual(len(strategy["trio_tickets"]), 6)
+        self.assertTrue(all(len(ticket) == 3 for ticket in strategy["trio_tickets"]))
+        self.assertEqual(len({tuple(ticket) for ticket in strategy["trio_tickets"]}), 6)
+
+    def test_axis_strategy_evaluates_800_yen_per_race(self):
+        group = [{"horse_no": str(i), "finish": i} for i in range(1, 7)]
+        pair_scores = {
+            (str(a), str(b)): 0.5
+            for a in range(1, 7) for b in range(a + 1, 7)
+        }
+        item = {
+            "group": group,
+            "payout": {
+                "wide": [(["1", "2"], 300)],
+                "trio": [(["1", "2", "3"], 500)],
+            },
+            "model_rank_scores": {str(i): 1.0 - (i - 1) * 0.1 for i in range(1, 7)},
+            "market_rank_scores": {str(i): 1.0 - (i - 1) * 0.1 for i in range(1, 7)},
+            "market_win_probabilities": {str(i): (7 - i) / 21 for i in range(1, 7)},
+            "learned_pair_scores": pair_scores,
+        }
+        result = fusion.evaluate_axis_wide_trio_strategy([item], 0.5, 0.5)
+        self.assertEqual(result["stake_per_race_jpy"], 800)
+        self.assertEqual(result["wide_stake_jpy"], 200)
+        self.assertEqual(result["trio_stake_jpy"], 600)
+        self.assertEqual(result["combined_stake_jpy"], 800)
+        self.assertEqual(result["wide_return_jpy"], 300)
+        self.assertEqual(result["trio_return_jpy"], 500)
+        self.assertEqual(result["combined_return_jpy"], 800)
+
     def test_weight_selection_uses_development_races_only(self):
         group = [
             {"horse_no": "1", "finish": 1},
