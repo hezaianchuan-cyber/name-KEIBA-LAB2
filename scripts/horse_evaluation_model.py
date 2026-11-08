@@ -62,7 +62,7 @@ def _margin_quality(row):
 
 
 def _style(history):
-    rows = history[-5:]
+    rows = history if len(history) <= 5 else history[-5:]
     positions = [r.get("first_corner_pct") for r in rows]
     positions = [float(x) for x in positions if x is not None]
     if not positions:
@@ -78,7 +78,7 @@ def _style(history):
 
 
 def _axis_scores(history, race, horse):
-    recent = history[-5:]
+    recent = history if len(history) <= 5 else history[-5:]
     quality = []
     for row in recent:
         value = _rank_quality(row)
