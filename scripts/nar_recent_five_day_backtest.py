@@ -60,6 +60,104 @@ def compact_model(model: dict) -> dict:
     }
 
 
+def daily_model_metrics(model: dict, market_model: dict | None, market_favorite: dict | None) -> dict:
+    trio = (
+        ((model.get("trio_diagnostics") or {}).get("formation_2_4_5_narrowed") or {})
+        .get("12") or {}
+    )
+    win = (model.get("bet_types") or {}).get("win") or {}
+    races = int(model.get("races") or 0)
+    market_races = int((market_model or {}).get("races") or 0)
+    favorite_races = int((market_favorite or {}).get("races") or 0)
+    model_hits = int((market_model or {}).get("top1_hits") or 0)
+    favorite_hits = int((market_favorite or {}).get("top1_hits") or 0)
+    return {
+        "races": races,
+        "winner_top1_hits": int(model.get("winner_top1") or 0),
+        "winner_top1_rate_pct": model.get("winner_top1_rate"),
+        "winner_top3_hits": int(model.get("winner_top3") or 0),
+        "winner_top3_rate_pct": model.get("winner_top3_rate"),
+        "win": {
+            "stake_jpy": int(win.get("stake") or 0),
+            "return_jpy": float(win.get("return") or 0),
+            "roi_pct": win.get("roi"),
+        },
+        "trio_12": {
+            "races": int(trio.get("races") or 0),
+            "hit_races": int(trio.get("hit_races") or 0),
+            "stake_jpy": int(trio.get("stake") or 0),
+            "return_jpy": float(trio.get("return") or 0),
+            "profit_jpy": float(trio.get("profit") or 0),
+            "roi_pct": trio.get("roi"),
+            "race_hit_rate_pct": trio.get("race_hit_rate"),
+        },
+        "market_comparison": {
+            "same_races": min(market_races, favorite_races),
+            "model_top1_hits": model_hits,
+            "model_top1_rate_pct": round(100 * model_hits / market_races, 2) if market_races else None,
+            "market_favorite_top1_hits": favorite_hits,
+            "market_favorite_top1_rate_pct": round(100 * favorite_hits / favorite_races, 2) if favorite_races else None,
+            "top1_gap_percentage_points": (
+                round(100 * model_hits / market_races - 100 * favorite_hits / favorite_races, 2)
+                if market_races and favorite_races and market_races == favorite_races else None
+            ),
+            "model_top1_roi_pct": (market_model or {}).get("roi"),
+            "market_favorite_roi_pct": (market_favorite or {}).get("roi"),
+        },
+    }
+
+
+def build_learning_curve(daily_rows: list[dict], model_names: tuple[str, ...]) -> list[dict]:
+    totals = {
+        name: {"races": 0, "winner_top1_hits": 0, "winner_top3_hits": 0,
+               "trio_races": 0, "trio_hit_races": 0, "trio_stake_jpy": 0,
+               "trio_return_jpy": 0.0, "market_top1_hits": 0, "market_races": 0}
+        for name in model_names
+    }
+    curve = []
+    for day in daily_rows:
+        cumulative = {}
+        for name in model_names:
+            row = day["models"].get(name)
+            if row is None:
+                continue
+            total = totals[name]
+            total["races"] += row["races"]
+            total["winner_top1_hits"] += row["winner_top1_hits"]
+            total["winner_top3_hits"] += row["winner_top3_hits"]
+            trio = row["trio_12"]
+            total["trio_races"] += trio["races"]
+            total["trio_hit_races"] += trio["hit_races"]
+            total["trio_stake_jpy"] += trio["stake_jpy"]
+            total["trio_return_jpy"] += trio["return_jpy"]
+            market = row["market_comparison"]
+            total["market_top1_hits"] += market["market_favorite_top1_hits"]
+            total["market_races"] += market["same_races"]
+            cumulative[name] = {
+                "races": total["races"],
+                "winner_top1_hits": total["winner_top1_hits"],
+                "winner_top1_rate_pct": round(100 * total["winner_top1_hits"] / total["races"], 2) if total["races"] else None,
+                "winner_top3_hits": total["winner_top3_hits"],
+                "winner_top3_rate_pct": round(100 * total["winner_top3_hits"] / total["races"], 2) if total["races"] else None,
+                "trio_12": {
+                    "races": total["trio_races"],
+                    "hit_races": total["trio_hit_races"],
+                    "race_hit_rate_pct": round(100 * total["trio_hit_races"] / total["trio_races"], 2) if total["trio_races"] else None,
+                    "stake_jpy": total["trio_stake_jpy"],
+                    "return_jpy": round(total["trio_return_jpy"], 2),
+                    "profit_jpy": round(total["trio_return_jpy"] - total["trio_stake_jpy"], 2),
+                    "roi_pct": round(100 * total["trio_return_jpy"] / total["trio_stake_jpy"], 2) if total["trio_stake_jpy"] else None,
+                },
+                "market_favorite_top1_rate_pct": round(100 * total["market_top1_hits"] / total["market_races"], 2) if total["market_races"] else None,
+                "market_top1_gap_percentage_points": (
+                    round(100 * total["winner_top1_hits"] / total["races"] - 100 * total["market_top1_hits"] / total["market_races"], 2)
+                    if total["races"] and total["market_races"] == total["races"] else None
+                ),
+            }
+        curve.append({"date": day["date"], "daily": day["models"], "cumulative": cumulative})
+    return curve
+
+
 def compact_market(row: dict | None) -> dict | None:
     if not row:
         return None
@@ -115,6 +213,47 @@ def main() -> None:
     fold = nb.evaluate_holdout_fold(
         races, horses, payouts, train_dates, test_dates, final_odds
     )
+
+    # Walk-forward learning: refit once per Japan-local race date. Only results
+    # strictly before the date being predicted are available to that day's model.
+    learning_model_names = (BASELINE, CANDIDATE, "ablate_form")
+    learning_days = []
+    for day_index, race_date in enumerate(test_dates, 1):
+        day_train_dates = [d for d in all_dates if d < race_date]
+        day_fold = nb.evaluate_holdout_fold(
+            races, horses, payouts, day_train_dates, [race_date], final_odds,
+            model_names=learning_model_names,
+        )
+        day_models = day_fold.get("models") or {}
+        day_market = day_fold.get("final_odds_market_comparison") or {}
+        market_favorite = day_market.get("final_odds_favorite")
+        day_summary = {
+            name: daily_model_metrics(
+                day_models[name],
+                day_market.get("C_model_top_pick" if name == BASELINE else name),
+                market_favorite,
+            )
+            for name in learning_model_names if name in day_models
+        }
+        learning_days.append({
+            "date": race_date.isoformat(),
+            "races": day_fold.get("test_races", 0),
+            "training_races": day_fold.get("train_races", 0),
+            "training_updates": day_fold.get("training_updates", 0),
+            "trained_weights": day_fold.get("trained_weights"),
+            "temperature": day_fold.get("temperature"),
+            "models": day_summary,
+        })
+        print(
+            f"LEARNING_CURVE day={day_index}/{len(test_dates)} date={race_date} "
+            f"train_races={day_fold.get('train_races')} test_races={day_fold.get('test_races')} "
+            + ", ".join(
+                f"{name}:top1={day_summary[name].get('winner_top1_rate_pct')}%"
+                for name in learning_model_names if name in day_summary
+            ),
+            flush=True,
+        )
+    learning_curve = build_learning_curve(learning_days, learning_model_names)
     models = fold.get("models") or {}
     baseline = models.get(BASELINE) or {}
     d4 = models.get(CANDIDATE) or {}
@@ -225,6 +364,17 @@ def main() -> None:
             "market_favorite": compact_market(market.get("final_odds_favorite")),
         },
         "research_candidate_comparison": research_candidates,
+        "sequential_learning_evaluation": {
+            "status": "evaluated",
+            "policy": "Walk-forward by Japan-local race date. Each day's model is refit using only official race results strictly before that date. Prior test-day results are added to the next day's training set; same-day results are not used until the next date.",
+            "model_names": list(learning_model_names),
+            "daily_and_cumulative": learning_curve,
+            "training_races_by_day": [
+                {"date": row["date"], "training_races": row["training_races"],
+                 "training_updates": row["training_updates"]}
+                for row in learning_days
+            ],
+        },
         "independent_adjacent_window_comparison": {
             "evaluation_window": {
                 "start": prior_start.isoformat(),
@@ -286,6 +436,7 @@ def main() -> None:
         "D4": report["results"]["D4"],
         "delta": report["results"]["delta_D4_minus_baseline_percentage_points"],
         "market": report["market_benchmark_same_final_odds_coverage"],
+        "sequential_learning_days": len(report["sequential_learning_evaluation"]["daily_and_cumulative"]),
     }, ensure_ascii=False, indent=2), flush=True)
 
 
