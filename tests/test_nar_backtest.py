@@ -240,6 +240,41 @@ class HistoricalOpponentStrengthTests(unittest.TestCase):
         strength = nb.historical_opponent_strength(field, {})
         self.assertEqual(strength, {"1": 0.5, "2": 0.5})
 
+    def test_shared_opponent_calculation_matches_original_pairwise_formula(self):
+        field = [
+            {"no": "1", "name": "A"},
+            {"no": "2", "name": "B"},
+            {"no": "3", "name": "C"},
+            {"no": "4", "name": "D"},
+        ]
+        history = {
+            "A": [{"finish": 1, "field_size": 10}, {"finish": 4, "field_size": 12}],
+            "B": [{"finish": 3, "field_size": 10}],
+            "C": [{"finish": 8, "field_size": 10}, {"finish": 2, "field_size": 8}],
+            "D": [],
+        }
+        expected = {}
+        for runner in field:
+            rival_quality = []
+            for rival in field:
+                if str(rival.get("no")) == str(runner.get("no")):
+                    continue
+                prior = history.get(rival.get("name"), [])[-5:]
+                values = [nb.rank_quality(row.get("finish"), row.get("field_size"))
+                          for row in prior]
+                values = [value / 100.0 for value in values if value is not None]
+                if values:
+                    rival_quality.append(sum(values) / len(values))
+            expected[str(runner.get("no"))] = (
+                nb.smoothed_rate(sum(rival_quality), len(rival_quality),
+                                 prior_rate=0.5, prior_strength=3.0)
+                if rival_quality else 0.5
+            )
+        actual = nb.historical_opponent_strength(field, history)
+        self.assertEqual(actual.keys(), expected.keys())
+        for horse_no in expected:
+            self.assertAlmostEqual(actual[horse_no], expected[horse_no], places=12)
+
 
 class RaceTimeFeatureTests(unittest.TestCase):
     def test_parse_minutes_seconds(self):
