@@ -58,8 +58,33 @@ def _github_checkpoint_request(url, method="GET", payload=None, raw=False):
     }
     data = json.dumps(payload).encode("utf-8") if payload is not None else None
     request = urllib.request.Request(url, data=data, headers=headers, method=method)
-    with urllib.request.urlopen(request, timeout=45) as response:
-        return response.read()
+    try:
+        with urllib.request.urlopen(request, timeout=45) as response:
+            return response.read()
+    except urllib.error.HTTPError as exc:
+        # Preserve GitHub's diagnostic response; the default traceback hides the
+        # response body, which is essential for distinguishing permissions,
+        # stale-SHA conflicts, payload limits, and secondary rate limits.
+        try:
+            error_body = exc.read().decode("utf-8", errors="replace")
+        except Exception:
+            error_body = ""
+        if token:
+            error_body = error_body.replace(token, "[REDACTED]")
+        try:
+            parsed = json.loads(error_body) if error_body else {}
+            message = parsed.get("message", error_body)
+        except (TypeError, ValueError):
+            message = error_body
+        details = {
+            "status": exc.code,
+            "reason": str(message)[:1200],
+            "request_id": exc.headers.get("X-GitHub-Request-Id") if exc.headers else None,
+            "rate_limit_remaining": exc.headers.get("X-RateLimit-Remaining") if exc.headers else None,
+            "retry_after": exc.headers.get("Retry-After") if exc.headers else None,
+        }
+        print("CHECKPOINT_HTTP_ERROR " + json.dumps(details, ensure_ascii=False), flush=True)
+        raise
 
 
 def _checkpoint_api_base():

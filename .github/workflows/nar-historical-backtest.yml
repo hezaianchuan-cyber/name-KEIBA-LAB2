@@ -43,10 +43,16 @@ jobs:
           restore-keys: |
             nar-parsed-v1-${{ runner.os }}-
 
+      - name: Compile Python sources
+        id: compile
+        run: python3 -m compileall -q scripts tests
+
       - name: Run backtest unit tests
+        id: unit-tests
         run: python3 -m unittest discover -s tests -p 'test_nar_backtest.py'
 
       - name: Run four-year backtest with final one-year holdout
+        id: full-backtest
         env:
           NAR_CACHE_DIR: .cache/nar-monthly
           NAR_PARSED_CACHE_DIR: .cache/nar-parsed
@@ -80,3 +86,22 @@ jobs:
           echo "Could not publish report after 5 attempts"
           exit 1
 
+
+      - name: Write test and backtest status summary
+        if: always()
+        env:
+          COMPILE_OUTCOME: ${{ steps.compile.outcome }}
+          UNIT_TEST_OUTCOME: ${{ steps.unit-tests.outcome }}
+          BACKTEST_OUTCOME: ${{ steps.full-backtest.outcome }}
+        run: |
+          {
+            echo "## KEIBA LAB — 検証状況"
+            echo
+            echo "| 項目 | 結果 |"
+            echo "|---|---|"
+            echo "| Python構文チェック | ${COMPILE_OUTCOME:-未実行} |"
+            echo "| 単体テスト | ${UNIT_TEST_OUTCOME:-未実行} |"
+            echo "| 4年バックテスト | ${BACKTEST_OUTCOME:-未実行} |"
+            echo
+            echo "詳細ログは各ステップを開いて確認できます。"
+          } >> "$GITHUB_STEP_SUMMARY"
