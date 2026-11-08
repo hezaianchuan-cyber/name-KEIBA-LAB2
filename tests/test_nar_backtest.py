@@ -83,16 +83,16 @@ class ChallengerBettingReturnTests(unittest.TestCase):
 
 class NARHorseFeatureParsingTests(unittest.TestCase):
     def test_official_horselist_frame_and_body_weight_columns(self):
-        row = ["大井", "20261101", "1", "6", "緑", "8", "テスト馬",
+        row = ["大井", "20261001", "1", "6", "緑", "8", "テスト馬",
                "牡", "5", "鹿毛", "20210101", "父", "母", "母父",
                "騎手", "大井", "56", "0-0-0-0", "調教師", "大井",
                "馬主", "牧場", "482", "-4"] + [""] * 12
         with tempfile.TemporaryDirectory() as tmp:
             archive = Path(tmp) / "sample.zip"
             with zipfile.ZipFile(archive, "w") as zf:
-                zf.writestr("202611_horselist.csv", ",".join(row))
+                zf.writestr("202610_horselist.csv", ",".join(row))
             _, horses, _ = nb.parse_month_archive(archive.read_bytes(), 2026, 11)
-        runner = horses[nb.race_key("大井", "20261101", "1")][0]
+        runner = horses[nb.race_key("大井", "20261001", "1")][0]
         self.assertEqual(runner["frame_no"], 6)
         self.assertEqual(runner["body_weight"], 482)
         self.assertEqual(runner["body_weight_change"], -4)
@@ -2154,7 +2154,7 @@ class DailyOnlineLearningRegressionTests(unittest.TestCase):
         races = {}
         horses = {}
         payouts = {}
-        for day, race_no in (("20261101", 1), ("20261101", 2), ("20261102", 1)):
+        for day, race_no in (("20261001", 1), ("20261001", 2), ("20261102", 1)):
             race = self._race(day, race_no)
             races[race["key"]] = race
             horses[race["key"]] = self._field()
@@ -2262,7 +2262,7 @@ class FrameGateTests(unittest.TestCase):
         self.assertAlmostEqual(nb.frame_form_score(other, horse, stats), 0.5)
 
     def test_frame_history_is_saved_with_historical_training_data(self):
-        race = {"key":("大井","20261101","1"),"date":__import__("datetime").date(2026,11,1),
+        race = {"key":("大井","20261001","1"),"date":__import__("datetime").date(2026,11,1),
                 "venue":"大井","surface":"ダート","distance":1600,"field_size":3,"race":"1"}
         horses = {race["key"]:[
             {"no":"1","name":"馬A","frame_no":1,"finish":1},
@@ -2899,10 +2899,10 @@ class ThreeYearDailyHistoryTests(unittest.TestCase):
 
     def test_live_history_freezes_opponent_strength_before_same_day_results(self):
         day = nb.dt.date(2026, 11, 1)
-        race1 = {"key": ("大井", "20261101", "1"), "date": day, "venue": "大井",
+        race1 = {"key": ("大井", "20261001", "1"), "date": day, "venue": "大井",
                  "race": "1", "distance": 1600, "going": "良", "surface": "ダート",
                  "field_size": 3}
-        race2 = {"key": ("大井", "20261101", "2"), "date": day, "venue": "大井",
+        race2 = {"key": ("大井", "20261001", "2"), "date": day, "venue": "大井",
                  "race": "2", "distance": 1600, "going": "良", "surface": "ダート",
                  "field_size": 3}
         horses = {
