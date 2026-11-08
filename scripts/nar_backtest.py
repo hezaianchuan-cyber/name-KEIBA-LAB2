@@ -2046,6 +2046,224 @@ def update_frame_stats(race, field, frame_stats):
         frame_stats[key]["top3"] += int(horse["finish"] <= 3)
 
 
+def race_segment_labels(race):
+    """Stable, source-grounded condition buckets for out-of-sample diagnostics."""
+    labels = {}
+    for key in ("venue", "surface", "going"):
+        value = norm(race.get(key))
+        if value:
+            labels[key] = value
+    distance = number(race.get("distance"))
+    if distance is not None and distance > 0:
+        if distance <= 1200:
+            band = "short_<=1200m"
+        elif distance <= 1600:
+            band = "mile_1201-1600m"
+        elif distance <= 2000:
+            band = "middle_1601-2000m"
+        else:
+            band = "long_>2000m"
+        labels["distance_band"] = band
+    field_size = number(race.get("field_size"))
+    if field_size is not None and field_size > 0:
+        if field_size <= 8:
+            labels["field_size_band"] = "small_<=8"
+        elif field_size <= 12:
+            labels["field_size_band"] = "medium_9-12"
+        else:
+            labels["field_size_band"] = "large_>12"
+    return labels
+
+def new_condition_finish_bucket():
+    return {
+        str(role): {
+            ranking: {"races": 0, "topk": {str(k): 0 for k in (1, 2, 3, 5, 7)}}
+            for ranking in ("ordinary", "role_specific")
+        }
+        for role in (1, 2, 3)
+    }
+
+def update_condition_finish_bucket(bucket, ordinary_ranking, role_rankings, field):
+    finishers = {
+        role: {str(h["no"]) for h in field if h.get("finish") == role}
+        for role in (1, 2, 3)
+    }
+    rankings = {
+        "ordinary": {role: ordinary_ranking for role in (1, 2, 3)},
+        "role_specific": role_rankings,
+    }
+    for role in (1, 2, 3):
+        targets = finishers[role]
+        # Do not count a race in a role's denominator when the official
+        # finishing position is absent (e.g. incomplete/void result rows).
+        if not targets:
+            continue
+        for ranking_name, by_role in rankings.items():
+            stats = bucket[str(role)][ranking_name]
+            stats["races"] += 1
+            positions = [i + 1 for i, horse in enumerate(by_role[role])
+                         if str(horse["no"]) in targets]
+            for k in (1, 2, 3, 5, 7):
+                stats["topk"][str(k)] += int(any(position <= k for position in positions))
+
+def summarize_condition_finish_segments(stats):
+    output = {}
+    for segment, roles in sorted(stats.items()):
+        output[segment] = {}
+        for role, rankings in roles.items():
+            output[segment][role] = {}
+            for ranking, bucket in rankings.items():
+                races = bucket["races"]
+                output[segment][role][ranking] = {
+                    "races": races,
+                    "topk_hits": bucket["topk"],
+                    "topk_rate": {
+                        k: round(100 * value / races, 2) if races else None
+                        for k, value in bucket["topk"].items()
+                    },
+                }
+    return output
+
+
+CONFIDENCE_THRESHOLDS = (0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50)
+
+def new_confidence_filter_stats():
+    return {
+        f"{threshold:.2f}": {
+            "races": 0, "winner_top1": 0, "winner_top3": 0,
+            "bet_types": {
+                kind: {"tickets": 0, "hits": 0, "stake": 0, "return": 0}
+                for kind in ("win", "place", "wide", "quinella", "exacta", "trio", "trifecta")
+            }
+        }
+        for threshold in CONFIDENCE_THRESHOLDS
+    }
+
+def update_confidence_filter_stats(stats, top_probability, ranked, winners, ticket_map, payout):
+    """Evaluate fixed tickets only when calibrated top-win probability clears a preset threshold."""
+    for threshold in CONFIDENCE_THRESHOLDS:
+        if top_probability + 1e-12 < threshold:
+            continue
+        bucket = stats[f"{threshold:.2f}"]
+        bucket["races"] += 1
+        bucket["winner_top1"] += int(bool(ranked) and ranked[0]["no"] in winners)
+        bucket["winner_top3"] += int(any(h["no"] in winners for h in ranked[:3]))
+        for kind, tickets in ticket_map.items():
+            target = bucket["bet_types"][kind]
+            for ticket in tickets:
+                target["tickets"] += 1
+                target["stake"] += 100
+                returned = payout_for(kind, ticket, payout) or 0
+                if returned:
+                    target["hits"] += 1
+                    target["return"] += returned
+
+def summarize_confidence_filter_stats(stats):
+    output = {}
+    for threshold, bucket in stats.items():
+        bet_types = {}
+        for kind, values in bucket["bet_types"].items():
+            bet_types[kind] = {
+                **values,
+                "hit_rate": round(100 * values["hits"] / values["tickets"], 2) if values["tickets"] else None,
+                "roi": round(100 * values["return"] / values["stake"], 2) if values["stake"] else None,
+                "profit": values["return"] - values["stake"],
+            }
+        output[threshold] = {
+            "races": bucket["races"],
+            "winner_top1_rate": round(100 * bucket["winner_top1"] / bucket["races"], 2) if bucket["races"] else None,
+            "winner_top3_rate": round(100 * bucket["winner_top3"] / bucket["races"], 2) if bucket["races"] else None,
+            "bet_types": bet_types,
+        }
+    return output
+
+def summarize_condition_model_segments(stats, kinds=("wide", "exacta", "trio")):
+    """Summarize baseline/challenger condition metrics for each requested bet type."""
+    segments = {
+        kind: {"baseline": {}, "trained_no_recent_history": {}}
+        for kind in kinds
+    }
+    for (model_name, kind, dimension, label), bucket in sorted(stats.items()):
+        if kind not in segments or model_name not in segments[kind]:
+            continue
+        roi = round(100 * bucket["return"] / bucket["stake"], 2) if bucket["stake"] else None
+        hit_rate = round(100 * bucket["hits"] / bucket["tickets"], 2) if bucket["tickets"] else None
+        segments[kind][model_name][f"{dimension}:{label}"] = {
+            **bucket, "roi": roi, "hit_rate": hit_rate,
+            "profit": bucket["return"] - bucket["stake"]
+        }
+    comparisons = {}
+    for kind in kinds:
+        comparison = []
+        baseline_segments = segments[kind]["baseline"]
+        candidate_segments = segments[kind]["trained_no_recent_history"]
+        for segment_key in sorted(set(baseline_segments) | set(candidate_segments)):
+            baseline_bucket = baseline_segments.get(segment_key)
+            candidate_bucket = candidate_segments.get(segment_key)
+            baseline_roi = baseline_bucket.get("roi") if baseline_bucket else None
+            candidate_roi = candidate_bucket.get("roi") if candidate_bucket else None
+            comparison.append({
+                "segment": segment_key,
+                "baseline_races": baseline_bucket.get("races", 0) if baseline_bucket else 0,
+                "candidate_races": candidate_bucket.get("races", 0) if candidate_bucket else 0,
+                "baseline_tickets": baseline_bucket.get("tickets", 0) if baseline_bucket else 0,
+                "candidate_tickets": candidate_bucket.get("tickets", 0) if candidate_bucket else 0,
+                "baseline_hits": baseline_bucket.get("hits", 0) if baseline_bucket else 0,
+                "candidate_hits": candidate_bucket.get("hits", 0) if candidate_bucket else 0,
+                "baseline_hit_rate": baseline_bucket.get("hit_rate") if baseline_bucket else None,
+                "candidate_hit_rate": candidate_bucket.get("hit_rate") if candidate_bucket else None,
+                "baseline_roi": baseline_roi, "candidate_roi": candidate_roi,
+                "roi_delta": round(candidate_roi - baseline_roi, 2)
+                    if baseline_roi is not None and candidate_roi is not None else None,
+                "baseline_profit": baseline_bucket.get("profit") if baseline_bucket else None,
+                "candidate_profit": candidate_bucket.get("profit") if candidate_bucket else None,
+            })
+        comparisons[kind] = comparison
+    return segments, comparisons
+
+def summarize_race_cluster_roi(stats):
+    """Estimate ROI uncertainty using races, not individual tickets, as clusters."""
+    races = int(stats.get("race_count") or stats.get("races") or 0)
+    tickets = int(stats.get("tickets") or 0)
+    stake = float(stats.get("stake") or 0)
+    returned = float(stats.get("return") or 0)
+    roi = 100.0 * returned / stake if stake else None
+    ci_low = ci_high = None
+    if races > 1 and stake > 0 and roi is not None:
+        ratio = returned / stake
+        sum_z_sq = (
+            float(stats.get("sum_return_sq") or 0)
+            - 2.0 * ratio * float(stats.get("sum_stake_return") or 0)
+            + ratio * ratio * float(stats.get("sum_stake_sq") or 0)
+        )
+        variance = max(0.0, sum_z_sq / (races - 1))
+        mean_stake = stake / races
+        standard_error = 100.0 * math.sqrt(variance / races) / mean_stake
+        ci_low = round(roi - 1.96 * standard_error, 2)
+        ci_high = round(roi + 1.96 * standard_error, 2)
+    enough_races = races >= 100
+    enough_tickets = tickets >= 300
+    roi_above_100 = roi is not None and roi > 100.0
+    ci_lower_above_100 = ci_low is not None and ci_low > 100.0
+    pass_conditions = {
+        "roi_above_100": roi_above_100,
+        "races_at_least_100": enough_races,
+        "tickets_at_least_300": enough_tickets,
+        "roi_ci95_lower_above_100": ci_lower_above_100,
+    }
+    candidate_pass = all(pass_conditions.values())
+    return {
+        "race_count": races,
+        "roi": round(roi, 2) if roi is not None else None,
+        "roi_ci95_method": "race_cluster_normal_approximation",
+        "roi_ci95_normal_low": ci_low,
+        "roi_ci95_normal_high": ci_high,
+        "minimum_sample_met": bool(enough_races and enough_tickets),
+        "pass_conditions": pass_conditions,
+        "candidate_pass": candidate_pass,
+        "profit": returned - stake,
+    }
+
 def run_backtest(races, horses, payouts, training_only=False):
     history = defaultdict(list)
     sire_stats = defaultdict(lambda: {"runs":0,"top3":0})
