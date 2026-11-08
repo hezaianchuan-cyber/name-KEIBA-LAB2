@@ -106,6 +106,28 @@ def _axis_scores(history, race, horse):
     elif quality:
         condition = 0.5 + (quality[-1] - 0.5) * 0.5
 
+    # Body weight is a condition signal, not a universal heavier/lighter rule.
+    # Compare today's declared weight only with this horse's strictly prior recorded weights.
+    current_weight = horse.get("body_weight")
+    prior_weights = []
+    for row in history:
+        try:
+            value = float(row.get("body_weight"))
+            if math.isfinite(value) and value > 0:
+                prior_weights.append(value)
+        except (TypeError, ValueError):
+            pass
+    weight_condition = 0.5
+    try:
+        current_weight = float(current_weight)
+        if current_weight > 0 and prior_weights:
+            baseline_weight = mean(prior_weights[-5:])
+            relative_change = abs(current_weight - baseline_weight) / baseline_weight
+            weight_condition = clamp01(0.5 + 0.5 * (1.0 - min(relative_change / 0.08, 1.0)))
+    except (TypeError, ValueError):
+        pass
+    condition = 0.80 * condition + 0.20 * weight_condition
+
     # Suitability is based only on prior runs under comparable conditions.
     venue = str(race.get("venue") or "")
     distance = race.get("distance")
