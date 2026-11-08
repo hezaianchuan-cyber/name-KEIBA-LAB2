@@ -2019,6 +2019,7 @@ def run_backtest(races, horses, payouts, training_only=False):
     history = defaultdict(list)
     sire_stats = defaultdict(lambda: {"runs":0,"top3":0})
     jockey_stats = defaultdict(lambda: {"runs":0,"top3":0})
+    horse_jockey_stats = defaultdict(lambda: {"runs": 0, "top3": 0})
     frame_stats = defaultdict(lambda: {"runs": 0, "top3": 0})
     metrics = {k: {"races":0,"tickets":0,"hits":0,"stake":0,"return":0} for k in ("win","place","wide","quinella","exacta","trio","trifecta")}
     examples = []
@@ -2070,6 +2071,9 @@ def run_backtest(races, horses, payouts, training_only=False):
                     if runner.get("jockey"):
                         jockey_stats[runner["jockey"]]["runs"] += 1
                         jockey_stats[runner["jockey"]]["top3"] += int(runner["finish"] <= 3)
+                        pair = horse_jockey_stats[(runner["name"], runner["jockey"])]
+                        pair["runs"] += 1
+                        pair["top3"] += int(runner["finish"] <= 3)
             update_frame_stats(pending_race, pending_field, frame_stats)
 
     for race_index, race in enumerate(ordered, 1):
@@ -2090,7 +2094,13 @@ def run_backtest(races, horses, payouts, training_only=False):
             pace_styles.append({"逃げ": "front", "先行": "stalker",
                                 "差し": "closer", "追込": "deep_closer"}.get(style, "unknown"))
         challenger_race = {**race, "predicted_styles": pace_styles}
-        challenger = evaluate_field(field, history, challenger_race)
+        evaluation_field = [
+            {**runner, "jockey_pair_stats": dict(horse_jockey_stats.get(
+                (runner["name"], runner.get("jockey")), {"runs": 0, "top3": 0}
+            ))}
+            for runner in field
+        ]
+        challenger = evaluate_field(evaluation_field, history, challenger_race)
         actual_winners = {str(h["no"]) for h in field if h.get("finish") == 1}
         actual_podium = {str(h["no"]) for h in field if h.get("finish") in (1, 2, 3)}
         if actual_winners and len(actual_podium) == 3:
