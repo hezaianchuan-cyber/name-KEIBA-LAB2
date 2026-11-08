@@ -61,6 +61,16 @@ class RichPreRaceFeatureTests(unittest.TestCase):
         self.assertGreater(first["recent_time_trend"], 0.5)
         self.assertTrue(0 <= first["recent_opponent_strength"] <= 1)
 
+    def test_walk_forward_splits_are_chronological_and_test_blocks_do_not_overlap(self):
+        dates = [dt.date(2024, 1, 1) + dt.timedelta(days=i) for i in range(100)]
+        folds = ml.build_walk_forward_splits(dates)
+        self.assertEqual(len(folds), 3)
+        for fold in folds:
+            self.assertLess(fold["train_dates"][-1], fold["development_dates"][0])
+            self.assertLess(fold["development_dates"][-1], fold["test_dates"][0])
+        tests = [day for fold in folds for day in fold["test_dates"]]
+        self.assertEqual(len(tests), len(set(tests)))
+
     def test_raw_feature_set_contains_all_added_pre_race_signals(self):
         expected = {
             "frame_no", "carried_weight", "body_weight", "body_weight_change",
