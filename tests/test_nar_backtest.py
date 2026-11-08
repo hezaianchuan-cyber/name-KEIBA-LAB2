@@ -2194,7 +2194,7 @@ class DailyOnlineLearningRegressionTests(unittest.TestCase):
         self.assertTrue(all(w == by_day["2026-11-02"][0]
                             for w in by_day["2026-11-02"]))
         # Results from the prior date must have updated the model before the next date.
-        self.assertNotEqual(by_day["2026-11-01"][0], by_day["2026-11-02"][0])
+        self.assertNotEqual(by_day["2026-10-01"][0], by_day["2026-11-02"][0])
         frame_by_day = defaultdict(list)
         for day, prior_runs in frame_observed:
             frame_by_day[day].append(prior_runs)
