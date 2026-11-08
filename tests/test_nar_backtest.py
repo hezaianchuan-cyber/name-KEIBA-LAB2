@@ -22,6 +22,14 @@ import nar_recent_five_day_backtest as recent
 
 
 
+class BCCompositeModelTests(unittest.TestCase):
+    def test_fifty_fifty_blend_uses_condition_and_performance_equally(self):
+        self.assertAlmostEqual(nb.blend_condition_performance_scores(0.8, 0.4), 0.6)
+
+    def test_blend_weight_can_be_configured_and_clamped(self):
+        self.assertAlmostEqual(nb.blend_condition_performance_scores(0.8, 0.4, 0.75), 0.7)
+        self.assertAlmostEqual(nb.blend_condition_performance_scores(0.8, 0.4, 2.0), 0.8)
+
 
 class NARMarketOddsBoundaryTests(unittest.TestCase):
     def test_market_odds_start_excludes_pre_archive_period(self):
