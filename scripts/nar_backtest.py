@@ -2025,7 +2025,9 @@ def run_backtest(races, horses, payouts, training_only=False):
     calibration_records = []
     model_weights = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
     learning_updates = 0
-    horse_model_metrics = {"races": 0, "winner_top1": 0, "winner_top3": 0, "podium_captured": 0, "podium_total": 0}
+    horse_model_metrics = {"races": 0, "winner_top1": 0, "winner_top3": 0, "podium_captured": 0, "podium_total": 0,
+                           "probability_rows": 0, "win_brier_sum": 0.0, "win_logloss_sum": 0.0,
+                           "top3_brier_sum": 0.0}
     shadow_metrics = {kind: {"races": 0, "tickets": 0, "hits": 0, "stake": 0, "return": 0}
                       for kind in ("win", "place", "wide", "trio")}
     shadow_races = 0
@@ -2099,6 +2101,18 @@ def run_backtest(races, horses, payouts, training_only=False):
             horse_model_metrics["winner_top3"] += int(any(no in actual_winners for no in win_order[:3]))
             horse_model_metrics["podium_captured"] += len(set(top3_order) & actual_podium)
             horse_model_metrics["podium_total"] += 3
+            for prediction in challenger["predictions"]:
+                no = prediction["horse_no"]
+                win_target = int(no in actual_winners)
+                top3_target = int(no in actual_podium)
+                win_p = min(1.0 - 1e-12, max(1e-12, prediction["win_probability"]))
+                top3_p = min(1.0 - 1e-12, max(1e-12, prediction["top3_probability"]))
+                horse_model_metrics["probability_rows"] += 1
+                horse_model_metrics["win_brier_sum"] += (win_p - win_target) ** 2
+                horse_model_metrics["win_logloss_sum"] += (
+                    -math.log(win_p) if win_target else -math.log(1.0 - win_p)
+                )
+                horse_model_metrics["top3_brier_sum"] += (top3_p - top3_target) ** 2
         # Predict BEFORE adding any current-race results to history or trainer/jockey/sire aggregates.
         scored = []
         parts_by_no = {}
@@ -2196,6 +2210,10 @@ def run_backtest(races, horses, payouts, training_only=False):
         "winner_top1_rate_pct": round(100 * horse_model_metrics["winner_top1"] / horse_model_metrics["races"], 2) if horse_model_metrics["races"] else None,
         "winner_top3_rate_pct": round(100 * horse_model_metrics["winner_top3"] / horse_model_metrics["races"], 2) if horse_model_metrics["races"] else None,
         "podium_capture_rate_pct": round(100 * horse_model_metrics["podium_captured"] / horse_model_metrics["podium_total"], 2) if horse_model_metrics["podium_total"] else None,
+        "win_brier_score": round(horse_model_metrics["win_brier_sum"] / horse_model_metrics["probability_rows"], 6) if horse_model_metrics["probability_rows"] else None,
+        "win_log_loss": round(horse_model_metrics["win_logloss_sum"] / horse_model_metrics["probability_rows"], 6) if horse_model_metrics["probability_rows"] else None,
+        "top3_brier_score": round(horse_model_metrics["top3_brier_sum"] / horse_model_metrics["probability_rows"], 6) if horse_model_metrics["probability_rows"] else None,
+        "probability_rows": horse_model_metrics["probability_rows"],
         "status": "research_only",
         "note": "All races with a complete official podium; uses prior history only. Win and top-three rankings are evaluated separately.",
     }
