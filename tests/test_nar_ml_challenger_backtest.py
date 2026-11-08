@@ -88,6 +88,44 @@ class RichPreRaceFeatureTests(unittest.TestCase):
         self.assertEqual(metrics["roi_pct"], 166.667)
         self.assertEqual(metrics["hit_rate_pct"], 100.0)
 
+    def test_race_relative_features_compare_each_runner_with_today_field(self):
+        rows = [
+            {"recent_finish_pct": 0.9, "recent_top3_rate": 0.8,
+             "recent_last_corner_pct": 0.2, "recent_last3f_rank": 0.9,
+             "recent_opponent_strength": 0.8, "recent_time_per_km": 60.0,
+             "venue_top3_rate": 0.7, "distance_top3_rate": 0.8,
+             "jockey_top3_rate": 0.9, "body_weight_delta_pct": 0.01},
+            {"recent_finish_pct": 0.5, "recent_top3_rate": 0.5,
+             "recent_last_corner_pct": 0.5, "recent_last3f_rank": 0.5,
+             "recent_opponent_strength": 0.5, "recent_time_per_km": 62.0,
+             "venue_top3_rate": 0.5, "distance_top3_rate": 0.5,
+             "jockey_top3_rate": 0.5, "body_weight_delta_pct": 0.00},
+            {"recent_finish_pct": 0.1, "recent_top3_rate": 0.2,
+             "recent_last_corner_pct": 0.8, "recent_last3f_rank": 0.1,
+             "recent_opponent_strength": 0.2, "recent_time_per_km": 64.0,
+             "venue_top3_rate": 0.3, "distance_top3_rate": 0.2,
+             "jockey_top3_rate": 0.1, "body_weight_delta_pct": -0.01},
+        ]
+        result = ml.add_race_relative_features(rows)
+        self.assertGreater(result[0]["race_rel_recent_finish_pct"],
+                           result[1]["race_rel_recent_finish_pct"])
+        self.assertGreater(result[1]["race_rel_recent_finish_pct"],
+                           result[2]["race_rel_recent_finish_pct"])
+        self.assertGreater(result[0]["race_rel_recent_time_per_km"],
+                           result[2]["race_rel_recent_time_per_km"])
+        for row in result:
+            for key in ("race_rel_recent_finish_pct",
+                        "race_rel_recent_top3_rate",
+                        "race_rel_recent_last_corner_pct",
+                        "race_rel_recent_last3f_rank",
+                        "race_rel_recent_opponent_strength",
+                        "race_rel_recent_time_per_km",
+                        "race_rel_venue_top3_rate",
+                        "race_rel_distance_top3_rate",
+                        "race_rel_jockey_top3_rate",
+                        "race_rel_body_weight_delta_pct"):
+                self.assertTrue(-5.0 <= row[key] <= 5.0)
+
     def test_raw_feature_set_contains_all_added_pre_race_signals(self):
         expected = {
             "frame_no", "carried_weight", "body_weight", "body_weight_change",
@@ -95,7 +133,12 @@ class RichPreRaceFeatureTests(unittest.TestCase):
             "recent_time_trend", "recent_opponent_strength",
             "recent_first_corner_pct", "recent_last_corner_pct",
             "recent_position_gain", "predicted_front_count",
-            "front_crowding_ratio",
+            "front_crowding_ratio", "race_rel_recent_finish_pct",
+            "race_rel_recent_top3_rate", "race_rel_recent_last_corner_pct",
+            "race_rel_recent_last3f_rank", "race_rel_recent_opponent_strength",
+            "race_rel_recent_time_per_km", "race_rel_venue_top3_rate",
+            "race_rel_distance_top3_rate", "race_rel_jockey_top3_rate",
+            "race_rel_body_weight_delta_pct",
         }
         self.assertTrue(expected.issubset(set(ml.RAW_FEATURES)))
 
