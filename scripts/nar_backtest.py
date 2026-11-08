@@ -2634,6 +2634,15 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     pending=[]; current=None
     test_calibration_records=[]
     confidence_filter_stats = new_confidence_filter_stats()
+    # Independent six-axis challenger metrics on this unseen holdout fold only.
+    # The same-date pending buffer is committed only after all races on that date,
+    # so this model cannot see results from another race on the same date.
+    horse_evaluation_holdout = {
+        "races": 0, "winner_top1": 0, "winner_top3": 0,
+        "podium_captured": 0, "podium_total": 0,
+        "win_brier_sum": 0.0, "win_logloss_sum": 0.0,
+        "top3_brier_sum": 0.0, "probability_rows": 0,
+    }
     # E: pre-registered integrated challenger. The confidence gate and role blend
     # are fixed before holdout evaluation; no test-fold threshold tuning is allowed.
     market_comparison_names = ("C_model_top_pick", "final_odds_favorite",
@@ -2709,6 +2718,35 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
         if not payout or not payout.get("win"): continue
         winners={numbers[0] for numbers, _ in payout.get("win", [])}
         if not winners: continue
+        # Evaluate the six-axis model before any current-date results are committed.
+        # It receives only the chronological history available before this race.
+        actual_winners = {str(h["no"]) for h in field if h.get("finish") == 1}
+        actual_podium = {str(h["no"]) for h in field if h.get("finish") in (1, 2, 3)}
+        if actual_winners and len(actual_podium) == 3:
+            prior_history = {name: rows for name, rows in history.items()}
+            predicted_styles = []
+            for runner in field:
+                style = pace_style(prior_history.get(runner["name"], [])).get("style")
+                predicted_styles.append({"逃げ": "front", "先行": "stalker",
+                                         "差し": "closer", "追込": "deep_closer"}.get(style, "unknown"))
+            challenger_race = {**race, "predicted_styles": predicted_styles}
+            challenger = evaluate_field(field, prior_history, challenger_race)
+            stats = horse_evaluation_holdout
+            stats["races"] += 1
+            stats["winner_top1"] += int(any(no in actual_winners for no in challenger["win_ranking"][:1]))
+            stats["winner_top3"] += int(any(no in actual_winners for no in challenger["win_ranking"][:3]))
+            stats["podium_captured"] += len(set(challenger["top3_ranking"][:3]) & actual_podium)
+            stats["podium_total"] += 3
+            for prediction in challenger["predictions"]:
+                no = prediction["horse_no"]
+                win_target = int(no in actual_winners)
+                top3_target = int(no in actual_podium)
+                win_p = min(1.0 - 1e-12, max(1e-12, prediction["win_probability"]))
+                top3_p = min(1.0 - 1e-12, max(1e-12, prediction["top3_probability"]))
+                stats["probability_rows"] += 1
+                stats["win_brier_sum"] += (win_p - win_target) ** 2
+                stats["win_logloss_sum"] += -math.log(win_p) if win_target else -math.log(1.0 - win_p)
+                stats["top3_brier_sum"] += (top3_p - top3_target) ** 2
         race_feature_cache = {}
         race_performance_cache = {}
         race_frame_score_cache = {}
@@ -3037,6 +3075,18 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             "train_races":len(train_races),"test_races":len(ordered),
             "training_updates":updates,"trained_weights":learned,"temperature":round(temperature,4),
             "calibration":calibration_metrics(test_calibration_records,temperature),"models":out,
+            "horse_evaluation_v1": {
+                **horse_evaluation_holdout,
+                "winner_top1_rate_pct": round(100 * horse_evaluation_holdout["winner_top1"] / horse_evaluation_holdout["races"], 2) if horse_evaluation_holdout["races"] else None,
+                "winner_top3_rate_pct": round(100 * horse_evaluation_holdout["winner_top3"] / horse_evaluation_holdout["races"], 2) if horse_evaluation_holdout["races"] else None,
+                "podium_capture_rate_pct": round(100 * horse_evaluation_holdout["podium_captured"] / horse_evaluation_holdout["podium_total"], 2) if horse_evaluation_holdout["podium_total"] else None,
+                "win_brier_score": round(horse_evaluation_holdout["win_brier_sum"] / horse_evaluation_holdout["probability_rows"], 6) if horse_evaluation_holdout["probability_rows"] else None,
+                "win_log_loss": round(horse_evaluation_holdout["win_logloss_sum"] / horse_evaluation_holdout["probability_rows"], 6) if horse_evaluation_holdout["probability_rows"] else None,
+                "top3_brier_score": round(horse_evaluation_holdout["top3_brier_sum"] / horse_evaluation_holdout["probability_rows"], 6) if horse_evaluation_holdout["probability_rows"] else None,
+                "probability_rows": horse_evaluation_holdout["probability_rows"],
+                "evaluation_scope": "unseen_holdout_only",
+                "status": "research_only",
+            },
             "trained_condition_segments":segment_output,
             "condition_model_segments":condition_segments,
             "condition_model_comparisons":condition_comparisons,
