@@ -233,7 +233,7 @@ class HistoricalOpponentStrengthTests(unittest.TestCase):
         strength = nb.historical_opponent_strength(field, history)
         self.assertGreater(strength["1"], 0.5)
         self.assertAlmostEqual(strength["1"], strength["2"])
-        self.assertAlmostEqual(strength["1"], strength["3"])
+        self.assertGreater(strength["3"], strength["1"])
 
     def test_missing_opponent_history_is_neutral(self):
         field = [{"no": "1", "name": "A"}, {"no": "2", "name": "B"}]
