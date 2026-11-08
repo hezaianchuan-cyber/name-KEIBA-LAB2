@@ -13,10 +13,10 @@ import nar_backtest as nb
 
 STRATEGIES = (
     "LAB", "independent_raw_CatBoost", "independent_raw_LightGBM",
-    "LambdaRank", "LambdaRank_tuned", "Market_favorite",
+    "LambdaRank", "LambdaRank_tuned", "LambdaRank_LightGBM_rank_blend_50_50", "Market_favorite",
 )
-BET_TYPES = ("win", "wide_top3", "quinella_top2", "exacta_top2",
-             "trio_top3", "trifecta_top3_box")
+BET_TYPES = ("win", "wide_top3", "wide_axis_to_rank2_3", "quinella_top2", "exacta_top2",
+             "trio_top3", "trio_axis_plus4", "wide2_plus_trio6", "trifecta_top3_box")
 
 
 def tickets_for_ranked(kind, ranked):
@@ -26,12 +26,20 @@ def tickets_for_ranked(kind, ranked):
         return [[nos[0]]]
     if kind == "wide_top3":
         return [list(x) for x in itertools.combinations(nos[:3], 2)]
+    if kind == "wide_axis_to_rank2_3":
+        return [[nos[0], nos[1]], [nos[0], nos[2]]] if len(nos) >= 3 else []
     if kind == "quinella_top2":
         return [nos[:2]]
     if kind == "exacta_top2":
         return [nos[:2]]
     if kind == "trio_top3":
         return [nos[:3]]
+    if kind == "trio_axis_plus4":
+        return [[nos[0], *pair] for pair in itertools.combinations(nos[1:5], 2)] if len(nos) >= 5 else []
+    if kind == "wide2_plus_trio6":
+        wide = tickets_for_ranked("wide_axis_to_rank2_3", ranked)
+        trio = tickets_for_ranked("trio_axis_plus4", ranked)
+        return [("wide", ticket) for ticket in wide] + [("trio", ticket) for ticket in trio]
     if kind == "trifecta_top3_box":
         return [list(x) for x in itertools.permutations(nos[:3], 3)]
     raise ValueError(f"Unknown bet type: {kind}")
@@ -96,8 +104,12 @@ def evaluate_bet_types(scored_groups, payouts):
             for kind in BET_TYPES:
                 tickets = tickets_for_ranked(kind, ranked)
                 stake = 100 * len(tickets)
-                returned = sum(nb.payout_for(kind.split("_")[0], ticket, payout)
-                               for ticket in tickets)
+                if kind == "wide2_plus_trio6":
+                    returned = sum(nb.payout_for(bet_kind, ticket, payout)
+                                   for bet_kind, ticket in tickets)
+                else:
+                    returned = sum(nb.payout_for(kind.split("_")[0], ticket, payout)
+                                   for ticket in tickets)
                 item = stats[strategy][kind]
                 item["races"] += 1
                 item["tickets"] += len(tickets)
@@ -130,9 +142,12 @@ def evaluate_bet_types(scored_groups, payouts):
         "ticket_policy": {
             "win": "Top-ranked runner, 100 JPY",
             "wide_top3": "All three unordered pairs among top 3, 100 JPY each",
+            "wide_axis_to_rank2_3": "Two wide tickets: predicted rank 1 paired with ranks 2 and 3, 100 JPY each",
             "quinella_top2": "Top two as unordered pair, 100 JPY",
             "exacta_top2": "Top two in predicted order, 100 JPY",
             "trio_top3": "Top three as unordered trio, 100 JPY",
+            "trio_axis_plus4": "One axis with every pair among ranks 2-5: six unordered trio tickets, 100 JPY each",
+            "wide2_plus_trio6": "Two axis wide tickets plus six axis-and-four-opponent trio tickets, 100 JPY each (800 JPY per race)",
             "trifecta_top3_box": "All six permutations of top three, 100 JPY each",
         },
         "caveat": "Fixed ticket simulation from retrospective rankings and official payouts; does not imply executable pre-off prices or profitability.",
