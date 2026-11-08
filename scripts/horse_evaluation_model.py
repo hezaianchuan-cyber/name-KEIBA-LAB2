@@ -79,8 +79,14 @@ def _style(history):
 
 def _axis_scores(history, race, horse):
     recent = history[-5:]
-    quality = [_rank_quality(r) for r in recent]
-    quality = [v for v in quality if v is not None]
+    quality = []
+    for row in recent:
+        value = _rank_quality(row)
+        if value is not None:
+            # Reward good results achieved against stronger fields, modestly;
+            # opposition evidence is itself estimated only from pre-race form.
+            opposition = clamp01(row.get("opponent_strength"), default=0.5)
+            quality.append(clamp01(value + (opposition - 0.5) * 0.30))
     margins = [_margin_quality(r) for r in recent]
     margins = [v for v in margins if v is not None]
     closings = [r.get("last3f_rank_score") for r in recent
