@@ -90,7 +90,15 @@ def _github_checkpoint_request(url, method="GET", payload=None, raw=False):
                 "retry_after": exc.headers.get("Retry-After") if exc.headers else None,
             }
             print("CHECKPOINT_HTTP_ERROR " + json.dumps(details, ensure_ascii=False), flush=True)
-            if exc.code not in retryable_statuses or attempt == max_attempts:
+            # GitHub may return 403 when its repository rules engine times
+            # out while evaluating a large Contents API update. Retry only
+            # this explicit transient message; ordinary permission 403s remain
+            # fatal and are never retried.
+            rule_timeout = (
+                exc.code == 403
+                and "rule did not run because of a timeout" in str(message).lower()
+            )
+            if (exc.code not in retryable_statuses and not rule_timeout) or attempt == max_attempts:
                 raise
             retry_after = None
             try:
