@@ -173,6 +173,12 @@ class BacktestCheckpointTests(unittest.TestCase):
         self.assertIn("end", first)
         self.assertNotIn("commit_sha", first)
 
+    def test_checkpoint_signature_changes_when_evaluation_period_changes(self):
+        signature = nb.checkpoint_signature()
+        with mock.patch.object(nb, "END", nb.END - dt.timedelta(days=1)):
+            changed = nb.checkpoint_signature()
+        self.assertNotEqual(signature, changed)
+
 
 class StrategyRiskDiagnosticsTests(unittest.TestCase):
     def test_reports_drawdown_losing_streak_and_worst_ten_race_roi(self):
