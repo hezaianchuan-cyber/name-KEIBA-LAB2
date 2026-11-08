@@ -160,7 +160,7 @@ def main() -> None:
     prior_models = prior_fold.get("models") or {}
     prior_candidate_names = (
         "C_performance_pace", "D2_jockey_distance", "D4_jockey_venue_distance",
-        "weight_jockey_up_1_5", "ablate_jockey", "ablate_distance",
+        "weight_jockey_up_1_5", "ablate_jockey", "ablate_distance", "ablate_form",
     )
     prior_comparison = {
         name: compact_model(prior_models[name])
@@ -244,6 +244,17 @@ def main() -> None:
             "final_odds_races": len(prior_odds),
             "final_odds_downloads": prior_odds_downloads,
             "candidate_comparison": prior_comparison,
+            "market_benchmark_same_final_odds_coverage": {
+                "baseline_model_top_pick": compact_market(
+                    (prior_fold.get("final_odds_market_comparison") or {}).get("C_model_top_pick")
+                ),
+                "D4_model_top_pick": compact_market(
+                    (prior_fold.get("final_odds_market_comparison") or {}).get(CANDIDATE)
+                ),
+                "market_favorite": compact_market(
+                    (prior_fold.get("final_odds_market_comparison") or {}).get("final_odds_favorite")
+                ),
+            },
             "market_rank_diagnostics": prior_fold.get("market_rank_diagnostics"),
         },
         "diagnostics": {
