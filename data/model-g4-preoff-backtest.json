@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-11-08T05:18:40.254800+00:00",
+  "generated_at": "2026-11-08T05:28:44.198496+00:00",
   "performance": {
     "stage_seconds": {
       "g1_load_seconds": 0.0,
-      "official_outcomes_load_seconds": 2.652,
-      "snapshots_load_and_supabase_join_seconds": 519.745,
-      "snapshot_outcome_evaluation_seconds": 525.408,
-      "report_aggregation_seconds": 1.182,
-      "total_seconds_before_write": 529.242
+      "official_outcomes_load_seconds": 3.062,
+      "snapshots_load_and_supabase_join_seconds": 403.829,
+      "snapshot_outcome_evaluation_seconds": 409.351,
+      "report_aggregation_seconds": 1.176,
+      "total_seconds_before_write": 413.589
     },
-    "total_seconds": 529.242,
+    "total_seconds": 413.589,
     "optimization": "bisect_right latest-prior model lookup plus single-worker per-day odds retrieval with 20-row JSONB pages and GitHub-archive-primary model snapshots; outputs and selection rules unchanged"
   },
   "feature": "G4_real_preoff_odds_evaluation",
@@ -1087,12 +1087,12 @@
     "missing_result": 0,
     "temperature_mismatch": 0,
     "valid_snapshots": 1944,
-    "supabase_query_rows": 5697,
-    "supabase_snapshots_joined": 1758,
+    "supabase_query_rows": 5757,
+    "supabase_snapshots_joined": 1754,
     "supabase_model_races": 143,
-    "supabase_race_key_matches": 4350,
-    "supabase_no_prior_model": 3048,
-    "supabase_model_too_old": 891,
+    "supabase_race_key_matches": 4377,
+    "supabase_no_prior_model": 3079,
+    "supabase_model_too_old": 924,
     "supabase_empty_odds": 0,
     "supabase_model_dates": [
       "20261103",
@@ -1174,7 +1174,7 @@
     "supabase_odds_fetch_parallelism": 1,
     "supabase_status": "loaded",
     "snapshots_from_github_five_minute": 283,
-    "snapshots_from_supabase_one_minute": 1758,
+    "snapshots_from_supabase_one_minute": 1754,
     "supabase_result_rows": 0,
     "supabase_result_dates": [
       "20261103",
@@ -1187,7 +1187,7 @@
     "supabase_result_errors": [],
     "official_outcome_races": 5330,
     "snapshots_with_official_result": 1954,
-    "snapshots_missing_official_result": 87,
+    "snapshots_missing_official_result": 83,
     "recalibrated_with_g1_temperature": 1944,
     "insufficient_odds_coverage": 10
   },
