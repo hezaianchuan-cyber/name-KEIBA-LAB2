@@ -15,6 +15,7 @@ import unicodedata
 from pathlib import Path
 import nar_backtest as nb
 import nar_ml_challenger_backtest as ml
+import nar_trio_compatibility as tc
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "nar-trio-lambdarank-market-fusion-5day.json"
@@ -105,17 +106,18 @@ def rank_horses(group, scores):
     return sorted(group, key=lambda row: (-scores[str(row["horse_no"])], int(row["horse_no"])))
 
 
-def build_trio_tickets(group, scores, limit=TICKETS_PER_RACE):
-    """Rank unordered three-runner sets by the sum of their fused runner scores."""
+def build_trio_tickets(group, scores, limit=TICKETS_PER_RACE, compatibility_weight=0.0):
+    """Rank trios with separate individual-merit and pair-compatibility terms."""
     candidates = []
     for combo in itertools.combinations((str(row["horse_no"]) for row in group), 3):
         key = tuple(sorted(combo, key=int))
-        candidates.append((sum(scores[horse] for horse in key), key))
+        score = tc.trio_score(group, key, scores, compatibility_weight)
+        candidates.append((score, key))
     candidates.sort(key=lambda item: (-item[0], tuple(map(int, item[1]))))
     return [list(key) for _, key in candidates[:limit]]
 
 
-def evaluate_races(races, weight):
+def evaluate_races(races, weight, compatibility_weight=0.0):
     totals = {
         "races": 0, "winner_top1_hits": 0, "winner_top3_hits": 0,
         "podium_horses_captured": 0, "podium_horses_total": 0,
@@ -136,7 +138,7 @@ def evaluate_races(races, weight):
         totals["podium_horses_captured"] += len(predicted_top3 & podium)
         totals["podium_horses_total"] += 3
         totals["exact_podium_top3_hits"] += int(predicted_top3 == podium)
-        tickets = build_trio_tickets(item["group"], scores)
+        tickets = build_trio_tickets(item["group"], scores, compatibility_weight=compatibility_weight)
         totals["tickets"] += len(tickets)
         totals["stake_jpy"] += len(tickets) * 100
         returned = sum(nb.payout_for("trio", ticket, item["payout"]) or 0 for ticket in tickets)
@@ -263,8 +265,27 @@ def main():
         raise RuntimeError(f"Insufficient fusion split: development={len(dev_races)} holdout={len(holdout_races)}")
 
     selected_weight, dev_results = select_market_weight(dev_races)
+    compatibility_weights = (0.00, 0.05, 0.10, 0.15, 0.20)
+    dev_compatibility_results = {
+        f"{cw:.2f}": evaluate_races(dev_races, selected_weight, cw)
+        for cw in compatibility_weights
+    }
+    selected_compatibility_weight = max(compatibility_weights, key=lambda cw: (
+        dev_compatibility_results[f"{cw:.2f}"]["trio_hit_rate_pct"]
+        if dev_compatibility_results[f"{cw:.2f}"]["trio_hit_rate_pct"] is not None else -1,
+        dev_compatibility_results[f"{cw:.2f}"]["roi_pct"]
+        if dev_compatibility_results[f"{cw:.2f}"]["roi_pct"] is not None else -1,
+        -cw,
+    ))
     holdout_results = {f"{weight:.2f}": evaluate_races(holdout_races, weight) for weight in BLEND_WEIGHTS}
     holdout_results["selected_from_development"] = evaluate_races(holdout_races, selected_weight)
+    holdout_compatibility_results = {
+        f"{cw:.2f}": evaluate_races(holdout_races, selected_weight, cw)
+        for cw in compatibility_weights
+    }
+    holdout_compatibility_results["selected_from_development"] = evaluate_races(
+        holdout_races, selected_weight, selected_compatibility_weight
+    )
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "evaluated", "research_only": True,
@@ -286,11 +307,20 @@ def main():
             "fusion_learning": "Select market percentile weight from {0,.25,.50,.75,1.00} using only the first three test dates; maximize trio 12-ticket race-hit rate, then podium capture; ties prefer lower market weight.",
         },
         "development_weight_selection": {"selected_market_weight": round(selected_weight, 2), "selection_results": dev_results},
+        "development_compatibility_selection": {
+            "selected_compatibility_weight": round(selected_compatibility_weight, 2),
+            "candidate_weights": list(compatibility_weights),
+            "selection_results": dev_compatibility_results,
+        },
+        "untouched_holdout_compatibility": holdout_compatibility_results,
         "untouched_holdout": holdout_results,
         "all_five_days_descriptive": {f"{weight:.2f}": evaluate_races(matched, weight) for weight in BLEND_WEIGHTS},
         "interpretation": {
             "market_weight": "0.00 = LambdaRank only; 1.00 = pre-off market only; 0.50 = equal blend.",
-            "trio_method": "Rank all unordered three-runner sets by the sum of their three fused within-race runner scores; evaluate the top 12 at 100 JPY per ticket.",
+            "trio_method": "Compare additive individual-score baseline against a separate pair-compatibility term; top 12 unordered combinations at 100 JPY per ticket.",
+            "individual_score": "LambdaRank and pre-off market rank fusion; compatibility does not alter the individual horse ranking.",
+            "pair_compatibility": "Transparent exploratory adjustment using historical first-corner running-style proxy and predicted front-runner crowding. Weight selected on first three test dates only.",
+            "compatibility_weight_grid": [0.00, 0.05, 0.10, 0.15, 0.20],
             "limitations": [
                 "Only the final two of five dates are untouched holdout; this is a pilot, not proof of profitability.",
                 "The fusion weight is tuned on three dates and needs validation on a longer later holdout.",
