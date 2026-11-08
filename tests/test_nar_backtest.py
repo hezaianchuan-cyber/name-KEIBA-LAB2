@@ -942,9 +942,6 @@ class AutomaticImprovementLoopTests(unittest.TestCase):
         self.assertEqual(win["roi_delta_vs_baseline"], 7.0)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class RunningStyleDiagnosticTests(unittest.TestCase):
     def test_running_style_diagnostics_use_only_prior_history_and_report_roi(self):
@@ -963,7 +960,7 @@ class RunningStyleDiagnosticTests(unittest.TestCase):
             "Closer": [{"first_corner_pct": 0.75, "last_corner_pct": 0.30}],
         }
         ranked = [field[1], field[0], field[2]]
-        payout = {"win": {("1",): 250}}
+        payout = {"win": [(("1",), 250)]}
         nb.update_running_style_diagnostics(stats, "C", ranked, field, history, payout)
         summary = nb.summarize_running_style_diagnostics(stats)
         self.assertEqual(summary["C"]["逃げ"]["starts"], 1)
@@ -3008,3 +3005,7 @@ class DailyLearningTraceTests(unittest.TestCase):
         self.assertEqual(trace[-1]["weights"], {
             key: round(value, 8) for key, value in result[3].items()
         })
+
+
+if __name__ == "__main__":
+    unittest.main()
