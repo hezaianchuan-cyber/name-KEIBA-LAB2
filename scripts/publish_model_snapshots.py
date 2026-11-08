@@ -186,7 +186,7 @@ def limit_pending_rows(rows: list[dict], max_rows: int = 5) -> list[dict]:
     return ordered[:max(0, int(max_rows))]
 
 
-def publish(rows: list[dict], endpoint: str, token: str, anon_key: str, batch_size: int = 1) -> int:
+def publish(rows: list[dict], endpoint: str, token: str, anon_key: str, batch_size: int = 5) -> int:
     published = 0
     for start in range(0, len(rows), batch_size):
         batch = rows[start:start + batch_size]
@@ -279,7 +279,7 @@ def main() -> None:
         print(json.dumps({"ok": True, **stats, "published": 0, "rows_sent": 0}, ensure_ascii=False), flush=True)
         return
     try:
-        existing_keys = fetch_existing_keys(rows, url, anon_key)
+        existing_keys = fetch_existing_keys(rows, url, anon_key, target_new_rows=25, batch_size=25)
         pending_all = filter_unpublished_rows(rows, existing_keys)
         saved_race_ids = {race_id for race_id, _captured_at in existing_keys}
         stats["already_in_supabase"] = len(rows) - len(pending_all)
@@ -297,7 +297,7 @@ def main() -> None:
             "deferred": True, "reason": "Supabase lookup unavailable; local archive preserved",
         }, ensure_ascii=False), flush=True)
         return
-    pending_rows = limit_pending_rows(pending_all, max_rows=5)
+    pending_rows = limit_pending_rows(pending_all, max_rows=25)
     stats["pending_publish"] = len(pending_rows)
     stats["pending_publish_deferred"] = max(0, len(pending_all) - len(pending_rows))
     print(
@@ -310,7 +310,7 @@ def main() -> None:
         print(json.dumps({"ok": True, **stats, "published": 0, "rows_sent": 0}, ensure_ascii=False), flush=True)
         return
     try:
-        published = publish(pending_rows, url + "/functions/v1/nar-model-snapshot-archive", token, anon_key)
+        published = publish(pending_rows, url + "/functions/v1/nar-model-snapshot-archive", token, anon_key, batch_size=5)
     except Exception as exc:
         record_publish_status("failed", stats, 0, str(exc))
         raise
