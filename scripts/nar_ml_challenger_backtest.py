@@ -349,7 +349,7 @@ def summarize_stratified_comparison(scored_groups, dimensions):
 def evaluate_betting_returns(scored_groups, payouts):
     """Fixed-stake retrospective win and trio returns on identical odds-matched races."""
     strategies = ("LAB", "independent_raw_CatBoost", "independent_raw_LightGBM",
-                  "LambdaRank", "Market_favorite")
+                  "LambdaRank", "LambdaRank_tuned", "Market_favorite")
     stats = {
         name: {
             "win": {"races": 0, "hits": 0, "stake_jpy": 0, "return_jpy": 0},
