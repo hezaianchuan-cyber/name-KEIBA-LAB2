@@ -674,7 +674,10 @@ function refreshRaceChoices(){
     if(/^\d+$/.test(norm(row.horseNo)))derived.get(row.id).horseNos.add(norm(row.horseNo));
   }
   const all=[...source.map(r=>({...r,venue:canonicalVenue(r.venue)})).filter(r=>r.venue),...([...derived.values()].map(r=>({...r,count:r.horseNos.size})))];
-  const known=[...new Set(all.map(r=>String(r.venue||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja'));
+  // The venue selector must reflect the selected race date, not every venue
+  // present in the six-day odds archive or the locally imported history.
+  const dateScopedAll=date?all.filter(r=>normDate(r.date)===date):all;
+  const known=[...new Set(dateScopedAll.map(r=>String(r.venue||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja'));
   const vs=$('venue'),current=venue;
   const opts=['<option value="">選択してください</option>',...known.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>')].join('');
   if(known.length){vs.innerHTML=opts;if(known.includes(current))vs.value=current;else if(current)vs.value='';}
