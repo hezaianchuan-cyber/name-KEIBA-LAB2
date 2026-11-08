@@ -218,6 +218,12 @@ def build_rows(races, horses):
             field = horses.get(race["key"], [])
             if len(field) < 3:
                 continue
+            identity_by_no = {}
+            for runner in field:
+                history_key, _ = horse_history_key({
+                    **runner, "race_key": "|".join(map(str, race["key"]))
+                })
+                identity_by_no[str(runner.get("no", ""))] = history_key
             performance = nb.field_performance_features(field)
             opposition_field = []
             for runner in field:
