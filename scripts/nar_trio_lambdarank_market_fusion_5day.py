@@ -286,7 +286,7 @@ def build_axis_wide_trio_strategy(group, scores, pair_scores, market_probabiliti
         if (value > best_value + 1e-12 or
             (abs(value - best_value) <= 1e-12 and rank_tiebreak > best_rank_tiebreak + 1e-12) or
             (abs(value - best_value) <= 1e-12 and abs(rank_tiebreak - best_rank_tiebreak) <= 1e-12
-             and (best_subset is None or tuple(map(int, key)) < tuple(map(int, best_subset)))):
+             and (best_subset is None or tuple(map(int, key)) < tuple(map(int, best_subset))))):
             best_subset, best_value, best_rank_tiebreak = key, value, rank_tiebreak
 
     trio_tickets = [
