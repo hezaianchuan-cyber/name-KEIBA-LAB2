@@ -3080,6 +3080,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             if e_trifecta.get("roi") is not None and reference_summary.get("roi") is not None else None,
         "policy": "Fixed 0.30 calibrated top-win probability gate; role-specific trifecta ranking blend 0.10; 2-3-4 formation. The reference uses the same qualifying races and formation with ordinary ranking, isolating the ranking change. Parameters are not selected on the holdout fold.",
     }
+    print(f"PERF_PROFILE fold_total={time.perf_counter()-fold_profile_started:.3f}s "
+          f"train_races={len(train_races)} test_races={len(ordered)}", flush=True)
     return {"train_start":min(train_dates).isoformat(),"train_end":max(train_dates).isoformat(),
             "test_start":min(test_dates).isoformat(),"test_end":max(test_dates).isoformat(),
             "train_races":len(train_races),"test_races":len(ordered),
