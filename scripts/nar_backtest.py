@@ -674,7 +674,7 @@ def field_performance_features(field):
     return output
 
 
-def score_runner_performance(h, race_history, sire_stats, jockey_stats, race, model_weights,
+def score_runner_performance(h, history, sire_stats, jockey_stats, race, model_weights,
                              margin_weight=0.10, closing_weight=0.10,
                              time_weight=0.0, include_recent_history=True,
                              going_weight=0.0, parts_cache=None, performance_cache=None):
@@ -2156,7 +2156,7 @@ def run_backtest(races, horses, payouts, training_only=False):
         parts_by_no = {}
         for h in field:
             base_score, parts = score_runner_performance(
-                h, history, sire_stats, jockey_stats, race, model_weights,
+                h, race_history, sire_stats, jockey_stats, race, model_weights,
                 margin_weight=0.10, closing_weight=0.10, time_weight=0.10,
                 going_weight=0.10,
             )
