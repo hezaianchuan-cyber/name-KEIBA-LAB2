@@ -4115,7 +4115,7 @@ def preoff_ranking_strategy_backtest(payouts):
     holdout = [item for item in records if split and item[0] not in development_dates]
 
     def evaluate(subset, kind, strategy):
-        races = tickets = hits = stake = returned = 0
+        races = tickets = hits = hit_races = stake = returned = 0
         race_results = []
         for _, candidates, payout in subset:
             eligible = [ticket for ticket in candidates
@@ -4131,13 +4131,16 @@ def preoff_ranking_strategy_backtest(payouts):
             if not selected:
                 continue
             race_stake = 100 * len(selected)
-            race_return = sum(payout_for(kind, [str(x) for x in ticket.get("numbers") or []], payout) or 0
-                              for ticket in selected)
-            race_hits = sum(1 for ticket in selected
-                            if payout_for(kind, [str(x) for x in ticket.get("numbers") or []], payout))
+            ticket_returns = [
+                payout_for(kind, [str(x) for x in ticket.get("numbers") or []], payout) or 0
+                for ticket in selected
+            ]
+            race_return = sum(ticket_returns)
+            race_hits = sum(1 for value in ticket_returns if value > 0)
             races += 1
             tickets += len(selected)
             hits += race_hits
+            hit_races += int(race_hits > 0)
             stake += race_stake
             returned += race_return
             race_results.append((race_stake, race_return))
@@ -4157,9 +4160,14 @@ def preoff_ranking_strategy_backtest(payouts):
                 ci_high = round(samples[int(0.975*(len(samples)-1))], 2)
         enough = races >= 100 and tickets >= 300
         return {
-            "races_with_bets":races, "tickets":tickets, "hits":hits, "stake":stake,
-            "return":returned, "hit_rate":round(100*hits/tickets,2) if tickets else None,
-            "roi":round(100*returned/stake,2) if stake else None,
+            "snapshot_races":len(subset),
+            "races_with_candidates":races,
+            "candidate_coverage_pct":round(100*races/len(subset),2) if subset else None,
+            "races_with_bets":races, "hit_races":hit_races,
+            "race_hit_rate":round(100*hit_races/races,2) if races else None,
+            "tickets":tickets, "hits":hits,
+            "ticket_hit_rate":round(100*hits/tickets,2) if tickets else None,
+            "stake":stake, "return":returned,
             "profit":returned-stake, "roi_ci95_low":ci_low, "roi_ci95_high":ci_high,
             "minimum_sample_met":enough,
             "candidate_pass":bool(enough and ci_low is not None and ci_low > 100),
