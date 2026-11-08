@@ -162,12 +162,16 @@ class BacktestCheckpointTests(unittest.TestCase):
                 self.assertEqual(restored["chronological"]["race_count"], 123)
                 self.assertIn("previous_year_2", restored["folds"])
 
-    def test_checkpoint_signature_rejects_different_period_or_code(self):
-        signature = nb.checkpoint_signature()
-        self.assertEqual(signature["version"], nb.BACKTEST_CHECKPOINT_VERSION)
-        self.assertIn("start", signature)
-        self.assertIn("end", signature)
-        self.assertIn("commit_sha", signature)
+    def test_checkpoint_signature_is_stable_across_compatible_commits(self):
+        with mock.patch.dict("os.environ", {"GITHUB_SHA": "first-commit"}):
+            first = nb.checkpoint_signature()
+        with mock.patch.dict("os.environ", {"GITHUB_SHA": "later-commit"}):
+            later = nb.checkpoint_signature()
+        self.assertEqual(first, later)
+        self.assertEqual(first["version"], nb.BACKTEST_CHECKPOINT_VERSION)
+        self.assertIn("start", first)
+        self.assertIn("end", first)
+        self.assertNotIn("commit_sha", first)
 
 
 class StrategyRiskDiagnosticsTests(unittest.TestCase):
