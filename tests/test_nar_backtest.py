@@ -6,6 +6,7 @@ import json
 import zipfile
 import tempfile
 import unittest
+import pickle
 from collections import defaultdict
 from unittest import mock
 from pathlib import Path
@@ -21,6 +22,14 @@ import capture_nar_odds as capture
 import nar_recent_five_day_backtest as recent
 
 
+
+class BCCompositeModelTests(unittest.TestCase):
+    def test_fifty_fifty_blend_uses_condition_and_performance_equally(self):
+        self.assertAlmostEqual(nb.blend_condition_performance_scores(0.8, 0.4), 0.6)
+
+    def test_blend_weight_can_be_configured_and_clamped(self):
+        self.assertAlmostEqual(nb.blend_condition_performance_scores(0.8, 0.4, 0.75), 0.7)
+        self.assertAlmostEqual(nb.blend_condition_performance_scores(0.8, 0.4, 2.0), 0.8)
 
 
 class NARMarketOddsBoundaryTests(unittest.TestCase):
@@ -162,6 +171,60 @@ class TrainingOnlyBacktestTests(unittest.TestCase):
         self.assertEqual(light[5], full[5])
         self.assertEqual(light[0]["trio"]["tickets"], 0)
         self.assertGreater(full[0]["trio"]["tickets"], 0)
+
+    def test_daily_checkpoint_resume_matches_uninterrupted_run(self):
+        races = {}
+        horses = {}
+        payouts = {}
+        for day in range(1, 4):
+            date = nb.dt.date(2026, 1, day)
+            key = ("大井", date.strftime("%Y%m%d"), "1")
+            races[key] = {
+                "key": key, "date": date, "venue": "大井", "race": "1",
+                "distance": 1600, "field_size": 3, "surface": "ダート",
+                "going": "良",
+            }
+            horses[key] = [
+                {"no": str(no), "name": f"馬{no}", "finish": no,
+                 "sire": f"父{no}", "jockey": f"騎手{no}",
+                 "frame_no": no, "last3f": 38.0 + no, "margin": "0.5"}
+                for no in (1, 2, 3)
+            ]
+            payouts[key] = {"win": [(["1"], 200)], "place": [], "wide": [],
+                            "quinella": [], "exacta": [], "trio": [], "trifecta": []}
+
+        def fake_score(horse, *args, **kwargs):
+            value = int(horse["no"]) / 10
+            return value, {"form": value, "venue": 0.5, "distance": 0.5,
+                           "sire": 0.5, "jockey": 0.5, "age": 0.5}
+
+        patches = (
+            mock.patch.object(nb, "score_runner_performance", side_effect=fake_score),
+            mock.patch.object(nb, "blend_frame_score", side_effect=lambda score, *a, **k: score),
+            mock.patch.object(nb, "pace_adjustments", return_value=(None, None, {})),
+            mock.patch.object(nb, "field_performance_features", return_value={}),
+            mock.patch.object(nb, "corner_history_for_runner", return_value={}),
+            mock.patch.object(nb, "margin_score", return_value=0.5),
+        )
+        with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5]:
+            uninterrupted = nb.run_backtest(races, horses, payouts)
+
+        captured = {}
+        def stop_after_first_completed_day(state, completed_date):
+            captured["state"] = pickle.loads(pickle.dumps(state))
+            if completed_date == nb.dt.date(2026, 1, 1):
+                raise RuntimeError("simulated interruption after daily checkpoint")
+
+        with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5]:
+            with self.assertRaisesRegex(RuntimeError, "simulated interruption"):
+                nb.run_backtest(races, horses, payouts, checkpoint_callback=stop_after_first_completed_day)
+
+        self.assertEqual(captured["state"]["last_completed_date"], "2026-01-01")
+        self.assertEqual(captured["state"]["next_race_index"], 2)
+        with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5]:
+            resumed = nb.run_backtest(races, horses, payouts, resume_state=captured["state"])
+
+        self.assertEqual(resumed, uninterrupted)
 
 class BacktestCheckpointTests(unittest.TestCase):
     def test_local_checkpoint_round_trip_preserves_completed_stages(self):
