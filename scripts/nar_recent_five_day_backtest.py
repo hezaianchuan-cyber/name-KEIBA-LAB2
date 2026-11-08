@@ -355,7 +355,7 @@ def main() -> None:
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "evaluated",
-        "diagnostic_version": 3,
+        "diagnostic_version": 4,
         "evaluation_window": {
             "start": start.isoformat(),
             "end": end.isoformat(),
@@ -369,6 +369,7 @@ def main() -> None:
             "start": min(train_dates).isoformat(),
             "end": max(train_dates).isoformat(),
             "race_dates": len(train_dates),
+            "history_years": 3,
             "races": len([r for r in races.values() if r["date"] in set(train_dates)]),
             "policy": "All training races strictly precede the five-day test window. Same-day results are not used to predict another race on that date.",
         },
@@ -467,11 +468,15 @@ def main() -> None:
             "test_dates_are_strictly_after_training": max(train_dates) < min(test_dates),
         },
         "feature_update": {
-            "body_weight": "Research six-axis condition compares current declared weight with strictly prior recorded weights; missing history is neutral.",
+            "body_weight": "Six-axis challenger compares current declared weight with the horse's strictly prior five recorded weights; missing history is neutral.",
             "frame": "Frame number is read from the official NAR frame-number field and contextualized by venue, surface, distance and field size.",
+            "running_style_and_pace": "Escape/stalker/closer/deep-closer profiles are inferred from strictly prior corner positions; today's field pace is estimated before the race.",
+            "finish_time_and_last3f": "Comparable time-per-kilometre, margin quality and race-relative last-3F rank are retained as separate performance-quality inputs.",
+            "opponent_strength": "Six-axis challenger adjusts prior performance for the pre-race ability of opponents; opponent estimates are frozen before each race date is committed.",
             "production_policy": "New six-axis challenger remains research-only pending holdout validation; the existing chronological live scorer uses the listed pace, time, last3f, opponent, body-weight, and frame history inputs."
         },
         "limitations": [
+            "The new body-weight and opponent-strength axes remain research-only until independent holdout results justify promotion.",
             "Five calendar days are a short sample; results are diagnostic and cannot establish stable hit rate or profitability.",
             "The comparison uses official final odds as a retrospective market benchmark, not as a pre-off input.",
             "D4 is research-only; no live model weights, saved predictions, or production tickets are changed.",
