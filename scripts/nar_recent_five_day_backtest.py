@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Evaluate the fixed D4 challenger on the latest five completed NAR race dates.
+"""Walk-forward evaluate recent NAR races and publish a fresh daily live model.
 
-All earlier official race history is used only to train/build prior form features.
-The five-day evaluation window remains untouched until predictions are scored.
-No production model weights or live predictions are modified.
+Each test date is predicted using strictly earlier official results. After the
+latest completed Japan-local race date is evaluated, the model is refit on all
+available completed-date history and its weights/history are exported for Web.
 """
 from __future__ import annotations
 
