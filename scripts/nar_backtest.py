@@ -2541,8 +2541,12 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     test_races = {k:r for k,r in races.items() if r["date"] in test_set}
     train_horses = {k:v for k,v in horses.items() if k in train_races}
     train_payouts = {k:v for k,v in payouts.items() if k in train_races}
+    fold_profile_started = time.perf_counter()
+    train_fit_started = time.perf_counter()
     _, _, _, learned, updates, train_calibration_records = run_backtest(
         train_races, train_horses, train_payouts, training_only=True)
+    print(f"PERF_PROFILE fold_training_model_fit={time.perf_counter()-train_fit_started:.3f}s "
+          f"races={len(train_races)}", flush=True)
     temperature = fit_temperature(train_calibration_records)
     baseline = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
     # Keep the learned B weights normalized to 1.0. The performance scorer
@@ -2628,8 +2632,11 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                 jockey_stats[h["jockey"]]["runs"] += 1
                 jockey_stats[h["jockey"]]["top3"] += int(h["finish"] <= 3)
 
+    print(f"PERF_PROFILE fold_training_state_preparation={time.perf_counter()-train_fit_started:.3f}s "
+          f"fold_elapsed={time.perf_counter()-fold_profile_started:.3f}s", flush=True)
     ordered = sorted(test_races.values(), key=lambda r:(r["date"],r["venue"],int(r["race"])))
     test_progress_every = max(1, len(ordered) // 10)
+    holdout_eval_started = time.perf_counter()
     print(f"HOLDOUT_PROGRESS evaluation start races={len(ordered)} dates={len(test_dates)} models={len(models)}", flush=True)
     pending=[]; current=None
     test_calibration_records=[]
@@ -2723,7 +2730,10 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
         actual_winners = {str(h["no"]) for h in field if h.get("finish") == 1}
         actual_podium = {str(h["no"]) for h in field if h.get("finish") in (1, 2, 3)}
         if actual_winners and len(actual_podium) == 3:
-            prior_history = {name: rows for name, rows in history.items()}
+            # evaluate_field is read-only: pass the chronological history mapping
+            # directly instead of copying every horse's full history for every race.
+            # This removes O(number_of_horses) allocation per eligible holdout race.
+            prior_history = history
             predicted_styles = []
             for runner in field:
                 style = pace_style(prior_history.get(runner["name"], [])).get("style")
