@@ -222,8 +222,18 @@ def corner_history_for_runner(horse, race):
     return {"first_corner_pct": (first-1)/denom, "last_corner_pct": (last-1)/denom}
 
 
+def recent_history_by_name(field, history, limit=5):
+    """Build one race-scoped recent-history view shared by all model evaluators."""
+    names = {str(runner.get("name") or "") for runner in field}
+    return {
+        name: (rows if len(rows) <= limit else rows[-limit:])
+        for name in names
+        for rows in (history.get(name, []),)
+    }
+
+
 def pace_style(history_rows):
-    recent = history_rows[-5:]
+    recent = history_rows if len(history_rows) <= 5 else history_rows[-5:]
     early = [number(x.get("first_corner_pct")) for x in recent]
     early = [x for x in early if x is not None]
     late = [number(x.get("last_corner_pct")) for x in recent]
@@ -664,7 +674,7 @@ def field_performance_features(field):
     return output
 
 
-def score_runner_performance(h, history, sire_stats, jockey_stats, race, model_weights,
+def score_runner_performance(h, race_history, sire_stats, jockey_stats, race, model_weights,
                              margin_weight=0.10, closing_weight=0.10,
                              time_weight=0.0, include_recent_history=True,
                              going_weight=0.0, parts_cache=None, performance_cache=None):
@@ -685,7 +695,8 @@ def score_runner_performance(h, history, sire_stats, jockey_stats, race, model_w
     cached_performance = (performance_cache.get(performance_key)
                           if performance_cache is not None else None)
     if cached_performance is None:
-        past = history.get(h["name"], [])[-5:] if include_recent_history else []
+        past_rows = history.get(h["name"], []) if include_recent_history else []
+        past = past_rows if len(past_rows) <= 5 else past_rows[-5:]
         def recent_average(key):
             values = [number(row.get(key)) for row in past]
             values = [value for value in values if value is not None]
@@ -754,7 +765,8 @@ def score_runner(h, history, sire_stats, jockey_stats, race, model_weights,
     cache_key = (str(h.get("no", "")), bool(include_recent_history))
     parts = parts_cache.get(cache_key) if parts_cache is not None else None
     if parts is None:
-        past = history.get(h["name"], [])[-5:] if include_recent_history else []
+        past_rows = history.get(h["name"], []) if include_recent_history else []
+        past = past_rows if len(past_rows) <= 5 else past_rows[-5:]
         if past:
             quality_rows = [rank_quality(x.get("finish"), x.get("field_size")) for x in past]
             quality_rows = [q for q in quality_rows if q is not None]
@@ -2099,11 +2111,14 @@ def run_backtest(races, horses, payouts, training_only=False):
         key = race["key"]
         field = horses.get(key, [])
         if len(field) < 3: continue
+        # Share one strictly pre-race five-start view across the challenger and
+        # baseline. The full chronological history remains untouched for updates.
+        race_history = recent_history_by_name(field, history)
         # Research challenger sees only previously committed history. Current-race
         # finish, payout, and odds are not passed into the evaluator.
         pace_styles = []
         for runner in field:
-            style = pace_style(history.get(runner["name"], [])).get("style")
+            style = pace_style(race_history.get(runner["name"], [])).get("style")
             pace_styles.append({"逃げ": "front", "先行": "stalker",
                                 "差し": "closer", "追込": "deep_closer"}.get(style, "unknown"))
         challenger_race = {**race, "predicted_styles": pace_styles}
@@ -2113,7 +2128,7 @@ def run_backtest(races, horses, payouts, training_only=False):
             ))}
             for runner in field
         ]
-        challenger = evaluate_field(evaluation_field, history, challenger_race)
+        challenger = evaluate_field(evaluation_field, race_history, challenger_race)
         actual_winners = {str(h["no"]) for h in field if h.get("finish") == 1}
         actual_podium = {str(h["no"]) for h in field if h.get("finish") in (1, 2, 3)}
         if actual_winners and len(actual_podium) == 3:
@@ -2148,7 +2163,7 @@ def run_backtest(races, horses, payouts, training_only=False):
             score = blend_frame_score(base_score, race, h, frame_stats)
             scored.append((score,h))
             parts_by_no[h["no"]] = parts
-        _, _, pace_delta = pace_adjustments(field, history)
+        _, _, pace_delta = pace_adjustments(field, race_history)
         scored = [(score + pace_delta.get(h["no"], 0.0), h) for score, h in scored]
         frame_gradient_scale = 0.92 if frame_stats else 1.0
         for predicted_score, horse in scored:
