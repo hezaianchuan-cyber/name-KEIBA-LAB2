@@ -2907,6 +2907,32 @@ class ThreeYearDailyHistoryTests(unittest.TestCase):
 
         self.assertIn("running_style", snapshot["feature_schema"])
 
+class DailyOnlineUpdateTests(unittest.TestCase):
+    def test_daily_online_updates_apply_only_the_completed_day_batch(self):
+        first_field = [{"no": "1"}, {"no": "2"}, {"no": "3"}]
+        second_field = [{"no": "4"}, {"no": "5"}, {"no": "6"}]
+        first_parts = {"1": {"form": 1.0}, "2": {"form": 0.0}, "3": {"form": 0.0}}
+        second_parts = {"4": {"form": 0.0}, "5": {"form": 1.0}, "6": {"form": 0.0}}
+        weights = {"form": 1.0}
+        calls = []
+
+        def fake_update(field, parts, current_weights):
+            calls.append((field, parts, dict(current_weights)))
+            current_weights["form"] += 0.01
+            return True
+
+        with mock.patch.object(nb, "update_model", side_effect=fake_update):
+            updates = nb.apply_daily_online_updates(
+                [(first_field, first_parts), (second_field, second_parts)], weights
+            )
+
+        self.assertEqual(updates, 2)
+        self.assertEqual(len(calls), 2)
+        self.assertIs(calls[0][0], first_field)
+        self.assertIs(calls[1][0], second_field)
+        self.assertEqual(weights["form"], 1.02)
+
+
 class DailyLearningTraceTests(unittest.TestCase):
     def test_run_backtest_emits_one_checkpoint_per_completed_date(self):
         dates = [nb.dt.date(2026, 1, day) for day in (1, 2, 3)]
