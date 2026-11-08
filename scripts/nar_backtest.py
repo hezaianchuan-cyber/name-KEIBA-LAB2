@@ -24,15 +24,19 @@ UA = "Mozilla/5.0 (compatible; KEIBA-LAB-backtest/1.0)"
 # Durable stage checkpoints live on a dedicated GitHub branch, separate from
 # production data and reports. Completed expensive stages/folds can therefore
 # be reused after a runner timeout or a failed workflow.
-BACKTEST_CHECKPOINT_VERSION = "nar-four-year-stage-checkpoint-v1"
+# Increment only when checkpoint payload semantics or model evaluation logic become incompatible.
+# Ordinary code commits must not invalidate expensive completed stages.
+BACKTEST_CHECKPOINT_VERSION = "nar-four-year-stage-checkpoint-v2"
 BACKTEST_CHECKPOINT_BRANCH = "nar-backtest-checkpoints"
 BACKTEST_CHECKPOINT_PATH = "nar-backtest-checkpoint.pkl.gz"
 
 
 def checkpoint_signature():
+    # Deliberately independent of GITHUB_SHA: performance-only refactors and
+    # workflow commits can resume compatible work instead of restarting it.
+    # Bump BACKTEST_CHECKPOINT_VERSION for any incompatible model/payload change.
     return {
         "version": BACKTEST_CHECKPOINT_VERSION,
-        "commit_sha": os.environ.get("GITHUB_SHA", "local"),
         "start": START.isoformat(),
         "end": END.isoformat(),
     }
