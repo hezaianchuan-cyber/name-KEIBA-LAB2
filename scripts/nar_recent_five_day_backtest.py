@@ -176,12 +176,11 @@ def main() -> None:
     # Use yesterday in Asia/Tokyo, not nb.END (which is based on the runner's UTC date).
     end = dt.datetime.now(ZoneInfo("Asia/Tokyo")).date() - dt.timedelta(days=1)
     start = end - dt.timedelta(days=4)
-    # nar_backtest.py defaults START/END from the runner's UTC date. Override
-    # both bounds with the Japan-local window before archive parsing; otherwise
-    # the final JST race date can be silently excluded while the runner is still
-    # on the previous UTC date.
+    # Use a rolling three-year training horizon for both daily walk-forward
+    # evaluation and the live refit. The five-day test window remains outside
+    # the training dates for every evaluated fold.
     nb.END = end
-    nb.START = end - dt.timedelta(days=1460)
+    nb.START = end - dt.timedelta(days=365 * 3)
     print(f"RECENT_WINDOW start={start} end={end} archive_start={nb.START} archive_end={nb.END} (Japan-local)", flush=True)
 
     races, horses, payouts, months = nb.load_archives()
@@ -274,11 +273,12 @@ def main() -> None:
             "end": end.isoformat(),
         },
         "updates": live_updates,
-        "feature_schema": ["form", "venue", "distance", "sire", "jockey", "age"],
+        "feature_schema": ["form", "running_style", "pace", "finish_time", "last3f", "opponent_strength", "body_weight", "body_weight_change", "frame_no", "venue", "distance", "going", "surface", "sire", "jockey", "age"],
+        "history_years": 3,
         "weights": live_weights,
         "temperature": live_temperature,
         "calibration": nb.calibration_metrics(live_calibration, live_temperature),
-        "training_policy": "Refit after the latest completed Japan-local race date using all official historical results available through that date. No same-day future results are used.",
+        "training_policy": "Refit daily on the rolling three-year official history through the latest completed Japan-local race date. Same-day results are committed only after all races for that date have been predicted; no same-day or future results are used.",
         "source": "sequential_walk_forward_daily_refit",
         "walk_forward_evaluation": {
             "window_start": start.isoformat(),
@@ -468,7 +468,7 @@ def main() -> None:
         "feature_update": {
             "body_weight": "Research six-axis condition compares current declared weight with strictly prior recorded weights; missing history is neutral.",
             "frame": "Frame number is read from the official NAR frame-number field and contextualized by venue, surface, distance and field size.",
-            "production_policy": "Research-only pending validation; live weights are not promoted by this run."
+            "production_policy": "New six-axis challenger remains research-only pending holdout validation; the existing chronological live scorer uses the listed pace, time, last3f, opponent, body-weight, and frame history inputs."
         },
         "limitations": [
             "Five calendar days are a short sample; results are diagnostic and cannot establish stable hit rate or profitability.",
