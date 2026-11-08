@@ -235,6 +235,158 @@ def evaluate_learned_compatibility(races, market_weight, compatibility_weight):
     return totals
 
 
+
+
+def build_axis_wide_trio_strategy(group, scores, pair_scores, market_probabilities,
+                                  compatibility_weight=0.0, temperature=0.10):
+    """Build 2 axis-wide tickets and 6 axis-trio tickets using a pre-off EV proxy.
+
+    The axis is the highest fused individual rank. Wide opponents are ranks 2 and 3.
+    For trio, score every axis+pair combination using the learned pair model, convert
+    those relative scores to a conditional probability proxy with softmax, then
+    multiply by a market-implied payout proxy (inverse square-root product of
+    pre-off win probabilities). Select the four opponents maximizing the sum of
+    the six ticket EV proxies. This is not a calibrated probability or yen EV:
+    exact pre-off wide/trio prices are not available in the snapshot feed.
+    """
+    if len(group) < 5:
+        raise ValueError("Axis strategy requires at least five runners")
+    ranked = rank_horses(group, scores)
+    numbers = [str(row["horse_no"]) for row in ranked]
+    axis = numbers[0]
+    wide_opponents = numbers[1:3]
+    candidates = numbers[1:]
+    combos = list(itertools.combinations(candidates, 2))
+    raw_scores = []
+    for a, b in combos:
+        raw_scores.append(learned_tc.learned_trio_score(
+            (axis, a, b), scores, pair_scores, compatibility_weight
+        ))
+    peak = max(raw_scores)
+    exps = [math.exp((value - peak) / max(float(temperature), 1e-6)) for value in raw_scores]
+    denominator = sum(exps) or 1.0
+    conditional_prob_proxy = [value / denominator for value in exps]
+
+    axis_prob = max(float(market_probabilities.get(axis, 0.0)), 1e-6)
+    ev_proxy_by_pair = {}
+    for (a, b), probability_proxy in zip(combos, conditional_prob_proxy):
+        pa = max(float(market_probabilities.get(a, 0.0)), 1e-6)
+        pb = max(float(market_probabilities.get(b, 0.0)), 1e-6)
+        market_payout_proxy = 1.0 / math.sqrt(axis_prob * pa * pb)
+        ev_proxy_by_pair[tuple(sorted((a, b), key=int))] = probability_proxy * market_payout_proxy
+
+    best_subset = None
+    best_value = -1.0
+    best_rank_tiebreak = -1.0
+    for subset in itertools.combinations(candidates, 4):
+        pairs = list(itertools.combinations(subset, 2))
+        value = sum(ev_proxy_by_pair[tuple(sorted(pair, key=int))] for pair in pairs)
+        rank_tiebreak = sum(float(scores[h]) for h in subset)
+        key = tuple(sorted(subset, key=int))
+        if (value > best_value + 1e-12 or
+            (abs(value - best_value) <= 1e-12 and rank_tiebreak > best_rank_tiebreak + 1e-12) or
+            (abs(value - best_value) <= 1e-12 and abs(rank_tiebreak - best_rank_tiebreak) <= 1e-12
+             and (best_subset is None or tuple(map(int, key)) < tuple(map(int, best_subset)))):
+            best_subset, best_value, best_rank_tiebreak = key, value, rank_tiebreak
+
+    trio_tickets = [
+        sorted((axis, a, b), key=int)
+        for a, b in itertools.combinations(best_subset, 2)
+    ]
+    return {
+        "axis": axis,
+        "wide_opponents": wide_opponents,
+        "wide_tickets": [[axis, h] for h in wide_opponents],
+        "trio_opponents": list(best_subset),
+        "trio_tickets": trio_tickets,
+        "trio_ev_proxy_sum": round(best_value, 8),
+        "trio_probability_proxy_mass": round(sum(
+            conditional_prob_proxy[i] for i, (a, b) in enumerate(combos)
+            if a in best_subset and b in best_subset
+        ), 8),
+    }
+
+
+def evaluate_axis_wide_trio_strategy(races, market_weight, compatibility_weight):
+    """Evaluate fixed 2-wide + 6-trio tickets at 100 JPY each, plus rank-only baseline."""
+    totals = {
+        "races": 0, "axis_winner_hits": 0, "axis_podium_hits": 0,
+        "wide_hit_races": 0, "wide_tickets": 0, "wide_stake_jpy": 0,
+        "wide_return_jpy": 0, "trio_hit_races": 0, "trio_tickets": 0,
+        "trio_stake_jpy": 0, "trio_return_jpy": 0,
+        "combined_hit_races": 0, "combined_stake_jpy": 0, "combined_return_jpy": 0,
+        "rank_only_trio_hit_races": 0, "rank_only_trio_return_jpy": 0,
+        "ev_trio_hit_races": 0, "ev_trio_return_jpy": 0,
+        "trio_opponent_overlap": 0, "trio_opponent_overlap_denominator": 0,
+        "axis_podium_total": 0,
+    }
+    for item in races:
+        scores = blend_rank_scores(item["model_rank_scores"], item["market_rank_scores"], market_weight)
+        group = item["group"]
+        podium = {str(row["horse_no"]) for row in group if row["finish"] in (1, 2, 3)}
+        winners = {str(row["horse_no"]) for row in group if row["finish"] == 1}
+        if len(podium) != 3 or not winners:
+            continue
+        strategy = build_axis_wide_trio_strategy(
+            group, scores, item["learned_pair_scores"], item["market_win_probabilities"],
+            compatibility_weight=compatibility_weight,
+        )
+        ranked = rank_horses(group, scores)
+        rank_only_opponents = [str(row["horse_no"]) for row in ranked[1:5]]
+        rank_only_tickets = [
+            sorted((strategy["axis"], a, b), key=int)
+            for a, b in itertools.combinations(rank_only_opponents, 2)
+        ]
+        wide_return = sum(nb.payout_for("wide", ticket, item["payout"]) or 0
+                          for ticket in strategy["wide_tickets"])
+        trio_return = sum(nb.payout_for("trio", ticket, item["payout"]) or 0
+                          for ticket in strategy["trio_tickets"])
+        rank_only_return = sum(nb.payout_for("trio", ticket, item["payout"]) or 0
+                               for ticket in rank_only_tickets)
+        totals["races"] += 1
+        totals["axis_winner_hits"] += int(strategy["axis"] in winners)
+        totals["axis_podium_hits"] += int(strategy["axis"] in podium)
+        totals["axis_podium_total"] += 1
+        totals["wide_tickets"] += 2
+        totals["wide_stake_jpy"] += 200
+        totals["wide_return_jpy"] += wide_return
+        totals["wide_hit_races"] += int(wide_return > 0)
+        totals["trio_tickets"] += 6
+        totals["trio_stake_jpy"] += 600
+        totals["trio_return_jpy"] += trio_return
+        totals["trio_hit_races"] += int(trio_return > 0)
+        totals["combined_stake_jpy"] += 800
+        totals["combined_return_jpy"] += wide_return + trio_return
+        totals["combined_hit_races"] += int(wide_return > 0 or trio_return > 0)
+        totals["rank_only_trio_return_jpy"] += rank_only_return
+        totals["rank_only_trio_hit_races"] += int(rank_only_return > 0)
+        totals["ev_trio_return_jpy"] += trio_return
+        totals["ev_trio_hit_races"] += int(trio_return > 0)
+        totals["trio_opponent_overlap"] += len(set(strategy["trio_opponents"]) & set(rank_only_opponents))
+        totals["trio_opponent_overlap_denominator"] += 4
+    n = totals["races"]
+    for prefix, stake_key, return_key, hit_key in (
+        ("wide", "wide_stake_jpy", "wide_return_jpy", "wide_hit_races"),
+        ("trio", "trio_stake_jpy", "trio_return_jpy", "trio_hit_races"),
+        ("combined", "combined_stake_jpy", "combined_return_jpy", "combined_hit_races"),
+    ):
+        stake = totals[stake_key]
+        totals[f"{prefix}_roi_pct"] = round(100 * totals[return_key] / stake, 2) if stake else None
+        totals[f"{prefix}_profit_jpy"] = totals[return_key] - stake
+        totals[f"{prefix}_hit_rate_pct"] = round(100 * totals[hit_key] / n, 2) if n else None
+    rank_stake = n * 600
+    totals["rank_only_trio_roi_pct"] = round(100 * totals["rank_only_trio_return_jpy"] / rank_stake, 2) if rank_stake else None
+    totals["rank_only_trio_profit_jpy"] = totals["rank_only_trio_return_jpy"] - rank_stake
+    totals["rank_only_trio_hit_rate_pct"] = round(100 * totals["rank_only_trio_hit_races"] / n, 2) if n else None
+    totals["axis_winner_rate_pct"] = round(100 * totals["axis_winner_hits"] / n, 2) if n else None
+    totals["axis_podium_rate_pct"] = round(100 * totals["axis_podium_hits"] / n, 2) if n else None
+    totals["trio_opponent_overlap_pct"] = round(
+        100 * totals["trio_opponent_overlap"] / totals["trio_opponent_overlap_denominator"], 2
+    ) if totals["trio_opponent_overlap_denominator"] else None
+    totals["stake_per_race_jpy"] = 800
+    return totals
+
+
 def select_market_weight(dev_races):
     """Tune only on the first three dates; never inspect final two-day holdout results."""
     results = {f"{weight:.2f}": evaluate_races(dev_races, weight) for weight in BLEND_WEIGHTS}
@@ -328,6 +480,7 @@ def main():
             "date": group[0]["date"], "race_key": key, "group": group,
             "payout": payout, "model_rank_scores": model_ranks,
             "market_rank_scores": {horse: market_ranks[horse] for horse in horse_numbers},
+            "market_win_probabilities": {horse: market_prob[horse] for horse in horse_numbers},
             "snapshot_minutes_to_post": snapshot.get("minutes_to_post"),
             "snapshot_model_version": snapshot.get("model_version"),
             "learned_pair_scores": learned_tc.predict_pair_compatibility(group, learned_pair_model),
@@ -399,6 +552,15 @@ def main():
             "compatibility_50pct": evaluate_races(segment, selected_weight, 0.50) if segment else None,
             "compatibility_100pct": evaluate_races(segment, selected_weight, 1.00) if segment else None,
         }
+    axis_strategy_dev = evaluate_axis_wide_trio_strategy(
+        dev_races, selected_weight, selected_learned_compatibility_weight
+    )
+    axis_strategy_holdout = evaluate_axis_wide_trio_strategy(
+        holdout_races, selected_weight, selected_learned_compatibility_weight
+    )
+    axis_strategy_all_days = evaluate_axis_wide_trio_strategy(
+        matched, selected_weight, selected_learned_compatibility_weight
+    )
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "evaluated", "research_only": True,
@@ -441,11 +603,26 @@ def main():
         },
         "untouched_holdout_compatibility": holdout_compatibility_results,
         "untouched_holdout_front_count_segments": holdout_front_count_segments,
+        "axis_wide_trio_strategy": {
+            "ticket_policy": {
+                "axis": "Highest fused LambdaRank + pre-off market individual rank",
+                "wide": "Axis to individual ranks 2 and 3; 2 unordered wide tickets at 100 JPY each",
+                "trio": "Axis plus four opponents selected by sum of six combination EV proxies; 6 unordered trio tickets at 100 JPY each",
+                "total_stake_per_race_jpy": 800,
+                "rank_only_comparator": "Same axis plus next four individual ranks; six trio tickets at 100 JPY each",
+            },
+            "selection_method": "For each axis+opponent-pair, softmax the learned trio compatibility score into a relative conditional probability proxy, multiply by inverse square-root product of timestamped pre-off win probabilities as a market-implied payout proxy, then choose the four-opponent subset maximizing the sum across its six pairs.",
+            "not_calibrated_warning": "This is a relative EV proxy, not calibrated probability or yen expected value. Exact pre-off wide/trio odds are not available in the snapshot feed; no final odds or realized payout is used in selection. Official payouts are used only after the race for retrospective evaluation.",
+            "development": axis_strategy_dev,
+            "untouched_holdout": axis_strategy_holdout,
+            "all_five_days_descriptive": axis_strategy_all_days,
+        },
         "untouched_holdout": holdout_results,
         "all_five_days_descriptive": {f"{weight:.2f}": evaluate_races(matched, weight) for weight in BLEND_WEIGHTS},
         "interpretation": {
             "market_weight": "0.00 = LambdaRank only; 1.00 = pre-off market only; 0.50 = equal blend.",
             "trio_method": "Compare additive individual-score baseline against a separate pair-compatibility term; top 12 unordered combinations at 100 JPY per ticket.",
+            "axis_strategy": "2 wide tickets and 6 trio tickets from one top-ranked axis; trio opponents selected by pre-off relative EV proxy. This research-only strategy does not alter production.",
             "individual_score": "LambdaRank and pre-off market rank fusion; compatibility does not alter the individual horse ranking.",
             "pair_compatibility": "Transparent exploratory adjustment using historical first-corner running-style proxy and predicted front-runner crowding. Weight selected on first three test dates only.",
             "compatibility_weight_grid": [0.00, 0.05, 0.10, 0.15, 0.20],
