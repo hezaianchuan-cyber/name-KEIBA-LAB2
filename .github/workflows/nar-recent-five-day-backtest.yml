@@ -53,11 +53,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           cp data/nar-recent-five-day-backtest.json /tmp/nar-recent-five-day-backtest.json
+          cp data/live-model.json /tmp/live-model.json
+          cp data/live-history.json /tmp/live-history.json
           for attempt in 1 2 3 4 5; do
             git fetch origin main
             git reset --hard origin/main
             cp /tmp/nar-recent-five-day-backtest.json data/nar-recent-five-day-backtest.json
-            git add data/nar-recent-five-day-backtest.json
+            cp /tmp/live-model.json data/live-model.json
+            cp /tmp/live-history.json data/live-history.json
+            git add data/nar-recent-five-day-backtest.json data/live-model.json data/live-history.json
             if git diff --cached --quiet; then
               echo "Five-day report is already current."
               exit 0
