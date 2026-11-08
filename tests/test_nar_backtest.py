@@ -2728,3 +2728,68 @@ class G4ModelMarketBlendTests(unittest.TestCase):
         row, reason = g4.build_race_evaluation(snapshot, outcome, 0.5)
         self.assertIsNone(row)
         self.assertEqual(reason, "insufficient_odds_coverage")
+
+
+class SharedRecentHistoryViewTests(unittest.TestCase):
+    def test_precomputed_recent_history_preserves_baseline_and_six_axis_outputs(self):
+        field = [
+            {"no": "1", "name": "A", "sire": "S1", "jockey": "J1", "age": 5},
+            {"no": "2", "name": "B", "sire": "S2", "jockey": "J2", "age": 4},
+            {"no": "3", "name": "C", "sire": "S3", "jockey": "J3", "age": 6},
+        ]
+        history = {}
+        for horse_index, horse in enumerate(field):
+            history[horse["name"]] = [
+                {
+                    "finish": 1 + ((i + horse_index) % 5),
+                    "field_size": 12,
+                    "venue": "大井" if i % 2 else "船橋",
+                    "distance": 1600 if i % 2 else 1400,
+                    "going": "良",
+                    "surface": "ダート",
+                    "margin_quality": 0.9 - i * 0.04,
+                    "last3f_rank_score": 0.8 - i * 0.03,
+                    "first_corner_pct": 0.08 + horse_index * 0.25,
+                    "last_corner_pct": 0.15 + horse_index * 0.20,
+                    "position_gain": 0.07,
+                    "going_quality": 0.7,
+                    "time_per_km": 74.0 + i,
+                    "opponent_strength": 0.5 + i * 0.01,
+                }
+                for i in range(7)
+            ]
+        race = {
+            "venue": "大井", "distance": 1600, "going": "良",
+            "surface": "ダート",
+            "predicted_styles": ["front", "stalker", "closer"],
+        }
+        recent = nb.recent_history_by_name(field, history)
+        self.assertTrue(all(len(rows) == 5 for rows in recent.values()))
+        self.assertEqual(recent["A"], history["A"][-5:])
+
+        full_challenger = nb.evaluate_field(field, history, race)
+        cached_challenger = nb.evaluate_field(field, recent, race)
+        self.assertEqual(full_challenger, cached_challenger)
+
+        weights = {"form": 0.55, "venue": 0.12, "distance": 0.12,
+                   "sire": 0.10, "jockey": 0.07, "age": 0.04}
+        sire_stats = {f"S{i}": {"runs": 20, "top3": 9} for i in range(1, 4)}
+        jockey_stats = {f"J{i}": {"runs": 20, "top3": 8} for i in range(1, 4)}
+        for horse in field:
+            full_score = nb.score_runner_performance(
+                horse, history, sire_stats, jockey_stats, race, weights,
+                margin_weight=0.10, closing_weight=0.10, time_weight=0.10,
+                going_weight=0.10,
+            )
+            cached_score = nb.score_runner_performance(
+                horse, recent, sire_stats, jockey_stats, race, weights,
+                margin_weight=0.10, closing_weight=0.10, time_weight=0.10,
+                going_weight=0.10,
+            )
+            self.assertAlmostEqual(full_score[0], cached_score[0])
+            self.assertEqual(full_score[1], cached_score[1])
+
+        self.assertEqual(
+            nb.pace_adjustments(field, history),
+            nb.pace_adjustments(field, recent),
+        )
