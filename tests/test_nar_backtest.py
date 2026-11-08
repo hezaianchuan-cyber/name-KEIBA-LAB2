@@ -2904,4 +2904,53 @@ class ThreeYearDailyHistoryTests(unittest.TestCase):
         self.assertEqual(a_history[-1]["frame_no"], 1)
         self.assertEqual(a_history[-1]["time_seconds"], 98.4)
         self.assertIn("opponent_strength", snapshot["feature_schema"])
+
         self.assertIn("running_style", snapshot["feature_schema"])
+
+class DailyLearningTraceTests(unittest.TestCase):
+    def test_run_backtest_emits_one_checkpoint_per_completed_date(self):
+        dates = [nb.dt.date(2026, 1, day) for day in (1, 2, 3)]
+        races, horses = {}, {}
+        for index, day in enumerate(dates, 1):
+            key = ("大井", day.strftime("%Y%m%d"), "1")
+            races[key] = {
+                "key": key, "date": day, "venue": "大井", "race": "1",
+                "distance": 1600, "going": "良", "surface": "ダート",
+                "field_size": 3, "corner_positions": [],
+            }
+            horses[key] = [
+                {"no": str(no), "name": f"H{index}-{no}", "finish": no,
+                 "frame_no": no, "age": 4, "sire": "S", "jockey": "J"}
+                for no in (1, 2, 3)
+            ]
+
+        def fake_score(horse, history, sire_stats, jockey_stats, race, weights, **kwargs):
+            parts = {key: 0.2 for key in ("form", "venue", "distance", "sire", "jockey", "age")}
+            return 0.1 * int(horse["no"]), parts
+
+        fake_challenger = {
+            "win_ranking": ["1", "2", "3"],
+            "top3_ranking": ["1", "2", "3"],
+            "predictions": [
+                {"horse_no": "1", "win_probability": 0.6, "top3_probability": 0.9},
+                {"horse_no": "2", "win_probability": 0.3, "top3_probability": 0.8},
+                {"horse_no": "3", "win_probability": 0.1, "top3_probability": 0.7},
+            ],
+        }
+        trace = []
+        with (
+            mock.patch.object(nb, "score_runner_performance", side_effect=fake_score),
+            mock.patch.object(nb, "evaluate_field", return_value=fake_challenger),
+            mock.patch.object(nb, "update_model", return_value=True),
+        ):
+            result = nb.run_backtest(
+                races, horses, {}, training_only=True, learning_trace=trace
+            )
+
+        self.assertEqual(len(trace), 3)
+        self.assertEqual([row["date"] for row in trace], [day.isoformat() for day in dates])
+        self.assertEqual([row["training_updates"] for row in trace], [1, 1, 1])
+        self.assertEqual(trace[-1]["cumulative_updates"], result[4])
+        self.assertEqual(trace[-1]["weights"], {
+            key: round(value, 8) for key, value in result[3].items()
+        })
