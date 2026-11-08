@@ -946,6 +946,34 @@ if __name__ == "__main__":
     unittest.main()
 
 
+class RunningStyleDiagnosticTests(unittest.TestCase):
+    def test_running_style_diagnostics_use_only_prior_history_and_report_roi(self):
+        stats = defaultdict(lambda: defaultdict(lambda: {
+            "starts": 0, "predicted_rank_sum": 0, "predicted_top1": 0,
+            "predicted_top3": 0, "actual_top3": 0, "winners": 0,
+            "win_stake_jpy": 0, "win_return_jpy": 0,
+        }))
+        field = [
+            {"no": "1", "name": "Front", "finish": 1},
+            {"no": "2", "name": "Closer", "finish": 2},
+            {"no": "3", "name": "Unknown", "finish": 4},
+        ]
+        history = {
+            "Front": [{"first_corner_pct": 0.05, "last_corner_pct": 0.08}],
+            "Closer": [{"first_corner_pct": 0.75, "last_corner_pct": 0.30}],
+        }
+        ranked = [field[1], field[0], field[2]]
+        payout = {"win": {("1",): 250}}
+        nb.update_running_style_diagnostics(stats, "C", ranked, field, history, payout)
+        summary = nb.summarize_running_style_diagnostics(stats)
+        self.assertEqual(summary["C"]["逃げ"]["starts"], 1)
+        self.assertEqual(summary["C"]["逃げ"]["winners"], 1)
+        self.assertEqual(summary["C"]["逃げ"]["predicted_top3"], 1)
+        self.assertEqual(summary["C"]["逃げ"]["win_roi_pct"], 250.0)
+        self.assertEqual(summary["C"]["差し"]["mean_predicted_rank"], 1.0)
+        self.assertEqual(summary["C"]["unknown"]["starts"], 1)
+
+
 class CornerPositionAndPaceTests(unittest.TestCase):
     def test_official_corner_order_parser_handles_groups_and_shared_ranks(self):
         positions = nb.parse_corner_order("1,3,(2,7),4")
