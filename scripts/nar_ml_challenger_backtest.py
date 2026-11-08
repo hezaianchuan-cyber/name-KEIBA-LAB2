@@ -454,7 +454,7 @@ def fit_classifier(kind, train, dev, features, category_maps):
     return model
 
 
-def fit_lambdarank(train_groups, dev_groups, features, category_maps):
+def fit_lambdarank(train_groups, dev_groups, features, category_maps, params=None):
     import numpy as np
     from lightgbm import LGBMRanker, early_stopping, log_evaluation
     def flatten(groups):
@@ -469,12 +469,99 @@ def fit_lambdarank(train_groups, dev_groups, features, category_maps):
         return x, np.asarray(labels, dtype=int), sizes
     xtr, ytr, gtr = flatten(train_groups)
     xdv, ydv, gdv = flatten(dev_groups)
-    model = LGBMRanker(objective="lambdarank", metric="ndcg", n_estimators=900,
-        learning_rate=0.035, num_leaves=15, min_child_samples=80, reg_lambda=2.0,
-        random_state=42, n_jobs=4, verbosity=-1)
+    config = {
+        "objective": "lambdarank", "metric": "ndcg", "n_estimators": 900,
+        "learning_rate": 0.035, "num_leaves": 15, "min_child_samples": 80,
+        "reg_lambda": 2.0, "random_state": 42, "n_jobs": 4, "verbosity": -1,
+    }
+    config.update(params or {})
+    model = LGBMRanker(**config)
     model.fit(xtr, ytr, group=gtr, eval_set=[(xdv, ydv)], eval_group=[gdv],
               eval_at=[1, 3], callbacks=[early_stopping(60, verbose=False), log_evaluation(0)])
     return model
+
+
+def evaluate_wide_top3(scored_groups, payouts):
+    """Evaluate three wide pairs from the same top-three ranking, 100 JPY each."""
+    import itertools
+    races = hits = stake = returned = 0
+    for group, scores in scored_groups:
+        if len(group) < 3:
+            continue
+        parts = str(group[0]["race_key"]).split("|")
+        if len(parts) != 3:
+            continue
+        payout = payouts.get(nb.race_key(parts[0], parts[1], parts[2]))
+        if not payout:
+            continue
+        order = sorted(range(len(group)),
+                       key=lambda i: (-float(scores[i]), int(group[i]["horse_no"])))
+        top = [str(group[i]["horse_no"]) for i in order[:3]]
+        tickets = [list(pair) for pair in itertools.combinations(top, 2)]
+        race_return = sum(nb.payout_for("wide", ticket, payout) for ticket in tickets)
+        races += 1
+        stake += 300
+        returned += race_return
+        hits += int(race_return > 0)
+    roi = 100.0 * returned / stake if stake else 0.0
+    hit_rate = 100.0 * hits / races if races else 0.0
+    # Geometric mean balances ROI and hit rate; it penalizes improving one by
+    # sacrificing the other. Selection is performed on development only.
+    balance_score = math.sqrt(max(roi, 0.0) * max(hit_rate, 0.0))
+    return {
+        "races": races, "hit_races": hits, "hit_rate_pct": round(hit_rate, 3),
+        "tickets_per_race": 3, "stake_jpy": stake, "return_jpy": returned,
+        "roi_pct": round(roi, 3), "profit_jpy": returned - stake,
+        "roi_hit_balance_score": round(balance_score, 3),
+        "policy": "Top 3 ranked runners; all 3 wide pairs; 100 JPY per pair (300 JPY per race).",
+    }
+
+
+def optimize_lambdarank_for_wide(train_groups, early_stop_groups, selection_groups,
+                                 features, category_maps, payouts):
+    """Tune LambdaRank on development only; holdout is never read by this selector."""
+    candidates = [
+        ("baseline", {"learning_rate": 0.035, "num_leaves": 15,
+                      "min_child_samples": 80, "reg_lambda": 2.0}),
+        ("compact_regularized", {"learning_rate": 0.030, "num_leaves": 7,
+                                 "min_child_samples": 120, "reg_lambda": 4.0}),
+        ("wide_regularized", {"learning_rate": 0.025, "num_leaves": 31,
+                              "min_child_samples": 120, "reg_lambda": 4.0}),
+        ("strong_regularization", {"learning_rate": 0.025, "num_leaves": 15,
+                                   "min_child_samples": 160, "reg_lambda": 8.0}),
+    ]
+    if not early_stop_groups or not selection_groups:
+        raise RuntimeError("LambdaRank wide optimization requires two non-empty development blocks")
+    reports = []
+    fitted = {}
+    for name, params in candidates:
+        model = fit_lambdarank(train_groups, early_stop_groups, features,
+                               category_maps, params=params)
+        scored = []
+        for group in selection_groups:
+            x = [[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
+                  for k in features] for r in group]
+            scored.append((group, model.predict(x)))
+        metrics = evaluate_wide_top3(scored, payouts)
+        reports.append({"name": name, "params": params, "development_metrics": metrics})
+        fitted[name] = model
+    eligible = [item for item in reports if item["development_metrics"]["races"] >= 100]
+    if not eligible:
+        raise RuntimeError("Insufficient development payout coverage for wide optimization")
+    selected = max(eligible, key=lambda item: (
+        item["development_metrics"]["roi_hit_balance_score"],
+        item["development_metrics"]["roi_pct"],
+        item["development_metrics"]["hit_rate_pct"],
+    ))
+    return fitted[selected["name"]], {
+        "selection_policy": "Select on the second chronological half of development only, after early stopping on the first half. Primary score is geometric mean of wide ROI% and race hit-rate%; tie-break by ROI then hit rate.",
+        "early_stopping_races": len(early_stop_groups),
+        "selection_races": len(selection_groups),
+        "candidates": reports,
+        "selected_candidate": selected["name"],
+        "selected_params": selected["params"],
+        "selected_development_metrics": selected["development_metrics"],
+    }
 
 
 def fit_plackett_luce(train_groups, features, category_maps, train_scale):
@@ -631,12 +718,25 @@ def main():
 
     # LambdaRank and Plackett-Luce use the genuinely LAB-score-free raw feature set.
     ranker = fit_lambdarank(train_groups, dev_groups, RAW_FEATURES, category_maps)
+    dev_mid = max(1, len(dev_groups) // 2)
+    tuned_ranker, wide_optimization = optimize_lambdarank_for_wide(
+        train_groups, dev_groups[:dev_mid], dev_groups[dev_mid:],
+        RAW_FEATURES, category_maps, payouts)
     rank_output = []
     for group in test_groups:
         x = [[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
               for k in RAW_FEATURES] for r in group]
         rank_output.append((group, ranker.predict(x)))
     models.append(evaluate_scores("LambdaRank_independent_raw", rank_output))
+    tuned_rank_output = []
+    for group in test_groups:
+        x = [[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
+              for k in RAW_FEATURES] for r in group]
+        tuned_rank_output.append((group, tuned_ranker.predict(x)))
+    models.append(evaluate_scores("LambdaRank_wide_optimized_independent_raw", tuned_rank_output))
+    wide_optimization["holdout_baseline_metrics"] = evaluate_wide_top3(rank_output, payouts)
+    wide_optimization["holdout_selected_metrics"] = evaluate_wide_top3(tuned_rank_output, payouts)
+    wide_optimization["holdout_policy"] = "Untouched chronological holdout; used only once for final evaluation, never for candidate selection."
 
     import numpy as np
     scale = np.asarray([[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
@@ -686,6 +786,13 @@ def main():
             rank_output_market.append((group, ranker.predict(x)))
         market_models.append(evaluate_scores("LambdaRank_independent_raw_same_odds_races",
                                              rank_output_market))
+        tuned_rank_output_market = []
+        for group in market_groups:
+            x = [[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
+                  for k in RAW_FEATURES] for r in group]
+            tuned_rank_output_market.append((group, tuned_ranker.predict(x)))
+        market_models.append(evaluate_scores("LambdaRank_wide_optimized_same_odds_races",
+                                             tuned_rank_output_market))
         pl_output_market = [(g, pl_scores(pl, g, RAW_FEATURES, category_maps, scale))
                             for g in market_groups]
         market_models.append(evaluate_scores("PlackettLuce_independent_raw_same_odds_races",
@@ -715,6 +822,7 @@ def main():
         x = [[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
               for k in RAW_FEATURES] for r in group]
         strategy_scores["LambdaRank"] = ranker.predict(x).tolist()
+        strategy_scores["LambdaRank_tuned"] = tuned_ranker.predict(x).tolist()
         stratified_inputs.append((group, strategy_scores))
     stratified_comparison = summarize_stratified_comparison(
         stratified_inputs, ("venue", "distance_band", "field_size_band", "going"))
@@ -781,6 +889,7 @@ def main():
         "feature_sets": {"LAB_feature_enhanced": LAB_FEATURES, "independent_raw": RAW_FEATURES},
         "models": models,
         "market_comparison": market_comparison,
+        "wide_top3_optimization": wide_optimization,
         "walk_forward_validation": walk_forward_validation,
         "feature_importance": importance,
         "plackett_luce_fit": {"converged": pl["converged"], "message": pl["message"],
