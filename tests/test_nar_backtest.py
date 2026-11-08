@@ -85,6 +85,51 @@ class GitHubCheckpointTransientRetryTests(unittest.TestCase):
         self.assertEqual(request.call_count, 2)
         sleep.assert_called_once_with(1)
 
+    def test_bodyless_checkpoint_write_403_with_request_id_is_retried(self):
+        import urllib.error
+
+        headers = {
+            "X-GitHub-Request-Id": "EMPTY-RULE-TIMEOUT",
+            "X-RateLimit-Remaining": "4800",
+        }
+        error = urllib.error.HTTPError(
+            "https://api.github.com/repos/example/repo/contents/checkpoint.json",
+            403, "Forbidden", headers, io.BytesIO(b"")
+        )
+        success = io.BytesIO(b'{"ok":true}')
+        with (
+            mock.patch.dict("os.environ", {"NAR_BACKTEST_CHECKPOINT_TOKEN": "secret-token"}),
+            mock.patch.object(nb.urllib.request, "urlopen", side_effect=[error, success]) as request,
+            mock.patch.object(nb.time, "sleep") as sleep,
+        ):
+            result = nb._github_checkpoint_request(
+                "https://api.github.com/repos/example/repo/contents/checkpoint.json",
+                method="PUT", payload={"content": "sample"}
+            )
+        self.assertEqual(result, b'{"ok":true}')
+        self.assertEqual(request.call_count, 2)
+        sleep.assert_called_once_with(1)
+
+    def test_bodyless_permission_403_without_transient_metadata_is_not_retried(self):
+        import urllib.error
+
+        error = urllib.error.HTTPError(
+            "https://api.github.com/repos/example/repo/contents/checkpoint.json",
+            403, "Forbidden", {}, io.BytesIO(b"")
+        )
+        with (
+            mock.patch.dict("os.environ", {"NAR_BACKTEST_CHECKPOINT_TOKEN": "secret-token"}),
+            mock.patch.object(nb.urllib.request, "urlopen", side_effect=error) as request,
+            mock.patch.object(nb.time, "sleep") as sleep,
+            self.assertRaises(urllib.error.HTTPError),
+        ):
+            nb._github_checkpoint_request(
+                "https://api.github.com/repos/example/repo/contents/checkpoint.json",
+                method="PUT", payload={"content": "sample"}
+            )
+        self.assertEqual(request.call_count, 1)
+        sleep.assert_not_called()
+
     def test_permission_error_is_not_retried(self):
         import urllib.error
 
