@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import nar_backtest as nb
+from nar_bet_type_comparison import evaluate_bet_types
 
 OUT = ROOT / "data" / "ml-challenger-backtest.json"
 BASE_WEIGHTS = {"form": 0.55, "venue": 0.12, "distance": 0.12,
@@ -639,6 +640,7 @@ def main():
         stratified_inputs, ("venue", "distance_band", "field_size_band", "going"))
 
     betting_returns = evaluate_betting_returns(stratified_inputs, payouts)
+    multi_bet_type_returns = evaluate_bet_types(stratified_inputs, payouts)
 
     market_comparison = {
         "odds_source": "NAR official monthly confirmed final win odds; retrospective only, not pre-off odds",
@@ -658,6 +660,7 @@ def main():
         "models": market_models,
         "stratified_comparison": stratified_comparison,
         "betting_returns": betting_returns,
+        "multi_bet_type_returns": multi_bet_type_returns,
         "odds_downloads": final_odds_downloads,
         "policy": "Every listed model and final-odds favorite is evaluated on exactly the same holdout races and the same matched runner subset. Market odds are used only as a retrospective benchmark, never as model input or a live betting price."
     }
