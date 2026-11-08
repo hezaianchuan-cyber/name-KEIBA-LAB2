@@ -2865,3 +2865,43 @@ class SequentialLearningCurveTests(unittest.TestCase):
         self.assertEqual(second["trio_12"]["profit_jpy"], 400.0)
         self.assertEqual(second["market_favorite_top1_rate_pct"], 46.67)
         self.assertEqual(second["market_top1_gap_percentage_points"], -10.0)
+
+
+class ThreeYearDailyHistoryTests(unittest.TestCase):
+    def test_training_horizon_is_three_years(self):
+        self.assertEqual(nb.HISTORY_DAYS, 365 * 3)
+        self.assertEqual(recent.nb.START, recent.nb.END - nb.dt.timedelta(days=365 * 3))
+
+    def test_live_history_freezes_opponent_strength_before_same_day_results(self):
+        day = nb.dt.date(2026, 11, 1)
+        race1 = {"key": ("大井", "20261101", "1"), "date": day, "venue": "大井",
+                 "race": "1", "distance": 1600, "going": "良", "surface": "ダート",
+                 "field_size": 3}
+        race2 = {"key": ("大井", "20261101", "2"), "date": day, "venue": "大井",
+                 "race": "2", "distance": 1600, "going": "良", "surface": "ダート",
+                 "field_size": 3}
+        horses = {
+            race1["key"]: [
+                {"no": "1", "name": "B", "finish": 1, "frame_no": 1,
+                 "body_weight": 480, "body_weight_change": 2, "time_seconds": 98.1},
+                {"no": "2", "name": "X", "finish": 2, "frame_no": 2},
+                {"no": "3", "name": "Y", "finish": 3, "frame_no": 3},
+            ],
+            race2["key"]: [
+                {"no": "1", "name": "A", "finish": 1, "frame_no": 1,
+                 "body_weight": 462, "body_weight_change": -2, "time_seconds": 98.4},
+                {"no": "2", "name": "B", "finish": 2, "frame_no": 2,
+                 "body_weight": 482, "body_weight_change": 2, "time_seconds": 98.5},
+                {"no": "3", "name": "Z", "finish": 3, "frame_no": 3},
+            ],
+        }
+        snapshot = nb.build_live_history({race1["key"]: race1, race2["key"]: race2}, horses)
+        # B's strong result in race 1 must not influence A's race-2 opponent score
+        # because both races occurred on the same Japan-local date.
+        a_history = snapshot["horse_history"]["A"]
+        self.assertEqual(a_history[-1]["opponent_strength"], 0.5)
+        self.assertEqual(a_history[-1]["body_weight"], 462)
+        self.assertEqual(a_history[-1]["frame_no"], 1)
+        self.assertEqual(a_history[-1]["time_seconds"], 98.4)
+        self.assertIn("opponent_strength", snapshot["feature_schema"])
+        self.assertIn("running_style", snapshot["feature_schema"])
