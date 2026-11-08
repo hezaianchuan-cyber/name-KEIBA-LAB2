@@ -23,13 +23,16 @@ jobs:
         with:
           python-version: "3.12"
       - name: Compile backtest
+        id: compile
         run: python -m py_compile scripts/*.py
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
       - name: Type-check isolated model snapshot archive function
+        id: deno-typecheck
         run: deno check supabase/functions/nar-model-snapshot-archive/index.ts
       - name: Check embedded app JavaScript syntax
+        id: app-js
         run: |
           python - <<'PY'
           import re
@@ -42,11 +45,40 @@ jobs:
           PY
           node --check /tmp/keiba-lab.js
       - name: Run shared trio strategy tests
+        id: trio-tests
         run: node --test tests/trio_strategy.test.js
       - name: Run pipeline static safety audit
+        id: safety-audit
         run: python scripts/nar_pipeline_audit.py
       - name: Run regression tests
+        id: regression-tests
         run: python -m unittest discover -s tests -v
       # Full Supabase-backed G4 runs are owned by nar-model-g4-preoff.yml.
       # Keep this validation workflow offline to avoid duplicate concurrent
       # database scans competing with the scheduled evaluator.
+
+      - name: Write validation status summary
+        if: always()
+        env:
+          COMPILE_OUTCOME: ${{ steps.compile.outcome }}
+          DENO_OUTCOME: ${{ steps.deno-typecheck.outcome }}
+          APP_JS_OUTCOME: ${{ steps.app-js.outcome }}
+          TRIO_OUTCOME: ${{ steps.trio-tests.outcome }}
+          AUDIT_OUTCOME: ${{ steps.safety-audit.outcome }}
+          REGRESSION_OUTCOME: ${{ steps.regression-tests.outcome }}
+          JOB_OUTCOME: ${{ job.status }}
+        run: |
+          {
+            echo "## KEIBA LAB — テスト状況"
+            echo
+            echo "| 検証項目 | 結果 |"
+            echo "|---|---|"
+            echo "| Python構文チェック | ${COMPILE_OUTCOME:-未実行} |"
+            echo "| Supabase関数型チェック | ${DENO_OUTCOME:-未実行} |"
+            echo "| Web版JavaScript構文 | ${APP_JS_OUTCOME:-未実行} |"
+            echo "| 3連複戦略テスト | ${TRIO_OUTCOME:-未実行} |"
+            echo "| パイプライン安全監査 | ${AUDIT_OUTCOME:-未実行} |"
+            echo "| 回帰テスト | ${REGRESSION_OUTCOME:-未実行} |"
+            echo
+            echo "総合結果: ${JOB_OUTCOME}"
+          } >> "$GITHUB_STEP_SUMMARY"
