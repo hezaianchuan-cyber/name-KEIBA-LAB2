@@ -2337,10 +2337,20 @@ def run_backtest(races, horses, payouts, training_only=False, learning_trace=Non
                       for kind in ("win", "place", "wide", "trio")}
     shadow_races = 0
     ordered = sorted((r for r in races.values()), key=lambda r:(r["date"],r["venue"],int(r["race"])))
-    dataset_signature = hashlib.sha256(json.dumps(
-        [(r["date"].isoformat(), r["venue"], str(r["race"]), "|".join(map(str, r["key"])))
-         for r in ordered], ensure_ascii=False, separators=(",", ":")
-    ).encode("utf-8")).hexdigest()
+    dataset_hasher = hashlib.sha256()
+    for source_race in ordered:
+        source_key = source_race["key"]
+        fingerprint_record = {
+            "race": source_race,
+            "horses": horses.get(source_key, []),
+            "payout": payouts.get(source_key),
+        }
+        dataset_hasher.update(json.dumps(
+            fingerprint_record, ensure_ascii=False, sort_keys=True,
+            separators=(",", ":"), default=str
+        ).encode("utf-8"))
+        dataset_hasher.update(b"\\n")
+    dataset_signature = dataset_hasher.hexdigest()
     start_race_index = 1
     if resume_state:
         if resume_state.get("state_version") != 1:
