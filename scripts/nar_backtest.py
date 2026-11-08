@@ -2534,7 +2534,7 @@ def summarize_race_cluster_roi(stats):
         "profit": returned - stake,
     }
 
-def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final_odds=None):
+def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final_odds=None, model_names=None):
     train_set = set(train_dates)
     test_set = set(test_dates)
     train_races = {k:r for k,r in races.items() if r["date"] in train_set}
@@ -2584,6 +2584,12 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
         "trained_with_time": (0.00, 0.00, 0.10),
         "trained_performance_with_time": (0.07, 0.08, 0.10),
     }
+    if model_names is not None:
+        requested_models = set(model_names)
+        missing_models = requested_models - set(models)
+        if missing_models:
+            raise ValueError(f"Requested holdout models are unavailable: {sorted(missing_models)}")
+        models = {name: model for name, model in models.items() if name in requested_models}
     kinds = ("win","place","wide","quinella","exacta","trio","trifecta")
     results = {name:{"races":0,"winner_top1":0,"winner_top3":0,
                      "winner_topk":{str(k):0 for k in (5,6,7)},
