@@ -516,9 +516,89 @@ def pl_scores(model, group, features, category_maps, train_scale):
     return (x / train_scale) @ np.asarray(model["coef"])
 
 
+def build_walk_forward_splits(dates, folds=3, initial_train_fraction=0.50):
+    """Expanding-window chronological folds; each test block is later than its dev block."""
+    ordered = sorted(dates)
+    block = max(1, len(ordered) // 10)
+    output = []
+    for index in range(folds):
+        train_end = int(len(ordered) * initial_train_fraction) + index * block
+        dev_end = train_end + block
+        test_end = dev_end + block
+        if test_end > len(ordered) or train_end < 2:
+            break
+        train_dates = ordered[:train_end]
+        dev_dates = ordered[train_end:dev_end]
+        test_dates = ordered[dev_end:test_end]
+        if train_dates and dev_dates and test_dates:
+            output.append({
+                "fold": index + 1,
+                "train_dates": train_dates,
+                "development_dates": dev_dates,
+                "test_dates": test_dates,
+            })
+    return output
+
+
+def run_walk_forward_validation(rows, dates):
+    """Refit independent LambdaRank models over three expanding chronological folds."""
+    fold_reports = []
+    for split in build_walk_forward_splits(dates):
+        train_set = set(split["train_dates"])
+        dev_set = set(split["development_dates"])
+        test_set = set(split["test_dates"])
+        train_rows = [r for r in rows if dt.date.fromisoformat(r["date"]) in train_set]
+        dev_rows = [r for r in rows if dt.date.fromisoformat(r["date"]) in dev_set]
+        test_rows = [r for r in rows if dt.date.fromisoformat(r["date"]) in test_set]
+        train_groups, dev_groups, test_groups = group_rows(train_rows), group_rows(dev_rows), group_rows(test_rows)
+        if not train_groups or not dev_groups or not test_groups:
+            fold_reports.append({"fold": split["fold"], "status": "skipped_empty_groups"})
+            continue
+        category_maps = {
+            key: {value: index for index, value in enumerate(sorted({r[key] for r in train_rows}))}
+            for key in CATEGORICAL
+        }
+        ranker = fit_lambdarank(train_groups, dev_groups, RAW_FEATURES, category_maps)
+        scored = []
+        for group in test_groups:
+            x = [[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
+                  for k in RAW_FEATURES] for r in group]
+            scored.append((group, ranker.predict(x)))
+        metrics = evaluate_scores("LambdaRank_walk_forward", scored)
+        fold_reports.append({
+            "fold": split["fold"], "status": "evaluated",
+            "train_start": split["train_dates"][0].isoformat(),
+            "train_end": split["train_dates"][-1].isoformat(),
+            "development_start": split["development_dates"][0].isoformat(),
+            "development_end": split["development_dates"][-1].isoformat(),
+            "test_start": split["test_dates"][0].isoformat(),
+            "test_end": split["test_dates"][-1].isoformat(),
+            "train_races": len(train_groups), "development_races": len(dev_groups),
+            "test_races": len(test_groups), "metrics": metrics,
+        })
+        print(f"ML_WALK_FORWARD fold={split['fold']} train={len(train_groups)} "
+              f"dev={len(dev_groups)} test={len(test_groups)} "
+              f"top3={metrics['top3_capture_rate']}", flush=True)
+    evaluated = [x for x in fold_reports if x.get("status") == "evaluated"]
+    total_races = sum(x["metrics"]["races"] for x in evaluated)
+    total_top1 = sum(x["metrics"]["top1_hits"] for x in evaluated)
+    total_top3 = sum(x["metrics"]["top3_hits"] for x in evaluated)
+    return {
+        "policy": "Three expanding chronological folds; training and development always precede each untouched test block. Test blocks do not overlap.",
+        "folds": fold_reports,
+        "aggregate": {
+            "folds_evaluated": len(evaluated), "races": total_races,
+            "top1_hits": total_top1, "top3_hits": total_top3,
+            "top1_rate": round(100 * total_top1 / total_races, 3) if total_races else None,
+            "top3_capture_rate": round(100 * total_top3 / total_races, 3) if total_races else None,
+        },
+    }
+
+
 def main():
     races, horses, payouts, downloads = nb.load_archives()
     rows, dates = build_rows(races, horses)
+    walk_forward_validation = run_walk_forward_validation(rows, dates)
     if len(dates) < 100:
         raise RuntimeError(f"Insufficient chronological date coverage: {len(dates)}")
     cut_train = max(1, int(len(dates) * 0.70))
@@ -701,6 +781,7 @@ def main():
         "feature_sets": {"LAB_feature_enhanced": LAB_FEATURES, "independent_raw": RAW_FEATURES},
         "models": models,
         "market_comparison": market_comparison,
+        "walk_forward_validation": walk_forward_validation,
         "feature_importance": importance,
         "plackett_luce_fit": {"converged": pl["converged"], "message": pl["message"],
                               "iterations": pl["iterations"]},
