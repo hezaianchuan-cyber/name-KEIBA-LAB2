@@ -4087,7 +4087,8 @@ def holdout_validation(races, horses, payouts, final_odds=None, checkpoint_state
         if not train_dates or not test_dates:
             continue
         saved_folds = (checkpoint_state or {}).get("folds") or {}
-        if label in saved_folds:
+        if (label in saved_folds
+                and saved_folds[label].get("sequential_daily_learning_version") == 1):
             saved_fold = saved_folds[label]
             folds.append(saved_fold)
             fold_runtime_seconds[label] = saved_fold.get("runtime_seconds", 0)
@@ -4102,7 +4103,8 @@ def holdout_validation(races, horses, payouts, final_odds=None, checkpoint_state
         print(f"PERF_PROFILE holdout_fold_{label}={fold_elapsed}s "
               f"train_dates={len(train_dates)} test_dates={len(test_dates)}", flush=True)
         completed_fold = {"fold":index,"period_label":label,
-                          "runtime_seconds":fold_elapsed, **fold_result}
+                          "runtime_seconds":fold_elapsed,
+                          "sequential_daily_learning_version": 1, **fold_result}
         folds.append(completed_fold)
         if checkpoint_state is not None:
             checkpoint_state.setdefault("folds", {})[label] = completed_fold
@@ -4557,10 +4559,11 @@ def main():
     print(f"Official monthly final-odds races: {len(final_odds)}", flush=True)
     mark_profile("final_odds_archive_load")
     validation = checkpoint_state.get("validation")
-    if validation:
+    if validation and validation.get("sequential_daily_learning_version") == 1:
         print("CHECKPOINT_RESUME stage=walk_forward_holdout_validation reused=true", flush=True)
     else:
         validation = holdout_validation(races, horses, payouts, final_odds, checkpoint_state)
+        validation["sequential_daily_learning_version"] = 1
         checkpoint_state["validation"] = validation
         save_backtest_checkpoint(checkpoint_state, "walk-forward-validation-complete")
     mark_profile("walk_forward_holdout_validation")
