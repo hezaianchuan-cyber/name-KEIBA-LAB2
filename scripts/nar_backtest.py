@@ -593,23 +593,36 @@ def smoothed_rate(successes, runs, prior_rate=0.50, prior_strength=10.0):
 
 
 def historical_opponent_strength(field, history):
-    """Estimate each runner's past-race opposition from rivals' pre-race form only."""
-    output = {}
+    """Estimate each runner's past-race opposition from rivals' pre-race form only.
+
+    Each runner's prior-form mean is computed once, then reused when estimating
+    every other runner's opposition. This preserves the original smoothing and
+    own-runner exclusion while reducing repeated history scans from O(n^2 * h)
+    to O(n * h), where h is the five-run history window.
+    """
+    runner_quality = []
+    total_quality = 0.0
+    total_count = 0
     for runner in field:
-        rival_quality = []
-        for rival in field:
-            if str(rival.get("no")) == str(runner.get("no")):
-                continue
-            prior = history.get(rival.get("name"), [])[-5:]
-            values = [rank_quality(row.get("finish"), row.get("field_size"))
-                      for row in prior]
-            values = [value / 100.0 for value in values if value is not None]
-            if values:
-                rival_quality.append(sum(values) / len(values))
+        prior = history.get(runner.get("name"), [])[-5:]
+        values = [rank_quality(row.get("finish"), row.get("field_size"))
+                  for row in prior]
+        values = [value / 100.0 for value in values if value is not None]
+        average = (sum(values) / len(values)) if values else None
+        runner_quality.append(average)
+        if average is not None:
+            total_quality += average
+            total_count += 1
+
+    output = {}
+    for index, runner in enumerate(field):
+        own_quality = runner_quality[index]
+        rival_count = total_count - int(own_quality is not None)
+        rival_total = total_quality - (own_quality or 0.0)
         output[str(runner.get("no"))] = (
-            smoothed_rate(sum(rival_quality), len(rival_quality),
+            smoothed_rate(rival_total, rival_count,
                           prior_rate=0.5, prior_strength=3.0)
-            if rival_quality else 0.5
+            if rival_count else 0.5
         )
     return output
 
