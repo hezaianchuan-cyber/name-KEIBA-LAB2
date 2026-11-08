@@ -592,6 +592,28 @@ def smoothed_rate(successes, runs, prior_rate=0.50, prior_strength=10.0):
     return (successes + prior_rate * prior_strength) / (runs + prior_strength)
 
 
+def historical_opponent_strength(field, history):
+    """Estimate each runner's past-race opposition from rivals' pre-race form only."""
+    output = {}
+    for runner in field:
+        rival_quality = []
+        for rival in field:
+            if str(rival.get("no")) == str(runner.get("no")):
+                continue
+            prior = history.get(rival.get("name"), [])[-5:]
+            values = [rank_quality(row.get("finish"), row.get("field_size"))
+                      for row in prior]
+            values = [value / 100.0 for value in values if value is not None]
+            if values:
+                rival_quality.append(sum(values) / len(values))
+        output[str(runner.get("no"))] = (
+            smoothed_rate(sum(rival_quality), len(rival_quality),
+                          prior_rate=0.5, prior_strength=3.0)
+            if rival_quality else 0.5
+        )
+    return output
+
+
 def field_performance_features(field):
     """Store race-relative closing-speed rank and margin quality for future races."""
     valid_last3f = [(h["no"], number(h.get("last3f"))) for h in field]
@@ -2015,14 +2037,22 @@ def run_backtest(races, horses, payouts, training_only=False):
 
     def commit_day(items):
         nonlocal learning_updates
+        # Freeze all opponent-strength estimates against history available before
+        # this date is committed. No race on the same date can influence another.
+        prepared = []
         for pending_field, pending_parts, pending_race in items:
+            opposition = historical_opponent_strength(pending_field, history)
+            performance = field_performance_features(pending_field)
+            prepared.append((pending_field, pending_parts, pending_race,
+                             opposition, performance))
+        for pending_field, pending_parts, pending_race, opposition, performance in prepared:
             if update_model(pending_field, pending_parts, model_weights):
                 learning_updates += 1
-            performance = field_performance_features(pending_field)
             for runner in pending_field:
                 if runner.get("finish"):
                     history[runner["name"]].append({
                         **performance.get(runner["no"], {}),
+                        "opponent_strength": opposition.get(str(runner["no"]), 0.5),
                         "date":pending_race["date"],"venue":pending_race["venue"],"distance":pending_race.get("distance"),"going":pending_race.get("going"),"surface":pending_race.get("surface"),"field_size":pending_race.get("field_size"),
                         "finish":runner["finish"],"margin":margin_score(runner.get("margin")),"last3f":runner.get("last3f"),
                         "going_quality": rank_quality(runner["finish"], pending_race.get("field_size")) / 100.0,
