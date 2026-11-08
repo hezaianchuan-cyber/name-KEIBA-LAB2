@@ -227,6 +227,15 @@ class TrainingOnlyBacktestTests(unittest.TestCase):
         self.assertEqual(resumed, uninterrupted)
 
 class BacktestCheckpointTests(unittest.TestCase):
+    def test_checkpoint_fingerprint_normalizes_tuple_keys_and_dates(self):
+        value = {
+            "exacta": {("1", "2"): 1230},
+            "date": nb.dt.date(2026, 1, 2),
+        }
+        normalized = nb.checkpoint_json_safe(value)
+        self.assertEqual(normalized["exacta"]["('1', '2')"], 1230)
+        self.assertEqual(normalized["date"], "2026-01-02")
+
     def test_local_checkpoint_round_trip_preserves_completed_stages(self):
         with tempfile.TemporaryDirectory() as tmp:
             with mock.patch.object(nb, "ROOT", Path(tmp)), mock.patch.dict(
