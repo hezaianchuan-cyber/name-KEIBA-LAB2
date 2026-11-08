@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-11-08T05:45:20.953437+00:00",
+  "generated_at": "2026-11-08T06:05:19.737939+00:00",
   "status": "evaluated",
   "period": {
-    "start": "2022-11-08",
-    "end": "2026-11-07"
+    "start": "2022-11-01",
+    "end": "2026-10-31"
   },
   "split": {
-    "train_end": "2025-08-25",
-    "development_start": "2025-08-26",
-    "development_end": "2026-01-18",
-    "holdout_start": "2026-01-19",
-    "holdout_end": "2026-11-07",
+    "train_end": "2025-08-18",
+    "development_start": "2025-08-19",
+    "development_end": "2026-01-11",
+    "holdout_start": "2026-01-12",
+    "holdout_end": "2026-10-31",
     "policy": "Chronological 70/10/20 split; early stopping uses development only; holdout untouched."
   },
   "identity_audit": {
-    "strong_identity_rows": 616093,
+    "strong_identity_rows": 615872,
     "partial_identity_rows": 0,
     "isolated_identity_rows": 0,
     "policy": "No permanent NAR horse ID is present in the published monthly runner CSV; complete composite identities are used where possible and incomplete identities are isolated per race to prevent cross-horse history contamination."
   },
   "data": {
-    "races": 61718,
-    "runner_rows": 616093,
+    "races": 61707,
+    "runner_rows": 615872,
     "dates": 1459,
-    "train_races": 42466,
-    "development_races": 6299,
-    "holdout_races": 12512,
+    "train_races": 42504,
+    "development_races": 6353,
+    "holdout_races": 12409,
     "downloaded_months": [
       {
         "month": "2022-11",
@@ -266,11 +266,6 @@
         "month": "2026-10",
         "bytes": 1420092,
         "parsed_cache": "miss"
-      },
-      {
-        "month": "2026-11",
-        "bytes": 454752,
-        "parsed_cache": "current_month_refresh"
       }
     ]
   },
@@ -321,204 +316,204 @@
   "models": [
     {
       "name": "LAB_frozen_baseline",
-      "races": 12512,
-      "top1_hits": 3769,
-      "top3_hits": 7596,
-      "top1_rate": 30.123,
-      "top3_capture_rate": 60.71
+      "races": 12409,
+      "top1_hits": 3757,
+      "top3_hits": 7552,
+      "top1_rate": 30.276,
+      "top3_capture_rate": 60.859
     },
     {
       "name": "LAB_feature_enhanced_CatBoost",
-      "races": 12512,
-      "top1_hits": 4074,
-      "top3_hits": 8178,
-      "top1_rate": 32.561,
-      "top3_capture_rate": 65.361
+      "races": 12409,
+      "top1_hits": 4060,
+      "top3_hits": 8110,
+      "top1_rate": 32.718,
+      "top3_capture_rate": 65.356
     },
     {
       "name": "LAB_feature_enhanced_LightGBM",
-      "races": 12512,
-      "top1_hits": 4056,
-      "top3_hits": 8114,
-      "top1_rate": 32.417,
-      "top3_capture_rate": 64.85
+      "races": 12409,
+      "top1_hits": 4062,
+      "top3_hits": 8098,
+      "top1_rate": 32.734,
+      "top3_capture_rate": 65.259
     },
     {
       "name": "independent_raw_CatBoost",
-      "races": 12512,
-      "top1_hits": 4177,
-      "top3_hits": 8280,
-      "top1_rate": 33.384,
-      "top3_capture_rate": 66.176
+      "races": 12409,
+      "top1_hits": 4146,
+      "top3_hits": 8231,
+      "top1_rate": 33.411,
+      "top3_capture_rate": 66.331
     },
     {
       "name": "independent_raw_LightGBM",
-      "races": 12512,
-      "top1_hits": 4256,
-      "top3_hits": 8333,
-      "top1_rate": 34.015,
-      "top3_capture_rate": 66.6
+      "races": 12409,
+      "top1_hits": 4213,
+      "top3_hits": 8295,
+      "top1_rate": 33.951,
+      "top3_capture_rate": 66.847
     },
     {
       "name": "LambdaRank_independent_raw",
-      "races": 12512,
-      "top1_hits": 4313,
-      "top3_hits": 8400,
-      "top1_rate": 34.471,
-      "top3_capture_rate": 67.136
+      "races": 12409,
+      "top1_hits": 4231,
+      "top3_hits": 8327,
+      "top1_rate": 34.096,
+      "top3_capture_rate": 67.105
     },
     {
       "name": "PlackettLuce_independent_raw",
-      "races": 12512,
-      "top1_hits": 4204,
-      "top3_hits": 8290,
-      "top1_rate": 33.6,
-      "top3_capture_rate": 66.256
+      "races": 12409,
+      "top1_hits": 4191,
+      "top3_hits": 8226,
+      "top1_rate": 33.774,
+      "top3_capture_rate": 66.291
     }
   ],
   "market_comparison": {
     "odds_source": "NAR official monthly confirmed final win odds; retrospective only, not pre-off odds",
     "holdout_period": {
-      "start": "2026-01-19",
-      "end": "2026-11-07"
+      "start": "2026-01-12",
+      "end": "2026-10-31"
     },
     "official_odds_available_from": "2026-03-01",
-    "requested_odds_start": "2026-01-19",
+    "requested_odds_start": "2026-01-12",
     "actual_odds_start": "2026-03-01",
     "pre_official_archive_period_excluded": {
-      "start": "2026-01-19",
+      "start": "2026-01-12",
       "end": "2026-02-28"
     },
-    "holdout_races_total": 12512,
-    "races_with_at_least_3_odds_matched_runners_and_winner": 11091,
-    "coverage_pct": 88.64,
-    "races_without_eligible_odds": 1421,
+    "holdout_races_total": 12409,
+    "races_with_at_least_3_odds_matched_runners_and_winner": 10769,
+    "coverage_pct": 86.78,
+    "races_without_eligible_odds": 1640,
     "models": [
       {
         "name": "final_odds_market_favorite",
-        "races": 11091,
-        "top1_hits": 4935,
-        "top3_hits": 8561,
-        "top1_rate": 44.496,
-        "top3_capture_rate": 77.189
+        "races": 10769,
+        "top1_hits": 4800,
+        "top3_hits": 8312,
+        "top1_rate": 44.572,
+        "top3_capture_rate": 77.185
       },
       {
         "name": "LAB_frozen_baseline_same_odds_races",
-        "races": 11091,
-        "top1_hits": 3326,
-        "top3_hits": 6728,
-        "top1_rate": 29.988,
-        "top3_capture_rate": 60.662
+        "races": 10769,
+        "top1_hits": 3240,
+        "top3_hits": 6531,
+        "top1_rate": 30.086,
+        "top3_capture_rate": 60.646
       },
       {
         "name": "LAB_feature_enhanced_CatBoost_same_odds_races",
-        "races": 11091,
-        "top1_hits": 3611,
-        "top3_hits": 7269,
-        "top1_rate": 32.558,
-        "top3_capture_rate": 65.54
+        "races": 10769,
+        "top1_hits": 3519,
+        "top3_hits": 7038,
+        "top1_rate": 32.677,
+        "top3_capture_rate": 65.354
       },
       {
         "name": "LAB_feature_enhanced_LightGBM_same_odds_races",
-        "races": 11091,
-        "top1_hits": 3586,
-        "top3_hits": 7193,
-        "top1_rate": 32.333,
-        "top3_capture_rate": 64.854
+        "races": 10769,
+        "top1_hits": 3510,
+        "top3_hits": 7029,
+        "top1_rate": 32.594,
+        "top3_capture_rate": 65.271
       },
       {
         "name": "independent_raw_CatBoost_same_odds_races",
-        "races": 11091,
-        "top1_hits": 3684,
-        "top3_hits": 7345,
-        "top1_rate": 33.216,
-        "top3_capture_rate": 66.225
+        "races": 10769,
+        "top1_hits": 3598,
+        "top3_hits": 7150,
+        "top1_rate": 33.411,
+        "top3_capture_rate": 66.394
       },
       {
         "name": "independent_raw_LightGBM_same_odds_races",
-        "races": 11091,
-        "top1_hits": 3754,
-        "top3_hits": 7383,
-        "top1_rate": 33.847,
-        "top3_capture_rate": 66.567
+        "races": 10769,
+        "top1_hits": 3629,
+        "top3_hits": 7203,
+        "top1_rate": 33.699,
+        "top3_capture_rate": 66.886
       },
       {
         "name": "LambdaRank_independent_raw_same_odds_races",
-        "races": 11091,
-        "top1_hits": 3798,
-        "top3_hits": 7448,
-        "top1_rate": 34.244,
-        "top3_capture_rate": 67.154
+        "races": 10769,
+        "top1_hits": 3652,
+        "top3_hits": 7223,
+        "top1_rate": 33.912,
+        "top3_capture_rate": 67.072
       },
       {
         "name": "PlackettLuce_independent_raw_same_odds_races",
-        "races": 11091,
-        "top1_hits": 3716,
-        "top3_hits": 7338,
-        "top1_rate": 33.505,
-        "top3_capture_rate": 66.162
+        "races": 10769,
+        "top1_hits": 3623,
+        "top3_hits": 7122,
+        "top1_rate": 33.643,
+        "top3_capture_rate": 66.134
       }
     ],
     "stratified_comparison": {
       "venue": {
         "佐賀": {
-          "races": 810,
+          "races": 787,
           "models": [
             {
               "name": "LAB",
-              "races": 810,
-              "top1_hits": 295,
-              "top3_hits": 544,
-              "top1_rate": 36.42,
-              "top3_capture_rate": 67.16
+              "races": 787,
+              "top1_hits": 290,
+              "top3_hits": 527,
+              "top1_rate": 36.849,
+              "top3_capture_rate": 66.963
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 810,
-              "top1_hits": 328,
-              "top3_hits": 591,
-              "top1_rate": 40.494,
-              "top3_capture_rate": 72.963
+              "races": 787,
+              "top1_hits": 316,
+              "top3_hits": 565,
+              "top1_rate": 40.152,
+              "top3_capture_rate": 71.792
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 810,
-              "top1_hits": 322,
-              "top3_hits": 585,
-              "top1_rate": 39.753,
-              "top3_capture_rate": 72.222
+              "races": 787,
+              "top1_hits": 314,
+              "top3_hits": 572,
+              "top1_rate": 39.898,
+              "top3_capture_rate": 72.681
             },
             {
               "name": "LambdaRank",
-              "races": 810,
-              "top1_hits": 330,
-              "top3_hits": 610,
-              "top1_rate": 40.741,
-              "top3_capture_rate": 75.309
+              "races": 787,
+              "top1_hits": 319,
+              "top3_hits": 585,
+              "top1_rate": 40.534,
+              "top3_capture_rate": 74.333
             },
             {
               "name": "Market_favorite",
-              "races": 810,
-              "top1_hits": 410,
-              "top3_hits": 663,
-              "top1_rate": 50.617,
-              "top3_capture_rate": 81.852
+              "races": 787,
+              "top1_hits": 399,
+              "top3_hits": 642,
+              "top1_rate": 50.699,
+              "top3_capture_rate": 81.576
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 810,
-              "top1_hits": 328,
-              "top3_hits": 595,
-              "top1_rate": 40.494,
-              "top3_capture_rate": 73.457
+              "races": 787,
+              "top1_hits": 324,
+              "top3_hits": 569,
+              "top1_rate": 41.169,
+              "top3_capture_rate": 72.3
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 810,
-              "top1_hits": 330,
-              "top3_hits": 607,
-              "top1_rate": 40.741,
-              "top3_capture_rate": 74.938
+              "races": 787,
+              "top1_hits": 323,
+              "top3_hits": 594,
+              "top1_rate": 41.042,
+              "top3_capture_rate": 75.476
             }
           ]
         },
@@ -529,33 +524,33 @@
               "name": "LAB",
               "races": 939,
               "top1_hits": 282,
-              "top3_hits": 575,
+              "top3_hits": 574,
               "top1_rate": 30.032,
-              "top3_capture_rate": 61.235
+              "top3_capture_rate": 61.129
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 939,
               "top1_hits": 297,
-              "top3_hits": 619,
+              "top3_hits": 621,
               "top1_rate": 31.629,
-              "top3_capture_rate": 65.921
+              "top3_capture_rate": 66.134
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 939,
-              "top1_hits": 302,
-              "top3_hits": 624,
-              "top1_rate": 32.162,
-              "top3_capture_rate": 66.454
+              "top1_hits": 300,
+              "top3_hits": 615,
+              "top1_rate": 31.949,
+              "top3_capture_rate": 65.495
             },
             {
               "name": "LambdaRank",
               "races": 939,
-              "top1_hits": 322,
-              "top3_hits": 637,
-              "top1_rate": 34.292,
-              "top3_capture_rate": 67.838
+              "top1_hits": 321,
+              "top3_hits": 641,
+              "top1_rate": 34.185,
+              "top3_capture_rate": 68.264
             },
             {
               "name": "Market_favorite",
@@ -568,79 +563,79 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 939,
-              "top1_hits": 306,
-              "top3_hits": 649,
-              "top1_rate": 32.588,
-              "top3_capture_rate": 69.116
+              "top1_hits": 320,
+              "top3_hits": 646,
+              "top1_rate": 34.079,
+              "top3_capture_rate": 68.797
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 939,
-              "top1_hits": 318,
-              "top3_hits": 649,
-              "top1_rate": 33.866,
-              "top3_capture_rate": 69.116
+              "top1_hits": 324,
+              "top3_hits": 647,
+              "top1_rate": 34.505,
+              "top3_capture_rate": 68.903
             }
           ]
         },
         "園田": {
-          "races": 1227,
+          "races": 1191,
           "models": [
             {
               "name": "LAB",
-              "races": 1227,
-              "top1_hits": 388,
-              "top3_hits": 782,
-              "top1_rate": 31.622,
-              "top3_capture_rate": 63.733
+              "races": 1191,
+              "top1_hits": 377,
+              "top3_hits": 757,
+              "top1_rate": 31.654,
+              "top3_capture_rate": 63.56
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 1227,
-              "top1_hits": 417,
-              "top3_hits": 828,
-              "top1_rate": 33.985,
-              "top3_capture_rate": 67.482
+              "races": 1191,
+              "top1_hits": 403,
+              "top3_hits": 803,
+              "top1_rate": 33.837,
+              "top3_capture_rate": 67.422
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 1227,
-              "top1_hits": 407,
-              "top3_hits": 819,
-              "top1_rate": 33.17,
-              "top3_capture_rate": 66.748
+              "races": 1191,
+              "top1_hits": 397,
+              "top3_hits": 794,
+              "top1_rate": 33.333,
+              "top3_capture_rate": 66.667
             },
             {
               "name": "LambdaRank",
-              "races": 1227,
-              "top1_hits": 457,
-              "top3_hits": 861,
-              "top1_rate": 37.245,
-              "top3_capture_rate": 70.171
+              "races": 1191,
+              "top1_hits": 439,
+              "top3_hits": 830,
+              "top1_rate": 36.86,
+              "top3_capture_rate": 69.689
             },
             {
               "name": "Market_favorite",
-              "races": 1227,
-              "top1_hits": 582,
-              "top3_hits": 995,
-              "top1_rate": 47.433,
-              "top3_capture_rate": 81.092
+              "races": 1191,
+              "top1_hits": 564,
+              "top3_hits": 965,
+              "top1_rate": 47.355,
+              "top3_capture_rate": 81.024
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 1227,
-              "top1_hits": 426,
-              "top3_hits": 859,
-              "top1_rate": 34.719,
-              "top3_capture_rate": 70.008
+              "races": 1191,
+              "top1_hits": 425,
+              "top3_hits": 831,
+              "top1_rate": 35.684,
+              "top3_capture_rate": 69.773
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 1227,
-              "top1_hits": 461,
-              "top3_hits": 873,
-              "top1_rate": 37.571,
-              "top3_capture_rate": 71.149
+              "races": 1191,
+              "top1_hits": 440,
+              "top3_hits": 842,
+              "top1_rate": 36.944,
+              "top3_capture_rate": 70.697
             }
           ]
         },
@@ -658,26 +653,26 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 781,
-              "top1_hits": 276,
+              "top1_hits": 271,
               "top3_hits": 527,
-              "top1_rate": 35.339,
+              "top1_rate": 34.699,
               "top3_capture_rate": 67.478
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 781,
               "top1_hits": 271,
-              "top3_hits": 526,
+              "top3_hits": 527,
               "top1_rate": 34.699,
-              "top3_capture_rate": 67.35
+              "top3_capture_rate": 67.478
             },
             {
               "name": "LambdaRank",
               "races": 781,
-              "top1_hits": 278,
-              "top3_hits": 540,
-              "top1_rate": 35.595,
-              "top3_capture_rate": 69.142
+              "top1_hits": 282,
+              "top3_hits": 542,
+              "top1_rate": 36.108,
+              "top3_capture_rate": 69.398
             },
             {
               "name": "Market_favorite",
@@ -690,18 +685,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 781,
-              "top1_hits": 275,
-              "top3_hits": 525,
-              "top1_rate": 35.211,
-              "top3_capture_rate": 67.222
+              "top1_hits": 277,
+              "top3_hits": 522,
+              "top1_rate": 35.467,
+              "top3_capture_rate": 66.837
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 781,
-              "top1_hits": 276,
-              "top3_hits": 529,
-              "top1_rate": 35.339,
-              "top3_capture_rate": 67.734
+              "top1_hits": 280,
+              "top3_hits": 538,
+              "top1_rate": 35.851,
+              "top3_capture_rate": 68.886
             }
           ]
         },
@@ -719,18 +714,18 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 72,
-              "top1_hits": 28,
-              "top3_hits": 46,
-              "top1_rate": 38.889,
-              "top3_capture_rate": 63.889
+              "top1_hits": 27,
+              "top3_hits": 45,
+              "top1_rate": 37.5,
+              "top3_capture_rate": 62.5
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 72,
-              "top1_hits": 26,
-              "top3_hits": 44,
-              "top1_rate": 36.111,
-              "top3_capture_rate": 61.111
+              "top1_hits": 24,
+              "top3_hits": 45,
+              "top1_rate": 33.333,
+              "top3_capture_rate": 62.5
             },
             {
               "name": "LambdaRank",
@@ -751,18 +746,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 72,
-              "top1_hits": 27,
-              "top3_hits": 47,
-              "top1_rate": 37.5,
-              "top3_capture_rate": 65.278
+              "top1_hits": 25,
+              "top3_hits": 48,
+              "top1_rate": 34.722,
+              "top3_capture_rate": 66.667
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 72,
-              "top1_hits": 27,
-              "top3_hits": 48,
-              "top1_rate": 37.5,
-              "top3_capture_rate": 66.667
+              "top1_hits": 26,
+              "top3_hits": 52,
+              "top1_rate": 36.111,
+              "top3_capture_rate": 72.222
             }
           ]
         },
@@ -780,26 +775,26 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 528,
-              "top1_hits": 158,
-              "top3_hits": 334,
-              "top1_rate": 29.924,
-              "top3_capture_rate": 63.258
+              "top1_hits": 156,
+              "top3_hits": 337,
+              "top1_rate": 29.545,
+              "top3_capture_rate": 63.826
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 528,
-              "top1_hits": 155,
-              "top3_hits": 332,
-              "top1_rate": 29.356,
-              "top3_capture_rate": 62.879
+              "top1_hits": 151,
+              "top3_hits": 341,
+              "top1_rate": 28.598,
+              "top3_capture_rate": 64.583
             },
             {
               "name": "LambdaRank",
               "races": 528,
-              "top1_hits": 156,
-              "top3_hits": 322,
-              "top1_rate": 29.545,
-              "top3_capture_rate": 60.985
+              "top1_hits": 157,
+              "top3_hits": 330,
+              "top1_rate": 29.735,
+              "top3_capture_rate": 62.5
             },
             {
               "name": "Market_favorite",
@@ -812,79 +807,79 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 528,
-              "top1_hits": 168,
-              "top3_hits": 333,
-              "top1_rate": 31.818,
-              "top3_capture_rate": 63.068
+              "top1_hits": 161,
+              "top3_hits": 334,
+              "top1_rate": 30.492,
+              "top3_capture_rate": 63.258
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 528,
-              "top1_hits": 155,
-              "top3_hits": 323,
-              "top1_rate": 29.356,
-              "top3_capture_rate": 61.174
+              "top1_hits": 152,
+              "top3_hits": 327,
+              "top1_rate": 28.788,
+              "top3_capture_rate": 61.932
             }
           ]
         },
         "帯広ば": {
-          "races": 1219,
+          "races": 1171,
           "models": [
             {
               "name": "LAB",
-              "races": 1219,
-              "top1_hits": 257,
-              "top3_hits": 599,
-              "top1_rate": 21.083,
-              "top3_capture_rate": 49.139
+              "races": 1171,
+              "top1_hits": 249,
+              "top3_hits": 578,
+              "top1_rate": 21.264,
+              "top3_capture_rate": 49.36
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 1219,
-              "top1_hits": 247,
-              "top3_hits": 639,
-              "top1_rate": 20.263,
-              "top3_capture_rate": 52.42
+              "races": 1171,
+              "top1_hits": 250,
+              "top3_hits": 600,
+              "top1_rate": 21.349,
+              "top3_capture_rate": 51.238
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 1219,
-              "top1_hits": 247,
-              "top3_hits": 603,
-              "top1_rate": 20.263,
-              "top3_capture_rate": 49.467
+              "races": 1171,
+              "top1_hits": 256,
+              "top3_hits": 617,
+              "top1_rate": 21.862,
+              "top3_capture_rate": 52.69
             },
             {
               "name": "LambdaRank",
-              "races": 1219,
-              "top1_hits": 302,
-              "top3_hits": 670,
-              "top1_rate": 24.774,
-              "top3_capture_rate": 54.963
+              "races": 1171,
+              "top1_hits": 270,
+              "top3_hits": 635,
+              "top1_rate": 23.057,
+              "top3_capture_rate": 54.227
             },
             {
               "name": "Market_favorite",
-              "races": 1219,
-              "top1_hits": 440,
-              "top3_hits": 839,
-              "top1_rate": 36.095,
-              "top3_capture_rate": 68.827
+              "races": 1171,
+              "top1_hits": 427,
+              "top3_hits": 808,
+              "top1_rate": 36.465,
+              "top3_capture_rate": 69.001
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 1219,
-              "top1_hits": 292,
-              "top3_hits": 629,
-              "top1_rate": 23.954,
-              "top3_capture_rate": 51.6
+              "races": 1171,
+              "top1_hits": 268,
+              "top3_hits": 618,
+              "top1_rate": 22.886,
+              "top3_capture_rate": 52.775
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 1219,
-              "top1_hits": 288,
-              "top3_hits": 629,
-              "top1_rate": 23.626,
-              "top3_capture_rate": 51.6
+              "races": 1171,
+              "top1_hits": 266,
+              "top3_hits": 620,
+              "top1_rate": 22.716,
+              "top3_capture_rate": 52.946
             }
           ]
         },
@@ -902,26 +897,26 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 562,
-              "top1_hits": 165,
-              "top3_hits": 356,
-              "top1_rate": 29.359,
-              "top3_capture_rate": 63.345
+              "top1_hits": 164,
+              "top3_hits": 348,
+              "top1_rate": 29.181,
+              "top3_capture_rate": 61.922
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 562,
-              "top1_hits": 156,
-              "top3_hits": 348,
-              "top1_rate": 27.758,
-              "top3_capture_rate": 61.922
+              "top1_hits": 161,
+              "top3_hits": 343,
+              "top1_rate": 28.648,
+              "top3_capture_rate": 61.032
             },
             {
               "name": "LambdaRank",
               "races": 562,
-              "top1_hits": 168,
-              "top3_hits": 367,
-              "top1_rate": 29.893,
-              "top3_capture_rate": 65.302
+              "top1_hits": 169,
+              "top3_hits": 363,
+              "top1_rate": 30.071,
+              "top3_capture_rate": 64.591
             },
             {
               "name": "Market_favorite",
@@ -934,18 +929,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 562,
-              "top1_hits": 170,
-              "top3_hits": 352,
-              "top1_rate": 30.249,
-              "top3_capture_rate": 62.633
+              "top1_hits": 175,
+              "top3_hits": 357,
+              "top1_rate": 31.139,
+              "top3_capture_rate": 63.523
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 562,
-              "top1_hits": 167,
-              "top3_hits": 360,
-              "top1_rate": 29.715,
-              "top3_capture_rate": 64.057
+              "top1_hits": 170,
+              "top3_hits": 355,
+              "top1_rate": 30.249,
+              "top3_capture_rate": 63.167
             }
           ]
         },
@@ -963,26 +958,26 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 455,
-              "top1_hits": 145,
-              "top3_hits": 280,
-              "top1_rate": 31.868,
-              "top3_capture_rate": 61.538
+              "top1_hits": 144,
+              "top3_hits": 288,
+              "top1_rate": 31.648,
+              "top3_capture_rate": 63.297
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 455,
-              "top1_hits": 148,
-              "top3_hits": 278,
-              "top1_rate": 32.527,
-              "top3_capture_rate": 61.099
+              "top1_hits": 149,
+              "top3_hits": 280,
+              "top1_rate": 32.747,
+              "top3_capture_rate": 61.538
             },
             {
               "name": "LambdaRank",
               "races": 455,
               "top1_hits": 142,
-              "top3_hits": 277,
+              "top3_hits": 283,
               "top1_rate": 31.209,
-              "top3_capture_rate": 60.879
+              "top3_capture_rate": 62.198
             },
             {
               "name": "Market_favorite",
@@ -995,815 +990,815 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 455,
-              "top1_hits": 136,
-              "top3_hits": 276,
-              "top1_rate": 29.89,
-              "top3_capture_rate": 60.659
+              "top1_hits": 140,
+              "top3_hits": 272,
+              "top1_rate": 30.769,
+              "top3_capture_rate": 59.78
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 455,
-              "top1_hits": 138,
-              "top3_hits": 273,
-              "top1_rate": 30.33,
-              "top3_capture_rate": 60.0
+              "top1_hits": 137,
+              "top3_hits": 272,
+              "top1_rate": 30.11,
+              "top3_capture_rate": 59.78
             }
           ]
         },
         "盛岡": {
-          "races": 671,
+          "races": 635,
           "models": [
             {
               "name": "LAB",
-              "races": 671,
-              "top1_hits": 170,
-              "top3_hits": 363,
-              "top1_rate": 25.335,
-              "top3_capture_rate": 54.098
+              "races": 635,
+              "top1_hits": 161,
+              "top3_hits": 344,
+              "top1_rate": 25.354,
+              "top3_capture_rate": 54.173
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 671,
-              "top1_hits": 204,
-              "top3_hits": 415,
-              "top1_rate": 30.402,
-              "top3_capture_rate": 61.848
+              "races": 635,
+              "top1_hits": 191,
+              "top3_hits": 388,
+              "top1_rate": 30.079,
+              "top3_capture_rate": 61.102
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 671,
-              "top1_hits": 202,
-              "top3_hits": 414,
-              "top1_rate": 30.104,
-              "top3_capture_rate": 61.699
+              "races": 635,
+              "top1_hits": 188,
+              "top3_hits": 381,
+              "top1_rate": 29.606,
+              "top3_capture_rate": 60.0
             },
             {
               "name": "LambdaRank",
-              "races": 671,
-              "top1_hits": 201,
-              "top3_hits": 422,
-              "top1_rate": 29.955,
-              "top3_capture_rate": 62.891
+              "races": 635,
+              "top1_hits": 187,
+              "top3_hits": 390,
+              "top1_rate": 29.449,
+              "top3_capture_rate": 61.417
             },
             {
               "name": "Market_favorite",
-              "races": 671,
-              "top1_hits": 299,
-              "top3_hits": 492,
-              "top1_rate": 44.56,
-              "top3_capture_rate": 73.323
+              "races": 635,
+              "top1_hits": 285,
+              "top3_hits": 462,
+              "top1_rate": 44.882,
+              "top3_capture_rate": 72.756
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 671,
-              "top1_hits": 199,
-              "top3_hits": 412,
-              "top1_rate": 29.657,
-              "top3_capture_rate": 61.401
+              "races": 635,
+              "top1_hits": 192,
+              "top3_hits": 378,
+              "top1_rate": 30.236,
+              "top3_capture_rate": 59.528
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 671,
-              "top1_hits": 206,
-              "top3_hits": 409,
-              "top1_rate": 30.7,
-              "top3_capture_rate": 60.954
+              "races": 635,
+              "top1_hits": 195,
+              "top3_hits": 392,
+              "top1_rate": 30.709,
+              "top3_capture_rate": 61.732
             }
           ]
         },
         "笠松": {
-          "races": 736,
+          "races": 700,
           "models": [
             {
               "name": "LAB",
-              "races": 736,
-              "top1_hits": 218,
-              "top3_hits": 459,
-              "top1_rate": 29.62,
-              "top3_capture_rate": 62.364
+              "races": 700,
+              "top1_hits": 203,
+              "top3_hits": 429,
+              "top1_rate": 29.0,
+              "top3_capture_rate": 61.286
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 736,
-              "top1_hits": 249,
-              "top3_hits": 493,
-              "top1_rate": 33.832,
-              "top3_capture_rate": 66.984
+              "races": 700,
+              "top1_hits": 235,
+              "top3_hits": 468,
+              "top1_rate": 33.571,
+              "top3_capture_rate": 66.857
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 736,
-              "top1_hits": 255,
-              "top3_hits": 497,
-              "top1_rate": 34.647,
-              "top3_capture_rate": 67.527
+              "races": 700,
+              "top1_hits": 230,
+              "top3_hits": 465,
+              "top1_rate": 32.857,
+              "top3_capture_rate": 66.429
             },
             {
               "name": "LambdaRank",
-              "races": 736,
-              "top1_hits": 263,
-              "top3_hits": 517,
-              "top1_rate": 35.734,
-              "top3_capture_rate": 70.245
+              "races": 700,
+              "top1_hits": 240,
+              "top3_hits": 488,
+              "top1_rate": 34.286,
+              "top3_capture_rate": 69.714
             },
             {
               "name": "Market_favorite",
-              "races": 736,
-              "top1_hits": 319,
-              "top3_hits": 571,
-              "top1_rate": 43.342,
-              "top3_capture_rate": 77.582
+              "races": 700,
+              "top1_hits": 295,
+              "top3_hits": 541,
+              "top1_rate": 42.143,
+              "top3_capture_rate": 77.286
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 736,
-              "top1_hits": 250,
-              "top3_hits": 512,
-              "top1_rate": 33.967,
-              "top3_capture_rate": 69.565
+              "races": 700,
+              "top1_hits": 226,
+              "top3_hits": 486,
+              "top1_rate": 32.286,
+              "top3_capture_rate": 69.429
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 736,
-              "top1_hits": 241,
-              "top3_hits": 510,
-              "top1_rate": 32.745,
-              "top3_capture_rate": 69.293
+              "races": 700,
+              "top1_hits": 231,
+              "top3_hits": 489,
+              "top1_rate": 33.0,
+              "top3_capture_rate": 69.857
             }
           ]
         },
         "船橋": {
-          "races": 540,
+          "races": 480,
           "models": [
             {
               "name": "LAB",
-              "races": 540,
-              "top1_hits": 173,
-              "top3_hits": 319,
-              "top1_rate": 32.037,
-              "top3_capture_rate": 59.074
+              "races": 480,
+              "top1_hits": 159,
+              "top3_hits": 288,
+              "top1_rate": 33.125,
+              "top3_capture_rate": 60.0
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 540,
-              "top1_hits": 189,
-              "top3_hits": 358,
-              "top1_rate": 35.0,
-              "top3_capture_rate": 66.296
+              "races": 480,
+              "top1_hits": 177,
+              "top3_hits": 321,
+              "top1_rate": 36.875,
+              "top3_capture_rate": 66.875
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 540,
-              "top1_hits": 190,
-              "top3_hits": 348,
-              "top1_rate": 35.185,
-              "top3_capture_rate": 64.444
+              "races": 480,
+              "top1_hits": 170,
+              "top3_hits": 319,
+              "top1_rate": 35.417,
+              "top3_capture_rate": 66.458
             },
             {
               "name": "LambdaRank",
-              "races": 540,
-              "top1_hits": 196,
-              "top3_hits": 352,
-              "top1_rate": 36.296,
-              "top3_capture_rate": 65.185
+              "races": 480,
+              "top1_hits": 182,
+              "top3_hits": 327,
+              "top1_rate": 37.917,
+              "top3_capture_rate": 68.125
             },
             {
               "name": "Market_favorite",
-              "races": 540,
-              "top1_hits": 227,
-              "top3_hits": 396,
-              "top1_rate": 42.037,
-              "top3_capture_rate": 73.333
+              "races": 480,
+              "top1_hits": 204,
+              "top3_hits": 354,
+              "top1_rate": 42.5,
+              "top3_capture_rate": 73.75
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 540,
-              "top1_hits": 189,
-              "top3_hits": 360,
-              "top1_rate": 35.0,
-              "top3_capture_rate": 66.667
+              "races": 480,
+              "top1_hits": 167,
+              "top3_hits": 326,
+              "top1_rate": 34.792,
+              "top3_capture_rate": 67.917
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 540,
-              "top1_hits": 195,
-              "top3_hits": 355,
-              "top1_rate": 36.111,
-              "top3_capture_rate": 65.741
+              "races": 480,
+              "top1_hits": 171,
+              "top3_hits": 317,
+              "top1_rate": 35.625,
+              "top3_capture_rate": 66.042
             }
           ]
         },
         "金沢": {
-          "races": 844,
+          "races": 821,
           "models": [
             {
               "name": "LAB",
-              "races": 844,
-              "top1_hits": 288,
-              "top3_hits": 540,
-              "top1_rate": 34.123,
-              "top3_capture_rate": 63.981
+              "races": 821,
+              "top1_hits": 280,
+              "top3_hits": 526,
+              "top1_rate": 34.105,
+              "top3_capture_rate": 64.068
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 844,
-              "top1_hits": 338,
-              "top3_hits": 614,
-              "top1_rate": 40.047,
-              "top3_capture_rate": 72.749
+              "races": 821,
+              "top1_hits": 332,
+              "top3_hits": 605,
+              "top1_rate": 40.438,
+              "top3_capture_rate": 73.691
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 844,
-              "top1_hits": 344,
-              "top3_hits": 611,
-              "top1_rate": 40.758,
-              "top3_capture_rate": 72.393
+              "races": 821,
+              "top1_hits": 339,
+              "top3_hits": 600,
+              "top1_rate": 41.291,
+              "top3_capture_rate": 73.082
             },
             {
               "name": "LambdaRank",
-              "races": 844,
-              "top1_hits": 352,
-              "top3_hits": 623,
-              "top1_rate": 41.706,
-              "top3_capture_rate": 73.815
+              "races": 821,
+              "top1_hits": 342,
+              "top3_hits": 600,
+              "top1_rate": 41.657,
+              "top3_capture_rate": 73.082
             },
             {
               "name": "Market_favorite",
-              "races": 844,
-              "top1_hits": 442,
-              "top3_hits": 698,
-              "top1_rate": 52.37,
-              "top3_capture_rate": 82.701
+              "races": 821,
+              "top1_hits": 432,
+              "top3_hits": 680,
+              "top1_rate": 52.619,
+              "top3_capture_rate": 82.826
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 844,
-              "top1_hits": 334,
-              "top3_hits": 623,
-              "top1_rate": 39.573,
-              "top3_capture_rate": 73.815
+              "races": 821,
+              "top1_hits": 329,
+              "top3_hits": 610,
+              "top1_rate": 40.073,
+              "top3_capture_rate": 74.3
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 844,
-              "top1_hits": 341,
-              "top3_hits": 623,
-              "top1_rate": 40.403,
-              "top3_capture_rate": 73.815
+              "races": 821,
+              "top1_hits": 335,
+              "top3_hits": 609,
+              "top1_rate": 40.804,
+              "top3_capture_rate": 74.178
             }
           ]
         },
         "門別": {
-          "races": 977,
+          "races": 941,
           "models": [
             {
               "name": "LAB",
-              "races": 977,
-              "top1_hits": 288,
-              "top3_hits": 624,
-              "top1_rate": 29.478,
-              "top3_capture_rate": 63.869
+              "races": 941,
+              "top1_hits": 279,
+              "top3_hits": 602,
+              "top1_rate": 29.649,
+              "top3_capture_rate": 63.974
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 977,
-              "top1_hits": 297,
-              "top3_hits": 651,
-              "top1_rate": 30.399,
-              "top3_capture_rate": 66.633
+              "races": 941,
+              "top1_hits": 288,
+              "top3_hits": 630,
+              "top1_rate": 30.606,
+              "top3_capture_rate": 66.95
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 977,
+              "races": 941,
               "top1_hits": 297,
-              "top3_hits": 654,
-              "top1_rate": 30.399,
-              "top3_capture_rate": 66.94
+              "top3_hits": 636,
+              "top1_rate": 31.562,
+              "top3_capture_rate": 67.588
             },
             {
               "name": "LambdaRank",
-              "races": 977,
-              "top1_hits": 335,
-              "top3_hits": 674,
-              "top1_rate": 34.289,
-              "top3_capture_rate": 68.987
+              "races": 941,
+              "top1_hits": 315,
+              "top3_hits": 654,
+              "top1_rate": 33.475,
+              "top3_capture_rate": 69.501
             },
             {
               "name": "Market_favorite",
-              "races": 977,
-              "top1_hits": 415,
-              "top3_hits": 784,
-              "top1_rate": 42.477,
-              "top3_capture_rate": 80.246
+              "races": 941,
+              "top1_hits": 403,
+              "top3_hits": 757,
+              "top1_rate": 42.827,
+              "top3_capture_rate": 80.446
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 977,
-              "top1_hits": 311,
-              "top3_hits": 650,
-              "top1_rate": 31.832,
-              "top3_capture_rate": 66.53
+              "races": 941,
+              "top1_hits": 299,
+              "top3_hits": 642,
+              "top1_rate": 31.775,
+              "top3_capture_rate": 68.225
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 977,
-              "top1_hits": 326,
-              "top3_hits": 668,
-              "top1_rate": 33.367,
-              "top3_capture_rate": 68.373
+              "races": 941,
+              "top1_hits": 303,
+              "top3_hits": 637,
+              "top1_rate": 32.2,
+              "top3_capture_rate": 67.694
             }
           ]
         },
         "高知": {
-          "races": 730,
+          "races": 706,
           "models": [
             {
               "name": "LAB",
-              "races": 730,
-              "top1_hits": 250,
-              "top3_hits": 473,
-              "top1_rate": 34.247,
-              "top3_capture_rate": 64.795
+              "races": 706,
+              "top1_hits": 243,
+              "top3_hits": 456,
+              "top1_rate": 34.419,
+              "top3_capture_rate": 64.589
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 730,
-              "top1_hits": 273,
-              "top3_hits": 518,
-              "top1_rate": 37.397,
-              "top3_capture_rate": 70.959
+              "races": 706,
+              "top1_hits": 268,
+              "top3_hits": 492,
+              "top1_rate": 37.96,
+              "top3_capture_rate": 69.688
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 730,
-              "top1_hits": 264,
-              "top3_hits": 510,
-              "top1_rate": 36.164,
-              "top3_capture_rate": 69.863
+              "races": 706,
+              "top1_hits": 263,
+              "top3_hits": 494,
+              "top1_rate": 37.252,
+              "top3_capture_rate": 69.972
             },
             {
               "name": "LambdaRank",
-              "races": 730,
-              "top1_hits": 270,
-              "top3_hits": 531,
-              "top1_rate": 36.986,
-              "top3_capture_rate": 72.74
+              "races": 706,
+              "top1_hits": 261,
+              "top3_hits": 510,
+              "top1_rate": 36.969,
+              "top3_capture_rate": 72.238
             },
             {
               "name": "Market_favorite",
-              "races": 730,
-              "top1_hits": 331,
-              "top3_hits": 570,
-              "top1_rate": 45.342,
-              "top3_capture_rate": 78.082
+              "races": 706,
+              "top1_hits": 321,
+              "top3_hits": 550,
+              "top1_rate": 45.467,
+              "top3_capture_rate": 77.904
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 730,
-              "top1_hits": 273,
-              "top3_hits": 523,
-              "top1_rate": 37.397,
-              "top3_capture_rate": 71.644
+              "races": 706,
+              "top1_hits": 270,
+              "top3_hits": 511,
+              "top1_rate": 38.244,
+              "top3_capture_rate": 72.38
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 730,
-              "top1_hits": 285,
-              "top3_hits": 527,
-              "top1_rate": 39.041,
-              "top3_capture_rate": 72.192
+              "races": 706,
+              "top1_hits": 276,
+              "top3_hits": 512,
+              "top1_rate": 39.093,
+              "top3_capture_rate": 72.521
             }
           ]
         }
       },
       "distance_band": {
         "1200-1599m": {
-          "races": 7036,
+          "races": 6846,
           "models": [
             {
               "name": "LAB",
-              "races": 7036,
-              "top1_hits": 2247,
-              "top3_hits": 4397,
-              "top1_rate": 31.936,
-              "top3_capture_rate": 62.493
+              "races": 6846,
+              "top1_hits": 2190,
+              "top3_hits": 4276,
+              "top1_rate": 31.989,
+              "top3_capture_rate": 62.46
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 7036,
-              "top1_hits": 2466,
-              "top3_hits": 4771,
-              "top1_rate": 35.048,
-              "top3_capture_rate": 67.808
+              "races": 6846,
+              "top1_hits": 2399,
+              "top3_hits": 4639,
+              "top1_rate": 35.042,
+              "top3_capture_rate": 67.762
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 7036,
-              "top1_hits": 2446,
-              "top3_hits": 4759,
-              "top1_rate": 34.764,
-              "top3_capture_rate": 67.638
+              "races": 6846,
+              "top1_hits": 2373,
+              "top3_hits": 4631,
+              "top1_rate": 34.663,
+              "top3_capture_rate": 67.645
             },
             {
               "name": "LambdaRank",
-              "races": 7036,
-              "top1_hits": 2575,
-              "top3_hits": 4895,
-              "top1_rate": 36.597,
-              "top3_capture_rate": 69.571
+              "races": 6846,
+              "top1_hits": 2488,
+              "top3_hits": 4754,
+              "top1_rate": 36.342,
+              "top3_capture_rate": 69.442
             },
             {
               "name": "Market_favorite",
-              "races": 7036,
-              "top1_hits": 3272,
-              "top3_hits": 5517,
-              "top1_rate": 46.504,
-              "top3_capture_rate": 78.411
+              "races": 6846,
+              "top1_hits": 3184,
+              "top3_hits": 5365,
+              "top1_rate": 46.509,
+              "top3_capture_rate": 78.367
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 7036,
-              "top1_hits": 2515,
-              "top3_hits": 4848,
-              "top1_rate": 35.745,
-              "top3_capture_rate": 68.903
+              "races": 6846,
+              "top1_hits": 2438,
+              "top3_hits": 4709,
+              "top1_rate": 35.612,
+              "top3_capture_rate": 68.785
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 7036,
-              "top1_hits": 2546,
-              "top3_hits": 4885,
-              "top1_rate": 36.185,
-              "top3_capture_rate": 69.429
+              "races": 6846,
+              "top1_hits": 2480,
+              "top3_hits": 4762,
+              "top1_rate": 36.226,
+              "top3_capture_rate": 69.559
             }
           ]
         },
         "1600-1999m": {
-          "races": 1304,
+          "races": 1261,
           "models": [
             {
               "name": "LAB",
-              "races": 1304,
-              "top1_hits": 398,
-              "top3_hits": 794,
-              "top1_rate": 30.521,
-              "top3_capture_rate": 60.89
+              "races": 1261,
+              "top1_hits": 385,
+              "top3_hits": 769,
+              "top1_rate": 30.531,
+              "top3_capture_rate": 60.983
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 1304,
-              "top1_hits": 423,
-              "top3_hits": 873,
-              "top1_rate": 32.439,
-              "top3_capture_rate": 66.948
+              "races": 1261,
+              "top1_hits": 409,
+              "top3_hits": 844,
+              "top1_rate": 32.435,
+              "top3_capture_rate": 66.931
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 1304,
-              "top1_hits": 414,
-              "top3_hits": 857,
-              "top1_rate": 31.748,
-              "top3_capture_rate": 65.721
+              "races": 1261,
+              "top1_hits": 405,
+              "top3_hits": 832,
+              "top1_rate": 32.117,
+              "top3_capture_rate": 65.979
             },
             {
               "name": "LambdaRank",
-              "races": 1304,
-              "top1_hits": 436,
-              "top3_hits": 884,
-              "top1_rate": 33.436,
-              "top3_capture_rate": 67.791
+              "races": 1261,
+              "top1_hits": 424,
+              "top3_hits": 858,
+              "top1_rate": 33.624,
+              "top3_capture_rate": 68.041
             },
             {
               "name": "Market_favorite",
-              "races": 1304,
-              "top1_hits": 542,
-              "top3_hits": 976,
-              "top1_rate": 41.564,
-              "top3_capture_rate": 74.847
+              "races": 1261,
+              "top1_hits": 522,
+              "top3_hits": 945,
+              "top1_rate": 41.396,
+              "top3_capture_rate": 74.941
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 1304,
-              "top1_hits": 416,
-              "top3_hits": 878,
-              "top1_rate": 31.902,
-              "top3_capture_rate": 67.331
+              "races": 1261,
+              "top1_hits": 436,
+              "top3_hits": 861,
+              "top1_rate": 34.576,
+              "top3_capture_rate": 68.279
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 1304,
-              "top1_hits": 439,
-              "top3_hits": 870,
-              "top1_rate": 33.666,
-              "top3_capture_rate": 66.718
+              "races": 1261,
+              "top1_hits": 423,
+              "top3_hits": 852,
+              "top1_rate": 33.545,
+              "top3_capture_rate": 67.565
             }
           ]
         },
         "2000m+": {
-          "races": 225,
+          "races": 221,
           "models": [
             {
               "name": "LAB",
-              "races": 225,
-              "top1_hits": 57,
-              "top3_hits": 127,
-              "top1_rate": 25.333,
-              "top3_capture_rate": 56.444
+              "races": 221,
+              "top1_hits": 54,
+              "top3_hits": 123,
+              "top1_rate": 24.434,
+              "top3_capture_rate": 55.656
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 225,
-              "top1_hits": 69,
+              "races": 221,
+              "top1_hits": 65,
               "top3_hits": 136,
-              "top1_rate": 30.667,
-              "top3_capture_rate": 60.444
+              "top1_rate": 29.412,
+              "top3_capture_rate": 61.538
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 225,
-              "top1_hits": 71,
-              "top3_hits": 138,
-              "top1_rate": 31.556,
-              "top3_capture_rate": 61.333
+              "races": 221,
+              "top1_hits": 70,
+              "top3_hits": 132,
+              "top1_rate": 31.674,
+              "top3_capture_rate": 59.729
             },
             {
               "name": "LambdaRank",
-              "races": 225,
+              "races": 221,
               "top1_hits": 61,
-              "top3_hits": 135,
-              "top1_rate": 27.111,
-              "top3_capture_rate": 60.0
+              "top3_hits": 133,
+              "top1_rate": 27.602,
+              "top3_capture_rate": 60.181
             },
             {
               "name": "Market_favorite",
-              "races": 225,
-              "top1_hits": 88,
-              "top3_hits": 162,
-              "top1_rate": 39.111,
-              "top3_capture_rate": 72.0
+              "races": 221,
+              "top1_hits": 86,
+              "top3_hits": 159,
+              "top1_rate": 38.914,
+              "top3_capture_rate": 71.946
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 225,
-              "top1_hits": 67,
-              "top3_hits": 144,
-              "top1_rate": 29.778,
-              "top3_capture_rate": 64.0
+              "races": 221,
+              "top1_hits": 66,
+              "top3_hits": 142,
+              "top1_rate": 29.864,
+              "top3_capture_rate": 64.253
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 225,
-              "top1_hits": 62,
-              "top3_hits": 141,
-              "top1_rate": 27.556,
-              "top3_capture_rate": 62.667
+              "races": 221,
+              "top1_hits": 59,
+              "top3_hits": 144,
+              "top1_rate": 26.697,
+              "top3_capture_rate": 65.158
             }
           ]
         },
         "<1200m": {
-          "races": 2526,
+          "races": 2441,
           "models": [
             {
               "name": "LAB",
-              "races": 2526,
-              "top1_hits": 624,
-              "top3_hits": 1410,
-              "top1_rate": 24.703,
-              "top3_capture_rate": 55.819
+              "races": 2441,
+              "top1_hits": 611,
+              "top3_hits": 1363,
+              "top1_rate": 25.031,
+              "top3_capture_rate": 55.838
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 2526,
-              "top1_hits": 653,
-              "top3_hits": 1489,
-              "top1_rate": 25.851,
-              "top3_capture_rate": 58.947
+              "races": 2441,
+              "top1_hits": 646,
+              "top3_hits": 1419,
+              "top1_rate": 26.465,
+              "top3_capture_rate": 58.132
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 2526,
-              "top1_hits": 655,
-              "top3_hits": 1439,
-              "top1_rate": 25.93,
-              "top3_capture_rate": 56.968
+              "races": 2441,
+              "top1_hits": 662,
+              "top3_hits": 1434,
+              "top1_rate": 27.12,
+              "top3_capture_rate": 58.746
             },
             {
               "name": "LambdaRank",
-              "races": 2526,
-              "top1_hits": 726,
-              "top3_hits": 1534,
-              "top1_rate": 28.741,
-              "top3_capture_rate": 60.728
+              "races": 2441,
+              "top1_hits": 679,
+              "top3_hits": 1478,
+              "top1_rate": 27.816,
+              "top3_capture_rate": 60.549
             },
             {
               "name": "Market_favorite",
-              "races": 2526,
-              "top1_hits": 1033,
-              "top3_hits": 1906,
-              "top1_rate": 40.895,
-              "top3_capture_rate": 75.455
+              "races": 2441,
+              "top1_hits": 1008,
+              "top3_hits": 1843,
+              "top1_rate": 41.295,
+              "top3_capture_rate": 75.502
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 2526,
-              "top1_hits": 686,
-              "top3_hits": 1475,
-              "top1_rate": 27.158,
-              "top3_capture_rate": 58.393
+              "races": 2441,
+              "top1_hits": 658,
+              "top3_hits": 1438,
+              "top1_rate": 26.956,
+              "top3_capture_rate": 58.91
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 2526,
-              "top1_hits": 707,
-              "top3_hits": 1487,
-              "top1_rate": 27.989,
-              "top3_capture_rate": 58.868
+              "races": 2441,
+              "top1_hits": 667,
+              "top3_hits": 1445,
+              "top1_rate": 27.325,
+              "top3_capture_rate": 59.197
             }
           ]
         }
       },
       "field_size_band": {
         "13頭以上": {
-          "races": 580,
+          "races": 561,
           "models": [
             {
               "name": "LAB",
-              "races": 580,
-              "top1_hits": 173,
-              "top3_hits": 345,
-              "top1_rate": 29.828,
-              "top3_capture_rate": 59.483
+              "races": 561,
+              "top1_hits": 168,
+              "top3_hits": 334,
+              "top1_rate": 29.947,
+              "top3_capture_rate": 59.537
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 580,
-              "top1_hits": 184,
-              "top3_hits": 363,
-              "top1_rate": 31.724,
-              "top3_capture_rate": 62.586
+              "races": 561,
+              "top1_hits": 171,
+              "top3_hits": 347,
+              "top1_rate": 30.481,
+              "top3_capture_rate": 61.854
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 580,
-              "top1_hits": 180,
-              "top3_hits": 359,
-              "top1_rate": 31.034,
-              "top3_capture_rate": 61.897
+              "races": 561,
+              "top1_hits": 171,
+              "top3_hits": 350,
+              "top1_rate": 30.481,
+              "top3_capture_rate": 62.389
             },
             {
               "name": "LambdaRank",
-              "races": 580,
-              "top1_hits": 186,
-              "top3_hits": 380,
-              "top1_rate": 32.069,
-              "top3_capture_rate": 65.517
+              "races": 561,
+              "top1_hits": 187,
+              "top3_hits": 365,
+              "top1_rate": 33.333,
+              "top3_capture_rate": 65.062
             },
             {
               "name": "Market_favorite",
-              "races": 580,
-              "top1_hits": 249,
-              "top3_hits": 420,
-              "top1_rate": 42.931,
-              "top3_capture_rate": 72.414
+              "races": 561,
+              "top1_hits": 241,
+              "top3_hits": 405,
+              "top1_rate": 42.959,
+              "top3_capture_rate": 72.193
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 580,
-              "top1_hits": 184,
-              "top3_hits": 362,
-              "top1_rate": 31.724,
-              "top3_capture_rate": 62.414
+              "races": 561,
+              "top1_hits": 189,
+              "top3_hits": 357,
+              "top1_rate": 33.69,
+              "top3_capture_rate": 63.636
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 580,
-              "top1_hits": 193,
-              "top3_hits": 363,
-              "top1_rate": 33.276,
-              "top3_capture_rate": 62.586
+              "races": 561,
+              "top1_hits": 184,
+              "top3_hits": 360,
+              "top1_rate": 32.799,
+              "top3_capture_rate": 64.171
             }
           ]
         },
         "8頭以下": {
-          "races": 1820,
+          "races": 1794,
           "models": [
             {
               "name": "LAB",
-              "races": 1820,
-              "top1_hits": 619,
-              "top3_hits": 1301,
-              "top1_rate": 34.011,
-              "top3_capture_rate": 71.484
+              "races": 1794,
+              "top1_hits": 612,
+              "top3_hits": 1284,
+              "top1_rate": 34.114,
+              "top3_capture_rate": 71.572
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 1820,
-              "top1_hits": 665,
-              "top3_hits": 1334,
-              "top1_rate": 36.538,
-              "top3_capture_rate": 73.297
+              "races": 1794,
+              "top1_hits": 660,
+              "top3_hits": 1318,
+              "top1_rate": 36.789,
+              "top3_capture_rate": 73.467
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 1820,
-              "top1_hits": 660,
-              "top3_hits": 1315,
-              "top1_rate": 36.264,
-              "top3_capture_rate": 72.253
+              "races": 1794,
+              "top1_hits": 661,
+              "top3_hits": 1301,
+              "top1_rate": 36.845,
+              "top3_capture_rate": 72.52
             },
             {
               "name": "LambdaRank",
-              "races": 1820,
-              "top1_hits": 693,
-              "top3_hits": 1379,
-              "top1_rate": 38.077,
-              "top3_capture_rate": 75.769
+              "races": 1794,
+              "top1_hits": 686,
+              "top3_hits": 1352,
+              "top1_rate": 38.239,
+              "top3_capture_rate": 75.362
             },
             {
               "name": "Market_favorite",
-              "races": 1820,
-              "top1_hits": 874,
-              "top3_hits": 1517,
-              "top1_rate": 48.022,
-              "top3_capture_rate": 83.352
+              "races": 1794,
+              "top1_hits": 863,
+              "top3_hits": 1497,
+              "top1_rate": 48.105,
+              "top3_capture_rate": 83.445
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 1820,
-              "top1_hits": 662,
-              "top3_hits": 1346,
-              "top1_rate": 36.374,
-              "top3_capture_rate": 73.956
+              "races": 1794,
+              "top1_hits": 653,
+              "top3_hits": 1333,
+              "top1_rate": 36.399,
+              "top3_capture_rate": 74.303
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 1820,
-              "top1_hits": 664,
-              "top3_hits": 1346,
-              "top1_rate": 36.484,
-              "top3_capture_rate": 73.956
+              "races": 1794,
+              "top1_hits": 657,
+              "top3_hits": 1323,
+              "top1_rate": 36.622,
+              "top3_capture_rate": 73.746
             }
           ]
         },
         "9-12頭": {
-          "races": 8691,
+          "races": 8414,
           "models": [
             {
               "name": "LAB",
-              "races": 8691,
-              "top1_hits": 2534,
-              "top3_hits": 5082,
-              "top1_rate": 29.157,
-              "top3_capture_rate": 58.474
+              "races": 8414,
+              "top1_hits": 2460,
+              "top3_hits": 4913,
+              "top1_rate": 29.237,
+              "top3_capture_rate": 58.391
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 8691,
-              "top1_hits": 2762,
-              "top3_hits": 5572,
-              "top1_rate": 31.78,
-              "top3_capture_rate": 64.112
+              "races": 8414,
+              "top1_hits": 2688,
+              "top3_hits": 5373,
+              "top1_rate": 31.947,
+              "top3_capture_rate": 63.858
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 8691,
-              "top1_hits": 2746,
-              "top3_hits": 5519,
-              "top1_rate": 31.596,
-              "top3_capture_rate": 63.502
+              "races": 8414,
+              "top1_hits": 2678,
+              "top3_hits": 5378,
+              "top1_rate": 31.828,
+              "top3_capture_rate": 63.917
             },
             {
               "name": "LambdaRank",
-              "races": 8691,
-              "top1_hits": 2919,
-              "top3_hits": 5689,
-              "top1_rate": 33.586,
-              "top3_capture_rate": 65.459
+              "races": 8414,
+              "top1_hits": 2779,
+              "top3_hits": 5506,
+              "top1_rate": 33.028,
+              "top3_capture_rate": 65.439
             },
             {
               "name": "Market_favorite",
-              "races": 8691,
-              "top1_hits": 3812,
-              "top3_hits": 6624,
-              "top1_rate": 43.861,
-              "top3_capture_rate": 76.217
+              "races": 8414,
+              "top1_hits": 3696,
+              "top3_hits": 6410,
+              "top1_rate": 43.927,
+              "top3_capture_rate": 76.183
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 8691,
-              "top1_hits": 2838,
-              "top3_hits": 5637,
-              "top1_rate": 32.654,
-              "top3_capture_rate": 64.86
+              "races": 8414,
+              "top1_hits": 2756,
+              "top3_hits": 5460,
+              "top1_rate": 32.755,
+              "top3_capture_rate": 64.892
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 8691,
-              "top1_hits": 2897,
-              "top3_hits": 5674,
-              "top1_rate": 33.333,
-              "top3_capture_rate": 65.286
+              "races": 8414,
+              "top1_hits": 2788,
+              "top3_hits": 5520,
+              "top1_rate": 33.135,
+              "top3_capture_rate": 65.605
             }
           ]
         }
@@ -1839,10 +1834,10 @@
             {
               "name": "LambdaRank",
               "races": 18,
-              "top1_hits": 3,
-              "top3_hits": 12,
-              "top1_rate": 16.667,
-              "top3_capture_rate": 66.667
+              "top1_hits": 4,
+              "top3_hits": 10,
+              "top1_rate": 22.222,
+              "top3_capture_rate": 55.556
             },
             {
               "name": "Market_favorite",
@@ -1855,18 +1850,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 18,
-              "top1_hits": 2,
+              "top1_hits": 3,
               "top3_hits": 12,
-              "top1_rate": 11.111,
+              "top1_rate": 16.667,
               "top3_capture_rate": 66.667
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 18,
-              "top1_hits": 2,
-              "top3_hits": 10,
-              "top1_rate": 11.111,
-              "top3_capture_rate": 55.556
+              "top1_hits": 5,
+              "top3_hits": 11,
+              "top1_rate": 27.778,
+              "top3_capture_rate": 61.111
             }
           ]
         },
@@ -1884,26 +1879,26 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 60,
-              "top1_hits": 11,
+              "top1_hits": 12,
               "top3_hits": 31,
-              "top1_rate": 18.333,
+              "top1_rate": 20.0,
               "top3_capture_rate": 51.667
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 60,
-              "top1_hits": 17,
-              "top3_hits": 32,
-              "top1_rate": 28.333,
-              "top3_capture_rate": 53.333
+              "top1_hits": 16,
+              "top3_hits": 36,
+              "top1_rate": 26.667,
+              "top3_capture_rate": 60.0
             },
             {
               "name": "LambdaRank",
               "races": 60,
               "top1_hits": 13,
-              "top3_hits": 36,
+              "top3_hits": 37,
               "top1_rate": 21.667,
-              "top3_capture_rate": 60.0
+              "top3_capture_rate": 61.667
             },
             {
               "name": "Market_favorite",
@@ -1916,18 +1911,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 60,
-              "top1_hits": 13,
-              "top3_hits": 34,
-              "top1_rate": 21.667,
-              "top3_capture_rate": 56.667
+              "top1_hits": 10,
+              "top3_hits": 33,
+              "top1_rate": 16.667,
+              "top3_capture_rate": 55.0
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 60,
-              "top1_hits": 13,
-              "top3_hits": 32,
-              "top1_rate": 21.667,
-              "top3_capture_rate": 53.333
+              "top1_hits": 10,
+              "top3_hits": 37,
+              "top1_rate": 16.667,
+              "top3_capture_rate": 61.667
             }
           ]
         },
@@ -1945,26 +1940,26 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 78,
-              "top1_hits": 18,
-              "top3_hits": 41,
-              "top1_rate": 23.077,
-              "top3_capture_rate": 52.564
+              "top1_hits": 20,
+              "top3_hits": 38,
+              "top1_rate": 25.641,
+              "top3_capture_rate": 48.718
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 78,
-              "top1_hits": 18,
-              "top3_hits": 35,
-              "top1_rate": 23.077,
-              "top3_capture_rate": 44.872
+              "top1_hits": 20,
+              "top3_hits": 37,
+              "top1_rate": 25.641,
+              "top3_capture_rate": 47.436
             },
             {
               "name": "LambdaRank",
               "races": 78,
-              "top1_hits": 23,
-              "top3_hits": 41,
-              "top1_rate": 29.487,
-              "top3_capture_rate": 52.564
+              "top1_hits": 20,
+              "top3_hits": 40,
+              "top1_rate": 25.641,
+              "top3_capture_rate": 51.282
             },
             {
               "name": "Market_favorite",
@@ -1977,18 +1972,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 78,
-              "top1_hits": 21,
+              "top1_hits": 18,
               "top3_hits": 43,
-              "top1_rate": 26.923,
+              "top1_rate": 23.077,
               "top3_capture_rate": 55.128
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 78,
-              "top1_hits": 22,
-              "top3_hits": 41,
-              "top1_rate": 28.205,
-              "top3_capture_rate": 52.564
+              "top1_hits": 21,
+              "top3_hits": 42,
+              "top1_rate": 26.923,
+              "top3_capture_rate": 53.846
             }
           ]
         },
@@ -2007,25 +2002,25 @@
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 68,
               "top1_hits": 15,
-              "top3_hits": 41,
+              "top3_hits": 40,
               "top1_rate": 22.059,
-              "top3_capture_rate": 60.294
+              "top3_capture_rate": 58.824
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 68,
-              "top1_hits": 14,
-              "top3_hits": 39,
-              "top1_rate": 20.588,
-              "top3_capture_rate": 57.353
+              "top1_hits": 15,
+              "top3_hits": 44,
+              "top1_rate": 22.059,
+              "top3_capture_rate": 64.706
             },
             {
               "name": "LambdaRank",
               "races": 68,
-              "top1_hits": 24,
-              "top3_hits": 45,
-              "top1_rate": 35.294,
-              "top3_capture_rate": 66.176
+              "top1_hits": 23,
+              "top3_hits": 47,
+              "top1_rate": 33.824,
+              "top3_capture_rate": 69.118
             },
             {
               "name": "Market_favorite",
@@ -2038,18 +2033,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 68,
-              "top1_hits": 20,
-              "top3_hits": 46,
-              "top1_rate": 29.412,
-              "top3_capture_rate": 67.647
+              "top1_hits": 23,
+              "top3_hits": 47,
+              "top1_rate": 33.824,
+              "top3_capture_rate": 69.118
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 68,
-              "top1_hits": 22,
-              "top3_hits": 49,
-              "top1_rate": 32.353,
-              "top3_capture_rate": 72.059
+              "top1_hits": 19,
+              "top3_hits": 47,
+              "top1_rate": 27.941,
+              "top3_capture_rate": 69.118
             }
           ]
         },
@@ -2067,26 +2062,26 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 68,
-              "top1_hits": 14,
+              "top1_hits": 17,
               "top3_hits": 32,
-              "top1_rate": 20.588,
+              "top1_rate": 25.0,
               "top3_capture_rate": 47.059
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 68,
-              "top1_hits": 15,
-              "top3_hits": 34,
-              "top1_rate": 22.059,
-              "top3_capture_rate": 50.0
+              "top1_hits": 16,
+              "top3_hits": 33,
+              "top1_rate": 23.529,
+              "top3_capture_rate": 48.529
             },
             {
               "name": "LambdaRank",
               "races": 68,
-              "top1_hits": 16,
-              "top3_hits": 37,
-              "top1_rate": 23.529,
-              "top3_capture_rate": 54.412
+              "top1_hits": 14,
+              "top3_hits": 35,
+              "top1_rate": 20.588,
+              "top3_capture_rate": 51.471
             },
             {
               "name": "Market_favorite",
@@ -2099,18 +2094,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 68,
-              "top1_hits": 20,
-              "top3_hits": 37,
-              "top1_rate": 29.412,
-              "top3_capture_rate": 54.412
+              "top1_hits": 18,
+              "top3_hits": 34,
+              "top1_rate": 26.471,
+              "top3_capture_rate": 50.0
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 68,
-              "top1_hits": 16,
-              "top3_hits": 33,
-              "top1_rate": 23.529,
-              "top3_capture_rate": 48.529
+              "top1_hits": 15,
+              "top3_hits": 31,
+              "top1_rate": 22.059,
+              "top3_capture_rate": 45.588
             }
           ]
         },
@@ -2128,26 +2123,26 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 64,
-              "top1_hits": 8,
-              "top3_hits": 28,
-              "top1_rate": 12.5,
-              "top3_capture_rate": 43.75
+              "top1_hits": 10,
+              "top3_hits": 26,
+              "top1_rate": 15.625,
+              "top3_capture_rate": 40.625
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 64,
-              "top1_hits": 8,
-              "top3_hits": 26,
-              "top1_rate": 12.5,
-              "top3_capture_rate": 40.625
+              "top1_hits": 11,
+              "top3_hits": 28,
+              "top1_rate": 17.188,
+              "top3_capture_rate": 43.75
             },
             {
               "name": "LambdaRank",
               "races": 64,
-              "top1_hits": 10,
-              "top3_hits": 24,
-              "top1_rate": 15.625,
-              "top3_capture_rate": 37.5
+              "top1_hits": 9,
+              "top3_hits": 25,
+              "top1_rate": 14.062,
+              "top3_capture_rate": 39.062
             },
             {
               "name": "Market_favorite",
@@ -2160,18 +2155,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 64,
-              "top1_hits": 14,
-              "top3_hits": 22,
-              "top1_rate": 21.875,
-              "top3_capture_rate": 34.375
+              "top1_hits": 15,
+              "top3_hits": 26,
+              "top1_rate": 23.438,
+              "top3_capture_rate": 40.625
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 64,
-              "top1_hits": 17,
-              "top3_hits": 23,
-              "top1_rate": 26.562,
-              "top3_capture_rate": 35.938
+              "top1_hits": 16,
+              "top3_hits": 24,
+              "top1_rate": 25.0,
+              "top3_capture_rate": 37.5
             }
           ]
         },
@@ -2189,26 +2184,26 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 60,
-              "top1_hits": 12,
-              "top3_hits": 35,
-              "top1_rate": 20.0,
-              "top3_capture_rate": 58.333
+              "top1_hits": 13,
+              "top3_hits": 34,
+              "top1_rate": 21.667,
+              "top3_capture_rate": 56.667
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 60,
-              "top1_hits": 14,
-              "top3_hits": 31,
-              "top1_rate": 23.333,
-              "top3_capture_rate": 51.667
+              "top1_hits": 15,
+              "top3_hits": 34,
+              "top1_rate": 25.0,
+              "top3_capture_rate": 56.667
             },
             {
               "name": "LambdaRank",
               "races": 60,
               "top1_hits": 16,
-              "top3_hits": 42,
+              "top3_hits": 33,
               "top1_rate": 26.667,
-              "top3_capture_rate": 70.0
+              "top3_capture_rate": 55.0
             },
             {
               "name": "Market_favorite",
@@ -2221,18 +2216,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 60,
-              "top1_hits": 12,
-              "top3_hits": 31,
-              "top1_rate": 20.0,
-              "top3_capture_rate": 51.667
+              "top1_hits": 14,
+              "top3_hits": 33,
+              "top1_rate": 23.333,
+              "top3_capture_rate": 55.0
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 60,
               "top1_hits": 17,
-              "top3_hits": 35,
+              "top3_hits": 34,
               "top1_rate": 28.333,
-              "top3_capture_rate": 58.333
+              "top3_capture_rate": 56.667
             }
           ]
         },
@@ -2250,25 +2245,25 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 72,
-              "top1_hits": 15,
+              "top1_hits": 13,
               "top3_hits": 37,
-              "top1_rate": 20.833,
+              "top1_rate": 18.056,
               "top3_capture_rate": 51.389
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 72,
-              "top1_hits": 18,
-              "top3_hits": 33,
-              "top1_rate": 25.0,
-              "top3_capture_rate": 45.833
+              "top1_hits": 17,
+              "top3_hits": 38,
+              "top1_rate": 23.611,
+              "top3_capture_rate": 52.778
             },
             {
               "name": "LambdaRank",
               "races": 72,
-              "top1_hits": 16,
+              "top1_hits": 15,
               "top3_hits": 38,
-              "top1_rate": 22.222,
+              "top1_rate": 20.833,
               "top3_capture_rate": 52.778
             },
             {
@@ -2283,17 +2278,17 @@
               "name": "independent_raw_CatBoost",
               "races": 72,
               "top1_hits": 17,
-              "top3_hits": 35,
+              "top3_hits": 37,
               "top1_rate": 23.611,
-              "top3_capture_rate": 48.611
+              "top3_capture_rate": 51.389
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 72,
-              "top1_hits": 14,
-              "top3_hits": 38,
-              "top1_rate": 19.444,
-              "top3_capture_rate": 52.778
+              "top1_hits": 11,
+              "top3_hits": 34,
+              "top1_rate": 15.278,
+              "top3_capture_rate": 47.222
             }
           ]
         },
@@ -2312,25 +2307,25 @@
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 46,
               "top1_hits": 5,
-              "top3_hits": 25,
+              "top3_hits": 23,
               "top1_rate": 10.87,
-              "top3_capture_rate": 54.348
+              "top3_capture_rate": 50.0
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 46,
-              "top1_hits": 4,
-              "top3_hits": 22,
-              "top1_rate": 8.696,
-              "top3_capture_rate": 47.826
+              "top1_hits": 5,
+              "top3_hits": 24,
+              "top1_rate": 10.87,
+              "top3_capture_rate": 52.174
             },
             {
               "name": "LambdaRank",
               "races": 46,
               "top1_hits": 10,
-              "top3_hits": 23,
+              "top3_hits": 24,
               "top1_rate": 21.739,
-              "top3_capture_rate": 50.0
+              "top3_capture_rate": 52.174
             },
             {
               "name": "Market_favorite",
@@ -2343,18 +2338,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 46,
-              "top1_hits": 8,
-              "top3_hits": 19,
-              "top1_rate": 17.391,
-              "top3_capture_rate": 41.304
+              "top1_hits": 7,
+              "top3_hits": 20,
+              "top1_rate": 15.217,
+              "top3_capture_rate": 43.478
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 46,
-              "top1_hits": 9,
-              "top3_hits": 21,
-              "top1_rate": 19.565,
-              "top3_capture_rate": 45.652
+              "top1_hits": 7,
+              "top3_hits": 24,
+              "top1_rate": 15.217,
+              "top3_capture_rate": 52.174
             }
           ]
         },
@@ -2372,18 +2367,18 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 48,
-              "top1_hits": 12,
-              "top3_hits": 23,
-              "top1_rate": 25.0,
-              "top3_capture_rate": 47.917
+              "top1_hits": 11,
+              "top3_hits": 25,
+              "top1_rate": 22.917,
+              "top3_capture_rate": 52.083
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 48,
-              "top1_hits": 10,
-              "top3_hits": 26,
-              "top1_rate": 20.833,
-              "top3_capture_rate": 54.167
+              "top1_hits": 9,
+              "top3_hits": 21,
+              "top1_rate": 18.75,
+              "top3_capture_rate": 43.75
             },
             {
               "name": "LambdaRank",
@@ -2405,17 +2400,17 @@
               "name": "independent_raw_CatBoost",
               "races": 48,
               "top1_hits": 13,
-              "top3_hits": 27,
+              "top3_hits": 25,
               "top1_rate": 27.083,
-              "top3_capture_rate": 56.25
+              "top3_capture_rate": 52.083
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 48,
-              "top1_hits": 9,
-              "top3_hits": 25,
-              "top1_rate": 18.75,
-              "top3_capture_rate": 52.083
+              "top1_hits": 11,
+              "top3_hits": 28,
+              "top1_rate": 22.917,
+              "top3_capture_rate": 58.333
             }
           ]
         },
@@ -2433,10 +2428,10 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 40,
-              "top1_hits": 9,
-              "top3_hits": 30,
-              "top1_rate": 22.5,
-              "top3_capture_rate": 75.0
+              "top1_hits": 11,
+              "top3_hits": 28,
+              "top1_rate": 27.5,
+              "top3_capture_rate": 70.0
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
@@ -2449,10 +2444,10 @@
             {
               "name": "LambdaRank",
               "races": 40,
-              "top1_hits": 12,
-              "top3_hits": 28,
-              "top1_rate": 30.0,
-              "top3_capture_rate": 70.0
+              "top1_hits": 13,
+              "top3_hits": 30,
+              "top1_rate": 32.5,
+              "top3_capture_rate": 75.0
             },
             {
               "name": "Market_favorite",
@@ -2465,79 +2460,79 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 40,
-              "top1_hits": 8,
-              "top3_hits": 24,
-              "top1_rate": 20.0,
-              "top3_capture_rate": 60.0
+              "top1_hits": 9,
+              "top3_hits": 28,
+              "top1_rate": 22.5,
+              "top3_capture_rate": 70.0
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 40,
-              "top1_hits": 8,
+              "top1_hits": 11,
               "top3_hits": 28,
-              "top1_rate": 20.0,
+              "top1_rate": 27.5,
               "top3_capture_rate": 70.0
             }
           ]
         },
         "1.6": {
-          "races": 69,
+          "races": 45,
           "models": [
             {
               "name": "LAB",
-              "races": 69,
-              "top1_hits": 20,
-              "top3_hits": 38,
-              "top1_rate": 28.986,
-              "top3_capture_rate": 55.072
+              "races": 45,
+              "top1_hits": 14,
+              "top3_hits": 28,
+              "top1_rate": 31.111,
+              "top3_capture_rate": 62.222
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 69,
-              "top1_hits": 20,
-              "top3_hits": 39,
-              "top1_rate": 28.986,
-              "top3_capture_rate": 56.522
+              "races": 45,
+              "top1_hits": 15,
+              "top3_hits": 26,
+              "top1_rate": 33.333,
+              "top3_capture_rate": 57.778
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 69,
-              "top1_hits": 17,
-              "top3_hits": 34,
-              "top1_rate": 24.638,
-              "top3_capture_rate": 49.275
+              "races": 45,
+              "top1_hits": 14,
+              "top3_hits": 26,
+              "top1_rate": 31.111,
+              "top3_capture_rate": 57.778
             },
             {
               "name": "LambdaRank",
-              "races": 69,
-              "top1_hits": 18,
-              "top3_hits": 40,
-              "top1_rate": 26.087,
-              "top3_capture_rate": 57.971
+              "races": 45,
+              "top1_hits": 13,
+              "top3_hits": 29,
+              "top1_rate": 28.889,
+              "top3_capture_rate": 64.444
             },
             {
               "name": "Market_favorite",
-              "races": 69,
-              "top1_hits": 24,
-              "top3_hits": 46,
-              "top1_rate": 34.783,
-              "top3_capture_rate": 66.667
+              "races": 45,
+              "top1_hits": 16,
+              "top3_hits": 32,
+              "top1_rate": 35.556,
+              "top3_capture_rate": 71.111
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 69,
-              "top1_hits": 16,
-              "top3_hits": 37,
-              "top1_rate": 23.188,
-              "top3_capture_rate": 53.623
+              "races": 45,
+              "top1_hits": 11,
+              "top3_hits": 28,
+              "top1_rate": 24.444,
+              "top3_capture_rate": 62.222
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 69,
-              "top1_hits": 17,
-              "top3_hits": 36,
-              "top1_rate": 24.638,
-              "top3_capture_rate": 52.174
+              "races": 45,
+              "top1_hits": 12,
+              "top3_hits": 29,
+              "top1_rate": 26.667,
+              "top3_capture_rate": 64.444
             }
           ]
         },
@@ -2555,26 +2550,26 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 46,
+              "top1_hits": 4,
+              "top3_hits": 22,
+              "top1_rate": 8.696,
+              "top3_capture_rate": 47.826
+            },
+            {
+              "name": "LAB_feature_enhanced_LightGBM",
+              "races": 46,
               "top1_hits": 5,
               "top3_hits": 23,
               "top1_rate": 10.87,
               "top3_capture_rate": 50.0
             },
             {
-              "name": "LAB_feature_enhanced_LightGBM",
-              "races": 46,
-              "top1_hits": 5,
-              "top3_hits": 21,
-              "top1_rate": 10.87,
-              "top3_capture_rate": 45.652
-            },
-            {
               "name": "LambdaRank",
               "races": 46,
-              "top1_hits": 5,
-              "top3_hits": 19,
-              "top1_rate": 10.87,
-              "top3_capture_rate": 41.304
+              "top1_hits": 6,
+              "top3_hits": 18,
+              "top1_rate": 13.043,
+              "top3_capture_rate": 39.13
             },
             {
               "name": "Market_favorite",
@@ -2587,18 +2582,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 46,
-              "top1_hits": 7,
-              "top3_hits": 15,
-              "top1_rate": 15.217,
-              "top3_capture_rate": 32.609
+              "top1_hits": 8,
+              "top3_hits": 21,
+              "top1_rate": 17.391,
+              "top3_capture_rate": 45.652
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 46,
               "top1_hits": 6,
-              "top3_hits": 16,
+              "top3_hits": 17,
               "top1_rate": 13.043,
-              "top3_capture_rate": 34.783
+              "top3_capture_rate": 36.957
             }
           ]
         },
@@ -2617,25 +2612,25 @@
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 42,
               "top1_hits": 11,
-              "top3_hits": 22,
+              "top3_hits": 23,
               "top1_rate": 26.19,
-              "top3_capture_rate": 52.381
+              "top3_capture_rate": 54.762
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 42,
               "top1_hits": 11,
-              "top3_hits": 24,
+              "top3_hits": 25,
               "top1_rate": 26.19,
-              "top3_capture_rate": 57.143
+              "top3_capture_rate": 59.524
             },
             {
               "name": "LambdaRank",
               "races": 42,
-              "top1_hits": 10,
-              "top3_hits": 20,
-              "top1_rate": 23.81,
-              "top3_capture_rate": 47.619
+              "top1_hits": 8,
+              "top3_hits": 22,
+              "top1_rate": 19.048,
+              "top3_capture_rate": 52.381
             },
             {
               "name": "Market_favorite",
@@ -2648,10 +2643,10 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 42,
-              "top1_hits": 8,
-              "top3_hits": 20,
-              "top1_rate": 19.048,
-              "top3_capture_rate": 47.619
+              "top1_hits": 9,
+              "top3_hits": 19,
+              "top1_rate": 21.429,
+              "top3_capture_rate": 45.238
             },
             {
               "name": "independent_raw_LightGBM",
@@ -2678,25 +2673,25 @@
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 26,
               "top1_hits": 7,
-              "top3_hits": 14,
+              "top3_hits": 13,
               "top1_rate": 26.923,
-              "top3_capture_rate": 53.846
+              "top3_capture_rate": 50.0
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 26,
-              "top1_hits": 7,
-              "top3_hits": 15,
-              "top1_rate": 26.923,
-              "top3_capture_rate": 57.692
+              "top1_hits": 8,
+              "top3_hits": 14,
+              "top1_rate": 30.769,
+              "top3_capture_rate": 53.846
             },
             {
               "name": "LambdaRank",
               "races": 26,
               "top1_hits": 6,
-              "top3_hits": 15,
+              "top3_hits": 13,
               "top1_rate": 23.077,
-              "top3_capture_rate": 57.692
+              "top3_capture_rate": 50.0
             },
             {
               "name": "Market_favorite",
@@ -2709,18 +2704,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 26,
-              "top1_hits": 8,
-              "top3_hits": 12,
-              "top1_rate": 30.769,
-              "top3_capture_rate": 46.154
+              "top1_hits": 5,
+              "top3_hits": 13,
+              "top1_rate": 19.231,
+              "top3_capture_rate": 50.0
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 26,
-              "top1_hits": 7,
-              "top3_hits": 12,
-              "top1_rate": 26.923,
-              "top3_capture_rate": 46.154
+              "top1_hits": 6,
+              "top3_hits": 13,
+              "top1_rate": 23.077,
+              "top3_capture_rate": 50.0
             }
           ]
         },
@@ -2738,26 +2733,26 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 41,
-              "top1_hits": 8,
+              "top1_hits": 9,
               "top3_hits": 21,
-              "top1_rate": 19.512,
+              "top1_rate": 21.951,
               "top3_capture_rate": 51.22
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 41,
-              "top1_hits": 7,
-              "top3_hits": 21,
-              "top1_rate": 17.073,
-              "top3_capture_rate": 51.22
+              "top1_hits": 9,
+              "top3_hits": 24,
+              "top1_rate": 21.951,
+              "top3_capture_rate": 58.537
             },
             {
               "name": "LambdaRank",
               "races": 41,
               "top1_hits": 4,
-              "top3_hits": 20,
+              "top3_hits": 17,
               "top1_rate": 9.756,
-              "top3_capture_rate": 48.78
+              "top3_capture_rate": 41.463
             },
             {
               "name": "Market_favorite",
@@ -2770,506 +2765,506 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 41,
-              "top1_hits": 6,
-              "top3_hits": 19,
-              "top1_rate": 14.634,
-              "top3_capture_rate": 46.341
+              "top1_hits": 5,
+              "top3_hits": 15,
+              "top1_rate": 12.195,
+              "top3_capture_rate": 36.585
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 41,
               "top1_hits": 2,
-              "top3_hits": 15,
+              "top3_hits": 16,
               "top1_rate": 4.878,
-              "top3_capture_rate": 36.585
+              "top3_capture_rate": 39.024
             }
           ]
         },
         "2.1": {
-          "races": 36,
+          "races": 32,
           "models": [
             {
               "name": "LAB",
-              "races": 36,
+              "races": 32,
               "top1_hits": 7,
-              "top3_hits": 14,
-              "top1_rate": 19.444,
-              "top3_capture_rate": 38.889
+              "top3_hits": 12,
+              "top1_rate": 21.875,
+              "top3_capture_rate": 37.5
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 36,
-              "top1_hits": 6,
-              "top3_hits": 17,
-              "top1_rate": 16.667,
-              "top3_capture_rate": 47.222
+              "races": 32,
+              "top1_hits": 7,
+              "top3_hits": 14,
+              "top1_rate": 21.875,
+              "top3_capture_rate": 43.75
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 36,
+              "races": 32,
               "top1_hits": 6,
-              "top3_hits": 17,
-              "top1_rate": 16.667,
-              "top3_capture_rate": 47.222
+              "top3_hits": 15,
+              "top1_rate": 18.75,
+              "top3_capture_rate": 46.875
             },
             {
               "name": "LambdaRank",
-              "races": 36,
-              "top1_hits": 9,
-              "top3_hits": 17,
-              "top1_rate": 25.0,
-              "top3_capture_rate": 47.222
+              "races": 32,
+              "top1_hits": 4,
+              "top3_hits": 15,
+              "top1_rate": 12.5,
+              "top3_capture_rate": 46.875
             },
             {
               "name": "Market_favorite",
-              "races": 36,
-              "top1_hits": 14,
-              "top3_hits": 26,
-              "top1_rate": 38.889,
-              "top3_capture_rate": 72.222
+              "races": 32,
+              "top1_hits": 12,
+              "top3_hits": 23,
+              "top1_rate": 37.5,
+              "top3_capture_rate": 71.875
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 36,
-              "top1_hits": 5,
-              "top3_hits": 18,
-              "top1_rate": 13.889,
-              "top3_capture_rate": 50.0
+              "races": 32,
+              "top1_hits": 6,
+              "top3_hits": 15,
+              "top1_rate": 18.75,
+              "top3_capture_rate": 46.875
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 36,
-              "top1_hits": 7,
-              "top3_hits": 13,
-              "top1_rate": 19.444,
-              "top3_capture_rate": 36.111
+              "races": 32,
+              "top1_hits": 3,
+              "top3_hits": 10,
+              "top1_rate": 9.375,
+              "top3_capture_rate": 31.25
             }
           ]
         },
         "2.2": {
-          "races": 44,
+          "races": 40,
           "models": [
             {
               "name": "LAB",
-              "races": 44,
-              "top1_hits": 11,
-              "top3_hits": 23,
+              "races": 40,
+              "top1_hits": 10,
+              "top3_hits": 20,
               "top1_rate": 25.0,
-              "top3_capture_rate": 52.273
+              "top3_capture_rate": 50.0
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 44,
-              "top1_hits": 5,
-              "top3_hits": 16,
-              "top1_rate": 11.364,
-              "top3_capture_rate": 36.364
+              "races": 40,
+              "top1_hits": 4,
+              "top3_hits": 15,
+              "top1_rate": 10.0,
+              "top3_capture_rate": 37.5
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 44,
-              "top1_hits": 4,
-              "top3_hits": 17,
-              "top1_rate": 9.091,
-              "top3_capture_rate": 38.636
+              "races": 40,
+              "top1_hits": 3,
+              "top3_hits": 14,
+              "top1_rate": 7.5,
+              "top3_capture_rate": 35.0
             },
             {
               "name": "LambdaRank",
-              "races": 44,
-              "top1_hits": 15,
-              "top3_hits": 25,
-              "top1_rate": 34.091,
-              "top3_capture_rate": 56.818
+              "races": 40,
+              "top1_hits": 12,
+              "top3_hits": 21,
+              "top1_rate": 30.0,
+              "top3_capture_rate": 52.5
             },
             {
               "name": "Market_favorite",
-              "races": 44,
-              "top1_hits": 11,
-              "top3_hits": 29,
+              "races": 40,
+              "top1_hits": 10,
+              "top3_hits": 25,
               "top1_rate": 25.0,
-              "top3_capture_rate": 65.909
+              "top3_capture_rate": 62.5
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 44,
-              "top1_hits": 14,
-              "top3_hits": 25,
-              "top1_rate": 31.818,
-              "top3_capture_rate": 56.818
+              "races": 40,
+              "top1_hits": 10,
+              "top3_hits": 20,
+              "top1_rate": 25.0,
+              "top3_capture_rate": 50.0
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 44,
+              "races": 40,
               "top1_hits": 11,
               "top3_hits": 21,
-              "top1_rate": 25.0,
-              "top3_capture_rate": 47.727
+              "top1_rate": 27.5,
+              "top3_capture_rate": 52.5
             }
           ]
         },
         "2.3": {
-          "races": 24,
-          "models": [
-            {
-              "name": "LAB",
-              "races": 24,
-              "top1_hits": 2,
-              "top3_hits": 11,
-              "top1_rate": 8.333,
-              "top3_capture_rate": 45.833
-            },
-            {
-              "name": "LAB_feature_enhanced_CatBoost",
-              "races": 24,
-              "top1_hits": 3,
-              "top3_hits": 15,
-              "top1_rate": 12.5,
-              "top3_capture_rate": 62.5
-            },
-            {
-              "name": "LAB_feature_enhanced_LightGBM",
-              "races": 24,
-              "top1_hits": 3,
-              "top3_hits": 12,
-              "top1_rate": 12.5,
-              "top3_capture_rate": 50.0
-            },
-            {
-              "name": "LambdaRank",
-              "races": 24,
-              "top1_hits": 6,
-              "top3_hits": 9,
-              "top1_rate": 25.0,
-              "top3_capture_rate": 37.5
-            },
-            {
-              "name": "Market_favorite",
-              "races": 24,
-              "top1_hits": 12,
-              "top3_hits": 18,
-              "top1_rate": 50.0,
-              "top3_capture_rate": 75.0
-            },
-            {
-              "name": "independent_raw_CatBoost",
-              "races": 24,
-              "top1_hits": 4,
-              "top3_hits": 12,
-              "top1_rate": 16.667,
-              "top3_capture_rate": 50.0
-            },
-            {
-              "name": "independent_raw_LightGBM",
-              "races": 24,
-              "top1_hits": 9,
-              "top3_hits": 13,
-              "top1_rate": 37.5,
-              "top3_capture_rate": 54.167
-            }
-          ]
-        },
-        "2.4": {
-          "races": 26,
-          "models": [
-            {
-              "name": "LAB",
-              "races": 26,
-              "top1_hits": 5,
-              "top3_hits": 11,
-              "top1_rate": 19.231,
-              "top3_capture_rate": 42.308
-            },
-            {
-              "name": "LAB_feature_enhanced_CatBoost",
-              "races": 26,
-              "top1_hits": 4,
-              "top3_hits": 11,
-              "top1_rate": 15.385,
-              "top3_capture_rate": 42.308
-            },
-            {
-              "name": "LAB_feature_enhanced_LightGBM",
-              "races": 26,
-              "top1_hits": 5,
-              "top3_hits": 11,
-              "top1_rate": 19.231,
-              "top3_capture_rate": 42.308
-            },
-            {
-              "name": "LambdaRank",
-              "races": 26,
-              "top1_hits": 9,
-              "top3_hits": 17,
-              "top1_rate": 34.615,
-              "top3_capture_rate": 65.385
-            },
-            {
-              "name": "Market_favorite",
-              "races": 26,
-              "top1_hits": 10,
-              "top3_hits": 16,
-              "top1_rate": 38.462,
-              "top3_capture_rate": 61.538
-            },
-            {
-              "name": "independent_raw_CatBoost",
-              "races": 26,
-              "top1_hits": 8,
-              "top3_hits": 12,
-              "top1_rate": 30.769,
-              "top3_capture_rate": 46.154
-            },
-            {
-              "name": "independent_raw_LightGBM",
-              "races": 26,
-              "top1_hits": 11,
-              "top3_hits": 16,
-              "top1_rate": 42.308,
-              "top3_capture_rate": 61.538
-            }
-          ]
-        },
-        "2.5": {
-          "races": 28,
-          "models": [
-            {
-              "name": "LAB",
-              "races": 28,
-              "top1_hits": 4,
-              "top3_hits": 13,
-              "top1_rate": 14.286,
-              "top3_capture_rate": 46.429
-            },
-            {
-              "name": "LAB_feature_enhanced_CatBoost",
-              "races": 28,
-              "top1_hits": 4,
-              "top3_hits": 14,
-              "top1_rate": 14.286,
-              "top3_capture_rate": 50.0
-            },
-            {
-              "name": "LAB_feature_enhanced_LightGBM",
-              "races": 28,
-              "top1_hits": 4,
-              "top3_hits": 12,
-              "top1_rate": 14.286,
-              "top3_capture_rate": 42.857
-            },
-            {
-              "name": "LambdaRank",
-              "races": 28,
-              "top1_hits": 4,
-              "top3_hits": 15,
-              "top1_rate": 14.286,
-              "top3_capture_rate": 53.571
-            },
-            {
-              "name": "Market_favorite",
-              "races": 28,
-              "top1_hits": 7,
-              "top3_hits": 18,
-              "top1_rate": 25.0,
-              "top3_capture_rate": 64.286
-            },
-            {
-              "name": "independent_raw_CatBoost",
-              "races": 28,
-              "top1_hits": 8,
-              "top3_hits": 14,
-              "top1_rate": 28.571,
-              "top3_capture_rate": 50.0
-            },
-            {
-              "name": "independent_raw_LightGBM",
-              "races": 28,
-              "top1_hits": 6,
-              "top3_hits": 14,
-              "top1_rate": 21.429,
-              "top3_capture_rate": 50.0
-            }
-          ]
-        },
-        "2.6": {
-          "races": 41,
-          "models": [
-            {
-              "name": "LAB",
-              "races": 41,
-              "top1_hits": 8,
-              "top3_hits": 19,
-              "top1_rate": 19.512,
-              "top3_capture_rate": 46.341
-            },
-            {
-              "name": "LAB_feature_enhanced_CatBoost",
-              "races": 41,
-              "top1_hits": 8,
-              "top3_hits": 19,
-              "top1_rate": 19.512,
-              "top3_capture_rate": 46.341
-            },
-            {
-              "name": "LAB_feature_enhanced_LightGBM",
-              "races": 41,
-              "top1_hits": 7,
-              "top3_hits": 16,
-              "top1_rate": 17.073,
-              "top3_capture_rate": 39.024
-            },
-            {
-              "name": "LambdaRank",
-              "races": 41,
-              "top1_hits": 10,
-              "top3_hits": 22,
-              "top1_rate": 24.39,
-              "top3_capture_rate": 53.659
-            },
-            {
-              "name": "Market_favorite",
-              "races": 41,
-              "top1_hits": 10,
-              "top3_hits": 28,
-              "top1_rate": 24.39,
-              "top3_capture_rate": 68.293
-            },
-            {
-              "name": "independent_raw_CatBoost",
-              "races": 41,
-              "top1_hits": 8,
-              "top3_hits": 20,
-              "top1_rate": 19.512,
-              "top3_capture_rate": 48.78
-            },
-            {
-              "name": "independent_raw_LightGBM",
-              "races": 41,
-              "top1_hits": 8,
-              "top3_hits": 21,
-              "top1_rate": 19.512,
-              "top3_capture_rate": 51.22
-            }
-          ]
-        },
-        "2.7": {
-          "races": 24,
-          "models": [
-            {
-              "name": "LAB",
-              "races": 24,
-              "top1_hits": 6,
-              "top3_hits": 13,
-              "top1_rate": 25.0,
-              "top3_capture_rate": 54.167
-            },
-            {
-              "name": "LAB_feature_enhanced_CatBoost",
-              "races": 24,
-              "top1_hits": 7,
-              "top3_hits": 13,
-              "top1_rate": 29.167,
-              "top3_capture_rate": 54.167
-            },
-            {
-              "name": "LAB_feature_enhanced_LightGBM",
-              "races": 24,
-              "top1_hits": 8,
-              "top3_hits": 12,
-              "top1_rate": 33.333,
-              "top3_capture_rate": 50.0
-            },
-            {
-              "name": "LambdaRank",
-              "races": 24,
-              "top1_hits": 7,
-              "top3_hits": 12,
-              "top1_rate": 29.167,
-              "top3_capture_rate": 50.0
-            },
-            {
-              "name": "Market_favorite",
-              "races": 24,
-              "top1_hits": 10,
-              "top3_hits": 19,
-              "top1_rate": 41.667,
-              "top3_capture_rate": 79.167
-            },
-            {
-              "name": "independent_raw_CatBoost",
-              "races": 24,
-              "top1_hits": 8,
-              "top3_hits": 13,
-              "top1_rate": 33.333,
-              "top3_capture_rate": 54.167
-            },
-            {
-              "name": "independent_raw_LightGBM",
-              "races": 24,
-              "top1_hits": 8,
-              "top3_hits": 15,
-              "top1_rate": 33.333,
-              "top3_capture_rate": 62.5
-            }
-          ]
-        },
-        "2.8": {
           "races": 22,
           "models": [
             {
               "name": "LAB",
               "races": 22,
               "top1_hits": 2,
-              "top3_hits": 8,
+              "top3_hits": 10,
               "top1_rate": 9.091,
-              "top3_capture_rate": 36.364
+              "top3_capture_rate": 45.455
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 22,
-              "top1_hits": 4,
+              "top1_hits": 3,
               "top3_hits": 10,
-              "top1_rate": 18.182,
+              "top1_rate": 13.636,
               "top3_capture_rate": 45.455
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 22,
+              "top1_hits": 3,
+              "top3_hits": 12,
+              "top1_rate": 13.636,
+              "top3_capture_rate": 54.545
+            },
+            {
+              "name": "LambdaRank",
+              "races": 22,
+              "top1_hits": 5,
+              "top3_hits": 8,
+              "top1_rate": 22.727,
+              "top3_capture_rate": 36.364
+            },
+            {
+              "name": "Market_favorite",
+              "races": 22,
+              "top1_hits": 12,
+              "top3_hits": 17,
+              "top1_rate": 54.545,
+              "top3_capture_rate": 77.273
+            },
+            {
+              "name": "independent_raw_CatBoost",
+              "races": 22,
+              "top1_hits": 4,
+              "top3_hits": 10,
+              "top1_rate": 18.182,
+              "top3_capture_rate": 45.455
+            },
+            {
+              "name": "independent_raw_LightGBM",
+              "races": 22,
+              "top1_hits": 8,
+              "top3_hits": 11,
+              "top1_rate": 36.364,
+              "top3_capture_rate": 50.0
+            }
+          ]
+        },
+        "2.4": {
+          "races": 24,
+          "models": [
+            {
+              "name": "LAB",
+              "races": 24,
+              "top1_hits": 5,
+              "top3_hits": 11,
+              "top1_rate": 20.833,
+              "top3_capture_rate": 45.833
+            },
+            {
+              "name": "LAB_feature_enhanced_CatBoost",
+              "races": 24,
               "top1_hits": 4,
               "top3_hits": 11,
-              "top1_rate": 18.182,
+              "top1_rate": 16.667,
+              "top3_capture_rate": 45.833
+            },
+            {
+              "name": "LAB_feature_enhanced_LightGBM",
+              "races": 24,
+              "top1_hits": 6,
+              "top3_hits": 11,
+              "top1_rate": 25.0,
+              "top3_capture_rate": 45.833
+            },
+            {
+              "name": "LambdaRank",
+              "races": 24,
+              "top1_hits": 9,
+              "top3_hits": 17,
+              "top1_rate": 37.5,
+              "top3_capture_rate": 70.833
+            },
+            {
+              "name": "Market_favorite",
+              "races": 24,
+              "top1_hits": 10,
+              "top3_hits": 16,
+              "top1_rate": 41.667,
+              "top3_capture_rate": 66.667
+            },
+            {
+              "name": "independent_raw_CatBoost",
+              "races": 24,
+              "top1_hits": 9,
+              "top3_hits": 13,
+              "top1_rate": 37.5,
+              "top3_capture_rate": 54.167
+            },
+            {
+              "name": "independent_raw_LightGBM",
+              "races": 24,
+              "top1_hits": 9,
+              "top3_hits": 14,
+              "top1_rate": 37.5,
+              "top3_capture_rate": 58.333
+            }
+          ]
+        },
+        "2.5": {
+          "races": 24,
+          "models": [
+            {
+              "name": "LAB",
+              "races": 24,
+              "top1_hits": 4,
+              "top3_hits": 11,
+              "top1_rate": 16.667,
+              "top3_capture_rate": 45.833
+            },
+            {
+              "name": "LAB_feature_enhanced_CatBoost",
+              "races": 24,
+              "top1_hits": 3,
+              "top3_hits": 12,
+              "top1_rate": 12.5,
+              "top3_capture_rate": 50.0
+            },
+            {
+              "name": "LAB_feature_enhanced_LightGBM",
+              "races": 24,
+              "top1_hits": 4,
+              "top3_hits": 13,
+              "top1_rate": 16.667,
+              "top3_capture_rate": 54.167
+            },
+            {
+              "name": "LambdaRank",
+              "races": 24,
+              "top1_hits": 3,
+              "top3_hits": 11,
+              "top1_rate": 12.5,
+              "top3_capture_rate": 45.833
+            },
+            {
+              "name": "Market_favorite",
+              "races": 24,
+              "top1_hits": 6,
+              "top3_hits": 15,
+              "top1_rate": 25.0,
+              "top3_capture_rate": 62.5
+            },
+            {
+              "name": "independent_raw_CatBoost",
+              "races": 24,
+              "top1_hits": 5,
+              "top3_hits": 11,
+              "top1_rate": 20.833,
+              "top3_capture_rate": 45.833
+            },
+            {
+              "name": "independent_raw_LightGBM",
+              "races": 24,
+              "top1_hits": 8,
+              "top3_hits": 13,
+              "top1_rate": 33.333,
+              "top3_capture_rate": 54.167
+            }
+          ]
+        },
+        "2.6": {
+          "races": 37,
+          "models": [
+            {
+              "name": "LAB",
+              "races": 37,
+              "top1_hits": 7,
+              "top3_hits": 17,
+              "top1_rate": 18.919,
+              "top3_capture_rate": 45.946
+            },
+            {
+              "name": "LAB_feature_enhanced_CatBoost",
+              "races": 37,
+              "top1_hits": 6,
+              "top3_hits": 17,
+              "top1_rate": 16.216,
+              "top3_capture_rate": 45.946
+            },
+            {
+              "name": "LAB_feature_enhanced_LightGBM",
+              "races": 37,
+              "top1_hits": 6,
+              "top3_hits": 16,
+              "top1_rate": 16.216,
+              "top3_capture_rate": 43.243
+            },
+            {
+              "name": "LambdaRank",
+              "races": 37,
+              "top1_hits": 7,
+              "top3_hits": 19,
+              "top1_rate": 18.919,
+              "top3_capture_rate": 51.351
+            },
+            {
+              "name": "Market_favorite",
+              "races": 37,
+              "top1_hits": 10,
+              "top3_hits": 25,
+              "top1_rate": 27.027,
+              "top3_capture_rate": 67.568
+            },
+            {
+              "name": "independent_raw_CatBoost",
+              "races": 37,
+              "top1_hits": 6,
+              "top3_hits": 17,
+              "top1_rate": 16.216,
+              "top3_capture_rate": 45.946
+            },
+            {
+              "name": "independent_raw_LightGBM",
+              "races": 37,
+              "top1_hits": 7,
+              "top3_hits": 16,
+              "top1_rate": 18.919,
+              "top3_capture_rate": 43.243
+            }
+          ]
+        },
+        "2.7": {
+          "races": 22,
+          "models": [
+            {
+              "name": "LAB",
+              "races": 22,
+              "top1_hits": 6,
+              "top3_hits": 12,
+              "top1_rate": 27.273,
+              "top3_capture_rate": 54.545
+            },
+            {
+              "name": "LAB_feature_enhanced_CatBoost",
+              "races": 22,
+              "top1_hits": 7,
+              "top3_hits": 12,
+              "top1_rate": 31.818,
+              "top3_capture_rate": 54.545
+            },
+            {
+              "name": "LAB_feature_enhanced_LightGBM",
+              "races": 22,
+              "top1_hits": 7,
+              "top3_hits": 11,
+              "top1_rate": 31.818,
               "top3_capture_rate": 50.0
             },
             {
               "name": "LambdaRank",
               "races": 22,
-              "top1_hits": 6,
-              "top3_hits": 10,
-              "top1_rate": 27.273,
-              "top3_capture_rate": 45.455
+              "top1_hits": 5,
+              "top3_hits": 13,
+              "top1_rate": 22.727,
+              "top3_capture_rate": 59.091
             },
             {
               "name": "Market_favorite",
               "races": 22,
-              "top1_hits": 10,
-              "top3_hits": 16,
-              "top1_rate": 45.455,
-              "top3_capture_rate": 72.727
+              "top1_hits": 9,
+              "top3_hits": 17,
+              "top1_rate": 40.909,
+              "top3_capture_rate": 77.273
             },
             {
               "name": "independent_raw_CatBoost",
               "races": 22,
-              "top1_hits": 6,
-              "top3_hits": 11,
-              "top1_rate": 27.273,
-              "top3_capture_rate": 50.0
+              "top1_hits": 4,
+              "top3_hits": 13,
+              "top1_rate": 18.182,
+              "top3_capture_rate": 59.091
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 22,
+              "top1_hits": 7,
+              "top3_hits": 14,
+              "top1_rate": 31.818,
+              "top3_capture_rate": 63.636
+            }
+          ]
+        },
+        "2.8": {
+          "races": 20,
+          "models": [
+            {
+              "name": "LAB",
+              "races": 20,
+              "top1_hits": 2,
+              "top3_hits": 8,
+              "top1_rate": 10.0,
+              "top3_capture_rate": 40.0
+            },
+            {
+              "name": "LAB_feature_enhanced_CatBoost",
+              "races": 20,
+              "top1_hits": 4,
+              "top3_hits": 10,
+              "top1_rate": 20.0,
+              "top3_capture_rate": 50.0
+            },
+            {
+              "name": "LAB_feature_enhanced_LightGBM",
+              "races": 20,
+              "top1_hits": 4,
+              "top3_hits": 11,
+              "top1_rate": 20.0,
+              "top3_capture_rate": 55.0
+            },
+            {
+              "name": "LambdaRank",
+              "races": 20,
               "top1_hits": 5,
               "top3_hits": 10,
-              "top1_rate": 22.727,
-              "top3_capture_rate": 45.455
+              "top1_rate": 25.0,
+              "top3_capture_rate": 50.0
+            },
+            {
+              "name": "Market_favorite",
+              "races": 20,
+              "top1_hits": 10,
+              "top3_hits": 15,
+              "top1_rate": 50.0,
+              "top3_capture_rate": 75.0
+            },
+            {
+              "name": "independent_raw_CatBoost",
+              "races": 20,
+              "top1_hits": 6,
+              "top3_hits": 11,
+              "top1_rate": 30.0,
+              "top3_capture_rate": 55.0
+            },
+            {
+              "name": "independent_raw_LightGBM",
+              "races": 20,
+              "top1_hits": 4,
+              "top3_hits": 10,
+              "top1_rate": 20.0,
+              "top3_capture_rate": 50.0
             }
           ]
         },
@@ -3287,25 +3282,25 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 20,
-              "top1_hits": 7,
-              "top3_hits": 14,
-              "top1_rate": 35.0,
-              "top3_capture_rate": 70.0
+              "top1_hits": 9,
+              "top3_hits": 13,
+              "top1_rate": 45.0,
+              "top3_capture_rate": 65.0
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 20,
-              "top1_hits": 6,
-              "top3_hits": 12,
-              "top1_rate": 30.0,
-              "top3_capture_rate": 60.0
+              "top1_hits": 8,
+              "top3_hits": 14,
+              "top1_rate": 40.0,
+              "top3_capture_rate": 70.0
             },
             {
               "name": "LambdaRank",
               "races": 20,
-              "top1_hits": 6,
+              "top1_hits": 5,
               "top3_hits": 11,
-              "top1_rate": 30.0,
+              "top1_rate": 25.0,
               "top3_capture_rate": 55.0
             },
             {
@@ -3327,10 +3322,10 @@
             {
               "name": "independent_raw_LightGBM",
               "races": 20,
-              "top1_hits": 6,
-              "top3_hits": 9,
-              "top1_rate": 30.0,
-              "top3_capture_rate": 45.0
+              "top1_hits": 4,
+              "top3_hits": 10,
+              "top1_rate": 20.0,
+              "top3_capture_rate": 50.0
             }
           ]
         },
@@ -3364,10 +3359,10 @@
             {
               "name": "LambdaRank",
               "races": 14,
-              "top1_hits": 7,
-              "top3_hits": 10,
-              "top1_rate": 50.0,
-              "top3_capture_rate": 71.429
+              "top1_hits": 6,
+              "top3_hits": 12,
+              "top1_rate": 42.857,
+              "top3_capture_rate": 85.714
             },
             {
               "name": "Market_favorite",
@@ -3380,18 +3375,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 14,
-              "top1_hits": 6,
+              "top1_hits": 4,
               "top3_hits": 9,
-              "top1_rate": 42.857,
+              "top1_rate": 28.571,
               "top3_capture_rate": 64.286
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 14,
-              "top1_hits": 5,
-              "top3_hits": 10,
-              "top1_rate": 35.714,
-              "top3_capture_rate": 71.429
+              "top1_hits": 6,
+              "top3_hits": 9,
+              "top1_rate": 42.857,
+              "top3_capture_rate": 64.286
             }
           ]
         },
@@ -3409,26 +3404,26 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 22,
+              "top1_hits": 5,
+              "top3_hits": 14,
+              "top1_rate": 22.727,
+              "top3_capture_rate": 63.636
+            },
+            {
+              "name": "LAB_feature_enhanced_LightGBM",
+              "races": 22,
               "top1_hits": 6,
               "top3_hits": 13,
               "top1_rate": 27.273,
               "top3_capture_rate": 59.091
             },
             {
-              "name": "LAB_feature_enhanced_LightGBM",
-              "races": 22,
-              "top1_hits": 7,
-              "top3_hits": 12,
-              "top1_rate": 31.818,
-              "top3_capture_rate": 54.545
-            },
-            {
               "name": "LambdaRank",
               "races": 22,
-              "top1_hits": 4,
-              "top3_hits": 13,
-              "top1_rate": 18.182,
-              "top3_capture_rate": 59.091
+              "top1_hits": 3,
+              "top3_hits": 12,
+              "top1_rate": 13.636,
+              "top3_capture_rate": 54.545
             },
             {
               "name": "Market_favorite",
@@ -3442,17 +3437,17 @@
               "name": "independent_raw_CatBoost",
               "races": 22,
               "top1_hits": 6,
-              "top3_hits": 15,
+              "top3_hits": 14,
               "top1_rate": 27.273,
-              "top3_capture_rate": 68.182
+              "top3_capture_rate": 63.636
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 22,
-              "top1_hits": 3,
-              "top3_hits": 13,
-              "top1_rate": 13.636,
-              "top3_capture_rate": 59.091
+              "top1_hits": 4,
+              "top3_hits": 14,
+              "top1_rate": 18.182,
+              "top3_capture_rate": 63.636
             }
           ]
         },
@@ -3471,25 +3466,25 @@
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 10,
               "top1_hits": 0,
-              "top3_hits": 0,
+              "top3_hits": 1,
               "top1_rate": 0.0,
-              "top3_capture_rate": 0.0
+              "top3_capture_rate": 10.0
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 10,
               "top1_hits": 0,
-              "top3_hits": 0,
+              "top3_hits": 1,
               "top1_rate": 0.0,
-              "top3_capture_rate": 0.0
+              "top3_capture_rate": 10.0
             },
             {
               "name": "LambdaRank",
               "races": 10,
               "top1_hits": 0,
-              "top3_hits": 2,
+              "top3_hits": 3,
               "top1_rate": 0.0,
-              "top3_capture_rate": 20.0
+              "top3_capture_rate": 30.0
             },
             {
               "name": "Market_favorite",
@@ -3502,18 +3497,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 10,
-              "top1_hits": 1,
+              "top1_hits": 0,
               "top3_hits": 2,
-              "top1_rate": 10.0,
+              "top1_rate": 0.0,
               "top3_capture_rate": 20.0
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 10,
-              "top1_hits": 0,
-              "top3_hits": 2,
-              "top1_rate": 0.0,
-              "top3_capture_rate": 20.0
+              "top1_hits": 1,
+              "top3_hits": 3,
+              "top1_rate": 10.0,
+              "top3_capture_rate": 30.0
             }
           ]
         },
@@ -3531,26 +3526,26 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 16,
-              "top1_hits": 2,
+              "top1_hits": 3,
               "top3_hits": 8,
-              "top1_rate": 12.5,
+              "top1_rate": 18.75,
               "top3_capture_rate": 50.0
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 16,
-              "top1_hits": 0,
+              "top1_hits": 2,
               "top3_hits": 9,
-              "top1_rate": 0.0,
+              "top1_rate": 12.5,
               "top3_capture_rate": 56.25
             },
             {
               "name": "LambdaRank",
               "races": 16,
-              "top1_hits": 5,
-              "top3_hits": 8,
-              "top1_rate": 31.25,
-              "top3_capture_rate": 50.0
+              "top1_hits": 4,
+              "top3_hits": 7,
+              "top1_rate": 25.0,
+              "top3_capture_rate": 43.75
             },
             {
               "name": "Market_favorite",
@@ -3563,18 +3558,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 16,
-              "top1_hits": 5,
-              "top3_hits": 9,
-              "top1_rate": 31.25,
-              "top3_capture_rate": 56.25
+              "top1_hits": 4,
+              "top3_hits": 10,
+              "top1_rate": 25.0,
+              "top3_capture_rate": 62.5
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 16,
-              "top1_hits": 2,
-              "top3_hits": 7,
-              "top1_rate": 12.5,
-              "top3_capture_rate": 43.75
+              "top1_hits": 1,
+              "top3_hits": 9,
+              "top1_rate": 6.25,
+              "top3_capture_rate": 56.25
             }
           ]
         },
@@ -3624,18 +3619,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 2,
-              "top1_hits": 0,
-              "top3_hits": 0,
-              "top1_rate": 0.0,
-              "top3_capture_rate": 0.0
+              "top1_hits": 1,
+              "top3_hits": 1,
+              "top1_rate": 50.0,
+              "top3_capture_rate": 50.0
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 2,
               "top1_hits": 0,
-              "top3_hits": 1,
+              "top3_hits": 0,
               "top1_rate": 0.0,
-              "top3_capture_rate": 50.0
+              "top3_capture_rate": 0.0
             }
           ]
         },
@@ -3661,10 +3656,10 @@
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 4,
-              "top1_hits": 1,
-              "top3_hits": 4,
-              "top1_rate": 25.0,
-              "top3_capture_rate": 100.0
+              "top1_hits": 2,
+              "top3_hits": 3,
+              "top1_rate": 50.0,
+              "top3_capture_rate": 75.0
             },
             {
               "name": "LambdaRank",
@@ -3714,26 +3709,26 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 8,
-              "top1_hits": 3,
-              "top3_hits": 5,
-              "top1_rate": 37.5,
-              "top3_capture_rate": 62.5
-            },
-            {
-              "name": "LAB_feature_enhanced_LightGBM",
-              "races": 8,
               "top1_hits": 2,
               "top3_hits": 5,
               "top1_rate": 25.0,
               "top3_capture_rate": 62.5
             },
             {
+              "name": "LAB_feature_enhanced_LightGBM",
+              "races": 8,
+              "top1_hits": 3,
+              "top3_hits": 5,
+              "top1_rate": 37.5,
+              "top3_capture_rate": 62.5
+            },
+            {
               "name": "LambdaRank",
               "races": 8,
-              "top1_hits": 5,
-              "top3_hits": 6,
-              "top1_rate": 62.5,
-              "top3_capture_rate": 75.0
+              "top1_hits": 3,
+              "top3_hits": 5,
+              "top1_rate": 37.5,
+              "top3_capture_rate": 62.5
             },
             {
               "name": "Market_favorite",
@@ -3755,9 +3750,9 @@
               "name": "independent_raw_LightGBM",
               "races": 8,
               "top1_hits": 3,
-              "top3_hits": 5,
+              "top3_hits": 6,
               "top1_rate": 37.5,
-              "top3_capture_rate": 62.5
+              "top3_capture_rate": 75.0
             }
           ]
         },
@@ -3775,25 +3770,25 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 14,
-              "top1_hits": 5,
-              "top3_hits": 11,
-              "top1_rate": 35.714,
-              "top3_capture_rate": 78.571
+              "top1_hits": 6,
+              "top3_hits": 10,
+              "top1_rate": 42.857,
+              "top3_capture_rate": 71.429
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 14,
               "top1_hits": 7,
-              "top3_hits": 10,
+              "top3_hits": 11,
               "top1_rate": 50.0,
-              "top3_capture_rate": 71.429
+              "top3_capture_rate": 78.571
             },
             {
               "name": "LambdaRank",
               "races": 14,
-              "top1_hits": 4,
+              "top1_hits": 6,
               "top3_hits": 11,
-              "top1_rate": 28.571,
+              "top1_rate": 42.857,
               "top3_capture_rate": 78.571
             },
             {
@@ -3808,17 +3803,17 @@
               "name": "independent_raw_CatBoost",
               "races": 14,
               "top1_hits": 4,
-              "top3_hits": 7,
+              "top3_hits": 10,
               "top1_rate": 28.571,
-              "top3_capture_rate": 50.0
+              "top3_capture_rate": 71.429
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 14,
-              "top1_hits": 7,
-              "top3_hits": 9,
-              "top1_rate": 50.0,
-              "top3_capture_rate": 64.286
+              "top1_hits": 6,
+              "top3_hits": 11,
+              "top1_rate": 42.857,
+              "top3_capture_rate": 78.571
             }
           ]
         },
@@ -3868,18 +3863,18 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 4,
-              "top1_hits": 1,
-              "top3_hits": 3,
-              "top1_rate": 25.0,
-              "top3_capture_rate": 75.0
+              "top1_hits": 0,
+              "top3_hits": 2,
+              "top1_rate": 0.0,
+              "top3_capture_rate": 50.0
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 4,
               "top1_hits": 1,
-              "top3_hits": 4,
+              "top3_hits": 3,
               "top1_rate": 25.0,
-              "top3_capture_rate": 100.0
+              "top3_capture_rate": 75.0
             }
           ]
         },
@@ -3897,18 +3892,18 @@
             {
               "name": "LAB_feature_enhanced_CatBoost",
               "races": 6,
-              "top1_hits": 0,
-              "top3_hits": 4,
-              "top1_rate": 0.0,
-              "top3_capture_rate": 66.667
+              "top1_hits": 1,
+              "top3_hits": 2,
+              "top1_rate": 16.667,
+              "top3_capture_rate": 33.333
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
               "races": 6,
               "top1_hits": 0,
-              "top3_hits": 2,
+              "top3_hits": 3,
               "top1_rate": 0.0,
-              "top3_capture_rate": 33.333
+              "top3_capture_rate": 50.0
             },
             {
               "name": "LambdaRank",
@@ -3929,17 +3924,17 @@
             {
               "name": "independent_raw_CatBoost",
               "races": 6,
-              "top1_hits": 3,
+              "top1_hits": 2,
               "top3_hits": 3,
-              "top1_rate": 50.0,
+              "top1_rate": 33.333,
               "top3_capture_rate": 50.0
             },
             {
               "name": "independent_raw_LightGBM",
               "races": 6,
-              "top1_hits": 3,
+              "top1_hits": 2,
               "top3_hits": 4,
-              "top1_rate": 50.0,
+              "top1_rate": 33.333,
               "top3_capture_rate": 66.667
             }
           ]
@@ -3999,260 +3994,260 @@
               "name": "independent_raw_LightGBM",
               "races": 8,
               "top1_hits": 3,
-              "top3_hits": 5,
+              "top3_hits": 4,
               "top1_rate": 37.5,
-              "top3_capture_rate": 62.5
+              "top3_capture_rate": 50.0
             }
           ]
         },
         "不良": {
-          "races": 1433,
+          "races": 1414,
           "models": [
             {
               "name": "LAB",
-              "races": 1433,
-              "top1_hits": 465,
-              "top3_hits": 890,
-              "top1_rate": 32.449,
-              "top3_capture_rate": 62.107
+              "races": 1414,
+              "top1_hits": 462,
+              "top3_hits": 878,
+              "top1_rate": 32.673,
+              "top3_capture_rate": 62.093
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 1433,
-              "top1_hits": 501,
-              "top3_hits": 961,
-              "top1_rate": 34.962,
-              "top3_capture_rate": 67.062
+              "races": 1414,
+              "top1_hits": 497,
+              "top3_hits": 934,
+              "top1_rate": 35.149,
+              "top3_capture_rate": 66.054
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 1433,
-              "top1_hits": 495,
-              "top3_hits": 956,
-              "top1_rate": 34.543,
-              "top3_capture_rate": 66.713
+              "races": 1414,
+              "top1_hits": 497,
+              "top3_hits": 936,
+              "top1_rate": 35.149,
+              "top3_capture_rate": 66.195
             },
             {
               "name": "LambdaRank",
-              "races": 1433,
-              "top1_hits": 497,
-              "top3_hits": 972,
-              "top1_rate": 34.682,
-              "top3_capture_rate": 67.83
+              "races": 1414,
+              "top1_hits": 485,
+              "top3_hits": 959,
+              "top1_rate": 34.3,
+              "top3_capture_rate": 67.822
             },
             {
               "name": "Market_favorite",
-              "races": 1433,
-              "top1_hits": 652,
-              "top3_hits": 1094,
-              "top1_rate": 45.499,
-              "top3_capture_rate": 76.343
+              "races": 1414,
+              "top1_hits": 645,
+              "top3_hits": 1080,
+              "top1_rate": 45.615,
+              "top3_capture_rate": 76.379
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 1433,
-              "top1_hits": 510,
-              "top3_hits": 950,
-              "top1_rate": 35.59,
-              "top3_capture_rate": 66.294
+              "races": 1414,
+              "top1_hits": 495,
+              "top3_hits": 949,
+              "top1_rate": 35.007,
+              "top3_capture_rate": 67.115
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 1433,
-              "top1_hits": 509,
-              "top3_hits": 960,
-              "top1_rate": 35.52,
-              "top3_capture_rate": 66.992
+              "races": 1414,
+              "top1_hits": 510,
+              "top3_hits": 948,
+              "top1_rate": 36.068,
+              "top3_capture_rate": 67.044
             }
           ]
         },
         "稍重": {
-          "races": 2301,
+          "races": 2155,
           "models": [
             {
               "name": "LAB",
-              "races": 2301,
-              "top1_hits": 710,
-              "top3_hits": 1422,
-              "top1_rate": 30.856,
-              "top3_capture_rate": 61.799
+              "races": 2155,
+              "top1_hits": 673,
+              "top3_hits": 1330,
+              "top1_rate": 31.23,
+              "top3_capture_rate": 61.717
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 2301,
-              "top1_hits": 775,
-              "top3_hits": 1564,
-              "top1_rate": 33.681,
-              "top3_capture_rate": 67.97
+              "races": 2155,
+              "top1_hits": 723,
+              "top3_hits": 1451,
+              "top1_rate": 33.55,
+              "top3_capture_rate": 67.332
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 2301,
-              "top1_hits": 778,
-              "top3_hits": 1535,
-              "top1_rate": 33.811,
-              "top3_capture_rate": 66.71
+              "races": 2155,
+              "top1_hits": 728,
+              "top3_hits": 1443,
+              "top1_rate": 33.782,
+              "top3_capture_rate": 66.961
             },
             {
               "name": "LambdaRank",
-              "races": 2301,
-              "top1_hits": 809,
-              "top3_hits": 1597,
-              "top1_rate": 35.159,
-              "top3_capture_rate": 69.405
+              "races": 2155,
+              "top1_hits": 751,
+              "top3_hits": 1491,
+              "top1_rate": 34.849,
+              "top3_capture_rate": 69.188
             },
             {
               "name": "Market_favorite",
-              "races": 2301,
-              "top1_hits": 1052,
-              "top3_hits": 1810,
-              "top1_rate": 45.719,
-              "top3_capture_rate": 78.661
+              "races": 2155,
+              "top1_hits": 989,
+              "top3_hits": 1691,
+              "top1_rate": 45.893,
+              "top3_capture_rate": 78.469
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 2301,
-              "top1_hits": 786,
-              "top3_hits": 1574,
-              "top1_rate": 34.159,
-              "top3_capture_rate": 68.405
+              "races": 2155,
+              "top1_hits": 744,
+              "top3_hits": 1476,
+              "top1_rate": 34.524,
+              "top3_capture_rate": 68.492
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 2301,
-              "top1_hits": 808,
-              "top3_hits": 1587,
-              "top1_rate": 35.115,
-              "top3_capture_rate": 68.97
+              "races": 2155,
+              "top1_hits": 754,
+              "top3_hits": 1490,
+              "top1_rate": 34.988,
+              "top3_capture_rate": 69.142
             }
           ]
         },
         "良": {
-          "races": 4581,
+          "races": 4543,
           "models": [
             {
               "name": "LAB",
-              "races": 4581,
-              "top1_hits": 1391,
-              "top3_hits": 2807,
-              "top1_rate": 30.365,
-              "top3_capture_rate": 61.275
+              "races": 4543,
+              "top1_hits": 1374,
+              "top3_hits": 2777,
+              "top1_rate": 30.244,
+              "top3_capture_rate": 61.127
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 4581,
-              "top1_hits": 1527,
-              "top3_hits": 3054,
-              "top1_rate": 33.333,
-              "top3_capture_rate": 66.667
+              "races": 4543,
+              "top1_hits": 1521,
+              "top3_hits": 3038,
+              "top1_rate": 33.48,
+              "top3_capture_rate": 66.872
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 4581,
-              "top1_hits": 1518,
-              "top3_hits": 3047,
-              "top1_rate": 33.137,
-              "top3_capture_rate": 66.514
+              "races": 4543,
+              "top1_hits": 1508,
+              "top3_hits": 3029,
+              "top1_rate": 33.194,
+              "top3_capture_rate": 66.674
             },
             {
               "name": "LambdaRank",
-              "races": 4581,
-              "top1_hits": 1600,
-              "top3_hits": 3121,
-              "top1_rate": 34.927,
-              "top3_capture_rate": 68.129
+              "races": 4543,
+              "top1_hits": 1580,
+              "top3_hits": 3092,
+              "top1_rate": 34.779,
+              "top3_capture_rate": 68.061
             },
             {
               "name": "Market_favorite",
-              "races": 4581,
-              "top1_hits": 2063,
-              "top3_hits": 3605,
-              "top1_rate": 45.034,
-              "top3_capture_rate": 78.695
+              "races": 4543,
+              "top1_hits": 2037,
+              "top3_hits": 3572,
+              "top1_rate": 44.838,
+              "top3_capture_rate": 78.626
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 4581,
-              "top1_hits": 1530,
-              "top3_hits": 3118,
-              "top1_rate": 33.399,
-              "top3_capture_rate": 68.064
+              "races": 4543,
+              "top1_hits": 1550,
+              "top3_hits": 3081,
+              "top1_rate": 34.118,
+              "top3_capture_rate": 67.819
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 4581,
-              "top1_hits": 1569,
-              "top3_hits": 3127,
-              "top1_rate": 34.25,
-              "top3_capture_rate": 68.26
+              "races": 4543,
+              "top1_hits": 1559,
+              "top3_hits": 3104,
+              "top1_rate": 34.317,
+              "top3_capture_rate": 68.325
             }
           ]
         },
         "重": {
-          "races": 1557,
+          "races": 1486,
           "models": [
             {
               "name": "LAB",
-              "races": 1557,
-              "top1_hits": 503,
-              "top3_hits": 1010,
-              "top1_rate": 32.306,
-              "top3_capture_rate": 64.868
+              "races": 1486,
+              "top1_hits": 482,
+              "top3_hits": 968,
+              "top1_rate": 32.436,
+              "top3_capture_rate": 65.141
             },
             {
               "name": "LAB_feature_enhanced_CatBoost",
-              "races": 1557,
-              "top1_hits": 561,
-              "top3_hits": 1051,
-              "top1_rate": 36.031,
-              "top3_capture_rate": 67.502
+              "races": 1486,
+              "top1_hits": 528,
+              "top3_hits": 1015,
+              "top1_rate": 35.532,
+              "top3_capture_rate": 68.304
             },
             {
               "name": "LAB_feature_enhanced_LightGBM",
-              "races": 1557,
-              "top1_hits": 548,
-              "top3_hits": 1052,
-              "top1_rate": 35.196,
-              "top3_capture_rate": 67.566
+              "races": 1486,
+              "top1_hits": 521,
+              "top3_hits": 1004,
+              "top1_rate": 35.061,
+              "top3_capture_rate": 67.564
             },
             {
               "name": "LambdaRank",
-              "races": 1557,
-              "top1_hits": 590,
-              "top3_hits": 1088,
-              "top1_rate": 37.893,
-              "top3_capture_rate": 69.878
+              "races": 1486,
+              "top1_hits": 566,
+              "top3_hits": 1046,
+              "top1_rate": 38.089,
+              "top3_capture_rate": 70.39
             },
             {
               "name": "Market_favorite",
-              "races": 1557,
-              "top1_hits": 728,
-              "top3_hits": 1213,
-              "top1_rate": 46.757,
-              "top3_capture_rate": 77.906
+              "races": 1486,
+              "top1_hits": 702,
+              "top3_hits": 1161,
+              "top1_rate": 47.241,
+              "top3_capture_rate": 78.129
             },
             {
               "name": "independent_raw_CatBoost",
-              "races": 1557,
-              "top1_hits": 566,
-              "top3_hits": 1074,
-              "top1_rate": 36.352,
-              "top3_capture_rate": 68.979
+              "races": 1486,
+              "top1_hits": 541,
+              "top3_hits": 1026,
+              "top1_rate": 36.406,
+              "top3_capture_rate": 69.044
             },
             {
               "name": "independent_raw_LightGBM",
-              "races": 1557,
-              "top1_hits": 580,
-              "top3_hits": 1080,
-              "top1_rate": 37.251,
-              "top3_capture_rate": 69.364
+              "races": 1486,
+              "top1_hits": 540,
+              "top3_hits": 1041,
+              "top1_rate": 36.339,
+              "top3_capture_rate": 70.054
             }
           ]
         }
       }
     },
     "betting_returns": {
-      "odds_matched_races_with_official_payouts": 11091,
+      "odds_matched_races_with_official_payouts": 10769,
       "fixed_stake_methods": {
         "win": "100 yen on each strategy's top-ranked runner",
         "trio_2_4_5_narrow12": "2-4-5 formation narrowed to 12 combinations; equal allocation totaling 1,900 yen per race"
@@ -4260,116 +4255,116 @@
       "strategies": {
         "LAB": {
           "win": {
-            "races": 11091,
-            "hits": 3330,
-            "stake_jpy": 1109100,
-            "return_jpy": 793460.0,
-            "hit_rate_pct": 30.024,
-            "roi_pct": 71.541,
-            "profit_jpy": -315640.0,
+            "races": 10769,
+            "hits": 3244,
+            "stake_jpy": 1076900,
+            "return_jpy": 774500.0,
+            "hit_rate_pct": 30.124,
+            "roi_pct": 71.919,
+            "profit_jpy": -302400.0,
             "stake_per_race_jpy": 100.0
           },
           "trio_2_4_5_narrow12": {
-            "races": 11091,
-            "hits": 4849,
-            "tickets": 132653,
-            "stake_jpy": 21072900,
-            "return_jpy": 12643120.0,
-            "hit_rate_pct": 43.72,
-            "roi_pct": 59.997,
-            "profit_jpy": -8429780.0,
+            "races": 10769,
+            "hits": 4725,
+            "tickets": 128803,
+            "stake_jpy": 20461100,
+            "return_jpy": 12330570.0,
+            "hit_rate_pct": 43.876,
+            "roi_pct": 60.263,
+            "profit_jpy": -8130530.0,
             "stake_per_race_jpy": 1900.0
           }
         },
         "independent_raw_CatBoost": {
           "win": {
-            "races": 11091,
-            "hits": 3691,
-            "stake_jpy": 1109100,
-            "return_jpy": 843370.0,
-            "hit_rate_pct": 33.279,
-            "roi_pct": 76.041,
-            "profit_jpy": -265730.0,
+            "races": 10769,
+            "hits": 3604,
+            "stake_jpy": 1076900,
+            "return_jpy": 810950.0,
+            "hit_rate_pct": 33.466,
+            "roi_pct": 75.304,
+            "profit_jpy": -265950.0,
             "stake_per_race_jpy": 100.0
           },
           "trio_2_4_5_narrow12": {
-            "races": 11091,
-            "hits": 5234,
-            "tickets": 132653,
-            "stake_jpy": 21072900,
-            "return_jpy": 13987500.0,
-            "hit_rate_pct": 47.191,
-            "roi_pct": 66.377,
-            "profit_jpy": -7085400.0,
+            "races": 10769,
+            "hits": 5087,
+            "tickets": 128803,
+            "stake_jpy": 20461100,
+            "return_jpy": 13266780.0,
+            "hit_rate_pct": 47.237,
+            "roi_pct": 64.839,
+            "profit_jpy": -7194320.0,
             "stake_per_race_jpy": 1900.0
           }
         },
         "independent_raw_LightGBM": {
           "win": {
-            "races": 11091,
-            "hits": 3761,
-            "stake_jpy": 1109100,
-            "return_jpy": 856230.0,
-            "hit_rate_pct": 33.91,
-            "roi_pct": 77.2,
-            "profit_jpy": -252870.0,
+            "races": 10769,
+            "hits": 3636,
+            "stake_jpy": 1076900,
+            "return_jpy": 820790.0,
+            "hit_rate_pct": 33.764,
+            "roi_pct": 76.218,
+            "profit_jpy": -256110.0,
             "stake_per_race_jpy": 100.0
           },
           "trio_2_4_5_narrow12": {
-            "races": 11091,
-            "hits": 5214,
-            "tickets": 132653,
-            "stake_jpy": 21072900,
-            "return_jpy": 14002570.0,
-            "hit_rate_pct": 47.011,
-            "roi_pct": 66.448,
-            "profit_jpy": -7070330.0,
+            "races": 10769,
+            "hits": 5110,
+            "tickets": 128803,
+            "stake_jpy": 20461100,
+            "return_jpy": 14129110.0,
+            "hit_rate_pct": 47.451,
+            "roi_pct": 69.054,
+            "profit_jpy": -6331990.0,
             "stake_per_race_jpy": 1900.0
           }
         },
         "LambdaRank": {
           "win": {
-            "races": 11091,
-            "hits": 3804,
-            "stake_jpy": 1109100,
-            "return_jpy": 847830.0,
-            "hit_rate_pct": 34.298,
-            "roi_pct": 76.443,
-            "profit_jpy": -261270.0,
+            "races": 10769,
+            "hits": 3659,
+            "stake_jpy": 1076900,
+            "return_jpy": 821090.0,
+            "hit_rate_pct": 33.977,
+            "roi_pct": 76.246,
+            "profit_jpy": -255810.0,
             "stake_per_race_jpy": 100.0
           },
           "trio_2_4_5_narrow12": {
-            "races": 11091,
-            "hits": 5438,
-            "tickets": 132653,
-            "stake_jpy": 21072900,
-            "return_jpy": 14101610.0,
-            "hit_rate_pct": 49.031,
-            "roi_pct": 66.918,
-            "profit_jpy": -6971290.0,
+            "races": 10769,
+            "hits": 5244,
+            "tickets": 128803,
+            "stake_jpy": 20461100,
+            "return_jpy": 13502900.0,
+            "hit_rate_pct": 48.695,
+            "roi_pct": 65.993,
+            "profit_jpy": -6958200.0,
             "stake_per_race_jpy": 1900.0
           }
         },
         "Market_favorite": {
           "win": {
-            "races": 11091,
-            "hits": 4937,
-            "stake_jpy": 1109100,
-            "return_jpy": 891650.0,
-            "hit_rate_pct": 44.514,
-            "roi_pct": 80.394,
-            "profit_jpy": -217450.0,
+            "races": 10769,
+            "hits": 4802,
+            "stake_jpy": 1076900,
+            "return_jpy": 866940.0,
+            "hit_rate_pct": 44.591,
+            "roi_pct": 80.503,
+            "profit_jpy": -209960.0,
             "stake_per_race_jpy": 100.0
           },
           "trio_2_4_5_narrow12": {
-            "races": 11091,
-            "hits": 6948,
-            "tickets": 132653,
-            "stake_jpy": 21072900,
-            "return_jpy": 15965480.0,
-            "hit_rate_pct": 62.645,
-            "roi_pct": 75.763,
-            "profit_jpy": -5107420.0,
+            "races": 10769,
+            "hits": 6749,
+            "tickets": 128803,
+            "stake_jpy": 20461100,
+            "return_jpy": 15484260.0,
+            "hit_rate_pct": 62.671,
+            "roi_pct": 75.677,
+            "profit_jpy": -4976840.0,
             "stake_per_race_jpy": 1900.0
           }
         }
@@ -4424,12 +4419,6 @@
         "bytes": 11633366,
         "win_odds_rows": 14725,
         "odds_cache": "miss"
-      },
-      {
-        "month": "2026-11",
-        "bytes": 2696612,
-        "win_odds_rows": 3358,
-        "odds_cache": "current_month_refresh"
       }
     ],
     "policy": "Every listed model and final-odds favorite is evaluated on exactly the same holdout races and the same matched runner subset. Market odds are used only as a retrospective benchmark, never as model input or a live betting price."
@@ -4438,354 +4427,354 @@
     "LAB_feature_enhanced_CatBoost": [
       {
         "feature": "jockey_score",
-        "importance": 20.108154
-      },
-      {
-        "feature": "form",
-        "importance": 16.479322
-      },
-      {
-        "feature": "lab_score",
-        "importance": 15.965945
+        "importance": 19.987554
       },
       {
         "feature": "venue_score",
-        "importance": 15.088262
+        "importance": 17.670776
+      },
+      {
+        "feature": "form",
+        "importance": 15.682459
+      },
+      {
+        "feature": "lab_score",
+        "importance": 15.63392
       },
       {
         "feature": "distance_score",
-        "importance": 8.937777
+        "importance": 7.717724
       },
       {
         "feature": "field_size",
-        "importance": 7.496604
+        "importance": 7.362444
       },
       {
         "feature": "sire_score",
-        "importance": 4.707717
+        "importance": 4.495712
       },
       {
         "feature": "distance_m",
-        "importance": 4.577687
+        "importance": 4.004693
       },
       {
         "feature": "venue",
-        "importance": 2.557135
+        "importance": 2.96932
       },
       {
         "feature": "age_score",
-        "importance": 2.1034
+        "importance": 2.305535
       },
       {
         "feature": "surface",
-        "importance": 1.195558
+        "importance": 1.661144
       },
       {
         "feature": "going",
-        "importance": 0.782437
+        "importance": 0.508719
       }
     ],
     "LAB_feature_enhanced_LightGBM": [
       {
         "feature": "lab_score",
-        "importance": 246173.837193
+        "importance": 247512.413721
       },
       {
         "feature": "jockey_score",
-        "importance": 70378.28935
+        "importance": 70262.498941
       },
       {
         "feature": "venue_score",
-        "importance": 61086.583447
+        "importance": 60752.728008
       },
       {
         "feature": "form",
-        "importance": 46591.070065
+        "importance": 43856.682246
       },
       {
         "feature": "field_size",
-        "importance": 22485.490447
+        "importance": 22581.931845
       },
       {
         "feature": "distance_score",
-        "importance": 14219.435499
+        "importance": 14392.688035
       },
       {
         "feature": "sire_score",
-        "importance": 13477.081117
+        "importance": 12638.776488
       },
       {
         "feature": "distance_m",
-        "importance": 12568.06153
+        "importance": 12332.493724
       },
       {
         "feature": "venue",
-        "importance": 8585.451129
+        "importance": 8100.080012
       },
       {
         "feature": "age_score",
-        "importance": 3895.068698
+        "importance": 3626.290761
       },
       {
         "feature": "going",
-        "importance": 3306.158377
+        "importance": 3494.391564
       },
       {
         "feature": "surface",
-        "importance": 106.038899
+        "importance": 100.212849
       }
     ],
     "independent_raw_CatBoost": [
       {
         "feature": "recent_finish_pct",
-        "importance": 22.116987
+        "importance": 22.01612
       },
       {
         "feature": "jockey_top3_rate",
-        "importance": 10.204356
+        "importance": 11.185103
       },
       {
         "feature": "venue_top3_rate",
-        "importance": 8.480383
-      },
-      {
-        "feature": "jockey",
-        "importance": 5.867882
-      },
-      {
-        "feature": "field_size",
-        "importance": 5.619079
+        "importance": 8.405568
       },
       {
         "feature": "career_top3_rate",
-        "importance": 5.34308
+        "importance": 7.109117
       },
       {
-        "feature": "career_win_rate",
-        "importance": 4.547659
+        "feature": "field_size",
+        "importance": 5.851719
+      },
+      {
+        "feature": "jockey",
+        "importance": 5.305661
       },
       {
         "feature": "venue_runs",
-        "importance": 3.843498
-      },
-      {
-        "feature": "sire",
-        "importance": 3.25551
-      },
-      {
-        "feature": "age",
-        "importance": 3.248489
-      },
-      {
-        "feature": "distance_m",
-        "importance": 3.181393
-      },
-      {
-        "feature": "jockey_runs",
-        "importance": 3.118077
-      },
-      {
-        "feature": "venue",
-        "importance": 3.025639
+        "importance": 4.986405
       },
       {
         "feature": "recent_top3_rate",
-        "importance": 2.657069
+        "importance": 4.184845
       },
       {
-        "feature": "recent_last3f_rank",
-        "importance": 2.525752
+        "feature": "career_win_rate",
+        "importance": 3.637924
       },
       {
-        "feature": "recent_time_per_km",
-        "importance": 2.044843
+        "feature": "venue",
+        "importance": 3.145326
       },
       {
-        "feature": "recent_margin_quality",
-        "importance": 1.720563
+        "feature": "jockey_runs",
+        "importance": 3.039801
       },
       {
-        "feature": "sire_top3_rate",
-        "importance": 1.704617
+        "feature": "sire",
+        "importance": 3.03491
+      },
+      {
+        "feature": "age",
+        "importance": 2.95123
+      },
+      {
+        "feature": "distance_m",
+        "importance": 2.908885
       },
       {
         "feature": "distance_top3_rate",
-        "importance": 1.550506
+        "importance": 2.220381
       },
       {
-        "feature": "sire_runs",
-        "importance": 1.113049
+        "feature": "recent_margin_quality",
+        "importance": 1.934673
+      },
+      {
+        "feature": "recent_last3f_rank",
+        "importance": 1.79479
+      },
+      {
+        "feature": "recent_time_per_km",
+        "importance": 1.242586
+      },
+      {
+        "feature": "surface",
+        "importance": 1.134311
+      },
+      {
+        "feature": "prior_runs",
+        "importance": 1.103029
       }
     ],
     "independent_raw_LightGBM": [
       {
         "feature": "venue_top3_rate",
-        "importance": 128538.595027
+        "importance": 130523.858042
       },
       {
         "feature": "recent_finish_pct",
-        "importance": 110690.58936
+        "importance": 110079.934033
       },
       {
         "feature": "recent_top3_rate",
-        "importance": 72322.03846
+        "importance": 71715.247956
       },
       {
         "feature": "jockey_top3_rate",
-        "importance": 63465.068785
+        "importance": 63826.195653
       },
       {
         "feature": "career_win_rate",
-        "importance": 24938.368374
+        "importance": 26098.642608
       },
       {
         "feature": "field_size",
-        "importance": 18875.827626
+        "importance": 19021.229558
       },
       {
         "feature": "jockey_runs",
-        "importance": 15352.171427
+        "importance": 15317.5271
       },
       {
         "feature": "distance_m",
-        "importance": 13791.570182
+        "importance": 14466.00094
       },
       {
         "feature": "age",
-        "importance": 10708.282293
+        "importance": 10867.180099
       },
       {
         "feature": "venue_runs",
-        "importance": 10351.344432
+        "importance": 9989.962814
       },
       {
         "feature": "recent_last3f_rank",
-        "importance": 8260.226672
-      },
-      {
-        "feature": "sire_top3_rate",
-        "importance": 6904.04301
-      },
-      {
-        "feature": "venue",
-        "importance": 6698.304815
+        "importance": 8310.935894
       },
       {
         "feature": "recent_time_per_km",
-        "importance": 6478.351275
+        "importance": 7190.277375
       },
       {
-        "feature": "career_top3_rate",
-        "importance": 5448.172392
+        "feature": "sire_top3_rate",
+        "importance": 6951.062508
+      },
+      {
+        "feature": "venue",
+        "importance": 6908.598862
       },
       {
         "feature": "going",
-        "importance": 4947.337343
+        "importance": 5334.724998
+      },
+      {
+        "feature": "career_top3_rate",
+        "importance": 5000.898238
       },
       {
         "feature": "sire_runs",
-        "importance": 4900.409177
-      },
-      {
-        "feature": "recent_margin_quality",
-        "importance": 4737.855225
-      },
-      {
-        "feature": "jockey",
-        "importance": 4385.095227
+        "importance": 4863.385347
       },
       {
         "feature": "distance_top3_rate",
-        "importance": 4361.960098
+        "importance": 4813.722726
+      },
+      {
+        "feature": "recent_margin_quality",
+        "importance": 4572.15257
+      },
+      {
+        "feature": "jockey",
+        "importance": 4174.134953
       }
     ],
     "LambdaRank_independent_raw": [
       {
         "feature": "recent_finish_pct",
-        "importance": 183317.740413
+        "importance": 189297.684735
       },
       {
         "feature": "venue_top3_rate",
-        "importance": 173292.988435
+        "importance": 170654.447783
       },
       {
         "feature": "jockey_top3_rate",
-        "importance": 73364.328167
+        "importance": 74120.964113
       },
       {
         "feature": "career_win_rate",
-        "importance": 41467.777556
-      },
-      {
-        "feature": "distance_top3_rate",
-        "importance": 31730.895603
+        "importance": 40013.706316
       },
       {
         "feature": "recent_top3_rate",
-        "importance": 27234.311024
+        "importance": 28512.903788
+      },
+      {
+        "feature": "distance_top3_rate",
+        "importance": 26259.956124
       },
       {
         "feature": "recent_time_per_km",
-        "importance": 16396.854193
+        "importance": 13308.731085
       },
       {
         "feature": "venue_runs",
-        "importance": 10031.720337
+        "importance": 9532.51809
       },
       {
         "feature": "recent_last3f_rank",
-        "importance": 8951.260413
+        "importance": 8439.808507
       },
       {
         "feature": "distance_m",
-        "importance": 8623.805108
+        "importance": 8100.02604
       },
       {
         "feature": "sire_top3_rate",
-        "importance": 7582.242744
+        "importance": 7288.775203
       },
       {
         "feature": "career_top3_rate",
-        "importance": 6432.614032
-      },
-      {
-        "feature": "age",
-        "importance": 5875.976652
-      },
-      {
-        "feature": "recent_margin_quality",
-        "importance": 5145.157682
+        "importance": 5468.27374
       },
       {
         "feature": "going",
-        "importance": 5129.153322
+        "importance": 5299.049781
+      },
+      {
+        "feature": "age",
+        "importance": 4850.138831
+      },
+      {
+        "feature": "recent_margin_quality",
+        "importance": 4837.215474
       },
       {
         "feature": "jockey_runs",
-        "importance": 4539.140828
-      },
-      {
-        "feature": "venue",
-        "importance": 2473.166762
+        "importance": 3881.065005
       },
       {
         "feature": "sire_runs",
-        "importance": 2343.957591
+        "importance": 1620.105169
+      },
+      {
+        "feature": "venue",
+        "importance": 1429.373495
       },
       {
         "feature": "sire",
-        "importance": 2149.678551
+        "importance": 1370.035391
       },
       {
-        "feature": "going_top3_rate",
-        "importance": 1648.011334
+        "feature": "distance_runs",
+        "importance": 1096.486417
       }
     ]
   },
   "plackett_luce_fit": {
     "converged": true,
     "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
-    "iterations": 23
+    "iterations": 21
   },
   "limitations": [
     "Research-only ranking; no production model or ticket logic changed.",
