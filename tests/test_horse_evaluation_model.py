@@ -67,6 +67,14 @@ class HorseEvaluationModelTests(unittest.TestCase):
         for key in ("ability", "condition", "suitability", "race_content", "partnership"):
             self.assertEqual(crowded_a["axes"][key], normal_a["axes"][key])
 
+    def test_horse_jockey_pair_history_changes_partnership_axis(self):
+        horse = {"no": "1", "name": "A", "jockey": "J1",
+                 "jockey_pair_stats": {"runs": 2, "top3": 2}}
+        result = evaluate_field([horse, self.field[1], self.field[2]],
+                                self.history, {"venue": "大井", "distance": 1600})
+        row = next(x for x in result["predictions"] if x["horse_no"] == "1")
+        self.assertGreater(row["axes"]["partnership"], 0.5)
+
     def test_invalid_weights_are_rejected(self):
         with self.assertRaises(ValueError):
             evaluate_field(self.field, {}, {"venue": "大井"},
