@@ -1,17 +1,17 @@
 {
   "version": "nar-daily-review-v1",
-  "generated_at": "2026-11-08T14:58:26.614926+09:00",
+  "generated_at": "2026-11-08T15:15:06.128908+09:00",
   "as_of_date_jst": "2026-11-08",
   "status": "ok",
   "daily_official_results": {
-    "report_generated_at": "2026-11-08T14:51:42.273906+09:00",
-    "report_age_hours": 0.11,
+    "report_generated_at": "2026-11-08T14:57:15.246132+09:00",
+    "report_age_hours": 0.3,
     "daily_archive_available": true,
     "today_payout_races": 7,
     "monthly_archive_available": true
   },
   "prospective_preoff_evaluation_G4": {
-    "generated_at": "2026-11-08T05:58:24.286182+00:00",
+    "generated_at": "2026-11-08T06:15:04.343324+00:00",
     "age_hours": 0.0,
     "status": "evaluated_not_profitable_or_not_confirmed",
     "evaluation_period": [
@@ -1222,10 +1222,10 @@
         "note": "One closest-to-post captured pre-off snapshot per race; official result joined after the race."
       }
     ],
-    "valid_snapshots": 2031,
-    "snapshots_with_official_result": 2041,
+    "valid_snapshots": 2024,
+    "snapshots_with_official_result": 2034,
     "snapshots_missing_official_result": 80,
-    "supabase_snapshots_joined": 1832,
+    "supabase_snapshots_joined": 1825,
     "closest_to_post": {
       "unique_races": 142,
       "development_races": 100,
@@ -2444,59 +2444,59 @@
     "profitable_claim": false
   },
   "calibration_G1": {
-    "generated_at": "2026-11-08T05:43:17.363960+00:00",
+    "generated_at": "2026-11-08T06:00:35.704056+00:00",
     "status": "G1_improved_on_untouched_holdout",
     "selected_temperature": 0.105,
-    "holdout_races": 3478,
+    "holdout_races": 3351,
     "baseline": {
-      "races": 3478,
+      "races": 3351,
       "temperature": 0.18,
-      "log_loss": 2.04662,
-      "brier": 0.83698,
-      "top1_accuracy": 29.73,
-      "ece": 0.09727,
+      "log_loss": 2.04414,
+      "brier": 0.83639,
+      "top1_accuracy": 29.9,
+      "ece": 0.09908,
       "confidence_buckets": [
         {
           "range": "0-10%",
-          "races": 6,
-          "mean_confidence_pct": 9.71,
-          "hit_rate_pct": 16.67,
-          "calibration_gap_pp": 6.95
+          "races": 7,
+          "mean_confidence_pct": 9.68,
+          "hit_rate_pct": 14.29,
+          "calibration_gap_pp": 4.61
         },
         {
           "range": "10-20%",
-          "races": 2033,
+          "races": 1971,
           "mean_confidence_pct": 16.55,
-          "hit_rate_pct": 22.58,
-          "calibration_gap_pp": 6.03
+          "hit_rate_pct": 23.03,
+          "calibration_gap_pp": 6.49
         },
         {
           "range": "20-30%",
-          "races": 1256,
-          "mean_confidence_pct": 23.6,
-          "hit_rate_pct": 37.1,
-          "calibration_gap_pp": 13.51
+          "races": 1195,
+          "mean_confidence_pct": 23.63,
+          "hit_rate_pct": 36.65,
+          "calibration_gap_pp": 13.02
         },
         {
           "range": "30-40%",
-          "races": 168,
-          "mean_confidence_pct": 33.23,
-          "hit_rate_pct": 57.74,
-          "calibration_gap_pp": 24.51
+          "races": 162,
+          "mean_confidence_pct": 33.25,
+          "hit_rate_pct": 59.88,
+          "calibration_gap_pp": 26.62
         },
         {
           "range": "40-50%",
-          "races": 14,
-          "mean_confidence_pct": 42.72,
-          "hit_rate_pct": 71.43,
-          "calibration_gap_pp": 28.71
+          "races": 15,
+          "mean_confidence_pct": 42.82,
+          "hit_rate_pct": 73.33,
+          "calibration_gap_pp": 30.51
         },
         {
           "range": "50-60%",
           "races": 1,
-          "mean_confidence_pct": 50.16,
+          "mean_confidence_pct": 50.28,
           "hit_rate_pct": 100.0,
-          "calibration_gap_pp": 49.84
+          "calibration_gap_pp": 49.72
         },
         {
           "range": "60-70%",
@@ -2529,12 +2529,12 @@
       ]
     },
     "calibrated": {
-      "races": 3478,
+      "races": 3351,
       "temperature": 0.105,
-      "log_loss": 1.99674,
-      "brier": 0.82052,
-      "top1_accuracy": 29.73,
-      "ece": 0.01533,
+      "log_loss": 1.99389,
+      "brier": 0.81959,
+      "top1_accuracy": 29.9,
+      "ece": 0.01721,
       "confidence_buckets": [
         {
           "range": "0-10%",
@@ -2545,52 +2545,52 @@
         },
         {
           "range": "10-20%",
-          "races": 595,
-          "mean_confidence_pct": 17.46,
-          "hit_rate_pct": 16.3,
-          "calibration_gap_pp": -1.16
+          "races": 590,
+          "mean_confidence_pct": 17.44,
+          "hit_rate_pct": 16.44,
+          "calibration_gap_pp": -1.0
         },
         {
           "range": "20-30%",
-          "races": 1640,
-          "mean_confidence_pct": 24.88,
-          "hit_rate_pct": 25.43,
-          "calibration_gap_pp": 0.55
+          "races": 1579,
+          "mean_confidence_pct": 24.89,
+          "hit_rate_pct": 25.9,
+          "calibration_gap_pp": 1.01
         },
         {
           "range": "30-40%",
-          "races": 807,
-          "mean_confidence_pct": 34.4,
-          "hit_rate_pct": 35.56,
-          "calibration_gap_pp": 1.16
+          "races": 767,
+          "mean_confidence_pct": 34.44,
+          "hit_rate_pct": 34.94,
+          "calibration_gap_pp": 0.5
         },
         {
           "range": "40-50%",
-          "races": 315,
-          "mean_confidence_pct": 44.19,
-          "hit_rate_pct": 50.79,
-          "calibration_gap_pp": 6.6
+          "races": 296,
+          "mean_confidence_pct": 44.21,
+          "hit_rate_pct": 52.36,
+          "calibration_gap_pp": 8.15
         },
         {
           "range": "50-60%",
-          "races": 91,
-          "mean_confidence_pct": 54.56,
-          "hit_rate_pct": 54.95,
-          "calibration_gap_pp": 0.38
+          "races": 89,
+          "mean_confidence_pct": 54.29,
+          "hit_rate_pct": 55.06,
+          "calibration_gap_pp": 0.77
         },
         {
           "range": "60-70%",
-          "races": 26,
-          "mean_confidence_pct": 63.21,
-          "hit_rate_pct": 84.62,
-          "calibration_gap_pp": 21.41
+          "races": 25,
+          "mean_confidence_pct": 63.55,
+          "hit_rate_pct": 88.0,
+          "calibration_gap_pp": 24.45
         },
         {
           "range": "70-80%",
-          "races": 3,
-          "mean_confidence_pct": 74.58,
-          "hit_rate_pct": 33.33,
-          "calibration_gap_pp": -41.25
+          "races": 4,
+          "mean_confidence_pct": 73.87,
+          "hit_rate_pct": 50.0,
+          "calibration_gap_pp": -23.87
         },
         {
           "range": "80-90%",
@@ -2621,7 +2621,7 @@
   },
   "weekly_historical_backtest": {
     "generated_at": "2026-11-08T05:22:42.649129+00:00",
-    "age_hours": 0.6,
+    "age_hours": 0.87,
     "period": {
       "start": "2022-11-08",
       "end": "2026-11-07"
