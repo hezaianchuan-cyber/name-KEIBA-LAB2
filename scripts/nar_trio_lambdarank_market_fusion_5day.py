@@ -20,6 +20,7 @@ import nar_trio_compatibility as tc
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "nar-trio-lambdarank-market-fusion-5day.json"
 BLEND_WEIGHTS = (0.00, 0.25, 0.50, 0.75, 1.00)
+COMPATIBILITY_WEIGHTS = (0.00, 0.10, 0.20, 0.35, 0.50, 0.75, 1.00)
 TICKETS_PER_RACE = 12
 
 
@@ -123,6 +124,8 @@ def evaluate_races(races, weight, compatibility_weight=0.0):
         "podium_horses_captured": 0, "podium_horses_total": 0,
         "exact_podium_top3_hits": 0, "trio_hit_races": 0,
         "tickets": 0, "stake_jpy": 0, "return_jpy": 0,
+        "compatibility_changed_races": 0, "top12_overlap_tickets": 0,
+        "top12_overlap_denominator": 0,
     }
     for item in races:
         scores = blend_rank_scores(item["model_rank_scores"], item["market_rank_scores"], weight)
@@ -139,6 +142,13 @@ def evaluate_races(races, weight, compatibility_weight=0.0):
         totals["podium_horses_total"] += 3
         totals["exact_podium_top3_hits"] += int(predicted_top3 == podium)
         tickets = build_trio_tickets(item["group"], scores, compatibility_weight=compatibility_weight)
+        baseline_tickets = build_trio_tickets(item["group"], scores, compatibility_weight=0.0)
+        baseline_set = {tuple(ticket) for ticket in baseline_tickets}
+        current_set = {tuple(ticket) for ticket in tickets}
+        overlap = len(baseline_set & current_set)
+        totals["compatibility_changed_races"] += int(current_set != baseline_set)
+        totals["top12_overlap_tickets"] += overlap
+        totals["top12_overlap_denominator"] += len(baseline_set)
         totals["tickets"] += len(tickets)
         totals["stake_jpy"] += len(tickets) * 100
         returned = sum(nb.payout_for("trio", ticket, item["payout"]) or 0 for ticket in tickets)
@@ -155,6 +165,9 @@ def evaluate_races(races, weight, compatibility_weight=0.0):
         "roi_pct": round(100 * totals["return_jpy"] / stake, 2) if stake else None,
         "profit_jpy": totals["return_jpy"] - stake,
         "tickets_per_race": round(totals["tickets"] / count, 2) if count else None,
+        "compatibility_changed_races": totals["compatibility_changed_races"],
+        "top12_overlap_pct": round(100 * totals["top12_overlap_tickets"] / totals["top12_overlap_denominator"], 2)
+            if totals["top12_overlap_denominator"] else None,
     })
     return totals
 
@@ -265,7 +278,7 @@ def main():
         raise RuntimeError(f"Insufficient fusion split: development={len(dev_races)} holdout={len(holdout_races)}")
 
     selected_weight, dev_results = select_market_weight(dev_races)
-    compatibility_weights = (0.00, 0.05, 0.10, 0.15, 0.20)
+    compatibility_weights = COMPATIBILITY_WEIGHTS
     dev_compatibility_results = {
         f"{cw:.2f}": evaluate_races(dev_races, selected_weight, cw)
         for cw in compatibility_weights
@@ -286,6 +299,22 @@ def main():
     holdout_compatibility_results["selected_from_development"] = evaluate_races(
         holdout_races, selected_weight, selected_compatibility_weight
     )
+    holdout_front_count_segments = {}
+    for label, predicate in (
+        ("0-1", lambda n: n <= 1),
+        ("2", lambda n: n == 2),
+        ("3+", lambda n: n >= 3),
+    ):
+        segment = [
+            item for item in holdout_races
+            if predicate(max(float(row.get("predicted_front_count", 0.0)) for row in item["group"]))
+        ]
+        holdout_front_count_segments[label] = {
+            "races": len(segment),
+            "baseline": evaluate_races(segment, selected_weight, 0.0) if segment else None,
+            "compatibility_50pct": evaluate_races(segment, selected_weight, 0.50) if segment else None,
+            "compatibility_100pct": evaluate_races(segment, selected_weight, 1.00) if segment else None,
+        }
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "evaluated", "research_only": True,
@@ -313,6 +342,7 @@ def main():
             "selection_results": dev_compatibility_results,
         },
         "untouched_holdout_compatibility": holdout_compatibility_results,
+        "untouched_holdout_front_count_segments": holdout_front_count_segments,
         "untouched_holdout": holdout_results,
         "all_five_days_descriptive": {f"{weight:.2f}": evaluate_races(matched, weight) for weight in BLEND_WEIGHTS},
         "interpretation": {
@@ -326,7 +356,8 @@ def main():
                 "The fusion weight is tuned on three dates and needs validation on a longer later holdout.",
                 "Only timestamped pre-off win odds are used; confirmed final odds are excluded.",
                 "No live-model.json, live-history.json, or production ticket logic is changed.",
-                "The trio set score is an initial additive score; pairwise interaction and pace compatibility remain future work.",
+                "Compatibility weights are swept broadly and top-12 ticket overlap is reported to detect inert adjustments.",
+                "Front-count segment results are exploratory; predicted_front_count is a historical proxy, not observed in-race pace.",
             ],
         },
         "data_source": {"archive_months": downloads, "snapshot_records_considered": len(snapshot_by_key)},
