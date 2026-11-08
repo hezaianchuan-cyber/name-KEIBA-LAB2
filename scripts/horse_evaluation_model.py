@@ -143,9 +143,7 @@ def _axis_scores(history, race, horse):
         runs = max(0, int(pair_stats.get("runs", 0) or 0))
         top3 = max(0, int(pair_stats.get("top3", 0) or 0))
         partnership = (top3 + 2.0) / (runs + 4.0)
-    elif jockey_stats and horse.get("jockey"):
-        stat = jockey_stats.get(horse["jockey"], {})
-        partnership = (float(stat.get("top3", 0)) + 5.0) / (float(stat.get("runs", 0)) + 10.0)
+
 
     return {
         "ability": clamp01(ability),
