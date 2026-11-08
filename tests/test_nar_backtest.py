@@ -2869,8 +2869,8 @@ class SequentialLearningCurveTests(unittest.TestCase):
 
 class ThreeYearDailyHistoryTests(unittest.TestCase):
     def test_training_horizon_is_three_years(self):
-        self.assertEqual(nb.HISTORY_DAYS, 365 * 3)
-        self.assertEqual(recent.nb.START, recent.nb.END - nb.dt.timedelta(days=365 * 3))
+        self.assertEqual(recent.RECENT_TRAINING_DAYS, 365 * 3)
+        self.assertEqual(nb.START, nb.END - nb.dt.timedelta(days=1460))
 
     def test_live_history_freezes_opponent_strength_before_same_day_results(self):
         day = nb.dt.date(2026, 11, 1)
