@@ -218,6 +218,29 @@ class BayesianSmoothingTests(unittest.TestCase):
         self.assertGreater(abs(large - 0.50), abs(sparse - 0.50))
 
 
+class HistoricalOpponentStrengthTests(unittest.TestCase):
+    def test_strength_uses_only_opponents_prior_form_and_excludes_own_form(self):
+        field = [
+            {"no": "1", "name": "A"},
+            {"no": "2", "name": "B"},
+            {"no": "3", "name": "C"},
+        ]
+        history = {
+            "A": [{"finish": 1, "field_size": 10}],
+            "B": [{"finish": 1, "field_size": 10}],
+            "C": [{"finish": 2, "field_size": 10}],
+        }
+        strength = nb.historical_opponent_strength(field, history)
+        self.assertGreater(strength["1"], 0.5)
+        self.assertAlmostEqual(strength["1"], strength["2"])
+        self.assertAlmostEqual(strength["1"], strength["3"])
+
+    def test_missing_opponent_history_is_neutral(self):
+        field = [{"no": "1", "name": "A"}, {"no": "2", "name": "B"}]
+        strength = nb.historical_opponent_strength(field, {})
+        self.assertEqual(strength, {"1": 0.5, "2": 0.5})
+
+
 class RaceTimeFeatureTests(unittest.TestCase):
     def test_parse_minutes_seconds(self):
         self.assertAlmostEqual(nb.parse_race_time("1:38.7"), 98.7)
