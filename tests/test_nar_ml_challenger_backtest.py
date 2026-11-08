@@ -71,6 +71,23 @@ class RichPreRaceFeatureTests(unittest.TestCase):
         tests = [day for fold in folds for day in fold["test_dates"]]
         self.assertEqual(len(tests), len(set(tests)))
 
+    def test_wide_top3_evaluator_uses_three_pairs_and_fixed_stake(self):
+        group = [
+            {"race_key": "大井|2026-01-01|1", "horse_no": "1"},
+            {"race_key": "大井|2026-01-01|1", "horse_no": "2"},
+            {"race_key": "大井|2026-01-01|1", "horse_no": "3"},
+            {"race_key": "大井|2026-01-01|1", "horse_no": "4"},
+        ]
+        key = ml.nb.race_key("大井", "20260101", "1")
+        payouts = {key: {"_index": {"wide": {("1", "2"): 500}}}}
+        metrics = ml.evaluate_wide_top3([(group, [4.0, 3.0, 2.0, 1.0])], payouts)
+        self.assertEqual(metrics["races"], 1)
+        self.assertEqual(metrics["hit_races"], 1)
+        self.assertEqual(metrics["stake_jpy"], 300)
+        self.assertEqual(metrics["return_jpy"], 500)
+        self.assertEqual(metrics["roi_pct"], 166.667)
+        self.assertEqual(metrics["hit_rate_pct"], 100.0)
+
     def test_raw_feature_set_contains_all_added_pre_race_signals(self):
         expected = {
             "frame_no", "carried_weight", "body_weight", "body_weight_change",
