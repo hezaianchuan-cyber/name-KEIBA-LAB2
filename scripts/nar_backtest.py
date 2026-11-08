@@ -4166,6 +4166,7 @@ def preoff_ranking_strategy_backtest(payouts):
             "races_with_bets":races, "hit_races":hit_races,
             "race_hit_rate":round(100*hit_races/races,2) if races else None,
             "tickets":tickets, "hits":hits,
+            "hit_rate":round(100*hits/tickets,2) if tickets else None,
             "ticket_hit_rate":round(100*hits/tickets,2) if tickets else None,
             "stake":stake, "return":returned,
             "profit":returned-stake, "roi_ci95_low":ci_low, "roi_ci95_high":ci_high,
