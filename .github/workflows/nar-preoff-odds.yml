@@ -16,7 +16,7 @@ on:
   schedule:
     # One five-minute schedule avoids overlapping duplicate capture jobs.
     # The Supabase official odds collector independently runs every minute.
-    - cron: "0-59/5 * * * *"
+    - cron: "*/5 * * * *"
 
 permissions:
   contents: write
