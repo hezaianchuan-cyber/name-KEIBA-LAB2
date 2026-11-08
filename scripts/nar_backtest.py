@@ -7,6 +7,10 @@ metrics and a small set of race-level examples are written to data/backtest-summ
 from __future__ import annotations
 import base64, csv, datetime as dt, gzip, io, json, math, os, pickle, random, re, sys, time, urllib.parse, urllib.request, zipfile
 from collections import defaultdict
+try:
+    from .horse_evaluation_model import evaluate_field
+except ImportError:
+    from horse_evaluation_model import evaluate_field
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -1999,6 +2003,7 @@ def run_backtest(races, horses, payouts, training_only=False):
     calibration_records = []
     model_weights = {"form":0.55,"venue":0.12,"distance":0.12,"sire":0.10,"jockey":0.07,"age":0.04}
     learning_updates = 0
+    horse_model_metrics = {"races": 0, "winner_top1": 0, "winner_top3": 0, "podium_captured": 0, "podium_total": 0}
     shadow_metrics = {kind: {"races": 0, "tickets": 0, "hits": 0, "stake": 0, "return": 0}
                       for kind in ("win", "place", "wide", "trio")}
     shadow_races = 0
@@ -2045,6 +2050,25 @@ def run_backtest(races, horses, payouts, training_only=False):
         key = race["key"]
         field = horses.get(key, [])
         if len(field) < 3: continue
+        # Research challenger sees only previously committed history. Current-race
+        # finish, payout, and odds are not passed into the evaluator.
+        pace_styles = []
+        for runner in field:
+            style = pace_style(history.get(runner["name"], [])).get("style")
+            pace_styles.append({"逃げ": "front", "先行": "stalker",
+                                "差し": "closer", "追込": "deep_closer"}.get(style, "unknown"))
+        challenger_race = {**race, "predicted_styles": pace_styles}
+        challenger = evaluate_field(field, history, challenger_race)
+        actual_winners = {str(h["no"]) for h in field if h.get("finish") == 1}
+        actual_podium = {str(h["no"]) for h in field if h.get("finish") in (1, 2, 3)}
+        if actual_winners and len(actual_podium) == 3:
+            win_order = challenger["win_ranking"]
+            top3_order = challenger["top3_ranking"][:3]
+            horse_model_metrics["races"] += 1
+            horse_model_metrics["winner_top1"] += int(any(no in actual_winners for no in win_order[:1]))
+            horse_model_metrics["winner_top3"] += int(any(no in actual_winners for no in win_order[:3]))
+            horse_model_metrics["podium_captured"] += len(set(top3_order) & actual_podium)
+            horse_model_metrics["podium_total"] += 3
         # Predict BEFORE adding any current-race results to history or trainer/jockey/sire aggregates.
         scored = []
         parts_by_no = {}
@@ -2137,6 +2161,14 @@ def run_backtest(races, horses, payouts, training_only=False):
         "policy": "Mirrors production shadowTickets: model rank 1 win; ranks 1-2 place; ranks 1-2 wide; ranks 1-3 trio; 100 JPY each; no odds-based real-bet selection.",
     }
     summary["shadow_portfolio"] = shadow_total
+    summary["horse_evaluation_v1"] = {
+        **horse_model_metrics,
+        "winner_top1_rate_pct": round(100 * horse_model_metrics["winner_top1"] / horse_model_metrics["races"], 2) if horse_model_metrics["races"] else None,
+        "winner_top3_rate_pct": round(100 * horse_model_metrics["winner_top3"] / horse_model_metrics["races"], 2) if horse_model_metrics["races"] else None,
+        "podium_capture_rate_pct": round(100 * horse_model_metrics["podium_captured"] / horse_model_metrics["podium_total"], 2) if horse_model_metrics["podium_total"] else None,
+        "status": "research_only",
+        "note": "All races with a complete official podium; uses prior history only. Win and top-three rankings are evaluated separately.",
+    }
     return summary, examples, len(ordered), model_weights, learning_updates, calibration_records
 
 def build_frame_stats(races, horses):
