@@ -960,8 +960,8 @@ class RunningStyleDiagnosticTests(unittest.TestCase):
             "Closer": [{"first_corner_pct": 0.75, "last_corner_pct": 0.30}],
         }
         ranked = [field[1], field[0], field[2]]
-        payout = {"win": [(("1",), 250)]}
-        nb.update_running_style_diagnostics(stats, "C", ranked, field, history, payout)
+        with mock.patch.object(nb, "payout_for", side_effect=lambda kind, ticket, payout: 250 if ticket == ("1",) else 0):
+            nb.update_running_style_diagnostics(stats, "C", ranked, field, history, {})
         summary = nb.summarize_running_style_diagnostics(stats)
         self.assertEqual(summary["C"]["逃げ"]["starts"], 1)
         self.assertEqual(summary["C"]["逃げ"]["winners"], 1)
