@@ -2046,6 +2046,52 @@ def update_frame_stats(race, field, frame_stats):
         frame_stats[key]["top3"] += int(horse["finish"] <= 3)
 
 
+def update_running_style_diagnostics(stats, model_name, ranked, field, history, payout):
+    """Measure prior-history running styles against this model's race ranking."""
+    if not ranked or len(ranked) < 3:
+        return
+    rank_by_no = {str(h["no"]): rank for rank, h in enumerate(ranked, 1)}
+    for horse in field:
+        no = str(horse.get("no"))
+        profile = pace_style(history.get(horse.get("name", ""), []))
+        style = profile.get("style") or "unknown"
+        bucket = stats[model_name][style]
+        rank = rank_by_no.get(no)
+        if rank is None:
+            continue
+        finish = horse.get("finish")
+        bucket["starts"] += 1
+        bucket["predicted_rank_sum"] += rank
+        bucket["predicted_top1"] += int(rank == 1)
+        bucket["predicted_top3"] += int(rank <= 3)
+        bucket["actual_top3"] += int(finish is not None and finish <= 3)
+        bucket["winners"] += int(finish == 1)
+        # Transparent style-level flat win benchmark: one 100-yen win bet
+        # on every runner of this prior-history style, not a selected ticket.
+        bucket["win_stake_jpy"] += 100
+        bucket["win_return_jpy"] += int(payout_for("win", (no,), payout) or 0)
+
+
+def summarize_running_style_diagnostics(stats):
+    output = {}
+    for model_name, styles in stats.items():
+        output[model_name] = {}
+        for style, bucket in sorted(styles.items()):
+            starts = bucket["starts"]
+            stake = bucket["win_stake_jpy"]
+            output[model_name][style] = {
+                **bucket,
+                "winner_rate_pct": round(100 * bucket["winners"] / starts, 2) if starts else None,
+                "actual_top3_rate_pct": round(100 * bucket["actual_top3"] / starts, 2) if starts else None,
+                "predicted_top1_rate_pct": round(100 * bucket["predicted_top1"] / starts, 2) if starts else None,
+                "predicted_top3_rate_pct": round(100 * bucket["predicted_top3"] / starts, 2) if starts else None,
+                "mean_predicted_rank": round(bucket["predicted_rank_sum"] / starts, 2) if starts else None,
+                "win_roi_pct": round(100 * bucket["win_return_jpy"] / stake, 2) if stake else None,
+                "win_profit_jpy": bucket["win_return_jpy"] - stake,
+            }
+    return output
+
+
 def race_segment_labels(race):
     """Stable, source-grounded condition buckets for out-of-sample diagnostics."""
     labels = {}
@@ -2734,6 +2780,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     })
     condition_bet_types = ("wide", "exacta", "trio", "trifecta")
     condition_finish_stats = defaultdict(new_condition_finish_bucket)
+    running_style_stats = defaultdict(lambda: defaultdict(lambda: {"starts": 0, "predicted_rank_sum": 0, "predicted_top1": 0, "predicted_top3": 0, "actual_top3": 0, "winners": 0, "win_stake_jpy": 0, "win_return_jpy": 0}))
     def commit(items):
         nonlocal sequential_updates
         # Every prediction for this date is already complete. Learn only now.
@@ -2962,6 +3009,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             else:
                 top_probability = None
             m=results[model_name]; m["races"]+=1
+            if model_name in ("C_performance_pace", "D4_jockey_venue_distance", "ablate_form"):
+                update_running_style_diagnostics(running_style_stats, model_name, ranked, field, history, payout)
             shadow = m["shadow_portfolio"]
             shadow_tickets = build_shadow_portfolio_tickets(ranked)
             if shadow_tickets:
@@ -3206,6 +3255,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                 "status": "research_only",
             },
             "trained_condition_segments":segment_output,
+            "running_style_diagnostics": summarize_running_style_diagnostics(running_style_stats),
             "condition_model_segments":condition_segments,
             "condition_model_comparisons":condition_comparisons,
             "condition_finish_position_segments":condition_finish_segments,
