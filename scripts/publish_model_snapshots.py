@@ -25,6 +25,14 @@ LOCK_FIELDS = (
 )
 
 
+def canonical_timestamp(value: str) -> str:
+    """Normalize timestamptz values so equivalent UTC/JST strings compare identically."""
+    parsed = dt.datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=dt.timezone.utc)
+    return parsed.astimezone(dt.timezone.utc).isoformat()
+
+
 def lock_digest(record: dict) -> str:
     payload = {key: record.get(key) for key in LOCK_FIELDS}
     canonical = json.dumps(
@@ -128,21 +136,25 @@ def fetch_existing_keys(
     found_new = 0
     for start in range(0, len(ordered), max(1, batch_size)):
         batch = ordered[start:start + max(1, batch_size)]
-        pairs = [
+        query_pairs = [
             (str(row.get("race_id") or ""), str(row.get("captured_at") or ""))
             for row in batch
         ]
-        pairs = [(race_id, captured_at) for race_id, captured_at in pairs if race_id and captured_at]
-        if not pairs:
+        query_pairs = [(race_id, captured_at) for race_id, captured_at in query_pairs if race_id and captured_at]
+        if not query_pairs:
             continue
+        normalized_pairs = [
+            (race_id, canonical_timestamp(captured_at))
+            for race_id, captured_at in query_pairs
+        ]
         clauses = ",".join(
             f"and(race_id.eq.{race_id},captured_at.eq.{captured_at})"
-            for race_id, captured_at in pairs
+            for race_id, captured_at in query_pairs
         )
         query = urllib.parse.urlencode([
             ("select", "race_id,captured_at"),
             ("or", "(" + clauses + ")"),
-            ("limit", str(len(pairs))),
+            ("limit", str(len(query_pairs))),
         ])
         request = urllib.request.Request(
             url.rstrip("/") + "/rest/v1/model_prediction_snapshots?" + query,
@@ -161,8 +173,8 @@ def fetch_existing_keys(
             race_id = str(item.get("race_id") or "")
             captured_at = str(item.get("captured_at") or "")
             if race_id and captured_at:
-                existing.add((race_id, captured_at))
-        found_new += sum(1 for pair in pairs if pair not in existing)
+                existing.add((race_id, canonical_timestamp(captured_at)))
+        found_new += sum(1 for pair in normalized_pairs if pair not in existing)
         if found_new >= max(1, target_new_rows):
             break
     return existing
@@ -171,7 +183,7 @@ def fetch_existing_keys(
 def filter_unpublished_rows(rows: list[dict], existing_keys: set[tuple[str, str]]) -> list[dict]:
     return [
         row for row in rows
-        if (str(row.get("race_id") or ""), str(row.get("captured_at") or "")) not in existing_keys
+        if (str(row.get("race_id") or ""), canonical_timestamp(str(row.get("captured_at") or ""))) not in existing_keys
     ]
 
 
