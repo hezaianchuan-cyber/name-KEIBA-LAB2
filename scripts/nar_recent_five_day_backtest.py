@@ -467,6 +467,7 @@ def main() -> None:
         "diagnostics": {
             "market_rank_diagnostics": fold.get("market_rank_diagnostics"),
             "condition_model_segments": fold.get("condition_model_segments"),
+            "running_style_diagnostics": fold.get("running_style_diagnostics", {}),
             "condition_model_comparisons": fold.get("condition_model_comparisons"),
             "condition_finish_position_segments": fold.get("condition_finish_position_segments"),
             "integrated_strategy_E": fold.get("integrated_strategy_E"),
