@@ -23,6 +23,46 @@ import nar_recent_five_day_backtest as recent
 
 
 
+class GitHubCheckpointTransientRetryTests(unittest.TestCase):
+    def test_gateway_timeout_is_retried_and_success_is_returned(self):
+        import urllib.error
+
+        headers = {"X-GitHub-Request-Id": "GATEWAY-TEST"}
+        error = urllib.error.HTTPError(
+            "https://api.github.com/example", 504, "Gateway Timeout",
+            headers, io.BytesIO(b'{"message":"temporary gateway timeout"}')
+        )
+        success = io.BytesIO(b'{"ok":true}')
+        with (
+            mock.patch.dict("os.environ", {"NAR_BACKTEST_CHECKPOINT_TOKEN": "secret-token"}),
+            mock.patch.object(nb.urllib.request, "urlopen", side_effect=[error, success]) as request,
+            mock.patch.object(nb.time, "sleep") as sleep,
+        ):
+            result = nb._github_checkpoint_request(
+                "https://api.github.com/example", method="PUT", payload={"content": "sample"}
+            )
+        self.assertEqual(result, b'{"ok":true}')
+        self.assertEqual(request.call_count, 2)
+        sleep.assert_called_once_with(1)
+
+    def test_permission_error_is_not_retried(self):
+        import urllib.error
+
+        error = urllib.error.HTTPError(
+            "https://api.github.com/example", 403, "Forbidden", {},
+            io.BytesIO(b'{"message":"Resource not accessible"}')
+        )
+        with (
+            mock.patch.dict("os.environ", {"NAR_BACKTEST_CHECKPOINT_TOKEN": "secret-token"}),
+            mock.patch.object(nb.urllib.request, "urlopen", side_effect=error) as request,
+            mock.patch.object(nb.time, "sleep") as sleep,
+            self.assertRaises(urllib.error.HTTPError),
+        ):
+            nb._github_checkpoint_request("https://api.github.com/example")
+        self.assertEqual(request.call_count, 1)
+        sleep.assert_not_called()
+
+
 class GitHubCheckpointHttpDiagnosticsTests(unittest.TestCase):
     def test_http_error_logs_github_message_and_rate_limit_metadata(self):
         import contextlib
