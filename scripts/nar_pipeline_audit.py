@@ -54,8 +54,14 @@ def main() -> int:
             and 'if record.get("model_version") != expected_model_version:' in source
             and '"model_version": "nar-chronological-v9-D-frame-preoff"' in source
         ),
-        "frame_number_is_parsed_from_official_horse_rows": '"frame_no": rank_value(row[4])' in source
-            and '"frame_no": nb.rank_value(row[4])' in capture_source,
+        "frame_number_is_parsed_from_official_horse_rows": (
+            '"frame_no": rank_value(row[3]) if len(row) > 3 else None' in source
+            and '"frame_no": nb.rank_value(row[3]) if len(row) > 3 else None' in capture_source
+        ),
+        "body_weight_is_parsed_from_official_horse_rows": (
+            '"body_weight": number(row[22]) if len(row) > 22 else None' in source
+            and '"body_weight_change": number(row[23]) if len(row) > 23 else None' in source
+        ),
         "frame_effect_uses_prior_condition_bucket_and_smoothing": (
             "def frame_context_key(" in source
             and "def frame_form_score(" in source
@@ -92,6 +98,7 @@ def main() -> int:
         "D_uses_C_features_before_odds_overlay",
         "D_requires_versioned_C_model_snapshots",
         "frame_number_is_parsed_from_official_horse_rows",
+        "body_weight_is_parsed_from_official_horse_rows",
         "frame_effect_uses_prior_condition_bucket_and_smoothing",
         "backtest_and_live_share_D_frame_pace_scoring",
     )):
