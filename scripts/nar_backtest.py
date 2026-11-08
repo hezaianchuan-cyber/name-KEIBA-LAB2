@@ -103,7 +103,25 @@ def _github_checkpoint_request(url, method="GET", payload=None, raw=False):
                 and has_timeout_wording
                 and ("rule" in rule_message or "validat" in rule_message)
             )
-            if (exc.code not in retryable_statuses and not rule_timeout) or attempt == max_attempts:
+            # A small number of GitHub Contents API writes have returned a
+            # body-less 403 while the repository rules engine was timing out.
+            # Treat it as transient only for checkpoint PUTs with a request ID
+            # and a positive primary rate-limit balance. Normal permission
+            # 403s carry a diagnostic message and remain fatal.
+            rate_limit_remaining = details["rate_limit_remaining"]
+            blank_checkpoint_write_403 = (
+                exc.code == 403
+                and method.upper() == "PUT"
+                and "/contents/" in url
+                and not str(message).strip()
+                and bool(details["request_id"])
+                and rate_limit_remaining is not None
+                and str(rate_limit_remaining).isdigit()
+                and int(rate_limit_remaining) > 0
+            )
+            if (exc.code not in retryable_statuses
+                    and not rule_timeout
+                    and not blank_checkpoint_write_403) or attempt == max_attempts:
                 raise
             retry_after = None
             try:
