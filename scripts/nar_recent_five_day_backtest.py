@@ -261,8 +261,10 @@ def main() -> None:
     # official result through yesterday, so today's Web predictions have no
     # avoidable one-day training lag. Same-day future results are unavailable.
     live_train_started = time.perf_counter()
+    daily_learning_trace = []
     _, _, live_race_count, live_weights, live_updates, live_calibration = nb.run_backtest(
-        races, horses, payouts, training_only=True
+        races, horses, payouts, training_only=True,
+        learning_trace=daily_learning_trace,
     )
     live_temperature = nb.fit_temperature(live_calibration)
     live_history = nb.build_live_history(races, horses)
@@ -279,7 +281,15 @@ def main() -> None:
         "weights": live_weights,
         "temperature": live_temperature,
         "calibration": nb.calibration_metrics(live_calibration, live_temperature),
-        "training_policy": "Refit daily on the rolling three-year official history through the latest completed Japan-local race date. Same-day results are committed only after all races for that date have been predicted; no same-day or future results are used.",
+        "training_policy": "One complete chronological replay of the rolling three-year official history, with a checkpoint after each Japan-local race date. Each date's predictions are formed before any result from that date is committed; no same-day or future results are used. The final weights are the end state of this daily replay, not a separate batch optimizer.",
+        "daily_learning": {
+            "method": "chronological_online_updates_with_daily_checkpoints",
+            "dates": len(daily_learning_trace),
+            "first_date": daily_learning_trace[0]["date"] if daily_learning_trace else None,
+            "last_date": daily_learning_trace[-1]["date"] if daily_learning_trace else None,
+            "total_updates": live_updates,
+            "checkpoints": daily_learning_trace,
+        },
         "source": "sequential_walk_forward_daily_refit",
         "walk_forward_evaluation": {
             "window_start": start.isoformat(),
