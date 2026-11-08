@@ -1,17 +1,17 @@
 {
   "version": "nar-daily-review-v1",
-  "generated_at": "2026-11-08T10:17:30.637505+09:00",
+  "generated_at": "2026-11-08T12:18:45.888401+09:00",
   "as_of_date_jst": "2026-11-08",
   "status": "ok",
   "daily_official_results": {
-    "report_generated_at": "2026-11-08T10:11:42.288518+09:00",
-    "report_age_hours": 0.1,
+    "report_generated_at": "2026-11-08T10:34:20.484669+09:00",
+    "report_age_hours": 1.74,
     "daily_archive_available": true,
     "today_payout_races": 0,
     "monthly_archive_available": true
   },
   "prospective_preoff_evaluation_G4": {
-    "generated_at": "2026-11-08T01:17:29.006973+00:00",
+    "generated_at": "2026-11-08T03:18:44.168609+00:00",
     "age_hours": 0.0,
     "status": "evaluated_not_profitable_or_not_confirmed",
     "evaluation_period": [
@@ -1087,8 +1087,8 @@
     ],
     "valid_snapshots": 1873,
     "snapshots_with_official_result": 1883,
-    "snapshots_missing_official_result": 0,
-    "supabase_snapshots_joined": 1613,
+    "snapshots_missing_official_result": 31,
+    "supabase_snapshots_joined": 1641,
     "closest_to_post": {
       "unique_races": 135,
       "development_races": 70,
@@ -2316,7 +2316,7 @@
     "profitable_claim": false
   },
   "calibration_G1": {
-    "generated_at": "2026-11-08T01:00:56.763054+00:00",
+    "generated_at": "2026-11-08T01:37:35.703634+00:00",
     "status": "G1_improved_on_untouched_holdout",
     "selected_temperature": 0.115,
     "holdout_races": 3478,
@@ -2492,24 +2492,24 @@
     "G3_selected_value_tickets": 0
   },
   "weekly_historical_backtest": {
-    "generated_at": "2026-11-07T20:18:57.148207+00:00",
-    "age_hours": 4.98,
+    "generated_at": "2026-11-08T03:12:49.404987+00:00",
+    "age_hours": 0.1,
     "period": {
-      "start": "2022-11-07",
-      "end": "2026-11-06"
+      "start": "2022-11-08",
+      "end": "2026-11-07"
     },
-    "race_count": 61809
+    "race_count": 61844
   },
   "weight_research": {
-    "generated_at": "2026-11-07T20:18:57.148207+00:00",
+    "generated_at": "2026-11-08T03:12:49.404987+00:00",
     "selected_on_prior_folds": "D4_jockey_venue_distance",
     "promotion_ready": false,
     "holdout_comparison": {
       "baseline_C": {
-        "races": 15401,
-        "winner_top1_rate": 30.13,
-        "winner_top3_rate": 60.89,
-        "trio_roi": 60.02,
+        "races": 15400,
+        "winner_top1_rate": 30.14,
+        "winner_top3_rate": 60.94,
+        "trio_roi": 59.49,
         "trio_roi_ci95_normal": {
           "low": null,
           "high": null
@@ -2517,18 +2517,18 @@
       },
       "selected_candidate": {
         "name": "D4_jockey_venue_distance",
-        "races": 15401,
-        "winner_top1_rate": 30.26,
-        "winner_top3_rate": 61.35,
-        "trio_roi": 61.16,
+        "races": 15400,
+        "winner_top1_rate": 30.3,
+        "winner_top3_rate": 61.34,
+        "trio_roi": 60.77,
         "trio_roi_ci95_normal": {
           "low": null,
           "high": null
         }
       },
-      "winner_top1_delta_pp": 0.13,
-      "winner_top3_delta_pp": 0.46,
-      "trio_roi_delta_pp": 1.14,
+      "winner_top1_delta_pp": 0.16,
+      "winner_top3_delta_pp": 0.4,
+      "trio_roi_delta_pp": 1.28,
       "promotion_ready": false,
       "selection_guardrail_passed": true,
       "note": "Candidate remains research-only. Promotion requires repeatable improvement in ranking and 12-ticket trio ROI on independent future holdout data; this single selected holdout does not change live weights."
