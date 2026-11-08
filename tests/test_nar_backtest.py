@@ -2740,6 +2740,23 @@ class G4ModelMarketBlendTests(unittest.TestCase):
         self.assertEqual(reason, "insufficient_odds_coverage")
 
 
+class SixAxisHistoryReadOnlyTests(unittest.TestCase):
+    def test_evaluate_field_does_not_mutate_history_mapping_or_rows(self):
+        field = [
+            {"no": "1", "name": "A", "jockey": "J1", "age": 5},
+            {"no": "2", "name": "B", "jockey": "J2", "age": 4},
+            {"no": "3", "name": "C", "jockey": "J3", "age": 6},
+        ]
+        history = {
+            "A": [{"finish": 2, "field_size": 10, "venue": "大井"}],
+            "B": [{"finish": 3, "field_size": 10, "venue": "船橋"}],
+            "C": [{"finish": 1, "field_size": 10, "venue": "川崎"}],
+        }
+        before = __import__("copy").deepcopy(history)
+        nb.evaluate_field(field, history, {"venue": "大井", "distance": 1600})
+        self.assertEqual(history, before)
+
+
 class SharedRecentHistoryViewTests(unittest.TestCase):
     def test_precomputed_recent_history_preserves_baseline_and_six_axis_outputs(self):
         field = [
