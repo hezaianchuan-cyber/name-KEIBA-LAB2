@@ -77,7 +77,7 @@ def _style(history):
     return "deep_closer"
 
 
-def _axis_scores(history, race, horse, jockey_stats=None):
+def _axis_scores(history, race, horse):
     recent = history[-5:]
     quality = [_rank_quality(r) for r in recent]
     quality = [v for v in quality if v is not None]
@@ -198,7 +198,7 @@ def evaluate_field(field, history_by_name, race, jockey_stats=None,
     for horse in field:
         name = str(horse.get("name") or "")
         history = history_by_name.get(name, [])
-        axes = _axis_scores(history, race, horse, jockey_stats)
+        axes = _axis_scores(history, race, horse)
         score = sum(axes[k] * weights[k] for k in weights)
         rows.append({"horse_no": str(horse.get("no", "")), "name": name,
                      "score": score, "axes": axes})
