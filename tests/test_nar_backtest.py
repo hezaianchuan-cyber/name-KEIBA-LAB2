@@ -23,6 +23,35 @@ import nar_recent_five_day_backtest as recent
 
 
 
+class GitHubCheckpointHttpDiagnosticsTests(unittest.TestCase):
+    def test_http_error_logs_github_message_and_rate_limit_metadata(self):
+        import contextlib
+        import urllib.error
+
+        body = json.dumps({"message": "You have exceeded a secondary rate limit"}).encode()
+        headers = {"X-GitHub-Request-Id": "TEST-REQUEST", "X-RateLimit-Remaining": "0",
+                   "Retry-After": "30"}
+        error = urllib.error.HTTPError(
+            "https://api.github.com/example", 403, "Forbidden", headers, io.BytesIO(body)
+        )
+        output = io.StringIO()
+        with (
+            mock.patch.dict("os.environ", {"NAR_BACKTEST_CHECKPOINT_TOKEN": "secret-token"}),
+            mock.patch.object(nb.urllib.request, "urlopen", side_effect=error),
+            contextlib.redirect_stdout(output),
+            self.assertRaises(urllib.error.HTTPError),
+        ):
+            nb._github_checkpoint_request("https://api.github.com/example", method="PUT",
+                                          payload={"content": "sample"})
+        diagnostic = output.getvalue()
+        self.assertIn("CHECKPOINT_HTTP_ERROR", diagnostic)
+        self.assertIn("secondary rate limit", diagnostic)
+        self.assertIn("TEST-REQUEST", diagnostic)
+        self.assertIn('"rate_limit_remaining": "0"', diagnostic)
+        self.assertIn('"retry_after": "30"', diagnostic)
+        self.assertNotIn("secret-token", diagnostic)
+
+
 class BCCompositeModelTests(unittest.TestCase):
     def test_fifty_fifty_blend_uses_condition_and_performance_equally(self):
         self.assertAlmostEqual(nb.blend_condition_performance_scores(0.8, 0.4), 0.6)
