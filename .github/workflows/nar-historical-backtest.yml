@@ -7,12 +7,6 @@ on:
       - 'scripts/nar_backtest.py'
       - 'tests/test_nar_backtest.py'
   workflow_dispatch:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'scripts/nar_backtest.py'
-      - 'tests/test_nar_backtest.py'
-      - '.github/workflows/nar-historical-backtest.yml'
   schedule:
     - cron: "30 18 * * 0"
 
@@ -59,7 +53,6 @@ jobs:
 
       - name: Run four-year backtest with final one-year holdout
         id: full-backtest
-        if: github.event_name != 'pull_request'
         env:
           NAR_CACHE_DIR: .cache/nar-monthly
           NAR_PARSED_CACHE_DIR: .cache/nar-parsed
@@ -68,7 +61,6 @@ jobs:
         run: python3 scripts/nar_backtest.py
 
       - name: Publish aggregate report only
-        if: github.event_name != 'pull_request'
         run: |
           set -e
           git config user.name "github-actions[bot]"
@@ -101,7 +93,6 @@ jobs:
           COMPILE_OUTCOME: ${{ steps.compile.outcome }}
           UNIT_TEST_OUTCOME: ${{ steps.unit-tests.outcome }}
           BACKTEST_OUTCOME: ${{ steps.full-backtest.outcome }}
-          EVENT_NAME: ${{ github.event_name }}
         run: |
           {
             echo "## KEIBA LAB — 検証状況"
@@ -110,11 +101,7 @@ jobs:
             echo "|---|---|"
             echo "| Python構文チェック | ${COMPILE_OUTCOME:-未実行} |"
             echo "| 単体テスト | ${UNIT_TEST_OUTCOME:-未実行} |"
-            if [ "$EVENT_NAME" = "pull_request" ]; then
-              echo "| 4年バックテスト | PR検証では未実行（本番実行を保護） |"
-            else
-              echo "| 4年バックテスト | ${BACKTEST_OUTCOME:-未実行} |"
-            fi
+            echo "| 4年バックテスト | ${BACKTEST_OUTCOME:-未実行} |"
             echo
             echo "詳細ログは各ステップを開いて確認できます。"
           } >> "$GITHUB_STEP_SUMMARY"
