@@ -254,6 +254,50 @@ def main() -> None:
             flush=True,
         )
     learning_curve = build_learning_curve(learning_days, learning_model_names)
+
+    # Publish a fresh production snapshot after the latest completed race date.
+    # Unlike the walk-forward day's test model, this final fit includes every
+    # official result through yesterday, so today's Web predictions have no
+    # avoidable one-day training lag. Same-day future results are unavailable.
+    live_train_started = time.perf_counter()
+    live_races, live_horses, live_payouts, live_updates, live_calibration = nb.run_backtest(
+        races, horses, payouts, training_only=True
+    )
+    live_temperature = nb.fit_temperature(live_calibration)
+    live_history = nb.build_live_history(races, horses)
+    live_model = {
+        "model_version": "nar-sequential-daily-refit-v1",
+        "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "training_period": {
+            "start": min(all_dates).isoformat(),
+            "end": end.isoformat(),
+        },
+        "updates": live_updates,
+        "feature_schema": ["form", "venue", "distance", "sire", "jockey", "age"],
+        "weights": live_races,
+        "temperature": live_temperature,
+        "calibration": nb.calibration_metrics(live_calibration, live_temperature),
+        "training_policy": "Refit after the latest completed Japan-local race date using all official historical results available through that date. No same-day future results are used.",
+        "source": "sequential_walk_forward_daily_refit",
+        "walk_forward_evaluation": {
+            "window_start": start.isoformat(),
+            "window_end": end.isoformat(),
+            "daily_model_names": list(learning_model_names),
+            "note": "Metrics are diagnostic; the deployed model is freshly refit on all available completed-date history."
+        }
+    }
+    (nb.ROOT / "data" / "live-model.json").write_text(
+        json.dumps(live_model, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    (nb.ROOT / "data" / "live-history.json").write_text(
+        json.dumps(live_history, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
+    )
+    print(
+        f"SEQUENTIAL_LIVE_MODEL_PUBLISHED updates={live_updates} "
+        f"training_end={end} temperature={live_temperature:.4f} "
+        f"fit_seconds={time.perf_counter()-live_train_started:.2f}",
+        flush=True,
+    )
     models = fold.get("models") or {}
     baseline = models.get(BASELINE) or {}
     d4 = models.get(CANDIDATE) or {}
