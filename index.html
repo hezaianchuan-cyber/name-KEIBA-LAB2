@@ -1326,9 +1326,61 @@ async function loadDailyPayouts(){
  if(status)status.textContent='公式結果 '+resultRows.length+'レースをSupabaseから同期。公開アーカイブ '+(report.days||[]).length+'日分を統合しました。';
 }
 
+let historicalBacktestStatusTimer=null;
+async function refreshHistoricalBacktestStatus(){
+ const host=document.getElementById('historicalBacktestLiveBody');if(!host)return;
+ const endpoint='https://api.github.com/repos/hezaianchuan-cyber/name-KEIBA-LAB2/actions/workflows/nar-historical-backtest.yml/runs?per_page=6';
+ try{
+  const response=await fetch(endpoint,{cache:'no-store',headers:{'Accept':'application/vnd.github+json'}});
+  if(!response.ok)throw new Error('GitHub API HTTP '+response.status);
+  const payload=await response.json(),runs=payload.workflow_runs||[];
+  if(!runs.length){host.textContent='まだ実行履歴がありません。';return;}
+  const labels={queued:'待機中',in_progress:'実行中',completed:'完了'};
+  const outcomes={success:'成功',failure:'失敗',cancelled:'キャンセル',skipped:'スキップ',timed_out:'時間切れ',action_required:'要対応',neutral:'中立'};
+  const current=runs.find(r=>r.status==='in_progress'||r.status==='queued')||runs[0];
+  let jobHtml='';let progress=0,stepText='ジョブ情報を取得中…';
+  try{
+   const jr=await fetch(current.jobs_url,{cache:'no-store',headers:{'Accept':'application/vnd.github+json'}});
+   if(jr.ok){
+    const jp=await jr.json(),jobs=jp.jobs||[];
+    const job=jobs.find(j=>j.status==='in_progress')||jobs.find(j=>j.status==='queued')||jobs[0];
+    if(job){
+     const steps=job.steps||[],done=steps.filter(x=>x.status==='completed').length;
+     progress=steps.length?Math.round(done/steps.length*100):0;
+     const active=steps.find(x=>x.status==='in_progress');
+     const waiting=steps.find(x=>x.status==='pending');
+     stepText=(job.name||'バックテスト')+'：'+(active?.name||waiting?.name||(job.conclusion?outcomes[job.conclusion]||job.conclusion:'処理状態を確認中'));
+     jobHtml='<div class="sub" style="margin-top:6px">現在の工程：<b>'+esc(stepText)+'</b><br>工程進捗：'+done+' / '+steps.length+' 完了</div>';
+    }
+   }
+  }catch(_){}
+  const started=current.run_started_at||current.created_at;
+  const updated=new Date().toLocaleString('ja-JP');
+  const runRows=runs.map(r=>{
+   const state=labels[r.status]||r.status;
+   const result=r.status==='completed'?' ／ '+(outcomes[r.conclusion]||r.conclusion||'結果不明'):'';
+   return '<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--border,#ddd)"><span>#'+r.run_number+'　'+state+result+'</span><span class="sub">'+new Date(r.created_at).toLocaleString('ja-JP')+'</span></div>';
+  }).join('');
+  const link='https://github.com/hezaianchuan-cyber/name-KEIBA-LAB2/actions/workflows/nar-historical-backtest.yml';
+  host.innerHTML='<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b>最新実行：#'+current.run_number+' ／ '+(labels[current.status]||current.status)+'</b><a href="'+link+'" target="_blank" rel="noopener">GitHubで詳細を見る ↗</a></div>'+
+   '<div style="height:9px;background:var(--line,#e5e7eb);border-radius:9px;overflow:hidden;margin-top:10px"><div style="height:100%;width:'+(current.status==='completed'?100:progress)+'%;background:var(--site-primary,#3478c7);transition:width .3s"></div></div>'+
+   jobHtml+'<p class="sub">開始：'+new Date(started).toLocaleString('ja-JP')+' ／ 最終確認：'+updated+'<br>コミット：<code>'+String(current.head_sha||'').slice(0,7)+'</code></p>'+
+   '<b style="display:block;margin-top:12px">直近の実行履歴</b>'+runRows;
+ }catch(e){
+  host.innerHTML='実行状況を取得できません：'+esc(e.message||String(e))+'。<a href="https://github.com/hezaianchuan-cyber/name-KEIBA-LAB2/actions/workflows/nar-historical-backtest.yml" target="_blank" rel="noopener">GitHubで確認</a>';
+ }
+}
 async function loadHistoricalBacktest(){
  const section=document.getElementById('history');
  if(!section)return;
+ const liveCard=document.createElement('div');
+ liveCard.className='card';liveCard.id='historicalBacktestLive';
+ liveCard.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2>4年バックテストの実行状況</h2><button class="btn" id="refreshHistoricalBacktestStatusBtn" type="button">状況を更新</button></div><p class="sub">GitHub Actionsの実行状態と現在の工程を自動更新します。約30秒ごとに再確認します。</p><div id="historicalBacktestLiveBody" class="sub">実行状況を読み込んでいます…</div>';
+ section.prepend(liveCard);
+ document.getElementById('refreshHistoricalBacktestStatusBtn')?.addEventListener('click',refreshHistoricalBacktestStatus);
+ refreshHistoricalBacktestStatus();
+ if(historicalBacktestStatusTimer)clearInterval(historicalBacktestStatusTimer);
+ historicalBacktestStatusTimer=setInterval(refreshHistoricalBacktestStatus,30000);
  const card=document.createElement('div');
  card.className='card';
  card.id='historicalBacktest';
