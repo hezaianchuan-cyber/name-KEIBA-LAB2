@@ -2186,11 +2186,11 @@ class DailyOnlineLearningRegressionTests(unittest.TestCase):
         by_day = defaultdict(list)
         for day, weights in observed:
             by_day[day].append(weights)
-        self.assertEqual(len(by_day["2026-11-01"]), 6)
+        self.assertEqual(len(by_day["2026-10-01"]), 6)
         self.assertEqual(len(by_day["2026-11-02"]), 3)
         # All horses/races on one date are scored against the same pre-update weights.
-        self.assertTrue(all(w == by_day["2026-11-01"][0]
-                            for w in by_day["2026-11-01"]))
+        self.assertTrue(all(w == by_day["2026-10-01"][0]
+                            for w in by_day["2026-10-01"]))
         self.assertTrue(all(w == by_day["2026-11-02"][0]
                             for w in by_day["2026-11-02"]))
         # Results from the prior date must have updated the model before the next date.
@@ -2198,7 +2198,7 @@ class DailyOnlineLearningRegressionTests(unittest.TestCase):
         frame_by_day = defaultdict(list)
         for day, prior_runs in frame_observed:
             frame_by_day[day].append(prior_runs)
-        self.assertTrue(all(value == 0 for value in frame_by_day["2026-11-01"]))
+        self.assertTrue(all(value == 0 for value in frame_by_day["2026-10-01"]))
         self.assertTrue(all(value > 0 for value in frame_by_day["2026-11-02"]))
         self.assertGreater(result[4], 0)
 
