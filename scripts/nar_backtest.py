@@ -94,9 +94,14 @@ def _github_checkpoint_request(url, method="GET", payload=None, raw=False):
             # out while evaluating a large Contents API update. Retry only
             # this explicit transient message; ordinary permission 403s remain
             # fatal and are never retried.
+            rule_message = str(message).lower()
+            has_timeout_wording = (
+                "timeout" in rule_message or "timed out" in rule_message
+            )
             rule_timeout = (
                 exc.code == 403
-                and "rule did not run because of a timeout" in str(message).lower()
+                and has_timeout_wording
+                and ("rule" in rule_message or "validat" in rule_message)
             )
             if (exc.code not in retryable_statuses and not rule_timeout) or attempt == max_attempts:
                 raise
