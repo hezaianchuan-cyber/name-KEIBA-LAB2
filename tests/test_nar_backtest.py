@@ -45,6 +45,26 @@ class GitHubCheckpointTransientRetryTests(unittest.TestCase):
         self.assertEqual(request.call_count, 2)
         sleep.assert_called_once_with(1)
 
+    def test_github_rules_timeout_403_is_retried(self):
+        import urllib.error
+
+        error = urllib.error.HTTPError(
+            "https://api.github.com/example", 403, "Forbidden", {},
+            io.BytesIO(b'{"message":"The rule did not run because of a timeout."}')
+        )
+        success = io.BytesIO(b'{"ok":true}')
+        with (
+            mock.patch.dict("os.environ", {"NAR_BACKTEST_CHECKPOINT_TOKEN": "secret-token"}),
+            mock.patch.object(nb.urllib.request, "urlopen", side_effect=[error, success]) as request,
+            mock.patch.object(nb.time, "sleep") as sleep,
+        ):
+            result = nb._github_checkpoint_request(
+                "https://api.github.com/example", method="PUT", payload={"content": "sample"}
+            )
+        self.assertEqual(result, b'{"ok":true}')
+        self.assertEqual(request.call_count, 2)
+        sleep.assert_called_once_with(1)
+
     def test_permission_error_is_not_retried(self):
         import urllib.error
 
