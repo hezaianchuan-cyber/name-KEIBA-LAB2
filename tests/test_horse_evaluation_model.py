@@ -63,7 +63,7 @@ class HorseEvaluationModelTests(unittest.TestCase):
         )
         crowded_a = next(x for x in crowded["predictions"] if x["horse_no"] == "1")
         normal_a = next(x for x in normal["predictions"] if x["horse_no"] == "1")
-        self.assertLess(crowded_a["axes"]["pace"], normal_a["axes"]["pace"])
+        self.assertGreater(crowded_a["axes"]["pace"], normal_a["axes"]["pace"])
         for key in ("ability", "condition", "suitability", "race_content", "partnership"):
             self.assertEqual(crowded_a["axes"][key], normal_a["axes"][key])
 
