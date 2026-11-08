@@ -41,6 +41,14 @@ class TrioLambdaRankMarketFusionTests(unittest.TestCase):
         self.assertTrue(all(len(ticket) == 3 for ticket in tickets))
         self.assertTrue(all(ticket == sorted(ticket, key=int) for ticket in tickets))
 
+    def test_learned_compatibility_ticket_builder_returns_unique_trios(self):
+        group = [{"horse_no": str(i)} for i in range(1, 5)]
+        scores = {"1": 1.0, "2": 0.8, "3": 0.6, "4": 0.4}
+        pair_scores = {(str(a), str(b)): (a + b) / 10 for a in range(1, 5) for b in range(a + 1, 5)}
+        tickets = fusion.build_trio_tickets_learned(group, scores, pair_scores, compatibility_weight=0.5)
+        self.assertEqual(len(tickets), 4)
+        self.assertEqual(len({tuple(x) for x in tickets}), 4)
+
     def test_weight_selection_uses_development_races_only(self):
         group = [
             {"horse_no": "1", "finish": 1},
