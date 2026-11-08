@@ -60,12 +60,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           mkdir -p /tmp/keiba-report
-          cp data/backtest-summary.json data/live-model.json data/live-history.json data/trifecta-research.json data/backtest-1-model-comparison.json data/backtest-2-ticket-strategy.json data/backtest-3-condition-robustness.json data/backtest-5-feature-ablation.json /tmp/keiba-report/
+          cp data/backtest-summary.json data/trifecta-research.json data/backtest-1-model-comparison.json data/backtest-2-ticket-strategy.json data/backtest-3-condition-robustness.json data/backtest-5-feature-ablation.json /tmp/keiba-report/
           for attempt in 1 2 3 4 5; do
             git fetch origin main
             git reset --hard origin/main
             cp /tmp/keiba-report/* data/
-            git add data/backtest-summary.json data/live-model.json data/live-history.json data/trifecta-research.json data/backtest-1-model-comparison.json data/backtest-2-ticket-strategy.json data/backtest-3-condition-robustness.json data/backtest-5-feature-ablation.json
+            git add data/backtest-summary.json data/trifecta-research.json data/backtest-1-model-comparison.json data/backtest-2-ticket-strategy.json data/backtest-3-condition-robustness.json data/backtest-5-feature-ablation.json
             if git diff --cached --quiet; then
               echo "No report changes"
               exit 0
