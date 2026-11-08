@@ -354,7 +354,7 @@ def main() -> None:
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "evaluated",
-        "diagnostic_version": 2,
+        "diagnostic_version": 3,
         "evaluation_window": {
             "start": start.isoformat(),
             "end": end.isoformat(),
@@ -464,6 +464,11 @@ def main() -> None:
             "missing_official_win_result_count": len(test_races) - test_with_win_result,
             "final_odds_coverage_races": len(final_odds),
             "test_dates_are_strictly_after_training": max(train_dates) < min(test_dates),
+        },
+        "feature_update": {
+            "body_weight": "Research six-axis condition compares current declared weight with strictly prior recorded weights; missing history is neutral.",
+            "frame": "Frame number is read from the official NAR frame-number field and contextualized by venue, surface, distance and field size.",
+            "production_policy": "Research-only pending validation; live weights are not promoted by this run."
         },
         "limitations": [
             "Five calendar days are a short sample; results are diagnostic and cannot establish stable hit rate or profitability.",
