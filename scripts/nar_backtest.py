@@ -2319,6 +2319,22 @@ def summarize_race_cluster_roi(stats):
         "profit": returned - stake,
     }
 
+def checkpoint_json_safe(value):
+    """Normalize nested date/tuple-keyed source records for deterministic hashing."""
+    if isinstance(value, dict):
+        return {
+            str(key): checkpoint_json_safe(item)
+            for key, item in sorted(value.items(), key=lambda pair: repr(pair[0]))
+        }
+    if isinstance(value, (list, tuple)):
+        return [checkpoint_json_safe(item) for item in value]
+    if isinstance(value, (dt.date, dt.datetime)):
+        return value.isoformat()
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
+
+
 def run_backtest(races, horses, payouts, training_only=False, learning_trace=None, resume_state=None, checkpoint_callback=None):
     history = defaultdict(list)
     sire_stats = defaultdict(lambda: {"runs":0,"top3":0})
@@ -2346,8 +2362,8 @@ def run_backtest(races, horses, payouts, training_only=False, learning_trace=Non
             "payout": payouts.get(source_key),
         }
         dataset_hasher.update(json.dumps(
-            fingerprint_record, ensure_ascii=False, sort_keys=True,
-            separators=(",", ":"), default=str
+            checkpoint_json_safe(fingerprint_record), ensure_ascii=False,
+            sort_keys=True, separators=(",", ":"), default=str
         ).encode("utf-8"))
         dataset_hasher.update(b"\\n")
     dataset_signature = dataset_hasher.hexdigest()
