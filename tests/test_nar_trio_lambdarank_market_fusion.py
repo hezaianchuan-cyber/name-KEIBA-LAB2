@@ -74,15 +74,21 @@ class TrioLambdaRankMarketFusionTests(unittest.TestCase):
             (str(a), str(b)): 0.5
             for a in range(1, 7) for b in range(a + 1, 7)
         }
+        model_scores = {str(i): 1.0 - (i - 1) * 0.1 for i in range(1, 7)}
+        market_scores = dict(model_scores)
+        market_probs = {str(i): (7 - i) / 21 for i in range(1, 7)}
+        strategy = fusion.build_axis_wide_trio_strategy(
+            group, model_scores, pair_scores, market_probs, compatibility_weight=0.5
+        )
         item = {
             "group": group,
             "payout": {
-                "wide": [(["1", "2"], 300)],
-                "trio": [(["1", "2", "3"], 500)],
+                "wide": [(strategy["wide_tickets"][0], 300)],
+                "trio": [(strategy["trio_tickets"][0], 500)],
             },
-            "model_rank_scores": {str(i): 1.0 - (i - 1) * 0.1 for i in range(1, 7)},
-            "market_rank_scores": {str(i): 1.0 - (i - 1) * 0.1 for i in range(1, 7)},
-            "market_win_probabilities": {str(i): (7 - i) / 21 for i in range(1, 7)},
+            "model_rank_scores": model_scores,
+            "market_rank_scores": market_scores,
+            "market_win_probabilities": market_probs,
             "learned_pair_scores": pair_scores,
         }
         result = fusion.evaluate_axis_wide_trio_strategy([item], 0.5, 0.5)
