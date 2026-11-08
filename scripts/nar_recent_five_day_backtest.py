@@ -18,6 +18,7 @@ import nar_backtest as nb
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "nar-recent-five-day-backtest.json"
+RECENT_TRAINING_DAYS = 365 * 3
 CANDIDATE = "D4_jockey_venue_distance"
 BASELINE = "C_performance_pace"
 
@@ -180,7 +181,7 @@ def main() -> None:
     # evaluation and the live refit. The five-day test window remains outside
     # the training dates for every evaluated fold.
     nb.END = end
-    nb.START = end - dt.timedelta(days=365 * 3)
+    nb.START = end - dt.timedelta(days=RECENT_TRAINING_DAYS)
     print(f"RECENT_WINDOW start={start} end={end} archive_start={nb.START} archive_end={nb.END} (Japan-local)", flush=True)
 
     races, horses, payouts, months = nb.load_archives()
