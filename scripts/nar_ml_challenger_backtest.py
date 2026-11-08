@@ -331,17 +331,46 @@ def group_rows(rows):
 
 def evaluate_scores(name, grouped_scores):
     races = top1 = top3 = 0
+    podium_horses = podium_captured = full_podium_covered = any_podium_covered = 0
     for group, scores in grouped_scores:
         winner = next((i for i, r in enumerate(group) if r["winner"]), None)
         if winner is None:
             continue
         order = sorted(range(len(group)), key=lambda i: (-float(scores[i]), group[i]["horse_no"]))
+        actual_podium = {i for i, r in enumerate(group)
+                         if r.get("finish") is not None and int(r["finish"]) <= 3}
+        top7 = set(order[:7])
         races += 1
         top1 += int(order[0] == winner)
         top3 += int(winner in order[:3])
+        podium_horses += len(actual_podium)
+        captured = len(actual_podium & top7)
+        podium_captured += captured
+        any_podium_covered += int(captured > 0)
+        full_podium_covered += int(len(actual_podium) == 3 and captured == 3)
     return {"name": name, "races": races, "top1_hits": top1, "top3_hits": top3,
             "top1_rate": round(100 * top1 / races, 3) if races else None,
-            "top3_capture_rate": round(100 * top3 / races, 3) if races else None}
+            "top3_capture_rate": round(100 * top3 / races, 3) if races else None,
+            "top7_podium_horses_captured": podium_captured,
+            "top7_podium_coverage_pct": round(100 * podium_captured / podium_horses, 3) if podium_horses else None,
+            "top7_any_podium_rate": round(100 * any_podium_covered / races, 3) if races else None,
+            "top7_full_podium_rate": round(100 * full_podium_covered / races, 3) if races else None,
+            "top7_policy": "Top 7 predicted runners; coverage is the share of all actual top-3 finishers included. Full-podium rate requires all three actual top-3 finishers in the selected seven."}
+
+
+def percentile_rank_scores(scores):
+    order = sorted(range(len(scores)), key=lambda i: (-float(scores[i]), i))
+    result = [0.0] * len(scores)
+    denom = max(len(scores) - 1, 1)
+    for rank, index in enumerate(order):
+        result[index] = 1.0 - rank / denom
+    return result
+
+
+def blend_rank_scores(primary, secondary, primary_weight=0.5):
+    p = percentile_rank_scores(primary)
+    q = percentile_rank_scores(secondary)
+    return [primary_weight * x + (1.0 - primary_weight) * y for x, y in zip(p, q)]
 
 
 def market_odds_start_date(requested_start):
@@ -392,7 +421,8 @@ def summarize_stratified_comparison(scored_groups, dimensions):
 def evaluate_betting_returns(scored_groups, payouts):
     """Fixed-stake retrospective win and trio returns on identical odds-matched races."""
     strategies = ("LAB", "independent_raw_CatBoost", "independent_raw_LightGBM",
-                  "LambdaRank", "LambdaRank_tuned", "Market_favorite")
+                  "LambdaRank", "LambdaRank_tuned", "LambdaRank_LightGBM_rank_blend_50_50",
+                  "Market_favorite")
     stats = {
         name: {
             "win": {"races": 0, "hits": 0, "stake_jpy": 0, "return_jpy": 0},
@@ -777,6 +807,14 @@ def main():
               for k in RAW_FEATURES] for r in group]
         tuned_rank_output.append((group, tuned_ranker.predict(x)))
     models.append(evaluate_scores("LambdaRank_wide_optimized_independent_raw", tuned_rank_output))
+    hybrid_output = []
+    lightgbm_model = model_objects["independent_raw_LightGBM"]
+    for group in test_groups:
+        x = [[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
+              for k in RAW_FEATURES] for r in group]
+        hybrid_output.append((group, blend_rank_scores(
+            ranker.predict(x), lightgbm_model.predict_proba(x)[:, 1], 0.5)))
+    models.append(evaluate_scores("LambdaRank_LightGBM_rank_blend_50_50", hybrid_output))
     wide_optimization["holdout_baseline_metrics"] = evaluate_wide_top3(rank_output, payouts)
     wide_optimization["holdout_selected_metrics"] = evaluate_wide_top3(tuned_rank_output, payouts)
     wide_optimization["holdout_policy"] = "Untouched chronological holdout; used only once for final evaluation, never for candidate selection."
@@ -836,6 +874,14 @@ def main():
             tuned_rank_output_market.append((group, tuned_ranker.predict(x)))
         market_models.append(evaluate_scores("LambdaRank_wide_optimized_same_odds_races",
                                              tuned_rank_output_market))
+        hybrid_market_output = []
+        for group in market_groups:
+            x = [[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
+                  for k in RAW_FEATURES] for r in group]
+            hybrid_market_output.append((group, blend_rank_scores(
+                ranker.predict(x), model_objects["independent_raw_LightGBM"].predict_proba(x)[:, 1], 0.5)))
+        market_models.append(evaluate_scores("LambdaRank_LightGBM_rank_blend_50_50_same_odds_races",
+                                             hybrid_market_output))
         pl_output_market = [(g, pl_scores(pl, g, RAW_FEATURES, category_maps, scale))
                             for g in market_groups]
         market_models.append(evaluate_scores("PlackettLuce_independent_raw_same_odds_races",
@@ -866,6 +912,8 @@ def main():
               for k in RAW_FEATURES] for r in group]
         strategy_scores["LambdaRank"] = ranker.predict(x).tolist()
         strategy_scores["LambdaRank_tuned"] = tuned_ranker.predict(x).tolist()
+        strategy_scores["LambdaRank_LightGBM_rank_blend_50_50"] = blend_rank_scores(
+            strategy_scores["LambdaRank"], strategy_scores["independent_raw_LightGBM"], 0.5)
         stratified_inputs.append((group, strategy_scores))
     stratified_comparison = summarize_stratified_comparison(
         stratified_inputs, ("venue", "distance_band", "field_size_band", "going"))
