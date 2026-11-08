@@ -2289,6 +2289,7 @@ def build_live_history(races, horses):
                     "going_quality": rank_quality(finish, race.get("field_size")) / 100.0,
                     **performance.get(h["no"], {}),
                     "margin": h.get("margin", ""), "last3f": h.get("last3f"),
+                    "body_weight": h.get("body_weight"), "body_weight_change": h.get("body_weight_change"),
                     "time_seconds": h.get("time_seconds"),
                     "time_per_km": (h.get("time_seconds") * 1000 / race["distance"]
                                     if h.get("time_seconds") and race.get("distance") else None),
@@ -2629,6 +2630,7 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
                 **train_performance.get(h["no"], {}),
                 "distance":train_race.get("distance"),"field_size":train_race.get("field_size"),"finish":h["finish"],
                 "margin":margin_score(h.get("margin")),"last3f":h.get("last3f"),
+                "body_weight": h.get("body_weight"), "body_weight_change": h.get("body_weight_change"),
                 "time_seconds": h.get("time_seconds"),
                 "time_per_km": (h.get("time_seconds") * 1000 / train_race["distance"]
                                 if h.get("time_seconds") and train_race.get("distance") else None),
