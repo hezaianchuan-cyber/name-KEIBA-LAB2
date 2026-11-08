@@ -102,7 +102,11 @@ def add_race_relative_features(race_rows):
         scale = math.sqrt(variance) if variance > 1e-12 else 0.0
         for row in race_rows:
             value = float(row.get(source) or 0.0)
-            z = (value - center) / scale if scale > 1e-6 and math.isfinite(value) else 0.0
+            # Lower seconds per km means faster recent performance, so reverse
+            # the field-relative direction for time while keeping higher-is-better
+            # semantics for the other pre-race quality features.
+            direction = -1.0 if source == "recent_time_per_km" else 1.0
+            z = direction * (value - center) / scale if scale > 1e-6 and math.isfinite(value) else 0.0
             row[target] = max(-5.0, min(5.0, z))
     return race_rows
 
