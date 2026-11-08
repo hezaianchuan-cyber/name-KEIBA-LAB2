@@ -1199,6 +1199,8 @@ class CandidateRankingResearchTests(unittest.TestCase):
             {"bet_type":"exacta","numbers":["2","3"],"probability":0.15,"odds":10.0,"expected_value":1.50},
             {"bet_type":"exacta","numbers":["3","1"],"probability":0.10,"odds":5.0,"expected_value":0.50},
             {"bet_type":"exacta","numbers":["3","2"],"probability":0.15,"odds":4.0,"expected_value":0.60},
+            {"bet_type":"trifecta","numbers":["2","1","3"],"probability":0.06,"odds":80.0,"expected_value":4.80},
+            {"bet_type":"trifecta","numbers":["1","2","3"],"probability":0.05,"odds":20.0,"expected_value":1.00},
         ]
         record = {
             "race_key":"大井|20261103|10","date":"20261103",
@@ -1210,6 +1212,7 @@ class CandidateRankingResearchTests(unittest.TestCase):
         payout = {kind:[] for kind in ("win","place","wide","quinella","exacta","trio","trifecta")}
         payout["win"] = [(["9"],100)]
         payout["exacta"] = [(["1","3"],2000)]
+        payout["trifecta"] = [(["2","1","3"],8000)]
         with mock.patch.object(nb,"load_odds_snapshots",return_value={key:record}):
             result = nb.preoff_ranking_strategy_backtest({key:payout})
         self.assertEqual(result["status"],"ok")
@@ -1218,7 +1221,16 @@ class CandidateRankingResearchTests(unittest.TestCase):
         self.assertEqual(ev["tickets"],4)
         self.assertEqual(ev["hits"],1)
         self.assertEqual(ev["return"],2000)
+        self.assertEqual(ev["hit_races"],1)
+        self.assertEqual(ev["race_hit_rate"],100.0)
+        self.assertEqual(ev["ticket_hit_rate"],25.0)
         self.assertFalse(ev["minimum_sample_met"])
+        tri = result["strategies"]["trifecta"]["expected_value"]["overall"]
+        self.assertEqual(tri["tickets"],2)
+        self.assertEqual(tri["hits"],1)
+        self.assertEqual(tri["return"],8000)
+        self.assertEqual(tri["race_hit_rate"],100.0)
+        self.assertEqual(tri["ticket_hit_rate"],50.0)
         self.assertEqual(result["selected_by_development"]["exacta"]["status"],
                          "awaiting_development_sample")
 
