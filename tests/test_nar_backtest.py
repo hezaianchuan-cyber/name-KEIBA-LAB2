@@ -175,7 +175,7 @@ class BacktestCheckpointTests(unittest.TestCase):
 
     def test_checkpoint_signature_changes_when_evaluation_period_changes(self):
         signature = nb.checkpoint_signature()
-        with mock.patch.object(nb, "END", nb.END - dt.timedelta(days=1)):
+        with mock.patch.object(nb, "END", nb.END - nb.dt.timedelta(days=1)):
             changed = nb.checkpoint_signature()
         self.assertNotEqual(signature, changed)
 
