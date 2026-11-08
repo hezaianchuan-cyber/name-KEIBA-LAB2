@@ -30,13 +30,15 @@ jobs:
         continue-on-error: true
         with:
           deno-version: v2.x
-      - name: Retry Deno installation if the setup action is unavailable
+      - name: Retry Deno installation from the official distribution host
         if: steps.deno-setup.outcome != 'success'
         run: |
           set -euo pipefail
           DENO_VERSION="2.9.8"
+          # Use Deno's distribution host rather than repeating the GitHub
+          # Releases URL that may be returning HTTP 504.
           curl --fail --location --retry 8 --retry-all-errors --retry-delay 5 --retry-max-time 240 \
-            "https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip" \
+            "https://dl.deno.land/release/v${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip" \
             --output /tmp/deno.zip
           python -m zipfile -e /tmp/deno.zip /tmp/deno-install
           sudo install /tmp/deno-install/deno /usr/local/bin/deno
