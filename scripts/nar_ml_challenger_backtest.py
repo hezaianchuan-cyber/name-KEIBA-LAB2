@@ -26,7 +26,11 @@ LAB_NUMERIC = ["lab_score", "form", "venue_score", "distance_score", "sire_score
 RAW_NUMERIC = [
     "prior_runs", "career_win_rate", "career_top3_rate", "recent_finish_pct",
     "recent_top3_rate", "recent_margin_quality", "recent_last3f_rank",
-    "recent_time_per_km", "venue_runs", "venue_top3_rate", "distance_runs",
+    "recent_time_per_km", "recent_time_trend", "recent_opponent_strength",
+    "recent_first_corner_pct", "recent_last_corner_pct", "recent_position_gain",
+    "prior_body_weight_avg", "body_weight_delta_pct", "body_weight",
+    "body_weight_change", "frame_no", "carried_weight", "predicted_front_count",
+    "front_crowding_ratio", "venue_runs", "venue_top3_rate", "distance_runs",
     "distance_top3_rate", "going_runs", "going_top3_rate", "jockey_runs",
     "jockey_top3_rate", "sire_runs", "sire_top3_rate", "age", "field_size",
     "distance_m"
@@ -85,6 +89,19 @@ def build_rows(races, horses):
             field = horses.get(race["key"], [])
             if len(field) < 3:
                 continue
+            identity_by_no = {}
+            field_histories = {}
+            for candidate in field:
+                candidate_key, _ = horse_history_key({
+                    **candidate, "race_key": "|".join(map(str, race["key"]))
+                })
+                identity_by_no[str(candidate.get("no", ""))] = candidate_key
+                field_histories[str(candidate.get("no", ""))] = history.get(candidate_key, [])[-5:]
+            front_count = sum(
+                1 for prior in field_histories.values()
+                if prior and mean_or([x.get("first_corner_pct") for x in prior], 1.0) <= 0.12
+            )
+            front_ratio = front_count / max(len(field), 1)
             for h in field:
                 history_key, identity_quality = horse_history_key({**h, "race_key": "|".join(map(str, race["key"]))})
                 _, parts = nb.score_runner({**h, "name": history_key}, history, sire_stats, jockey_stats, race, BASE_WEIGHTS)
@@ -94,6 +111,33 @@ def build_rows(races, horses):
                     continue
                 past = history.get(history_key, [])
                 recent = past[-5:]
+                prior_weights = [nb.number(x.get("body_weight")) for x in past]
+                prior_weights = [x for x in prior_weights if x is not None and x > 0]
+                prior_weight_avg = mean_or(prior_weights[-5:], 0.0)
+                current_weight = nb.number(h.get("body_weight"))
+                weight_delta_pct = (
+                    (current_weight - prior_weight_avg) / prior_weight_avg
+                    if current_weight is not None and prior_weight_avg > 0 else 0.0
+                )
+                prior_times = [nb.number(x.get("time_per_km")) for x in recent]
+                prior_times = [x for x in prior_times if x is not None and x > 0]
+                time_trend = 0.5
+                if len(prior_times) >= 3:
+                    baseline_time = mean_or(prior_times[:-2], 0.0)
+                    recent_time = mean_or(prior_times[-2:], 0.0)
+                    if baseline_time > 0:
+                        time_trend = max(0.0, min(1.0,
+                            0.5 + (baseline_time - recent_time) / baseline_time * 8.0))
+                first_positions = [nb.number(x.get("first_corner_pct")) for x in recent]
+                first_positions = [x for x in first_positions if x is not None]
+                last_positions = [nb.number(x.get("last_corner_pct")) for x in recent]
+                last_positions = [x for x in last_positions if x is not None]
+                position_gains = [nb.number(x.get("position_gain")) for x in recent]
+                position_gains = [x for x in position_gains if x is not None]
+                opponent_strength = mean_or(
+                    [x.get("opponent_strength") for x in recent if x.get("opponent_strength") is not None],
+                    0.5,
+                )
                 venue_past = [x for x in past if x.get("venue") == race.get("venue")]
                 distance = nb.number(race.get("distance"))
                 distance_past = [
@@ -153,6 +197,19 @@ def build_rows(races, horses):
                     "sire_runs": float(ss["runs"]),
                     "sire_top3_rate": float((ss["top3"] + 0.5 * 10) / (ss["runs"] + 10)),
                     "age": float(h.get("age") or 0),
+                    "frame_no": float(h.get("frame_no") or 0),
+                    "carried_weight": float(h.get("carried") or 0),
+                    "body_weight": float(current_weight or 0),
+                    "body_weight_change": float(h.get("body_weight_change") or 0),
+                    "prior_body_weight_avg": float(prior_weight_avg),
+                    "body_weight_delta_pct": float(weight_delta_pct),
+                    "recent_time_trend": float(time_trend),
+                    "recent_opponent_strength": float(opponent_strength),
+                    "recent_first_corner_pct": float(mean_or(first_positions, 0.5)),
+                    "recent_last_corner_pct": float(mean_or(last_positions, 0.5)),
+                    "recent_position_gain": float(mean_or(position_gains, 0.0)),
+                    "predicted_front_count": float(front_count),
+                    "front_crowding_ratio": float(front_ratio),
                 }
                 rows.append(row)
 
@@ -162,6 +219,12 @@ def build_rows(races, horses):
             if len(field) < 3:
                 continue
             performance = nb.field_performance_features(field)
+            opposition_field = []
+            for runner in field:
+                history_key = identity_by_no.get(str(runner.get("no", "")))
+                if history_key is not None:
+                    opposition_field.append({**runner, "name": history_key})
+            opposition_by_no = nb.historical_opponent_strength(opposition_field, history)
             for runner in field:
                 if not runner.get("finish"):
                     continue
@@ -175,7 +238,12 @@ def build_rows(races, horses):
                     jockey_stats[jockey]["runs"] += 1
                     jockey_stats[jockey]["top3"] += int(runner["finish"] <= 3)
                     jockey_stats[jockey]["wins"] += int(runner["finish"] == 1)
-                history_key, _ = horse_history_key({**runner, "race_key": "|".join(map(str, race["key"]))})
+                history_key = identity_by_no.get(str(runner.get("no", "")))
+                if history_key is None:
+                    continue
+                corner = nb.corner_history_for_runner(runner, race)
+                first_corner = corner.get("first_corner_pct")
+                last_corner = corner.get("last_corner_pct")
                 history[history_key].append({
                     **performance.get(runner["no"], {}),
                     "date": race["date"], "venue": race["venue"],
@@ -188,6 +256,16 @@ def build_rows(races, horses):
                     "time_seconds": runner.get("time_seconds"),
                     "time_per_km": (runner.get("time_seconds") * 1000 / race["distance"]
                                     if runner.get("time_seconds") and race.get("distance") else None),
+                    "frame_no": runner.get("frame_no"),
+                    "carried": runner.get("carried"),
+                    "body_weight": runner.get("body_weight"),
+                    "body_weight_change": runner.get("body_weight_change"),
+                    "first_corner_pct": first_corner,
+                    "last_corner_pct": last_corner,
+                    "position_gain": (first_corner - last_corner
+                                      if first_corner is not None and last_corner is not None else None),
+                    "opponent_strength": opposition_by_no.get(str(runner.get("no", "")), 0.5),
+                    "last3f": runner.get("last3f"),
                 })
         if day_index == 1 or day_index % max(1, len(dates)//10) == 0 or day_index == len(dates):
             print(f"ML_DATA_PROGRESS {day_index}/{len(dates)} date={day}", flush=True)
