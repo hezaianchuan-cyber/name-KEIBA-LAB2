@@ -13,7 +13,7 @@ import nar_backtest as nb
 
 STRATEGIES = (
     "LAB", "independent_raw_CatBoost", "independent_raw_LightGBM",
-    "LambdaRank", "Market_favorite",
+    "LambdaRank", "LambdaRank_tuned", "Market_favorite",
 )
 BET_TYPES = ("win", "wide_top3", "quinella_top2", "exacta_top2",
              "trio_top3", "trifecta_top3_box")
