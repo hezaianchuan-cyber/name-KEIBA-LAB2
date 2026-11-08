@@ -2557,6 +2557,15 @@ def build_live_history(races, horses):
         "note": "Three-year snapshot through period end; only use for target dates after training_period.end. Opponent strength is frozen before each date is appended; historical corner-position and time features are included where available."
     }
 
+def apply_daily_online_updates(pending, model_weights):
+    """Update one model only after every race prediction for a date is complete."""
+    updates = 0
+    for field, parts_by_no in pending:
+        if update_model(field, parts_by_no, model_weights):
+            updates += 1
+    return updates
+
+
 def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final_odds=None, model_names=None):
     train_set = set(train_dates)
     test_set = set(test_dates)
@@ -2598,6 +2607,9 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
         name: combined_scaled_model_weights(learned, adjustments)
         for name, adjustments in FEATURE_WEIGHT_COMBINATIONS.items()
     })
+    # Research-only challenger: continue updating after each completed holdout date.
+    sequential_weights = dict(learned)
+    models["D_sequential_daily"] = sequential_weights
     performance_blends = {
         "trained_with_performance": (0.10, 0.10, 0.00),
         "trained_performance_with_pace": (0.10, 0.10, 0.00),
@@ -2669,6 +2681,10 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     holdout_eval_started = time.perf_counter()
     print(f"HOLDOUT_PROGRESS evaluation start races={len(ordered)} dates={len(test_dates)} models={len(models)}", flush=True)
     pending=[]; current=None
+    sequential_pending = []
+    sequential_scores_by_key = {}
+    sequential_updates = 0
+    sequential_day_checkpoints = []
     test_calibration_records=[]
     confidence_filter_stats = new_confidence_filter_stats()
     # Independent six-axis challenger metrics on this unseen holdout fold only.
@@ -2719,6 +2735,19 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     condition_bet_types = ("wide", "exacta", "trio", "trifecta")
     condition_finish_stats = defaultdict(new_condition_finish_bucket)
     def commit(items):
+        nonlocal sequential_updates
+        # Every prediction for this date is already complete. Learn only now.
+        day_updates = apply_daily_online_updates(sequential_pending, sequential_weights)
+        sequential_updates += day_updates
+        if items:
+            sequential_day_checkpoints.append({
+                "date": items[-1][1]["date"].isoformat(),
+                "races": len(items),
+                "training_updates": day_updates,
+                "cumulative_updates": sequential_updates,
+                "weights": {key: round(value, 8) for key, value in sequential_weights.items()},
+            })
+        sequential_pending.clear()
         # Calculate opponent strength for every race in this date before adding
         # any same-date result. This prevents same-day cross-race leakage.
         prepared = []
@@ -2759,6 +2788,33 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
         # Add every race to the daily buffer, regardless of payout availability.
         pending.append((field,race))
         if len(field)<3: continue
+        if "D_sequential_daily" in models:
+            sequential_parts = {}
+            sequential_scored = []
+            for runner in field:
+                score, parts = score_runner_performance(
+                    runner, history, sire_stats, jockey_stats, race, sequential_weights,
+                    margin_weight=0.10, closing_weight=0.10, time_weight=0.10,
+                    going_weight=0.10,
+                )
+                score = blend_frame_score(score, race, runner, frame_stats)
+                sequential_scored.append((score, runner))
+                sequential_parts[runner["no"]] = parts
+            _, _, sequential_pace_delta = pace_adjustments(field, history)
+            sequential_scored = [
+                (score + sequential_pace_delta.get(runner["no"], 0.0), runner)
+                for score, runner in sequential_scored
+            ]
+            frame_gradient_scale = 0.92 if frame_stats else 1.0
+            for predicted_score, runner in sequential_scored:
+                features = sequential_parts[runner["no"]]
+                base_share = number((features.get("performance_weights") or {}).get("base"))
+                if base_share is None:
+                    base_share = 1.0
+                features["__prediction_score"] = predicted_score
+                features["__model_gradient_scale"] = base_share * frame_gradient_scale
+            sequential_pending.append((field, sequential_parts))
+            sequential_scores_by_key[key] = sequential_scored
         payout=payouts.get(key)
         if not payout or not payout.get("win"): continue
         winners={numbers[0] for numbers, _ in payout.get("win", [])}
@@ -2803,7 +2859,9 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
         _, _, race_pace_delta = pace_adjustments(field, history)
         for model_name,weights in models.items():
             include_recent_history = model_name != "trained_no_recent_history"
-            if model_name == "trained_race_relative":
+            if model_name == "D_sequential_daily":
+                scored = sequential_scores_by_key[key]
+            elif model_name == "trained_race_relative":
                 relative_parts = {
                     h["no"]: score_runner(h,history,sire_stats,jockey_stats,race,weights,
                                           include_recent_history=include_recent_history,
@@ -3124,6 +3182,16 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
             "test_start":min(test_dates).isoformat(),"test_end":max(test_dates).isoformat(),
             "train_races":len(train_races),"test_races":len(ordered),
             "training_updates":updates,"trained_weights":learned,"temperature":round(temperature,4),
+            "sequential_daily_learning": {
+                "status": "research_only_evaluated" if sequential_day_checkpoints else "not_evaluated",
+                "method": "Initialize from the fold's pre-test trained weights; predict every race on a Japan-local date with frozen weights; apply that date's result updates only after all same-date predictions are complete.",
+                "dates": len(sequential_day_checkpoints),
+                "first_date": sequential_day_checkpoints[0]["date"] if sequential_day_checkpoints else None,
+                "last_date": sequential_day_checkpoints[-1]["date"] if sequential_day_checkpoints else None,
+                "updates": sequential_updates,
+                "final_weights": {key: round(value, 8) for key, value in sequential_weights.items()},
+                "checkpoints": sequential_day_checkpoints,
+            },
             "calibration":calibration_metrics(test_calibration_records,temperature),"models":out,
             "horse_evaluation_v1": {
                 **horse_evaluation_holdout,
@@ -4516,6 +4584,7 @@ def main():
         "evaluated": sum(v["races"] for v in metrics.values()),
         "method": {
             "prediction_order": "date-batched chronological; every race on a date is predicted before any result from that date updates history or model weights",
+            "sequential_holdout_model": "D_sequential_daily starts from the training-fold weights and updates once per completed Japan-local race date; research-only and never auto-promoted.",
             "odds_feature": False,
             "production_parity": "Primary chronological backtest uses the same D performance, going, pace, temperature and learned frame-context scoring blocks as live predictions; odds are overlaid only from genuine timestamped pre-off snapshots.",
             "frame_feature": "Prior top-three rate by venue, surface, 400m distance band, field-size band and frame number; 8% blend with D performance score, neutral prior for sparse/missing buckets; updates only after all races on a date are predicted.",
@@ -4543,6 +4612,7 @@ def main():
             "A_baseline": "out_of_sample_validation.models.A_baseline (fixed reference weights)",
             "B_condition": "out_of_sample_validation.models.B_condition (learned base weights + prior track/going suitability)",
             "C_performance_pace": "out_of_sample_validation.models.C_performance_pace (B + prior margin/last3f/time + race pace + smoothed prior frame-context effect)",
+            "D_sequential_daily": "out_of_sample_validation.models.D_sequential_daily (starts with training-fold weights and updates after each completed holdout date; research-only)",
             "D_preoff_odds": "preoff_ranking_strategy_backtest (timestamped 2-30 minute snapshots only; separately reports snapshot coverage)",
             "comparison_design": "A-C are evaluated on identical chronological holdout races with identical ticket construction and 100 JPY per ticket. B and C share the same learned base weights intentionally so their difference isolates the added feature blocks; A is the fixed baseline. D is evaluated only on races with valid genuine pre-off snapshots and is never imputed for missing snapshots.",
             "E_integrated": "out_of_sample_validation.integrated_strategy_E",
