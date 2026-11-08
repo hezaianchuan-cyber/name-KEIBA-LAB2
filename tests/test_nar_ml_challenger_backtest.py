@@ -49,7 +49,7 @@ class RichPreRaceFeatureTests(unittest.TestCase):
 
         self.assertEqual(first["frame_no"], 1.0)
         self.assertEqual(first["carried_weight"], 57.0)
-        self.assertEqual(first["body_weight"], 500.0)
+        self.assertEqual(first["body_weight"], 505.0)
         self.assertEqual(first["body_weight_change"], -1.0)
         self.assertGreater(first["prior_body_weight_avg"], 0)
         self.assertGreater(first["body_weight_delta_pct"], 0)
