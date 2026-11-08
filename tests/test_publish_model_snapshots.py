@@ -86,7 +86,8 @@ class PublishModelSnapshotsTests(unittest.TestCase):
             {"race_id": "園田|20261106|1", "captured_at": "2026-11-06T09:30:00+09:00"},
             {"race_id": "園田|20261106|1", "captured_at": "2026-11-06T09:35:00+09:00"},
         ]
-        existing = {("園田|20261106|1", "2026-11-06T09:30:00+09:00")}
+        # Supabase returns timestamptz normalized to UTC; the archive keeps JST.
+        existing = {("園田|20261106|1", "2026-11-06T00:30:00+00:00")}
         pending = filter_unpublished_rows(rows, existing)
         self.assertEqual(len(pending), 1)
         self.assertEqual(pending[0]["captured_at"], "2026-11-06T09:35:00+09:00")
@@ -138,7 +139,7 @@ class PublishModelSnapshotsTests(unittest.TestCase):
             def read(self):
                 return json.dumps([{
                     "race_id": "園田|20261106|1",
-                    "captured_at": "2026-11-06T09:30:00+09:00",
+                    "captured_at": "2026-11-06T00:30:00+00:00",
                 }]).encode("utf-8")
 
         requested = []
@@ -151,7 +152,7 @@ class PublishModelSnapshotsTests(unittest.TestCase):
         with patch("publish_model_snapshots.urllib.request.urlopen", side_effect=fake_urlopen):
             keys = fetch_existing_keys(rows, "https://example.supabase.co", "test-key")
 
-        self.assertEqual(keys, {("園田|20261106|1", "2026-11-06T09:30:00+09:00")})
+        self.assertEqual(keys, {("園田|20261106|1", "2026-11-06T00:30:00+00:00")})
         self.assertEqual(requested[0][0], "/rest/v1/model_prediction_snapshots")
         self.assertEqual(requested[0][1]["select"], ["race_id,captured_at"])
         self.assertIn("or", requested[0][1])
