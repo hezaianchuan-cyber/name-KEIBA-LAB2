@@ -18,6 +18,7 @@ import nar_model_g3_risk_gated_backtest as g3
 import nar_model_g4_preoff_backtest as g4
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import capture_nar_odds as capture
+import nar_recent_five_day_backtest as recent
 
 
 
@@ -2820,3 +2821,30 @@ class SharedRecentHistoryViewTests(unittest.TestCase):
             nb.pace_adjustments(field, history),
             nb.pace_adjustments(field, recent),
         )
+
+ 
+class SequentialLearningCurveTests(unittest.TestCase):
+    def test_daily_and_cumulative_roi_and_market_gap_are_weighted_by_stake_and_races(self):
+        days = [
+            {"date": "2026-01-01", "models": {"LAB": {
+                "races": 10, "winner_top1_hits": 3, "winner_top3_hits": 6,
+                "trio_12": {"races": 10, "hit_races": 4, "stake_jpy": 1000, "return_jpy": 800},
+                "market_comparison": {"market_favorite_top1_hits": 5, "same_races": 10},
+            }}},
+            {"date": "2026-01-02", "models": {"LAB": {
+                "races": 20, "winner_top1_hits": 8, "winner_top3_hits": 12,
+                "trio_12": {"races": 20, "hit_races": 9, "stake_jpy": 2000, "return_jpy": 2600},
+                "market_comparison": {"market_favorite_top1_hits": 9, "same_races": 20},
+            }}},
+        ]
+        curve = recent.build_learning_curve(days, ("LAB",))
+        first = curve[0]["cumulative"]["LAB"]
+        second = curve[1]["cumulative"]["LAB"]
+        self.assertEqual(first["winner_top1_rate_pct"], 30.0)
+        self.assertEqual(second["winner_top1_rate_pct"], 36.67)
+        self.assertEqual(second["trio_12"]["stake_jpy"], 3000)
+        self.assertEqual(second["trio_12"]["return_jpy"], 3400.0)
+        self.assertEqual(second["trio_12"]["roi_pct"], 113.33)
+        self.assertEqual(second["trio_12"]["profit_jpy"], 400.0)
+        self.assertEqual(second["market_favorite_top1_rate_pct"], 46.67)
+        self.assertEqual(second["market_top1_gap_percentage_points"], -10.0)
