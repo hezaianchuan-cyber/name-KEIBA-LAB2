@@ -128,7 +128,7 @@ def read_archives():
                             continue
                         horse_rows.setdefault(key, []).append({
                             "no": str(int(no)),
-                            "frame_no": nb.rank_value(row[4]) if len(row) > 4 else None,
+                            "frame_no": nb.rank_value(row[3]) if len(row) > 3 else None,
                             "name": horse_name,
                             "age": nb.number(row[8]) if len(row) > 8 else None,
                             "sire": str(row[11] or "").strip() if len(row) > 11 else "",
