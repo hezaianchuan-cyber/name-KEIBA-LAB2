@@ -43,7 +43,7 @@ class AxisOpponentSeparationTests(unittest.TestCase):
     def test_five_runner_race_retains_six_ticket_baseline(self):
         group = self.group[:5]
         axis = {h: self.axis_scores[h] for h in ("1", "2", "3", "4", "5")}
-        opponent = {h: self.opponent_scores[h] for h in axis}
+        opponent = {h: self.opponent_scores[h] for h in axis if h != "3"}
         result = research.build_axis_longshot_tickets(group, axis, opponent, {})
         self.assertEqual(len(result["baseline_tickets"]), 6)
         self.assertEqual(result["selection_status"], "insufficient_runners_for_longshot")
