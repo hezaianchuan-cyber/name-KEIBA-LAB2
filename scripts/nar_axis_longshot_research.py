@@ -56,9 +56,11 @@ def build_axis_longshot_tickets(group, axis_scores, opponent_scores, market_win_
     numbers = [str(row["horse_no"]) for row in group]
     if len(numbers) < 5:
         raise ValueError("At least five runners are required for the six-ticket baseline")
-    if set(numbers) - set(axis_scores) or (set(numbers) - {str(axis)}) - set(opponent_scores):
-        raise ValueError("Axis scores must cover every runner and opponent scores every non-axis runner")
+    if set(numbers) - set(axis_scores):
+        raise ValueError("Axis scores must cover every runner")
     axis = sorted(numbers, key=lambda h: (-float(axis_scores[h]), int(h)))[0]
+    if (set(numbers) - {axis}) - set(opponent_scores):
+        raise ValueError("Opponent scores must cover every non-axis runner")
     opponents = sorted((h for h in numbers if h != axis),
                        key=lambda h: (-float(opponent_scores[h]), int(h)))
     ordinary = opponents[:4]
