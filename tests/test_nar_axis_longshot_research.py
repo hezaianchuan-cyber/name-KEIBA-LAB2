@@ -39,6 +39,15 @@ class AxisLongshotResearchTests(unittest.TestCase):
         result = research.build_axis_longshot_tickets(self.group, self.model, market)
         self.assertEqual(result["selection_status"], "missing_preoff_market_probability")
 
+    def test_five_runner_race_keeps_six_ticket_baseline_without_longshot(self):
+        group = self.group[:5]
+        model = {h: self.model[h] for h in self.model if h in {str(i) for i in range(1, 6)}}
+        result = research.build_axis_longshot_tickets(group, model, {})
+        self.assertEqual(len(result["baseline_tickets"]), 6)
+        self.assertIsNone(result["longshot"])
+        self.assertIsNone(result["ten_ticket_tickets"])
+        self.assertEqual(result["selection_status"], "insufficient_runners_for_longshot")
+
     def test_evaluation_reports_axis_and_same_race_increment(self):
         group = [
             {"horse_no": str(i), "finish": i}
