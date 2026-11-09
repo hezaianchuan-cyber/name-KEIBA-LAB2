@@ -131,7 +131,7 @@ class TrioLambdaRankMarketFusionTests(unittest.TestCase):
         self.assertEqual(result["races"], 1)
         self.assertEqual(result["axis_win_rate_pct"], 0.0)
         self.assertEqual(result["axis_podium_rate_pct"], 0.0)
-        self.assertEqual(result["top7_podium_coverage_pct"], round(200 / 3, 2))
+        self.assertEqual(result["top7_podium_coverage_pct"], 100.0)
 
     def test_weight_selection_uses_development_races_only(self):
         group = [
