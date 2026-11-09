@@ -726,17 +726,26 @@ def main():
     axis_strategy_all_days = evaluate_axis_wide_trio_strategy(
         matched, selected_weight, selected_learned_compatibility_weight
     )
-    longshot_races = [
-        {
+    # Axis uses the individual fused ranking. Opponents are then re-ranked
+    # conditionally on that fixed axis using the independently trained pair model.
+    longshot_races = []
+    for item in matched:
+        individual_scores = blend_rank_scores(
+            item["model_rank_scores"], item["market_rank_scores"], selected_weight
+        )
+        axis = rank_horses(item["group"], individual_scores)[0]["horse_no"]
+        axis = str(axis)
+        opponent_scores = axis_longshot.build_axis_conditioned_opponent_scores(
+            item["group"], axis, individual_scores, item["learned_pair_scores"],
+            selected_learned_compatibility_weight
+        )
+        longshot_races.append({
             "group": item["group"],
-            "model_scores": blend_rank_scores(
-                item["model_rank_scores"], item["market_rank_scores"], selected_weight
-            ),
+            "axis_scores": individual_scores,
+            "opponent_scores": opponent_scores,
             "market_win_probabilities": item["market_win_probabilities"],
             "payout": item["payout"],
-        }
-        for item in matched
-    ]
+        })
     longshot_dev = axis_longshot.evaluate_axis_longshot([
         race for race, item in zip(longshot_races, matched)
         if item["date"] in dev_dates_for_fusion
