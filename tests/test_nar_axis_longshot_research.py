@@ -26,6 +26,7 @@ class AxisLongshotResearchTests(unittest.TestCase):
 
     def test_does_not_force_longshot_when_no_positive_gap(self):
         market = dict(self.market)
+        market["6"], market["7"] = .03, .01
         model = {h: 1.0 - i * .1 for i, h in enumerate(self.model)}
         result = research.build_axis_longshot_tickets(self.group, model, market)
         self.assertIsNone(result["longshot"])
