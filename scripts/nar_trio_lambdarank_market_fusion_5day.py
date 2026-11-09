@@ -405,6 +405,127 @@ def feature_matrix(group, category_maps):
              for key in ml.RAW_FEATURES] for row in group]
 
 
+def fit_binary_model(train_rows, dev_rows, target, category_maps):
+    """Fit a research-only winner or podium classifier using chronological rows."""
+    import numpy as np
+    from lightgbm import LGBMClassifier, early_stopping, log_evaluation
+    def matrix(rows):
+        return np.asarray(feature_matrix(rows, category_maps), dtype=float)
+    def labels(rows):
+        return np.asarray([
+            int(row.get("finish") == 1) if target == "winner"
+            else int(row.get("finish") in (1, 2, 3))
+            for row in rows
+        ], dtype=int)
+    y_train, y_dev = labels(train_rows), labels(dev_rows)
+    if len(set(y_train.tolist())) < 2 or len(set(y_dev.tolist())) < 2:
+        raise RuntimeError(f"{target} classifier requires both classes in fit and early-stop data")
+    model = LGBMClassifier(
+        objective="binary", n_estimators=900, learning_rate=0.035,
+        num_leaves=15, min_child_samples=80, reg_lambda=2.0,
+        subsample=0.9, colsample_bytree=0.9, random_state=42,
+        n_jobs=4, verbosity=-1,
+    )
+    model.fit(matrix(train_rows), y_train, eval_set=[(matrix(dev_rows), y_dev)],
+              callbacks=[early_stopping(60, verbose=False), log_evaluation(0)])
+    return model
+
+
+def classifier_probabilities(model, group, category_maps):
+    return model.predict_proba(feature_matrix(group, category_maps))[:, 1].tolist()
+
+
+def evaluate_axis_model(races, score_key, probability_key=None, target="winner"):
+    races_n = axis_wins = axis_podiums = top7_podiums = podium_total = 0
+    probs, labels = [], []
+    for item in races:
+        group = item["group"]
+        scores = item[score_key]
+        if len(group) < 3 or len(scores) != len(group):
+            continue
+        podium = {str(r["horse_no"]) for r in group if r.get("finish") in (1, 2, 3)}
+        winners = {str(r["horse_no"]) for r in group if r.get("finish") == 1}
+        if len(podium) != 3 or len(winners) != 1:
+            continue
+        ordered = sorted(range(len(group)), key=lambda i: (-float(scores[str(group[i]["horse_no"])]),
+                                                            int(group[i]["horse_no"])))
+        axis = str(group[ordered[0]]["horse_no"])
+        top7 = {str(group[i]["horse_no"]) for i in ordered[:7]}
+        races_n += 1
+        axis_wins += int(axis in winners)
+        axis_podiums += int(axis in podium)
+        top7_podiums += len(top7 & podium)
+        podium_total += 3
+        if probability_key:
+            pmap = item[probability_key]
+            for row in group:
+                horse = str(row["horse_no"])
+                probs.append(min(max(float(pmap[horse]), 1e-7), 1 - 1e-7))
+                labels.append(int(row.get("finish") == 1) if target == "winner"
+                              else int(row.get("finish") in (1, 2, 3)))
+    result = {
+        "races": races_n,
+        "axis_win_rate_pct": round(100 * axis_wins / races_n, 2) if races_n else None,
+        "axis_podium_rate_pct": round(100 * axis_podiums / races_n, 2) if races_n else None,
+        "top7_podium_coverage_pct": round(100 * top7_podiums / podium_total, 2) if podium_total else None,
+        "top7_podium_horses_captured": top7_podiums,
+        "top7_podium_horses_total": podium_total,
+    }
+    if probs:
+        import numpy as np
+        y = np.asarray(labels, dtype=float)
+        p = np.asarray(probs, dtype=float)
+        bins = []
+        ece = 0.0
+        for lo in np.linspace(0.0, 0.9, 10):
+            hi = lo + 0.1
+            mask = (p >= lo) & (p < hi if hi < 1 else p <= hi)
+            if mask.any():
+                gap = abs(float(y[mask].mean()) - float(p[mask].mean()))
+                ece += float(mask.mean()) * gap
+                bins.append({"lower": round(float(lo), 2), "upper": round(float(hi), 2),
+                             "count": int(mask.sum()), "mean_probability": round(float(p[mask].mean()), 5),
+                             "observed_rate": round(float(y[mask].mean()), 5)})
+        result["calibration"] = {
+            "target": target,
+            "brier_score": round(float(np.mean((p - y) ** 2)), 6),
+            "log_loss": round(float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p))), 6),
+            "ece_10_bins": round(ece, 6),
+            "bins": bins,
+            "warning": "Per-runner binary probabilities are not normalized to sum to one within each race.",
+        }
+    return result
+
+
+def blend_win_podium_percentiles(group, winner_scores, podium_scores, podium_weight):
+    win_rank = percentile_scores(winner_scores)
+    podium_rank = percentile_scores(podium_scores)
+    return {
+        horse: (1.0 - podium_weight) * win_rank[horse] + podium_weight * podium_rank[horse]
+        for horse in win_rank
+    }
+
+
+def select_win_podium_blend(dev_races):
+    weights = [round(i / 10, 1) for i in range(11)]
+    results = {}
+    for weight in weights:
+        scored = []
+        for item in dev_races:
+            scores = blend_win_podium_percentiles(
+                item["group"], item["winner_model_scores"], item["podium_model_scores"], weight
+            )
+            scored.append({**item, "candidate_scores": scores})
+        results[f"{weight:.1f}"] = evaluate_axis_model(scored, "candidate_scores")
+    selected = max(weights, key=lambda w: (
+        results[f"{w:.1f}"]["axis_podium_rate_pct"] if results[f"{w:.1f}"]["axis_podium_rate_pct"] is not None else -1,
+        results[f"{w:.1f}"]["axis_win_rate_pct"] if results[f"{w:.1f}"]["axis_win_rate_pct"] is not None else -1,
+        results[f"{w:.1f}"]["top7_podium_coverage_pct"] if results[f"{w:.1f}"]["top7_podium_coverage_pct"] is not None else -1,
+        -w,
+    ))
+    return selected, results
+
+
 def main():
     snapshots = nb.load_odds_snapshots()
     snapshot_by_key = {
@@ -453,6 +574,11 @@ def main():
     }
     print(f"TRIO_FUSION_LAMBDARANK fit_races={len(fit_groups)} dev_races={len(dev_groups)}", flush=True)
     ranker = ml.fit_lambdarank(fit_groups, dev_groups, ml.RAW_FEATURES, category_maps)
+    dev_rows = [row for row in training_rows if dt.date.fromisoformat(row["date"]) in dev_dates]
+    winner_model = fit_binary_model(fit_rows, dev_rows, "winner", category_maps)
+    podium_model = fit_binary_model(fit_rows, dev_rows, "podium", category_maps)
+    print(f"TRIO_AXIS_CLASSIFIERS winner_fit_rows={len(fit_rows)} podium_fit_rows={len(fit_rows)} "
+          f"early_stop_rows={len(dev_rows)}", flush=True)
 
     training_groups_for_pairs = ml.group_rows(training_rows)
     learned_pair_model = learned_tc.fit_pair_model(training_groups_for_pairs)
@@ -477,9 +603,19 @@ def main():
             for row, score in zip(group, ranker.predict(feature_matrix(group, category_maps)))
         }
         model_ranks = percentile_scores(model_raw)
+        winner_probs_list = classifier_probabilities(winner_model, group, category_maps)
+        podium_probs_list = classifier_probabilities(podium_model, group, category_maps)
+        winner_probs = {str(row["horse_no"]): float(prob)
+                        for row, prob in zip(group, winner_probs_list)}
+        podium_probs = {str(row["horse_no"]): float(prob)
+                        for row, prob in zip(group, podium_probs_list)}
         matched.append({
             "date": group[0]["date"], "race_key": key, "group": group,
             "payout": payout, "model_rank_scores": model_ranks,
+            "winner_model_scores": percentile_scores(winner_probs),
+            "podium_model_scores": percentile_scores(podium_probs),
+            "winner_model_probabilities": winner_probs,
+            "podium_model_probabilities": podium_probs,
             "market_rank_scores": {horse: market_ranks[horse] for horse in horse_numbers},
             "market_win_probabilities": {horse: market_prob[horse] for horse in horse_numbers},
             "snapshot_minutes_to_post": snapshot.get("minutes_to_post"),
@@ -498,6 +634,16 @@ def main():
         raise RuntimeError(f"Insufficient fusion split: development={len(dev_races)} holdout={len(holdout_races)}")
 
     selected_weight, dev_results = select_market_weight(dev_races)
+    axis_blend_weight, axis_blend_dev_results = select_win_podium_blend(dev_races)
+    axis_model_development = {
+        "LambdaRank_baseline": evaluate_axis_model(dev_races, "model_rank_scores"),
+        "winner_classifier": evaluate_axis_model(dev_races, "winner_model_scores",
+                                                  "winner_model_probabilities", "winner"),
+        "podium_classifier": evaluate_axis_model(dev_races, "podium_model_scores",
+                                                  "podium_model_probabilities", "podium"),
+        "winner_podium_blend": axis_blend_dev_results[f"{axis_blend_weight:.1f}"],
+        "preoff_market_favorite": evaluate_axis_model(dev_races, "market_rank_scores"),
+    }
     compatibility_weights = COMPATIBILITY_WEIGHTS
     dev_compatibility_results = {
         f"{cw:.2f}": evaluate_races(dev_races, selected_weight, cw)
@@ -512,6 +658,24 @@ def main():
     ))
     holdout_results = {f"{weight:.2f}": evaluate_races(holdout_races, weight) for weight in BLEND_WEIGHTS}
     holdout_results["selected_from_development"] = evaluate_races(holdout_races, selected_weight)
+    holdout_axis_scores = []
+    for item in holdout_races:
+        holdout_axis_scores.append({
+            **item,
+            "winner_podium_blend_scores": blend_win_podium_percentiles(
+                item["group"], item["winner_model_scores"], item["podium_model_scores"],
+                axis_blend_weight
+            ),
+        })
+    axis_model_holdout = {
+        "LambdaRank_baseline": evaluate_axis_model(holdout_races, "model_rank_scores"),
+        "winner_classifier": evaluate_axis_model(holdout_races, "winner_model_scores",
+                                                  "winner_model_probabilities", "winner"),
+        "podium_classifier": evaluate_axis_model(holdout_races, "podium_model_scores",
+                                                  "podium_model_probabilities", "podium"),
+        "winner_podium_blend": evaluate_axis_model(holdout_axis_scores, "winner_podium_blend_scores"),
+        "preoff_market_favorite": evaluate_axis_model(holdout_races, "market_rank_scores"),
+    }
     development_learned_compatibility = {
         f"{cw:.2f}": evaluate_learned_compatibility(dev_races, selected_weight, cw)
         for cw in LEARNED_COMPATIBILITY_WEIGHTS
@@ -603,6 +767,25 @@ def main():
             "fusion_learning": "Select market percentile weight from {0,.25,.50,.75,1.00} using only the first three test dates; maximize trio 12-ticket race-hit rate, then podium capture; ties prefer lower market weight.",
         },
         "development_weight_selection": {"selected_market_weight": round(selected_weight, 2), "selection_results": dev_results},
+        "axis_model_comparison": {
+            "purpose": "Research-only comparison of winner, podium and combined ability models against current LambdaRank and same-race pre-off market favorite.",
+            "training": {
+                "fit_dates": {"start": min(fit_dates).isoformat(), "end": max(fit_dates).isoformat()},
+                "early_stopping_dates": {"start": min(dev_dates).isoformat(), "end": max(dev_dates).isoformat()},
+                "fit_rows": len(fit_rows), "early_stopping_rows": len(dev_rows),
+                "winner_label": "finish == 1", "podium_label": "finish in 1,2,3",
+                "features": list(ml.RAW_FEATURES),
+                "policy": "Only historical races before the five-day evaluation window are used for fitting; feature dictionaries fit on fit rows only; dev rows are used only for early stopping.",
+            },
+            "development": axis_model_development,
+            "blend_selection": {
+                "selected_podium_model_weight": axis_blend_weight,
+                "selection_metric_priority": "Axis podium rate, then axis win rate, then top-7 podium coverage; selected using first three test dates only.",
+                "candidate_results": axis_blend_dev_results,
+            },
+            "untouched_holdout": axis_model_holdout,
+            "holdout_policy": "Final two test dates remain untouched until model and blend selection are complete.",
+        },
         "learned_pair_compatibility_training": {
             "training_races": len(training_groups_for_pairs),
             "training_pairs": learned_pair_model["training_pairs"],
