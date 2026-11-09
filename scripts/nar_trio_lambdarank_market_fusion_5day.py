@@ -17,6 +17,7 @@ import nar_backtest as nb
 import nar_ml_challenger_backtest as ml
 import nar_trio_compatibility as tc
 import nar_trio_learned_compatibility as learned_tc
+import nar_axis_longshot_research as axis_longshot
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "nar-trio-lambdarank-market-fusion-5day.json"
@@ -561,6 +562,26 @@ def main():
     axis_strategy_all_days = evaluate_axis_wide_trio_strategy(
         matched, selected_weight, selected_learned_compatibility_weight
     )
+    longshot_races = [
+        {
+            "group": item["group"],
+            "model_scores": blend_rank_scores(
+                item["model_rank_scores"], item["market_rank_scores"], selected_weight
+            ),
+            "market_win_probabilities": item["market_win_probabilities"],
+            "payout": item["payout"],
+        }
+        for item in matched
+    ]
+    longshot_dev = axis_longshot.evaluate_axis_longshot([
+        race for race, item in zip(longshot_races, matched)
+        if item["date"] in dev_dates_for_fusion
+    ])
+    longshot_holdout = axis_longshot.evaluate_axis_longshot([
+        race for race, item in zip(longshot_races, matched)
+        if item["date"] in holdout_dates
+    ])
+    longshot_all_days = axis_longshot.evaluate_axis_longshot(longshot_races)
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "evaluated", "research_only": True,
@@ -603,6 +624,11 @@ def main():
         },
         "untouched_holdout_compatibility": holdout_compatibility_results,
         "untouched_holdout_front_count_segments": holdout_front_count_segments,
+        "axis_longshot_strategy": {
+            "development": longshot_dev,
+            "untouched_holdout": longshot_holdout,
+            "all_five_days_descriptive": longshot_all_days,
+        },
         "axis_wide_trio_strategy": {
             "ticket_policy": {
                 "axis": "Highest fused LambdaRank + pre-off market individual rank",
