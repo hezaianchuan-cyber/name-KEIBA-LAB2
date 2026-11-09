@@ -10,6 +10,7 @@ import datetime as dt
 import itertools
 import json
 import math
+import os
 import re
 import unicodedata
 from pathlib import Path
@@ -20,7 +21,16 @@ import nar_trio_learned_compatibility as learned_tc
 import nar_axis_longshot_research as axis_longshot
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "data" / "nar-trio-lambdarank-market-fusion-5day.json"
+TEST_DAYS = int(os.environ.get("NAR_RESEARCH_TEST_DAYS", "5"))
+DEV_FRACTION = float(os.environ.get("NAR_RESEARCH_DEV_FRACTION", "0.60"))
+OUT = Path(os.environ.get(
+    "NAR_RESEARCH_OUTPUT",
+    str(ROOT / "data" / "nar-trio-lambdarank-market-fusion-5day.json"),
+))
+if TEST_DAYS < 5:
+    raise ValueError("NAR_RESEARCH_TEST_DAYS must be at least 5")
+if not 0.50 <= DEV_FRACTION <= 0.80:
+    raise ValueError("NAR_RESEARCH_DEV_FRACTION must be between 0.50 and 0.80")
 BLEND_WEIGHTS = (0.00, 0.25, 0.50, 0.75, 1.00)
 COMPATIBILITY_WEIGHTS = (0.00, 0.10, 0.20, 0.35, 0.50, 0.75, 1.00)
 LEARNED_COMPATIBILITY_WEIGHTS = (0.00, 0.05, 0.10, 0.20, 0.35, 0.50, 0.75, 1.00)
@@ -548,9 +558,13 @@ def main():
         payout = payouts.get(race_key) or {}
         if race_key in races and payout.get("trio"):
             eligible_dates.add(snapshot_date(snapshot))
-    test_dates = sorted(eligible_dates)[-5:]
-    if len(test_dates) < 5:
-        raise RuntimeError(f"Need five completed snapshot dates with trio payouts; found {len(test_dates)}: {test_dates}")
+    test_dates = sorted(eligible_dates)[-TEST_DAYS:]
+    if len(test_dates) < TEST_DAYS:
+        raise RuntimeError(
+            f"Need {TEST_DAYS} completed snapshot dates with trio payouts; "
+            f"found {len(test_dates)}: {test_dates}"
+        )
+    dev_date_count = max(1, min(len(test_dates) - 1, int(len(test_dates) * DEV_FRACTION)))
     test_date_set = set(test_dates)
     test_start = test_dates[0]
     training_dates = [day for day in all_dates if day < test_start]
@@ -626,8 +640,8 @@ def main():
     if len(matched) < 20:
         raise RuntimeError(f"Insufficient same-race pre-off market coverage for a useful five-day pilot: {len(matched)} races")
 
-    dev_dates_for_fusion = {day.isoformat() for day in test_dates[:3]}
-    holdout_dates = {day.isoformat() for day in test_dates[3:]}
+    dev_dates_for_fusion = {day.isoformat() for day in test_dates[:dev_date_count]}
+    holdout_dates = {day.isoformat() for day in test_dates[dev_date_count:]}
     dev_races = [item for item in matched if item["date"] in dev_dates_for_fusion]
     holdout_races = [item for item in matched if item["date"] in holdout_dates]
     if len(dev_races) < 10 or len(holdout_races) < 10:
@@ -760,8 +774,12 @@ def main():
         "status": "evaluated", "research_only": True,
         "test_window": {
             "dates": [day.isoformat() for day in test_dates],
-            "development_dates_for_fusion": [day.isoformat() for day in test_dates[:3]],
-            "untouched_holdout_dates": [day.isoformat() for day in test_dates[3:]],
+            "requested_test_days": TEST_DAYS,
+            "development_date_count": dev_date_count,
+            "holdout_date_count": len(test_dates) - dev_date_count,
+            "development_fraction": DEV_FRACTION,
+            "development_dates_for_fusion": [day.isoformat() for day in test_dates[:dev_date_count]],
+            "untouched_holdout_dates": [day.isoformat() for day in test_dates[dev_date_count:]],
             "matched_preoff_races": len(matched), "development_races": len(dev_races),
             "holdout_races": len(holdout_races),
             "snapshot_policy": "closest valid 2-30 minute pre-off snapshot; same races and runners for every blend",
@@ -773,7 +791,7 @@ def main():
             "model": "LightGBM LambdaRank", "features": list(ml.RAW_FEATURES),
             "relevance": "winner=3, second=2, third=1, other=0",
             "market_features_used_inside_ranker": False,
-            "fusion_learning": "Select market percentile weight from {0,.25,.50,.75,1.00} using only the first three test dates; maximize trio 12-ticket race-hit rate, then podium capture; ties prefer lower market weight.",
+            "fusion_learning": "Select market percentile weight from {0,.25,.50,.75,1.00} using only the chronological development dates; maximize trio 12-ticket race-hit rate, then podium capture; ties prefer lower market weight.",
         },
         "development_weight_selection": {"selected_market_weight": round(selected_weight, 2), "selection_results": dev_results},
         "axis_model_comparison": {
@@ -784,16 +802,16 @@ def main():
                 "fit_rows": len(fit_rows), "early_stopping_rows": len(dev_rows),
                 "winner_label": "finish == 1", "podium_label": "finish in 1,2,3",
                 "features": list(ml.RAW_FEATURES),
-                "policy": "Only historical races before the five-day evaluation window are used for fitting; feature dictionaries fit on fit rows only; dev rows are used only for early stopping.",
+                "policy": "Only historical races before the chronological evaluation window are used for fitting; feature dictionaries fit on fit rows only; dev rows are used only for early stopping.",
             },
             "development": axis_model_development,
             "blend_selection": {
                 "selected_podium_model_weight": axis_blend_weight,
-                "selection_metric_priority": "Axis podium rate, then axis win rate, then top-7 podium coverage; selected using first three test dates only.",
+                "selection_metric_priority": "Axis podium rate, then axis win rate, then top-7 podium coverage; selected using chronological development dates only.",
                 "candidate_results": axis_blend_dev_results,
             },
             "untouched_holdout": axis_model_holdout,
-            "holdout_policy": "Final two test dates remain untouched until model and blend selection are complete.",
+            "holdout_policy": "All later chronological holdout dates remain untouched until model and blend selection are complete.",
         },
         "learned_pair_compatibility_training": {
             "training_races": len(training_groups_for_pairs),
@@ -845,8 +863,8 @@ def main():
             "pair_compatibility": "Transparent exploratory adjustment using historical first-corner running-style proxy and predicted front-runner crowding. Weight selected on first three test dates only.",
             "compatibility_weight_grid": [0.00, 0.05, 0.10, 0.15, 0.20],
             "limitations": [
-                "Only the final two of five dates are untouched holdout; this is a pilot, not proof of profitability.",
-                "The fusion weight is tuned on three dates and needs validation on a longer later holdout.",
+                "The later chronological segment is untouched holdout; sample size and uncertainty must be considered before any promotion.",
+                "The fusion weight is tuned only on chronological development dates and evaluated on a later untouched holdout.",
                 "Only timestamped pre-off win odds are used; confirmed final odds are excluded.",
                 "No live-model.json, live-history.json, or production ticket logic is changed.",
                 "Compatibility weights are swept broadly and top-12 ticket overlap is reported to detect inert adjustments.",
@@ -856,6 +874,7 @@ def main():
         },
         "data_source": {"archive_months": downloads, "snapshot_records_considered": len(snapshot_by_key)},
     }
+    OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({
         "status": report["status"], "dates": report["test_window"]["dates"],
