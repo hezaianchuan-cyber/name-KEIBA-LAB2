@@ -10,7 +10,7 @@ class AxisOpponentSeparationTests(unittest.TestCase):
     def setUp(self):
         self.group = [{"horse_no": str(i), "finish": i} for i in range(1, 8)]
         self.axis_scores = {"1": .1, "2": .2, "3": .99, "4": .4, "5": .3, "6": .2, "7": .1}
-        self.opponent_scores = {"1": .9, "2": .8, "3": .0, "4": .7, "5": .6, "6": .5, "7": .4}
+        self.opponent_scores = {"1": .9, "2": .8, "4": .7, "5": .6, "6": .5, "7": .4}
         self.market = {"1": .40, "2": .25, "3": .15, "4": .10, "5": .06, "6": .005, "7": .01}
 
     def test_axis_and_opponents_are_ranked_by_separate_scores(self):
