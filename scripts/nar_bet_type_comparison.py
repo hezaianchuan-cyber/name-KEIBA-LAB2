@@ -13,7 +13,9 @@ import nar_backtest as nb
 
 STRATEGIES = (
     "LAB", "independent_raw_CatBoost", "independent_raw_LightGBM",
-    "LambdaRank", "LambdaRank_tuned", "LambdaRank_LightGBM_rank_blend_50_50", "Market_favorite",
+    "LambdaRank", "LambdaRank_tuned", "LambdaRank_LightGBM_rank_blend_50_50",
+    "LAB_LambdaRank_rank_blend_LAB_25", "LAB_LambdaRank_rank_blend_LAB_50",
+    "LAB_LambdaRank_rank_blend_LAB_75", "Market_favorite",
 )
 BET_TYPES = ("win", "wide_top3", "wide_axis_to_rank2_3", "quinella_top2", "exacta_top2",
              "trio_top3", "trio_axis_plus4", "wide2_plus_trio6", "trifecta_top3_box")
