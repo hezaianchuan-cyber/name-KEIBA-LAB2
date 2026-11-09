@@ -8,7 +8,6 @@ is lower than every ordinary opponent's. Selection uses pre-off inputs only.
 from __future__ import annotations
 
 import itertools
-import math
 
 import nar_backtest as nb
 
@@ -30,8 +29,8 @@ def build_axis_longshot_tickets(group, model_scores, market_win_probabilities):
         key=lambda row: (-float(model_scores[str(row["horse_no"])]), int(row["horse_no"])),
     )
     numbers = [str(row["horse_no"]) for row in ranked]
-    if len(numbers) < 6:
-        raise ValueError("At least six runners are required for a longshot comparison")
+    if len(numbers) < 5:
+        raise ValueError("At least five runners are required for the six-ticket baseline")
 
     axis = numbers[0]
     ordinary = numbers[1:5]
@@ -39,6 +38,17 @@ def build_axis_longshot_tickets(group, model_scores, market_win_probabilities):
         sorted((axis, a, b), key=int)
         for a, b in itertools.combinations(ordinary, 2)
     ]
+
+    # Five-runner races still support the six-ticket baseline, but cannot
+    # supply a rank-6+ longshot. Keep them in axis/baseline evaluation.
+    if len(numbers) < 6:
+        return {
+            "axis": axis, "ordinary_opponents": ordinary,
+            "baseline_tickets": baseline, "longshot": None,
+            "ten_ticket_tickets": None, "longshot_gap": None,
+            "longshot_market_probability": None,
+            "selection_status": "insufficient_runners_for_longshot",
+        }
 
     common = set(numbers)
     if not common.issubset(market_win_probabilities):
@@ -117,6 +127,8 @@ def evaluate_axis_longshot(races):
     eligible = 0
     longshot_top3 = 0
     for item in races:
+        if len(item["group"]) < 5:
+            continue
         selection = build_axis_longshot_tickets(
             item["group"], item["model_scores"], item["market_win_probabilities"]
         )
