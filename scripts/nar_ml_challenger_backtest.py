@@ -831,6 +831,20 @@ def main():
             scores[f"LAB_LambdaRank_rank_blend_LAB_{int(weight*100)}"] = development_fusion_outputs[weight][group_index][1]
         development_bet_inputs.append((group, scores))
     development_bet_returns = evaluate_bet_types(development_bet_inputs, payouts)
+    required_fusion_strategies = {
+        f"LAB_LambdaRank_rank_blend_LAB_{int(weight*100)}" for weight in fusion_weights
+    }
+    missing_fusion_strategies = required_fusion_strategies - set(development_bet_returns["strategies"])
+    if missing_fusion_strategies:
+        raise RuntimeError(
+            "Fusion bet-type strategies missing from evaluator: "
+            + ", ".join(sorted(missing_fusion_strategies))
+        )
+    if not any(
+        development_bet_returns["strategies"][name]["trio_axis_plus4"]["races"] > 0
+        for name in required_fusion_strategies
+    ):
+        raise RuntimeError("Fusion trio-axis-plus-four evaluation produced zero eligible races")
 
     hybrid_output = []
     lightgbm_model = model_objects["independent_raw_LightGBM"]
