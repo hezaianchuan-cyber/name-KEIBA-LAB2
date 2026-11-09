@@ -1,4 +1,8 @@
-"""Research-only separated axis and opponent scoring for NAR trio tickets."""
+"""Research-only separated axis and opponent scoring for NAR trio tickets.
+
+The axis score is never modified by pair compatibility; pair compatibility only
+re-ranks the opponents conditional on the selected axis.
+"""
 from __future__ import annotations
 
 import itertools
