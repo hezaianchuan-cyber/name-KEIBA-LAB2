@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Research-only NAR challenger suite: CatBoost, LightGBM, LambdaRank and Plackett-Luce.
 
+The bet-type evaluator also compares six-ticket and ten-ticket trio constructions.
+
 All features are built from information available before the race date. Results from
 all races on a date are added only after every race on that date has been featurized.
 The final chronological holdout is never used for tuning or early stopping.
