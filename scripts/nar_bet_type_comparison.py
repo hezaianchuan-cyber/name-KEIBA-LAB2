@@ -18,7 +18,7 @@ STRATEGIES = (
     "LAB_LambdaRank_rank_blend_LAB_75", "Market_favorite",
 )
 BET_TYPES = ("win", "wide_top3", "wide_axis_to_rank2_3", "quinella_top2", "exacta_top2",
-             "trio_top3", "trio_axis_plus4", "wide2_plus_trio6", "trifecta_top3_box")
+             "trio_top3", "trio_axis_plus4", "trio_axis_plus5", "wide2_plus_trio6", "trifecta_top3_box")
 
 
 def tickets_for_ranked(kind, ranked):
@@ -38,6 +38,8 @@ def tickets_for_ranked(kind, ranked):
         return [nos[:3]]
     if kind == "trio_axis_plus4":
         return [[nos[0], *pair] for pair in itertools.combinations(nos[1:5], 2)] if len(nos) >= 5 else []
+    if kind == "trio_axis_plus5":
+        return [[nos[0], *pair] for pair in itertools.combinations(nos[1:6], 2)] if len(nos) >= 6 else []
     if kind == "wide2_plus_trio6":
         wide = tickets_for_ranked("wide_axis_to_rank2_3", ranked)
         trio = tickets_for_ranked("trio_axis_plus4", ranked)
@@ -149,6 +151,7 @@ def evaluate_bet_types(scored_groups, payouts):
             "exacta_top2": "Top two in predicted order, 100 JPY",
             "trio_top3": "Top three as unordered trio, 100 JPY",
             "trio_axis_plus4": "One axis with every pair among ranks 2-5: six unordered trio tickets, 100 JPY each",
+            "trio_axis_plus5": "One axis with every pair among ranks 2-6: ten unordered trio tickets, 100 JPY each",
             "wide2_plus_trio6": "Two axis wide tickets plus six axis-and-four-opponent trio tickets, 100 JPY each (800 JPY per race)",
             "trifecta_top3_box": "All six permutations of top three, 100 JPY each",
         },
