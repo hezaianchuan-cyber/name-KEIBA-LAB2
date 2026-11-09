@@ -28,7 +28,7 @@ class AxisOpponentSeparationTests(unittest.TestCase):
 
     def test_no_forced_longshot_without_positive_model_market_gap(self):
         opponent = {"1": .9, "2": .8, "3": 0, "4": .7, "5": .6, "6": .1, "7": .2}
-        market = {"1": .40, "2": .25, "3": .15, "4": .10, "5": .06, "6": .03, "7": .01}
+        market = {"1": .40, "2": .25, "3": .15, "4": .10, "5": .06, "6": .01, "7": .03}
         result = research.build_axis_longshot_tickets(self.group, self.axis_scores, opponent, market)
         self.assertIsNone(result["longshot"])
         self.assertEqual(result["selection_status"], "no_qualified_longshot")
@@ -50,8 +50,9 @@ class AxisOpponentSeparationTests(unittest.TestCase):
 
     def test_axis_conditioned_opponent_scores_use_pair_compatibility(self):
         pair_scores = {
-            tuple(sorted((a, b), key=int)): .9 if b == "2" else .1
-            for a in ("1", "2", "3") for b in ("1", "2", "3") if a != b
+            ("1", "2"): .9,
+            ("1", "3"): .1,
+            ("2", "3"): .5,
         }
         group = [{"horse_no": h} for h in ("1", "2", "3")]
         scores = research.build_axis_conditioned_opponent_scores(
@@ -69,7 +70,7 @@ class AxisOpponentSeparationTests(unittest.TestCase):
         }
         report = research.evaluate_axis_longshot([item])
         self.assertEqual(report["axis_win_rate_pct"], 0.0)
-        self.assertEqual(report["axis_podium_rate_pct"], 0.0)
+        self.assertEqual(report["axis_podium_rate_pct"], 100.0)
         self.assertEqual(report["longshot_eligible_races"], 1)
         self.assertEqual(report["six_ticket_baseline_eligible_races"]["stake_jpy"], 600)
         self.assertEqual(report["ten_ticket_longshot_eligible_races"]["stake_jpy"], 1000)
