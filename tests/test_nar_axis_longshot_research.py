@@ -13,7 +13,7 @@ class AxisLongshotResearchTests(unittest.TestCase):
             for i in range(1, 8)
         ]
         self.model = {"1": .99, "2": .85, "3": .75, "4": .65, "5": .55, "6": .50, "7": .10}
-        self.market = {"1": .40, "2": .25, "3": .15, "4": .10, "5": .06, "6": .03, "7": .01}
+        self.market = {"1": .40, "2": .25, "3": .15, "4": .10, "5": .06, "6": .005, "7": .01}
 
     def test_selects_exactly_one_model_over_market_longshot(self):
         result = research.build_axis_longshot_tickets(self.group, self.model, self.market)
