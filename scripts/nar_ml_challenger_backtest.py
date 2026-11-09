@@ -807,6 +807,31 @@ def main():
               for k in RAW_FEATURES] for r in group]
         tuned_rank_output.append((group, tuned_ranker.predict(x)))
     models.append(evaluate_scores("LambdaRank_wide_optimized_independent_raw", tuned_rank_output))
+    # LAB + LambdaRank fusion candidates. Each model is converted to within-race
+    # percentile ranks before blending, so their raw score scales are never mixed.
+    fusion_weights = (0.25, 0.50, 0.75)  # LAB share; LambdaRank supplies the remainder.
+    development_fusion_outputs = {w: [] for w in fusion_weights}
+    for group in dev_groups:
+        x = [[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
+              for k in RAW_FEATURES] for r in group]
+        rank_scores = ranker.predict(x)
+        lab_scores = [r["lab_score"] for r in group]
+        for weight in fusion_weights:
+            development_fusion_outputs[weight].append(
+                (group, blend_rank_scores(lab_scores, rank_scores, weight)))
+    development_fusion_metrics = [
+        {**evaluate_scores(f"LAB_LambdaRank_rank_blend_LAB_{int(w*100)}", scored),
+         "lab_weight": w, "lambdarank_weight": 1.0 - w}
+        for w, scored in development_fusion_outputs.items()
+    ]
+    development_bet_inputs = []
+    for group_index, group in enumerate(dev_groups):
+        scores = {}
+        for weight in fusion_weights:
+            scores[f"LAB_LambdaRank_rank_blend_LAB_{int(weight*100)}"] = development_fusion_outputs[weight][group_index][1]
+        development_bet_inputs.append((group, scores))
+    development_bet_returns = evaluate_bet_types(development_bet_inputs, payouts)
+
     hybrid_output = []
     lightgbm_model = model_objects["independent_raw_LightGBM"]
     for group in test_groups:
@@ -815,6 +840,17 @@ def main():
         hybrid_output.append((group, blend_rank_scores(
             ranker.predict(x), lightgbm_model.predict_proba(x)[:, 1], 0.5)))
     models.append(evaluate_scores("LambdaRank_LightGBM_rank_blend_50_50", hybrid_output))
+    holdout_fusion_outputs = {}
+    for weight in fusion_weights:
+        scored = []
+        for group in test_groups:
+            x = [[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
+                  for k in RAW_FEATURES] for r in group]
+            scored.append((group, blend_rank_scores(
+                [r["lab_score"] for r in group], ranker.predict(x), weight)))
+        name = f"LAB_LambdaRank_rank_blend_LAB_{int(weight*100)}"
+        holdout_fusion_outputs[weight] = scored
+        models.append(evaluate_scores(name, scored))
     wide_optimization["holdout_baseline_metrics"] = evaluate_wide_top3(rank_output, payouts)
     wide_optimization["holdout_selected_metrics"] = evaluate_wide_top3(tuned_rank_output, payouts)
     wide_optimization["holdout_policy"] = "Untouched chronological holdout; used only once for final evaluation, never for candidate selection."
@@ -882,6 +918,15 @@ def main():
                 ranker.predict(x), model_objects["independent_raw_LightGBM"].predict_proba(x)[:, 1], 0.5)))
         market_models.append(evaluate_scores("LambdaRank_LightGBM_rank_blend_50_50_same_odds_races",
                                              hybrid_market_output))
+        for weight in fusion_weights:
+            scored = []
+            for group in market_groups:
+                x = [[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
+                      for k in RAW_FEATURES] for r in group]
+                scored.append((group, blend_rank_scores(
+                    [r["lab_score"] for r in group], ranker.predict(x), weight)))
+            market_models.append(evaluate_scores(
+                f"LAB_LambdaRank_rank_blend_LAB_{int(weight*100)}_same_odds_races", scored))
         pl_output_market = [(g, pl_scores(pl, g, RAW_FEATURES, category_maps, scale))
                             for g in market_groups]
         market_models.append(evaluate_scores("PlackettLuce_independent_raw_same_odds_races",
@@ -914,6 +959,9 @@ def main():
         strategy_scores["LambdaRank_tuned"] = tuned_ranker.predict(x).tolist()
         strategy_scores["LambdaRank_LightGBM_rank_blend_50_50"] = blend_rank_scores(
             strategy_scores["LambdaRank"], strategy_scores["independent_raw_LightGBM"], 0.5)
+        for weight in fusion_weights:
+            strategy_scores[f"LAB_LambdaRank_rank_blend_LAB_{int(weight*100)}"] = blend_rank_scores(
+                strategy_scores["LAB"], strategy_scores["LambdaRank"], weight)
         stratified_inputs.append((group, strategy_scores))
     stratified_comparison = summarize_stratified_comparison(
         stratified_inputs, ("venue", "distance_band", "field_size_band", "going"))
@@ -979,6 +1027,12 @@ def main():
                  "holdout_races": len(test_groups), "downloaded_months": downloads},
         "feature_sets": {"LAB_feature_enhanced": LAB_FEATURES, "independent_raw": RAW_FEATURES},
         "models": models,
+        "lab_lambdarank_fusion_development": {
+            "candidate_weights": [{"lab": w, "lambdarank": 1.0-w} for w in fusion_weights],
+            "ranking_metrics": development_fusion_metrics,
+            "bet_type_returns": development_bet_returns,
+            "selection_policy": "Weights are compared on chronological development data only; final chronological holdout is reserved for one-time evaluation. No automatic production promotion.",
+        },
         "market_comparison": market_comparison,
         "wide_top3_optimization": wide_optimization,
         "walk_forward_validation": walk_forward_validation,
