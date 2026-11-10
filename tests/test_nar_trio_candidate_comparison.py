@@ -113,3 +113,4 @@ class TrioCandidateComparisonTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+# Selector regression coverage: keep the ability-only baseline independent of combo scores.
