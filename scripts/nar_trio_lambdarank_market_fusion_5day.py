@@ -20,6 +20,7 @@ import nar_trio_compatibility as tc
 import nar_trio_learned_compatibility as learned_tc
 import nar_trio_combination_model as trio_combo_model
 import nar_trio_candidate_comparison as trio_candidates
+import nar_exacta_research as exacta_research
 import nar_axis_longshot_research as axis_longshot
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -754,6 +755,7 @@ def main():
     # Four comparable trio candidates: ability-only, combo-only, ability+combo,
     # and ability+pre-off-market+combo. C/D weights are selected on dev only.
     trio_candidate_comparison = trio_candidates.compare_and_select(dev_races, holdout_races)
+    exacta_holdout = exacta_research.evaluate(holdout_races)
 
     selected_weight, dev_results = select_market_weight(dev_races)
     axis_blend_weight, axis_blend_dev_results = select_win_podium_blend(dev_races)
@@ -1000,6 +1002,7 @@ def main():
             },
         },
         "four_way_trio_candidate_comparison": trio_candidate_comparison,
+        "six_ticket_exacta_holdout": exacta_holdout,
         "axis_wide_trio_strategy": {
             "ticket_policy": {
                 "axis": "Highest fused LambdaRank + pre-off market individual rank",
