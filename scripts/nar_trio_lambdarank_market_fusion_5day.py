@@ -1086,3 +1086,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+# Re-run PR validation after candidate-pool selector comparison changes; no runtime behavior change.
