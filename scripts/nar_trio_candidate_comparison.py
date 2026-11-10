@@ -34,8 +34,14 @@ def _subset(group, axis, ability, market, combo, mode, combo_weight=0.5,
         raise ValueError("At least five runners are required")
     ability_rank = percentile({h: float(ability[h]) for h in horses})
     market_rank = percentile({h: float(market[h]) for h in horses})
-    combo_rank = percentile({str(a) + "|" + str(b): float(score)
-                             for (a, b), score in combo.items()})
+    combo_values = {}
+    for members, score in combo.items():
+        members = tuple(map(str, members))
+        pair = tuple(sorted((h for h in members if h != axis), key=int))
+        if len(pair) != 2:
+            raise ValueError("Each combination score must identify the two opponents and fixed axis")
+        combo_values["|".join(pair)] = float(score)
+    combo_rank = percentile(combo_values)
     if mode == "ability":
         return tuple(sorted(sorted(opponents,
                                    key=lambda h: (-ability_rank[h], int(h)))[:4], key=int))
