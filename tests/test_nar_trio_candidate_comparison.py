@@ -75,6 +75,30 @@ class TrioCandidateComparisonTests(unittest.TestCase):
         self.assertEqual(len(diagnostic["selected_opponents"]), 4)
         self.assertEqual(len(diagnostic["selected_tickets"]), 6)
 
+    def test_pool_selector_uses_fixed_axis_and_rank_scale_blend(self):
+        import itertools
+        pool = ("2", "3", "4", "5", "6", "7")
+        trio_scores = {
+            tuple(sorted(("1", a, b), key=int)):
+                (0.9 if a in ("2", "3", "4", "5") and b in ("2", "3", "4", "5") else 0.1)
+            for a, b in itertools.combinations(pool, 2)
+        }
+        pair_scores = {
+            tuple(sorted((a, b), key=int)):
+                (0.9 if a in ("2", "3", "4", "5") and b in ("2", "3", "4", "5") else 0.1)
+            for a, b in itertools.combinations(pool, 2)
+        }
+        item = {
+            "model_rank_scores": self.ability,
+            "winner_axis_trio_scores": trio_scores,
+            "learned_pair_scores": pair_scores,
+        }
+        for mode in ("trio", "pair", "blend"):
+            result = comparison._pool_selector_subset(item, "1", pool, mode, 0.5)
+            self.assertEqual(set(result), {"2", "3", "4", "5"})
+            self.assertNotIn("1", result)
+            self.assertEqual(len(comparison._tickets("1", result)), 6)
+
     def test_candidate_pool_rejects_unsupported_sizes(self):
         with self.assertRaises(ValueError):
             comparison.evaluate_candidate_pool([], 5)
