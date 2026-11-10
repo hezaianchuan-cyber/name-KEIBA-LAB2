@@ -18,6 +18,7 @@ import nar_backtest as nb
 import nar_ml_challenger_backtest as ml
 import nar_trio_compatibility as tc
 import nar_trio_learned_compatibility as learned_tc
+import nar_trio_combination_model as trio_combo_model
 import nar_axis_longshot_research as axis_longshot
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -411,6 +412,90 @@ def evaluate_axis_wide_trio_strategy(races, market_weight, compatibility_weight,
     return totals
 
 
+def evaluate_axis_combo_strategy(races, market_weight):
+    """Evaluate 2 wide + 6 trio tickets with a winner-model axis and supervised trio ranking."""
+    totals = {
+        "races": 0, "axis_winner_hits": 0, "axis_podium_hits": 0,
+        "wide_hit_races": 0, "wide_stake_jpy": 0, "wide_return_jpy": 0,
+        "trio_hit_races": 0, "trio_stake_jpy": 0, "trio_return_jpy": 0,
+        "combined_hit_races": 0, "combined_stake_jpy": 0, "combined_return_jpy": 0,
+        "baseline_trio_return_jpy": 0, "baseline_trio_hit_races": 0,
+    }
+    for item in races:
+        group = item["group"]
+        individual_scores = blend_rank_scores(
+            item["model_rank_scores"], item["market_rank_scores"], market_weight
+        )
+        strategy = trio_combo_model.choose_axis_trio_tickets(
+            group, item["winner_model_scores"], individual_scores,
+            item["winner_axis_trio_scores"], opponent_count=4,
+        )
+        baseline_axis = min(
+            {str(row["horse_no"]): row for row in group},
+            key=lambda horse: (-float(item["winner_model_scores"][horse]), int(horse))
+        )
+        baseline_opponents = sorted(
+            (str(row["horse_no"]) for row in group if str(row["horse_no"]) != baseline_axis),
+            key=lambda horse: (-float(individual_scores[horse]), int(horse))
+        )[:4]
+        baseline_tickets = [
+            sorted((baseline_axis, a, b), key=int)
+            for a, b in itertools.combinations(baseline_opponents, 2)
+        ]
+        podium = {str(row["horse_no"]) for row in group if row.get("finish") in (1, 2, 3)}
+        winners = {str(row["horse_no"]) for row in group if row.get("finish") == 1}
+        if len(podium) != 3 or len(winners) != 1:
+            continue
+        wide_return = sum(
+            nb.payout_for("wide", ticket, item["payout"]) or 0
+            for ticket in strategy["wide_tickets"]
+        )
+        trio_return = sum(
+            nb.payout_for("trio", ticket, item["payout"]) or 0
+            for ticket in strategy["trio_tickets"]
+        )
+        baseline_return = sum(
+            nb.payout_for("trio", ticket, item["payout"]) or 0
+            for ticket in baseline_tickets
+        )
+        totals["races"] += 1
+        totals["axis_winner_hits"] += int(strategy["axis"] in winners)
+        totals["axis_podium_hits"] += int(strategy["axis"] in podium)
+        totals["wide_stake_jpy"] += 200
+        totals["wide_return_jpy"] += wide_return
+        totals["wide_hit_races"] += int(wide_return > 0)
+        totals["trio_stake_jpy"] += 600
+        totals["trio_return_jpy"] += trio_return
+        totals["trio_hit_races"] += int(trio_return > 0)
+        totals["combined_stake_jpy"] += 800
+        totals["combined_return_jpy"] += wide_return + trio_return
+        totals["combined_hit_races"] += int(wide_return > 0 or trio_return > 0)
+        totals["baseline_trio_return_jpy"] += baseline_return
+        totals["baseline_trio_hit_races"] += int(baseline_return > 0)
+    n = totals["races"]
+    for name, stake_key, return_key, hit_key in (
+        ("wide", "wide_stake_jpy", "wide_return_jpy", "wide_hit_races"),
+        ("trio", "trio_stake_jpy", "trio_return_jpy", "trio_hit_races"),
+        ("combined", "combined_stake_jpy", "combined_return_jpy", "combined_hit_races"),
+    ):
+        stake = totals[stake_key]
+        totals[f"{name}_roi_pct"] = round(100 * totals[return_key] / stake, 2) if stake else None
+        totals[f"{name}_profit_jpy"] = totals[return_key] - stake
+        totals[f"{name}_hit_rate_pct"] = round(100 * totals[hit_key] / n, 2) if n else None
+    baseline_stake = n * 600
+    totals["baseline_trio_roi_pct"] = round(
+        100 * totals["baseline_trio_return_jpy"] / baseline_stake, 2
+    ) if baseline_stake else None
+    totals["baseline_trio_profit_jpy"] = totals["baseline_trio_return_jpy"] - baseline_stake
+    totals["baseline_trio_hit_rate_pct"] = round(
+        100 * totals["baseline_trio_hit_races"] / n, 2
+    ) if n else None
+    totals["axis_win_rate_pct"] = round(100 * totals["axis_winner_hits"] / n, 2) if n else None
+    totals["axis_podium_rate_pct"] = round(100 * totals["axis_podium_hits"] / n, 2) if n else None
+    totals["stake_per_race_jpy"] = 800
+    return totals
+
+
 def select_market_weight(dev_races):
     """Tune only on the first three dates; never inspect final two-day holdout results."""
     results = {f"{weight:.2f}": evaluate_races(dev_races, weight) for weight in BLEND_WEIGHTS}
@@ -609,6 +694,7 @@ def main():
 
     training_groups_for_pairs = ml.group_rows(training_rows)
     learned_pair_model = learned_tc.fit_pair_model(training_groups_for_pairs)
+    learned_trio_model = trio_combo_model.fit_trio_model(training_groups_for_pairs)
     test_rows = [row for row in rows if dt.date.fromisoformat(row["date"]) in test_date_set]
     test_groups = ml.group_rows(test_rows)
     matched = []
@@ -649,6 +735,10 @@ def main():
             "snapshot_model_version": snapshot.get("model_version"),
             "learned_pair_scores": learned_tc.predict_pair_compatibility(group, learned_pair_model),
         })
+        winner_axis = str(rank_horses(group, percentile_scores(winner_probs))[0]["horse_no"])
+        matched[-1]["winner_axis_trio_scores"] = trio_combo_model.predict_trio_scores(
+            group, learned_trio_model, winner_axis
+        )
     matched.sort(key=lambda item: (item["date"], item["race_key"]))
     if len(matched) < 20:
         raise RuntimeError(f"Insufficient same-race pre-off market coverage for a useful five-day pilot: {len(matched)} races")
@@ -767,6 +857,11 @@ def main():
         matched, selected_weight, selected_learned_compatibility_weight,
         axis_score_key="winner_model_scores",
     )
+    # New research candidate: winner specialist selects the axis; a supervised
+    # trio model ranks complete axis+opponent combinations trained only pre-window.
+    axis_combo_strategy_dev = evaluate_axis_combo_strategy(dev_races, selected_weight)
+    axis_combo_strategy_holdout = evaluate_axis_combo_strategy(holdout_races, selected_weight)
+    axis_combo_strategy_all_days = evaluate_axis_combo_strategy(matched, selected_weight)
     # Axis uses the individual fused ranking. Opponents are then re-ranked
     # conditionally on that fixed axis using the independently trained pair model.
     longshot_races = []
@@ -861,6 +956,13 @@ def main():
             "untouched_holdout": axis_model_holdout,
             "holdout_policy": "All later chronological holdout dates remain untouched until model and blend selection are complete.",
         },
+        "learned_trio_combination_training": {
+            "training_races": learned_trio_model["training_races"],
+            "positive_triplets": learned_trio_model["positive_triplets"],
+            "negative_triplets": learned_trio_model["negative_triplets"],
+            "features": learned_trio_model["features"],
+            "method": "balanced logistic regression on historical pre-race pairwise-derived trio features; one exact top-three positive and up to 12 deterministic negative triplets per race; scores rank combinations only and are not calibrated probabilities",
+        },
         "learned_pair_compatibility_training": {
             "training_races": len(training_groups_for_pairs),
             "training_pairs": learned_pair_model["training_pairs"],
@@ -909,6 +1011,13 @@ def main():
                 "development": axis_classifier_strategy_dev,
                 "untouched_holdout": axis_classifier_strategy_holdout,
                 "all_days_descriptive": axis_classifier_strategy_all_days,
+            },
+            "supervised_trio_combination_candidate": {
+                "ticket_policy": "Winner classifier selects axis; supervised combination model ranks all axis+opponent pairs; choose four opponents maximizing sum of six combo scores; two wide tickets use top two individual opponents",
+                "development": axis_combo_strategy_dev,
+                "untouched_holdout": axis_combo_strategy_holdout,
+                "all_days_descriptive": axis_combo_strategy_all_days,
+                "warning": "Scores are ranking scores, not calibrated probabilities or yen expected values. Research only.",
             },
         },
         "untouched_holdout": holdout_results,
