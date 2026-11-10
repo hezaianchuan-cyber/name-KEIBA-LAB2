@@ -762,6 +762,7 @@ def main():
     # Four comparable trio candidates: ability-only, combo-only, ability+combo,
     # and ability+pre-off-market+combo. C/D weights are selected on dev only.
     trio_candidate_comparison = trio_candidates.compare_and_select(dev_races, holdout_races)
+    # Common-cohort 4/6/8 candidate-pool comparison; winner-classifier axis stays fixed.
     trio_candidate_pool_comparison = trio_candidates.compare_candidate_pools(dev_races, holdout_races)
     exacta_holdout = exacta_research.evaluate(holdout_races)
     exacta_conditional_holdout = exacta_research.evaluate_conditional(holdout_races)
