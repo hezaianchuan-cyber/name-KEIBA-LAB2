@@ -80,7 +80,8 @@ def _tickets(axis, opponents):
             for a, b in itertools.combinations(opponents, 2)]
 
 
-def evaluate(races, mode, combo_weight=0.5, market_weight=0.25,\n             include_diagnostics=False):
+def evaluate(races, mode, combo_weight=0.5, market_weight=0.25,
+             include_diagnostics=False):
     import nar_backtest as nb
     totals = {"races": 0, "axis_wins": 0, "axis_podiums": 0,
               "hits": 0, "tickets": 0, "stake_jpy": 0, "return_jpy": 0}
