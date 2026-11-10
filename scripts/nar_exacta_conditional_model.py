@@ -2,6 +2,7 @@
 
 Training conditions on the actual historical winner; inference conditions on each
 predicted first-place candidate. Only pre-race numeric runner features are used.
+The module is intentionally isolated from live prediction and production ticket code.
 """
 from __future__ import annotations
 
