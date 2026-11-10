@@ -97,3 +97,70 @@ def evaluate(races):
         "policy": "Six exacta tickets per race, 100 JPY each; first-place top-2 winner classifier probabilities x second-place top-4 podium classifier probabilities, excluding same-horse pairs and ranking by probability product. ROI and hit rate use only races with an official exacta payout row; missing-payout races are reported and excluded, not silently treated as zero. Same chronological holdout race cohort as the trio comparison.",
     })
     return totals
+
+
+def evaluate_conditional(races):
+    """Evaluate conditional-second model with the same six-ticket / 600-JPY policy."""
+    import nar_backtest as nb
+    import nar_exacta_conditional_model as conditional
+    totals = {
+        "races": 0, "eligible_result_races": 0, "payout_data_missing_races": 0,
+        "hits": 0, "tickets": 0, "stake_jpy": 0, "return_jpy": 0,
+        "first_pool_winner_hits": 0, "second_pool_runnerup_hits": 0,
+    }
+    diagnostics, missing = [], []
+    for item in races:
+        group = item["group"]
+        first_scores = item["winner_model_probabilities"]
+        conditional_scores = item["conditional_second_scores"]
+        tickets = conditional.build_conditional_exacta_tickets(
+            group, first_scores, conditional_scores, limit=6
+        )
+        payout = item.get("payout") or {}
+        winners = {str(r["horse_no"]) for r in group if r.get("finish") == 1}
+        seconds = {str(r["horse_no"]) for r in group if r.get("finish") == 2}
+        if len(winners) != 1 or len(seconds) != 1:
+            continue
+        totals["eligible_result_races"] += 1
+        if not has_exacta_payout_data(payout):
+            totals["payout_data_missing_races"] += 1
+            missing.append({"date": item.get("date"), "race_key": item.get("race_key")})
+            continue
+        first_pool = set(sorted(first_scores, key=lambda h: (-float(first_scores[h]), int(h)))[:2])
+        second_pool = set()
+        for first in first_pool:
+            second_pool.update(sorted(
+                conditional_scores[first],
+                key=lambda h: (-float(conditional_scores[first][h]), int(h)),
+            )[:4])
+        returned = sum(nb.payout_for("exacta", ticket, payout) or 0 for ticket in tickets)
+        totals["races"] += 1
+        totals["hits"] += int(returned > 0)
+        totals["tickets"] += len(tickets)
+        totals["stake_jpy"] += len(tickets) * 100
+        totals["return_jpy"] += returned
+        totals["first_pool_winner_hits"] += int(bool(winners & first_pool))
+        totals["second_pool_runnerup_hits"] += int(bool(seconds & second_pool))
+        diagnostics.append({
+            "date": item.get("date"), "race_key": item.get("race_key"),
+            "tickets": tickets, "hit": returned > 0, "return_jpy": int(returned),
+            "winner_in_first_pool": bool(winners & first_pool),
+            "runnerup_in_conditional_top4": bool(seconds & second_pool),
+            "exacta_payout_data_present": True,
+        })
+    n, stake = totals["races"], totals["stake_jpy"]
+    eligible = totals["eligible_result_races"]
+    totals.update({
+        "hit_rate_pct": round(100 * totals["hits"] / n, 2) if n else None,
+        "roi_pct": round(100 * totals["return_jpy"] / stake, 2) if stake else None,
+        "profit_jpy": totals["return_jpy"] - stake,
+        "average_tickets_per_race": round(totals["tickets"] / n, 2) if n else None,
+        "average_stake_per_race_jpy": round(stake / n, 2) if n else None,
+        "payout_data_coverage_pct": round(100 * n / eligible, 2) if eligible else None,
+        "first_pool_winner_capture_pct": round(100 * totals["first_pool_winner_hits"] / n, 2) if n else None,
+        "second_pool_runnerup_capture_pct": round(100 * totals["second_pool_runnerup_hits"] / n, 2) if n else None,
+        "race_diagnostics": diagnostics, "payout_data_missing_races_detail": missing,
+        "research_only": True,
+        "policy": "Six ordered exacta tickets at 100 JPY each; top-2 winner candidates multiplied by conditional runner-up probabilities for each possible first horse. Conditional model is trained only on races before the evaluation window. ROI excludes races without an official exacta payout row and reports coverage.",
+    })
+    return totals
