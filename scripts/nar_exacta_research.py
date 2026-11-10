@@ -127,12 +127,11 @@ def evaluate_conditional(races):
             missing.append({"date": item.get("date"), "race_key": item.get("race_key")})
             continue
         first_pool = set(sorted(first_scores, key=lambda h: (-float(first_scores[h]), int(h)))[:2])
-        second_pool = set()
-        for first in first_pool:
-            second_pool.update(sorted(
-                conditional_scores[first],
-                key=lambda h: (-float(conditional_scores[first][h]), int(h)),
-            )[:4])
+        actual_winner = next(iter(winners))
+        second_pool = set(sorted(
+            conditional_scores[actual_winner],
+            key=lambda h: (-float(conditional_scores[actual_winner][h]), int(h)),
+        )[:4])
         returned = sum(nb.payout_for("exacta", ticket, payout) or 0 for ticket in tickets)
         totals["races"] += 1
         totals["hits"] += int(returned > 0)
