@@ -68,6 +68,25 @@ class TrioLambdaRankMarketFusionTests(unittest.TestCase):
         self.assertTrue(all(len(ticket) == 3 for ticket in strategy["trio_tickets"]))
         self.assertEqual(len({tuple(ticket) for ticket in strategy["trio_tickets"]}), 6)
 
+    def test_axis_strategy_can_select_axis_with_separate_winner_model(self):
+        group = [{"horse_no": str(i), "finish": i} for i in range(1, 8)]
+        opponent_scores = {str(i): 1.0 - (i - 1) * 0.1 for i in range(1, 8)}
+        winner_scores = {"1": 0.1, "2": 0.2, "3": 1.0, "4": 0.4,
+                         "5": 0.3, "6": 0.2, "7": 0.1}
+        pair_scores = {
+            (str(a), str(b)): 0.2 + 0.05 * (8 - a - b)
+            for a in range(1, 8) for b in range(a + 1, 8)
+        }
+        market_probs = {str(i): (8 - i) / 28 for i in range(1, 8)}
+        strategy = fusion.build_axis_wide_trio_strategy(
+            group, opponent_scores, pair_scores, market_probs,
+            compatibility_weight=0.5, axis_scores=winner_scores,
+        )
+        self.assertEqual(strategy["axis"], "3")
+        self.assertEqual(strategy["wide_tickets"], [["3", "1"], ["3", "2"]])
+        self.assertEqual(len(strategy["trio_tickets"]), 6)
+        self.assertNotIn("3", strategy["trio_opponents"])
+
     def test_axis_strategy_evaluates_800_yen_per_race(self):
         group = [{"horse_no": str(i), "finish": i} for i in range(1, 7)]
         pair_scores = {
@@ -99,6 +118,39 @@ class TrioLambdaRankMarketFusionTests(unittest.TestCase):
         self.assertEqual(result["wide_return_jpy"], 300)
         self.assertEqual(result["trio_return_jpy"], 500)
         self.assertEqual(result["combined_return_jpy"], 800)
+
+    def test_winner_podium_percentile_blend_uses_both_specialists(self):
+        group = [{"horse_no": str(i), "finish": i} for i in range(1, 5)]
+        winner = {"1": 0.9, "2": 0.4, "3": 0.2, "4": 0.1}
+        podium = {"1": 0.5, "2": 0.9, "3": 0.8, "4": 0.1}
+        blended = fusion.blend_win_podium_percentiles(group, winner, podium, 0.5)
+        self.assertEqual(set(blended), {"1", "2", "3", "4"})
+        self.assertGreater(blended["2"], blended["4"])
+        self.assertEqual(fusion.blend_win_podium_percentiles(group, winner, podium, 0.0),
+                         fusion.percentile_scores(winner))
+        self.assertEqual(fusion.blend_win_podium_percentiles(group, winner, podium, 1.0),
+                         fusion.percentile_scores(podium))
+
+    def test_axis_model_metrics_measure_axis_podium_and_top7_coverage(self):
+        group = [
+            {"horse_no": "1", "finish": 4},
+            {"horse_no": "2", "finish": 1},
+            {"horse_no": "3", "finish": 2},
+            {"horse_no": "4", "finish": 3},
+            {"horse_no": "5", "finish": 5},
+            {"horse_no": "6", "finish": 6},
+            {"horse_no": "7", "finish": 7},
+            {"horse_no": "8", "finish": 8},
+        ]
+        item = {"group": group, "scores": {
+            "1": 1.0, "2": 0.9, "3": 0.8, "4": 0.7,
+            "5": 0.6, "6": 0.5, "7": 0.4, "8": 0.3,
+        }}
+        result = fusion.evaluate_axis_model([item], "scores")
+        self.assertEqual(result["races"], 1)
+        self.assertEqual(result["axis_win_rate_pct"], 0.0)
+        self.assertEqual(result["axis_podium_rate_pct"], 0.0)
+        self.assertEqual(result["top7_podium_coverage_pct"], 100.0)
 
     def test_weight_selection_uses_development_races_only(self):
         group = [

@@ -10,6 +10,7 @@ import datetime as dt
 import itertools
 import json
 import math
+import os
 import re
 import unicodedata
 from pathlib import Path
@@ -17,9 +18,21 @@ import nar_backtest as nb
 import nar_ml_challenger_backtest as ml
 import nar_trio_compatibility as tc
 import nar_trio_learned_compatibility as learned_tc
+import nar_trio_combination_model as trio_combo_model
+import nar_trio_candidate_comparison as trio_candidates
+import nar_axis_longshot_research as axis_longshot
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "data" / "nar-trio-lambdarank-market-fusion-5day.json"
+TEST_DAYS = int(os.environ.get("NAR_RESEARCH_TEST_DAYS", "5"))
+DEV_FRACTION = float(os.environ.get("NAR_RESEARCH_DEV_FRACTION", "0.60"))
+OUT = Path(os.environ.get(
+    "NAR_RESEARCH_OUTPUT",
+    str(ROOT / "data" / "nar-trio-lambdarank-market-fusion-5day.json"),
+))
+if TEST_DAYS < 5:
+    raise ValueError("NAR_RESEARCH_TEST_DAYS must be at least 5")
+if not 0.50 <= DEV_FRACTION <= 0.80:
+    raise ValueError("NAR_RESEARCH_DEV_FRACTION must be between 0.50 and 0.80")
 BLEND_WEIGHTS = (0.00, 0.25, 0.50, 0.75, 1.00)
 COMPATIBILITY_WEIGHTS = (0.00, 0.10, 0.20, 0.35, 0.50, 0.75, 1.00)
 LEARNED_COMPATIBILITY_WEIGHTS = (0.00, 0.05, 0.10, 0.20, 0.35, 0.50, 0.75, 1.00)
@@ -238,7 +251,8 @@ def evaluate_learned_compatibility(races, market_weight, compatibility_weight):
 
 
 def build_axis_wide_trio_strategy(group, scores, pair_scores, market_probabilities,
-                                  compatibility_weight=0.0, temperature=0.10):
+                                  compatibility_weight=0.0, temperature=0.10,
+                                  axis_scores=None):
     """Build 2 axis-wide tickets and 6 axis-trio tickets using a pre-off EV proxy.
 
     The axis is the highest fused individual rank. Wide opponents are ranks 2 and 3.
@@ -251,11 +265,17 @@ def build_axis_wide_trio_strategy(group, scores, pair_scores, market_probabiliti
     """
     if len(group) < 5:
         raise ValueError("Axis strategy requires at least five runners")
-    ranked = rank_horses(group, scores)
-    numbers = [str(row["horse_no"]) for row in ranked]
-    axis = numbers[0]
-    wide_opponents = numbers[1:3]
-    candidates = numbers[1:]
+    # Axis selection can use a specialist model independently from opponent ranking.
+    # Default behavior is unchanged when axis_scores is omitted.
+    axis_ranked = rank_horses(group, axis_scores if axis_scores is not None else scores)
+    axis = str(axis_ranked[0]["horse_no"])
+    candidates = [
+        str(row["horse_no"]) for row in sorted(
+            (row for row in group if str(row["horse_no"]) != axis),
+            key=lambda row: (-float(scores[str(row["horse_no"])]), int(row["horse_no"]))
+        )
+    ]
+    wide_opponents = candidates[:2]
     combos = list(itertools.combinations(candidates, 2))
     raw_scores = []
     for a, b in combos:
@@ -307,7 +327,8 @@ def build_axis_wide_trio_strategy(group, scores, pair_scores, market_probabiliti
     }
 
 
-def evaluate_axis_wide_trio_strategy(races, market_weight, compatibility_weight):
+def evaluate_axis_wide_trio_strategy(races, market_weight, compatibility_weight,
+                                      axis_score_key=None):
     """Evaluate fixed 2-wide + 6-trio tickets at 100 JPY each, plus rank-only baseline."""
     totals = {
         "races": 0, "axis_winner_hits": 0, "axis_podium_hits": 0,
@@ -322,6 +343,7 @@ def evaluate_axis_wide_trio_strategy(races, market_weight, compatibility_weight)
     }
     for item in races:
         scores = blend_rank_scores(item["model_rank_scores"], item["market_rank_scores"], market_weight)
+        axis_scores = item[axis_score_key] if axis_score_key else scores
         group = item["group"]
         podium = {str(row["horse_no"]) for row in group if row["finish"] in (1, 2, 3)}
         winners = {str(row["horse_no"]) for row in group if row["finish"] == 1}
@@ -329,10 +351,14 @@ def evaluate_axis_wide_trio_strategy(races, market_weight, compatibility_weight)
             continue
         strategy = build_axis_wide_trio_strategy(
             group, scores, item["learned_pair_scores"], item["market_win_probabilities"],
-            compatibility_weight=compatibility_weight,
+            compatibility_weight=compatibility_weight, axis_scores=axis_scores,
         )
-        ranked = rank_horses(group, scores)
-        rank_only_opponents = [str(row["horse_no"]) for row in ranked[1:5]]
+        rank_only_opponents = [
+            str(row["horse_no"]) for row in sorted(
+                (row for row in group if str(row["horse_no"]) != strategy["axis"]),
+                key=lambda row: (-float(scores[str(row["horse_no"])]), int(row["horse_no"]))
+            )[:4]
+        ]
         rank_only_tickets = [
             sorted((strategy["axis"], a, b), key=int)
             for a, b in itertools.combinations(rank_only_opponents, 2)
@@ -387,6 +413,90 @@ def evaluate_axis_wide_trio_strategy(races, market_weight, compatibility_weight)
     return totals
 
 
+def evaluate_axis_combo_strategy(races, market_weight):
+    """Evaluate 2 wide + 6 trio tickets with a winner-model axis and supervised trio ranking."""
+    totals = {
+        "races": 0, "axis_winner_hits": 0, "axis_podium_hits": 0,
+        "wide_hit_races": 0, "wide_stake_jpy": 0, "wide_return_jpy": 0,
+        "trio_hit_races": 0, "trio_stake_jpy": 0, "trio_return_jpy": 0,
+        "combined_hit_races": 0, "combined_stake_jpy": 0, "combined_return_jpy": 0,
+        "baseline_trio_return_jpy": 0, "baseline_trio_hit_races": 0,
+    }
+    for item in races:
+        group = item["group"]
+        individual_scores = blend_rank_scores(
+            item["model_rank_scores"], item["market_rank_scores"], market_weight
+        )
+        strategy = trio_combo_model.choose_axis_trio_tickets(
+            group, item["winner_model_scores"], individual_scores,
+            item["winner_axis_trio_scores"], opponent_count=4,
+        )
+        baseline_axis = min(
+            {str(row["horse_no"]): row for row in group},
+            key=lambda horse: (-float(item["winner_model_scores"][horse]), int(horse))
+        )
+        baseline_opponents = sorted(
+            (str(row["horse_no"]) for row in group if str(row["horse_no"]) != baseline_axis),
+            key=lambda horse: (-float(individual_scores[horse]), int(horse))
+        )[:4]
+        baseline_tickets = [
+            sorted((baseline_axis, a, b), key=int)
+            for a, b in itertools.combinations(baseline_opponents, 2)
+        ]
+        podium = {str(row["horse_no"]) for row in group if row.get("finish") in (1, 2, 3)}
+        winners = {str(row["horse_no"]) for row in group if row.get("finish") == 1}
+        if len(podium) != 3 or len(winners) != 1:
+            continue
+        wide_return = sum(
+            nb.payout_for("wide", ticket, item["payout"]) or 0
+            for ticket in strategy["wide_tickets"]
+        )
+        trio_return = sum(
+            nb.payout_for("trio", ticket, item["payout"]) or 0
+            for ticket in strategy["trio_tickets"]
+        )
+        baseline_return = sum(
+            nb.payout_for("trio", ticket, item["payout"]) or 0
+            for ticket in baseline_tickets
+        )
+        totals["races"] += 1
+        totals["axis_winner_hits"] += int(strategy["axis"] in winners)
+        totals["axis_podium_hits"] += int(strategy["axis"] in podium)
+        totals["wide_stake_jpy"] += 200
+        totals["wide_return_jpy"] += wide_return
+        totals["wide_hit_races"] += int(wide_return > 0)
+        totals["trio_stake_jpy"] += 600
+        totals["trio_return_jpy"] += trio_return
+        totals["trio_hit_races"] += int(trio_return > 0)
+        totals["combined_stake_jpy"] += 800
+        totals["combined_return_jpy"] += wide_return + trio_return
+        totals["combined_hit_races"] += int(wide_return > 0 or trio_return > 0)
+        totals["baseline_trio_return_jpy"] += baseline_return
+        totals["baseline_trio_hit_races"] += int(baseline_return > 0)
+    n = totals["races"]
+    for name, stake_key, return_key, hit_key in (
+        ("wide", "wide_stake_jpy", "wide_return_jpy", "wide_hit_races"),
+        ("trio", "trio_stake_jpy", "trio_return_jpy", "trio_hit_races"),
+        ("combined", "combined_stake_jpy", "combined_return_jpy", "combined_hit_races"),
+    ):
+        stake = totals[stake_key]
+        totals[f"{name}_roi_pct"] = round(100 * totals[return_key] / stake, 2) if stake else None
+        totals[f"{name}_profit_jpy"] = totals[return_key] - stake
+        totals[f"{name}_hit_rate_pct"] = round(100 * totals[hit_key] / n, 2) if n else None
+    baseline_stake = n * 600
+    totals["baseline_trio_roi_pct"] = round(
+        100 * totals["baseline_trio_return_jpy"] / baseline_stake, 2
+    ) if baseline_stake else None
+    totals["baseline_trio_profit_jpy"] = totals["baseline_trio_return_jpy"] - baseline_stake
+    totals["baseline_trio_hit_rate_pct"] = round(
+        100 * totals["baseline_trio_hit_races"] / n, 2
+    ) if n else None
+    totals["axis_win_rate_pct"] = round(100 * totals["axis_winner_hits"] / n, 2) if n else None
+    totals["axis_podium_rate_pct"] = round(100 * totals["axis_podium_hits"] / n, 2) if n else None
+    totals["stake_per_race_jpy"] = 800
+    return totals
+
+
 def select_market_weight(dev_races):
     """Tune only on the first three dates; never inspect final two-day holdout results."""
     results = {f"{weight:.2f}": evaluate_races(dev_races, weight) for weight in BLEND_WEIGHTS}
@@ -402,6 +512,127 @@ def select_market_weight(dev_races):
 def feature_matrix(group, category_maps):
     return [[row[key] if key not in ml.CATEGORICAL else category_maps[key].get(row[key], -1)
              for key in ml.RAW_FEATURES] for row in group]
+
+
+def fit_binary_model(train_rows, dev_rows, target, category_maps):
+    """Fit a research-only winner or podium classifier using chronological rows."""
+    import numpy as np
+    from lightgbm import LGBMClassifier, early_stopping, log_evaluation
+    def matrix(rows):
+        return np.asarray(feature_matrix(rows, category_maps), dtype=float)
+    def labels(rows):
+        return np.asarray([
+            int(row.get("finish") == 1) if target == "winner"
+            else int(row.get("finish") in (1, 2, 3))
+            for row in rows
+        ], dtype=int)
+    y_train, y_dev = labels(train_rows), labels(dev_rows)
+    if len(set(y_train.tolist())) < 2 or len(set(y_dev.tolist())) < 2:
+        raise RuntimeError(f"{target} classifier requires both classes in fit and early-stop data")
+    model = LGBMClassifier(
+        objective="binary", n_estimators=900, learning_rate=0.035,
+        num_leaves=15, min_child_samples=80, reg_lambda=2.0,
+        subsample=0.9, colsample_bytree=0.9, random_state=42,
+        n_jobs=4, verbosity=-1,
+    )
+    model.fit(matrix(train_rows), y_train, eval_set=[(matrix(dev_rows), y_dev)],
+              callbacks=[early_stopping(60, verbose=False), log_evaluation(0)])
+    return model
+
+
+def classifier_probabilities(model, group, category_maps):
+    return model.predict_proba(feature_matrix(group, category_maps))[:, 1].tolist()
+
+
+def evaluate_axis_model(races, score_key, probability_key=None, target="winner"):
+    races_n = axis_wins = axis_podiums = top7_podiums = podium_total = 0
+    probs, labels = [], []
+    for item in races:
+        group = item["group"]
+        scores = item[score_key]
+        if len(group) < 3 or len(scores) != len(group):
+            continue
+        podium = {str(r["horse_no"]) for r in group if r.get("finish") in (1, 2, 3)}
+        winners = {str(r["horse_no"]) for r in group if r.get("finish") == 1}
+        if len(podium) != 3 or len(winners) != 1:
+            continue
+        ordered = sorted(range(len(group)), key=lambda i: (-float(scores[str(group[i]["horse_no"])]),
+                                                            int(group[i]["horse_no"])))
+        axis = str(group[ordered[0]]["horse_no"])
+        top7 = {str(group[i]["horse_no"]) for i in ordered[:7]}
+        races_n += 1
+        axis_wins += int(axis in winners)
+        axis_podiums += int(axis in podium)
+        top7_podiums += len(top7 & podium)
+        podium_total += 3
+        if probability_key:
+            pmap = item[probability_key]
+            for row in group:
+                horse = str(row["horse_no"])
+                probs.append(min(max(float(pmap[horse]), 1e-7), 1 - 1e-7))
+                labels.append(int(row.get("finish") == 1) if target == "winner"
+                              else int(row.get("finish") in (1, 2, 3)))
+    result = {
+        "races": races_n,
+        "axis_win_rate_pct": round(100 * axis_wins / races_n, 2) if races_n else None,
+        "axis_podium_rate_pct": round(100 * axis_podiums / races_n, 2) if races_n else None,
+        "top7_podium_coverage_pct": round(100 * top7_podiums / podium_total, 2) if podium_total else None,
+        "top7_podium_horses_captured": top7_podiums,
+        "top7_podium_horses_total": podium_total,
+    }
+    if probs:
+        import numpy as np
+        y = np.asarray(labels, dtype=float)
+        p = np.asarray(probs, dtype=float)
+        bins = []
+        ece = 0.0
+        for lo in np.linspace(0.0, 0.9, 10):
+            hi = lo + 0.1
+            mask = (p >= lo) & (p < hi if hi < 1 else p <= hi)
+            if mask.any():
+                gap = abs(float(y[mask].mean()) - float(p[mask].mean()))
+                ece += float(mask.mean()) * gap
+                bins.append({"lower": round(float(lo), 2), "upper": round(float(hi), 2),
+                             "count": int(mask.sum()), "mean_probability": round(float(p[mask].mean()), 5),
+                             "observed_rate": round(float(y[mask].mean()), 5)})
+        result["calibration"] = {
+            "target": target,
+            "brier_score": round(float(np.mean((p - y) ** 2)), 6),
+            "log_loss": round(float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p))), 6),
+            "ece_10_bins": round(ece, 6),
+            "bins": bins,
+            "warning": "Per-runner binary probabilities are not normalized to sum to one within each race.",
+        }
+    return result
+
+
+def blend_win_podium_percentiles(group, winner_scores, podium_scores, podium_weight):
+    win_rank = percentile_scores(winner_scores)
+    podium_rank = percentile_scores(podium_scores)
+    return {
+        horse: (1.0 - podium_weight) * win_rank[horse] + podium_weight * podium_rank[horse]
+        for horse in win_rank
+    }
+
+
+def select_win_podium_blend(dev_races):
+    weights = [round(i / 10, 1) for i in range(11)]
+    results = {}
+    for weight in weights:
+        scored = []
+        for item in dev_races:
+            scores = blend_win_podium_percentiles(
+                item["group"], item["winner_model_scores"], item["podium_model_scores"], weight
+            )
+            scored.append({**item, "candidate_scores": scores})
+        results[f"{weight:.1f}"] = evaluate_axis_model(scored, "candidate_scores")
+    selected = max(weights, key=lambda w: (
+        results[f"{w:.1f}"]["axis_podium_rate_pct"] if results[f"{w:.1f}"]["axis_podium_rate_pct"] is not None else -1,
+        results[f"{w:.1f}"]["axis_win_rate_pct"] if results[f"{w:.1f}"]["axis_win_rate_pct"] is not None else -1,
+        results[f"{w:.1f}"]["top7_podium_coverage_pct"] if results[f"{w:.1f}"]["top7_podium_coverage_pct"] is not None else -1,
+        -w,
+    ))
+    return selected, results
 
 
 def main():
@@ -426,9 +657,13 @@ def main():
         payout = payouts.get(race_key) or {}
         if race_key in races and payout.get("trio"):
             eligible_dates.add(snapshot_date(snapshot))
-    test_dates = sorted(eligible_dates)[-5:]
-    if len(test_dates) < 5:
-        raise RuntimeError(f"Need five completed snapshot dates with trio payouts; found {len(test_dates)}: {test_dates}")
+    test_dates = sorted(eligible_dates)[-TEST_DAYS:]
+    if len(test_dates) < TEST_DAYS:
+        raise RuntimeError(
+            f"Need {TEST_DAYS} completed snapshot dates with trio payouts; "
+            f"found {len(test_dates)}: {test_dates}"
+        )
+    dev_date_count = max(1, min(len(test_dates) - 1, int(len(test_dates) * DEV_FRACTION)))
     test_date_set = set(test_dates)
     test_start = test_dates[0]
     training_dates = [day for day in all_dates if day < test_start]
@@ -452,9 +687,15 @@ def main():
     }
     print(f"TRIO_FUSION_LAMBDARANK fit_races={len(fit_groups)} dev_races={len(dev_groups)}", flush=True)
     ranker = ml.fit_lambdarank(fit_groups, dev_groups, ml.RAW_FEATURES, category_maps)
+    dev_rows = [row for row in training_rows if dt.date.fromisoformat(row["date"]) in dev_dates]
+    winner_model = fit_binary_model(fit_rows, dev_rows, "winner", category_maps)
+    podium_model = fit_binary_model(fit_rows, dev_rows, "podium", category_maps)
+    print(f"TRIO_AXIS_CLASSIFIERS winner_fit_rows={len(fit_rows)} podium_fit_rows={len(fit_rows)} "
+          f"early_stop_rows={len(dev_rows)}", flush=True)
 
     training_groups_for_pairs = ml.group_rows(training_rows)
     learned_pair_model = learned_tc.fit_pair_model(training_groups_for_pairs)
+    learned_trio_model = trio_combo_model.fit_trio_model(training_groups_for_pairs)
     test_rows = [row for row in rows if dt.date.fromisoformat(row["date"]) in test_date_set]
     test_groups = ml.group_rows(test_rows)
     matched = []
@@ -476,27 +717,55 @@ def main():
             for row, score in zip(group, ranker.predict(feature_matrix(group, category_maps)))
         }
         model_ranks = percentile_scores(model_raw)
+        winner_probs_list = classifier_probabilities(winner_model, group, category_maps)
+        podium_probs_list = classifier_probabilities(podium_model, group, category_maps)
+        winner_probs = {str(row["horse_no"]): float(prob)
+                        for row, prob in zip(group, winner_probs_list)}
+        podium_probs = {str(row["horse_no"]): float(prob)
+                        for row, prob in zip(group, podium_probs_list)}
         matched.append({
             "date": group[0]["date"], "race_key": key, "group": group,
             "payout": payout, "model_rank_scores": model_ranks,
+            "winner_model_scores": percentile_scores(winner_probs),
+            "podium_model_scores": percentile_scores(podium_probs),
+            "winner_model_probabilities": winner_probs,
+            "podium_model_probabilities": podium_probs,
             "market_rank_scores": {horse: market_ranks[horse] for horse in horse_numbers},
             "market_win_probabilities": {horse: market_prob[horse] for horse in horse_numbers},
             "snapshot_minutes_to_post": snapshot.get("minutes_to_post"),
             "snapshot_model_version": snapshot.get("model_version"),
             "learned_pair_scores": learned_tc.predict_pair_compatibility(group, learned_pair_model),
         })
+        winner_axis = str(rank_horses(group, percentile_scores(winner_probs))[0]["horse_no"])
+        matched[-1]["winner_axis_trio_scores"] = trio_combo_model.predict_trio_scores(
+            group, learned_trio_model, winner_axis
+        )
     matched.sort(key=lambda item: (item["date"], item["race_key"]))
     if len(matched) < 20:
         raise RuntimeError(f"Insufficient same-race pre-off market coverage for a useful five-day pilot: {len(matched)} races")
 
-    dev_dates_for_fusion = {day.isoformat() for day in test_dates[:3]}
-    holdout_dates = {day.isoformat() for day in test_dates[3:]}
+    dev_dates_for_fusion = {day.isoformat() for day in test_dates[:dev_date_count]}
+    holdout_dates = {day.isoformat() for day in test_dates[dev_date_count:]}
     dev_races = [item for item in matched if item["date"] in dev_dates_for_fusion]
     holdout_races = [item for item in matched if item["date"] in holdout_dates]
     if len(dev_races) < 10 or len(holdout_races) < 10:
         raise RuntimeError(f"Insufficient fusion split: development={len(dev_races)} holdout={len(holdout_races)}")
 
+    # Four comparable trio candidates: ability-only, combo-only, ability+combo,
+    # and ability+pre-off-market+combo. C/D weights are selected on dev only.
+    trio_candidate_comparison = trio_candidates.compare_and_select(dev_races, holdout_races)
+
     selected_weight, dev_results = select_market_weight(dev_races)
+    axis_blend_weight, axis_blend_dev_results = select_win_podium_blend(dev_races)
+    axis_model_development = {
+        "LambdaRank_baseline": evaluate_axis_model(dev_races, "model_rank_scores"),
+        "winner_classifier": evaluate_axis_model(dev_races, "winner_model_scores",
+                                                  "winner_model_probabilities", "winner"),
+        "podium_classifier": evaluate_axis_model(dev_races, "podium_model_scores",
+                                                  "podium_model_probabilities", "podium"),
+        "winner_podium_blend": axis_blend_dev_results[f"{axis_blend_weight:.1f}"],
+        "preoff_market_favorite": evaluate_axis_model(dev_races, "market_rank_scores"),
+    }
     compatibility_weights = COMPATIBILITY_WEIGHTS
     dev_compatibility_results = {
         f"{cw:.2f}": evaluate_races(dev_races, selected_weight, cw)
@@ -511,6 +780,24 @@ def main():
     ))
     holdout_results = {f"{weight:.2f}": evaluate_races(holdout_races, weight) for weight in BLEND_WEIGHTS}
     holdout_results["selected_from_development"] = evaluate_races(holdout_races, selected_weight)
+    holdout_axis_scores = []
+    for item in holdout_races:
+        holdout_axis_scores.append({
+            **item,
+            "winner_podium_blend_scores": blend_win_podium_percentiles(
+                item["group"], item["winner_model_scores"], item["podium_model_scores"],
+                axis_blend_weight
+            ),
+        })
+    axis_model_holdout = {
+        "LambdaRank_baseline": evaluate_axis_model(holdout_races, "model_rank_scores"),
+        "winner_classifier": evaluate_axis_model(holdout_races, "winner_model_scores",
+                                                  "winner_model_probabilities", "winner"),
+        "podium_classifier": evaluate_axis_model(holdout_races, "podium_model_scores",
+                                                  "podium_model_probabilities", "podium"),
+        "winner_podium_blend": evaluate_axis_model(holdout_axis_scores, "winner_podium_blend_scores"),
+        "preoff_market_favorite": evaluate_axis_model(holdout_races, "market_rank_scores"),
+    }
     development_learned_compatibility = {
         f"{cw:.2f}": evaluate_learned_compatibility(dev_races, selected_weight, cw)
         for cw in LEARNED_COMPATIBILITY_WEIGHTS
@@ -561,13 +848,86 @@ def main():
     axis_strategy_all_days = evaluate_axis_wide_trio_strategy(
         matched, selected_weight, selected_learned_compatibility_weight
     )
+    # Research candidate: use the winner specialist only for axis selection,
+    # while keeping the exact same fused opponent scores, pair model and ticket count.
+    axis_classifier_strategy_dev = evaluate_axis_wide_trio_strategy(
+        dev_races, selected_weight, selected_learned_compatibility_weight,
+        axis_score_key="winner_model_scores",
+    )
+    axis_classifier_strategy_holdout = evaluate_axis_wide_trio_strategy(
+        holdout_races, selected_weight, selected_learned_compatibility_weight,
+        axis_score_key="winner_model_scores",
+    )
+    axis_classifier_strategy_all_days = evaluate_axis_wide_trio_strategy(
+        matched, selected_weight, selected_learned_compatibility_weight,
+        axis_score_key="winner_model_scores",
+    )
+    # New research candidate: winner specialist selects the axis; a supervised
+    # trio model ranks complete axis+opponent combinations trained only pre-window.
+    axis_combo_strategy_dev = evaluate_axis_combo_strategy(dev_races, selected_weight)
+    axis_combo_strategy_holdout = evaluate_axis_combo_strategy(holdout_races, selected_weight)
+    axis_combo_strategy_all_days = evaluate_axis_combo_strategy(matched, selected_weight)
+    # Axis uses the individual fused ranking. Opponents are then re-ranked
+    # conditionally on that fixed axis using the independently trained pair model.
+    longshot_races = []
+    winner_axis_longshot_races = []
+    for item in matched:
+        individual_scores = blend_rank_scores(
+            item["model_rank_scores"], item["market_rank_scores"], selected_weight
+        )
+        axis = str(rank_horses(item["group"], individual_scores)[0]["horse_no"])
+        opponent_scores = axis_longshot.build_axis_conditioned_opponent_scores(
+            item["group"], axis, individual_scores, item["learned_pair_scores"],
+            selected_learned_compatibility_weight
+        )
+        common = {
+            "group": item["group"],
+            "market_win_probabilities": item["market_win_probabilities"],
+            "payout": item["payout"],
+        }
+        longshot_races.append({
+            **common, "axis_scores": individual_scores, "opponent_scores": opponent_scores,
+        })
+        # Separate axis specialist candidate; no holdout tuning and no live promotion.
+        winner_axis_scores = item["winner_model_scores"]
+        winner_axis = str(rank_horses(item["group"], winner_axis_scores)[0]["horse_no"])
+        winner_opponent_scores = axis_longshot.build_axis_conditioned_opponent_scores(
+            item["group"], winner_axis, winner_axis_scores, item["learned_pair_scores"],
+            selected_learned_compatibility_weight
+        )
+        winner_axis_longshot_races.append({
+            **common, "axis_scores": winner_axis_scores,
+            "opponent_scores": winner_opponent_scores,
+        })
+    longshot_dev = axis_longshot.evaluate_axis_longshot([
+        race for race, item in zip(longshot_races, matched)
+        if item["date"] in dev_dates_for_fusion
+    ])
+    longshot_holdout = axis_longshot.evaluate_axis_longshot([
+        race for race, item in zip(longshot_races, matched)
+        if item["date"] in holdout_dates
+    ])
+    longshot_all_days = axis_longshot.evaluate_axis_longshot(longshot_races)
+    winner_axis_longshot_dev = axis_longshot.evaluate_axis_longshot([
+        race for race, item in zip(winner_axis_longshot_races, matched)
+        if item["date"] in dev_dates_for_fusion
+    ])
+    winner_axis_longshot_holdout = axis_longshot.evaluate_axis_longshot([
+        race for race, item in zip(winner_axis_longshot_races, matched)
+        if item["date"] in holdout_dates
+    ])
+    winner_axis_longshot_all_days = axis_longshot.evaluate_axis_longshot(winner_axis_longshot_races)
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "evaluated", "research_only": True,
         "test_window": {
             "dates": [day.isoformat() for day in test_dates],
-            "development_dates_for_fusion": [day.isoformat() for day in test_dates[:3]],
-            "untouched_holdout_dates": [day.isoformat() for day in test_dates[3:]],
+            "requested_test_days": TEST_DAYS,
+            "development_date_count": dev_date_count,
+            "holdout_date_count": len(test_dates) - dev_date_count,
+            "development_fraction": DEV_FRACTION,
+            "development_dates_for_fusion": [day.isoformat() for day in test_dates[:dev_date_count]],
+            "untouched_holdout_dates": [day.isoformat() for day in test_dates[dev_date_count:]],
             "matched_preoff_races": len(matched), "development_races": len(dev_races),
             "holdout_races": len(holdout_races),
             "snapshot_policy": "closest valid 2-30 minute pre-off snapshot; same races and runners for every blend",
@@ -579,9 +939,35 @@ def main():
             "model": "LightGBM LambdaRank", "features": list(ml.RAW_FEATURES),
             "relevance": "winner=3, second=2, third=1, other=0",
             "market_features_used_inside_ranker": False,
-            "fusion_learning": "Select market percentile weight from {0,.25,.50,.75,1.00} using only the first three test dates; maximize trio 12-ticket race-hit rate, then podium capture; ties prefer lower market weight.",
+            "fusion_learning": "Select market percentile weight from {0,.25,.50,.75,1.00} using only the chronological development dates; maximize trio 12-ticket race-hit rate, then podium capture; ties prefer lower market weight.",
         },
         "development_weight_selection": {"selected_market_weight": round(selected_weight, 2), "selection_results": dev_results},
+        "axis_model_comparison": {
+            "purpose": "Research-only comparison of winner, podium and combined ability models against current LambdaRank and same-race pre-off market favorite.",
+            "training": {
+                "fit_dates": {"start": min(fit_dates).isoformat(), "end": max(fit_dates).isoformat()},
+                "early_stopping_dates": {"start": min(dev_dates).isoformat(), "end": max(dev_dates).isoformat()},
+                "fit_rows": len(fit_rows), "early_stopping_rows": len(dev_rows),
+                "winner_label": "finish == 1", "podium_label": "finish in 1,2,3",
+                "features": list(ml.RAW_FEATURES),
+                "policy": "Only historical races before the chronological evaluation window are used for fitting; feature dictionaries fit on fit rows only; dev rows are used only for early stopping.",
+            },
+            "development": axis_model_development,
+            "blend_selection": {
+                "selected_podium_model_weight": axis_blend_weight,
+                "selection_metric_priority": "Axis podium rate, then axis win rate, then top-7 podium coverage; selected using chronological development dates only.",
+                "candidate_results": axis_blend_dev_results,
+            },
+            "untouched_holdout": axis_model_holdout,
+            "holdout_policy": "All later chronological holdout dates remain untouched until model and blend selection are complete.",
+        },
+        "learned_trio_combination_training": {
+            "training_races": learned_trio_model["training_races"],
+            "positive_triplets": learned_trio_model["positive_triplets"],
+            "negative_triplets": learned_trio_model["negative_triplets"],
+            "features": learned_trio_model["features"],
+            "method": "balanced logistic regression on historical pre-race pairwise-derived trio features; one exact top-three positive and up to 12 deterministic negative triplets per race; scores rank combinations only and are not calibrated probabilities",
+        },
         "learned_pair_compatibility_training": {
             "training_races": len(training_groups_for_pairs),
             "training_pairs": learned_pair_model["training_pairs"],
@@ -603,6 +989,17 @@ def main():
         },
         "untouched_holdout_compatibility": holdout_compatibility_results,
         "untouched_holdout_front_count_segments": holdout_front_count_segments,
+        "axis_longshot_strategy": {
+            "development": longshot_dev,
+            "untouched_holdout": longshot_holdout,
+            "all_days_descriptive": longshot_all_days,
+            "winner_classifier_axis_candidate": {
+                "development": winner_axis_longshot_dev,
+                "untouched_holdout": winner_axis_longshot_holdout,
+                "all_days_descriptive": winner_axis_longshot_all_days,
+            },
+        },
+        "four_way_trio_candidate_comparison": trio_candidate_comparison,
         "axis_wide_trio_strategy": {
             "ticket_policy": {
                 "axis": "Highest fused LambdaRank + pre-off market individual rank",
@@ -615,7 +1012,19 @@ def main():
             "not_calibrated_warning": "This is a relative EV proxy, not calibrated probability or yen expected value. Exact pre-off wide/trio odds are not available in the snapshot feed; no final odds or realized payout is used in selection. Official payouts are used only after the race for retrospective evaluation.",
             "development": axis_strategy_dev,
             "untouched_holdout": axis_strategy_holdout,
-            "all_five_days_descriptive": axis_strategy_all_days,
+            "all_days_descriptive": axis_strategy_all_days,
+            "winner_classifier_axis_candidate": {
+                "development": axis_classifier_strategy_dev,
+                "untouched_holdout": axis_classifier_strategy_holdout,
+                "all_days_descriptive": axis_classifier_strategy_all_days,
+            },
+            "supervised_trio_combination_candidate": {
+                "ticket_policy": "Winner classifier selects axis; supervised combination model ranks all axis+opponent pairs; choose four opponents maximizing sum of six combo scores; two wide tickets use top two individual opponents",
+                "development": axis_combo_strategy_dev,
+                "untouched_holdout": axis_combo_strategy_holdout,
+                "all_days_descriptive": axis_combo_strategy_all_days,
+                "warning": "Scores are ranking scores, not calibrated probabilities or yen expected values. Research only.",
+            },
         },
         "untouched_holdout": holdout_results,
         "all_five_days_descriptive": {f"{weight:.2f}": evaluate_races(matched, weight) for weight in BLEND_WEIGHTS},
@@ -627,8 +1036,8 @@ def main():
             "pair_compatibility": "Transparent exploratory adjustment using historical first-corner running-style proxy and predicted front-runner crowding. Weight selected on first three test dates only.",
             "compatibility_weight_grid": [0.00, 0.05, 0.10, 0.15, 0.20],
             "limitations": [
-                "Only the final two of five dates are untouched holdout; this is a pilot, not proof of profitability.",
-                "The fusion weight is tuned on three dates and needs validation on a longer later holdout.",
+                "The later chronological segment is untouched holdout; sample size and uncertainty must be considered before any promotion.",
+                "The fusion weight is tuned only on chronological development dates and evaluated on a later untouched holdout.",
                 "Only timestamped pre-off win odds are used; confirmed final odds are excluded.",
                 "No live-model.json, live-history.json, or production ticket logic is changed.",
                 "Compatibility weights are swept broadly and top-12 ticket overlap is reported to detect inert adjustments.",
@@ -638,6 +1047,7 @@ def main():
         },
         "data_source": {"archive_months": downloads, "snapshot_records_considered": len(snapshot_by_key)},
     }
+    OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({
         "status": report["status"], "dates": report["test_window"]["dates"],
