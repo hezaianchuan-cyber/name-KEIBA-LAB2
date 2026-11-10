@@ -63,7 +63,7 @@ class AxisConditionalPairTests(unittest.TestCase):
             races[0]["group"], "1", races[0]["candidate_horse_nos"],
             races[0]["individual_scores"], fitted,
         )
-        self.assertEqual(len(result), 10)
+        self.assertEqual(len(result), 15)
         self.assertTrue(all(0 <= item["score"] <= 1 for item in result))
         self.assertNotIn("1", result[0]["pair"])
 
