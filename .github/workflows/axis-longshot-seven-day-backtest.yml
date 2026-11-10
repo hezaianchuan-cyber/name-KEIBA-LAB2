@@ -1,5 +1,13 @@
 name: Run seven-day axis longshot research
 on:
+  pull_request:
+    branches:
+      - research/axis-longshot-10-ticket
+    paths:
+      - 'scripts/nar_exacta_research.py'
+      - 'scripts/nar_trio_lambdarank_market_fusion_5day.py'
+      - 'tests/test_nar_exacta_research.py'
+      - '.github/workflows/axis-longshot-seven-day-backtest.yml'
   push:
     branches:
       - research/axis-longshot-10-ticket
