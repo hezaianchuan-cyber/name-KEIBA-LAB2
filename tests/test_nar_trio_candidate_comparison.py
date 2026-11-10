@@ -34,6 +34,15 @@ class TrioCandidateComparisonTests(unittest.TestCase):
             self.assertEqual(len(result), 4)
             self.assertNotIn("1", result)
 
+    def test_axis_conditioned_three_horse_score_keys_are_supported(self):
+        combo = {}
+        import itertools
+        for a, b in itertools.combinations(("2", "3", "4", "5", "6", "7"), 2):
+            combo[tuple(sorted(("1", a, b), key=int))] = 0.9 if a in ("2", "3", "4") and b in ("2", "3", "4") else 0.1
+        result = comparison._subset(self.group, "1", self.ability, self.market,
+                                    combo, "combo")
+        self.assertEqual(set(result), {"2", "3", "4", "5"})
+
     def test_ticket_count_is_six(self):
         self.assertEqual(len(comparison._tickets("1", ("2", "3", "4", "5"))), 6)
 
