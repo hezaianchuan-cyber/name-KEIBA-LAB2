@@ -9,7 +9,9 @@ import itertools
 
 
 def percentile(values):
-    ordered = sorted(values, key=lambda h: (-float(values[h]), int(h)))
+    def stable_key(h):
+        return tuple(int(part) for part in str(h).split("|"))
+    ordered = sorted(values, key=lambda h: (-float(values[h]), stable_key(h)))
     if len(ordered) <= 1:
         return {h: 0.5 for h in ordered}
     result = {}
