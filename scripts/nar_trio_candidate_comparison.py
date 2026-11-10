@@ -324,3 +324,65 @@ def compare_candidate_pools(dev_races, holdout_races):
         "banei_holdout": venue_results.get("帯広") or venue_results.get("ばんえい") or None,
         "research_only": True,
     }
+
+
+# Override the initial comparison helper with a strict common-cohort version:
+# all three pool sizes are evaluated on exactly the same races (>= 9 runners).
+def compare_candidate_pools(dev_races, holdout_races):
+    """Select pool size on development dates only, with identical 4/6/8 race cohorts."""
+    dev_eligible = [item for item in dev_races if len(item["group"]) >= 9]
+    holdout_eligible = [item for item in holdout_races if len(item["group"]) >= 9]
+    if len(dev_eligible) < 10 or len(holdout_eligible) < 10:
+        raise ValueError(
+            "Candidate-pool comparison requires at least 10 common-cohort races "
+            f"with >=9 runners; development={len(dev_eligible)}, holdout={len(holdout_eligible)}"
+        )
+    development = {
+        str(size): evaluate_candidate_pool(dev_eligible, size)
+        for size in (4, 6, 8)
+    }
+    def rank(result):
+        return (
+            result["trio_hit_rate_pct"] if result["trio_hit_rate_pct"] is not None else -1,
+            result["roi_pct"] if result["roi_pct"] is not None else -1,
+            result["profit_jpy"],
+        )
+    selected_size = max((6, 8), key=lambda size: rank(development[str(size)]))
+    holdout = {
+        str(size): evaluate_candidate_pool(holdout_eligible, size, include_diagnostics=True)
+        for size in (4, 6, 8)
+    }
+    venue_results = {}
+    venues = sorted({
+        str(item["group"][0].get("venue") or "unknown")
+        for item in holdout_eligible
+    })
+    for venue in venues:
+        segment = [
+            item for item in holdout_eligible
+            if str(item["group"][0].get("venue") or "unknown") == venue
+        ]
+        venue_results[venue] = {
+            str(size): evaluate_candidate_pool(segment, size)
+            for size in (4, 6, 8)
+        }
+    banei_names = ("帯広", "ばんえい", "ばんえい帯広")
+    banei = {
+        name: venue_results[name] for name in banei_names if name in venue_results
+    }
+    return {
+        "policy": "Winner-classifier axis is fixed. Opponent pool is top 4/6/8 by the same LambdaRank ability scores; select exactly four opponents by maximizing the sum of six axis-conditioned supervised trio scores; exactly six unordered trio tickets at 100 JPY each. All three pool sizes use the same races with at least nine runners. Pool size is selected on chronological development data only.",
+        "common_cohort": {
+            "development_races": len(dev_eligible),
+            "holdout_races": len(holdout_eligible),
+            "development_excluded_for_field_size": len(dev_races) - len(dev_eligible),
+            "holdout_excluded_for_field_size": len(holdout_races) - len(holdout_eligible),
+            "minimum_field_size": 9,
+        },
+        "development": development,
+        "selected_pool_size_on_development": selected_size,
+        "untouched_holdout": holdout,
+        "holdout_by_venue": venue_results,
+        "banei_holdout": banei or None,
+        "research_only": True,
+    }
