@@ -397,16 +397,6 @@ def _pool_selector_subset(item, axis, pool, mode, trio_weight=0.5):
     import itertools
 
     ability = item["model_rank_scores"]
-    trio_raw, pair_raw = {}, {}
-    for a, b in itertools.combinations(pool, 2):
-        key = "|".join(sorted((a, b), key=int))
-        trio_key = tuple(sorted((axis, a, b), key=int))
-        pair_key = tuple(sorted((a, b), key=int))
-        trio_raw[key] = float(item["winner_axis_trio_scores"][trio_key])
-        pair_raw[key] = float(item["learned_pair_scores"][pair_key])
-    trio_rank = percentile(trio_raw)
-    pair_rank = percentile(pair_raw)
-
     if mode == "ability":
         return tuple(sorted(sorted(pool, key=lambda h: (-float(ability[h]), int(h)))[:4], key=int))
     if mode not in ("trio", "pair", "blend"):
@@ -414,6 +404,21 @@ def _pool_selector_subset(item, axis, pool, mode, trio_weight=0.5):
     if not 0.0 <= float(trio_weight) <= 1.0:
         raise ValueError("trio_weight must be between 0 and 1")
 
+    trio_rank, pair_rank = {}, {}
+    if mode in ("trio", "blend"):
+        trio_raw = {}
+        for a, b in itertools.combinations(pool, 2):
+            key = "|".join(sorted((a, b), key=int))
+            trio_key = tuple(sorted((axis, a, b), key=int))
+            trio_raw[key] = float(item["winner_axis_trio_scores"][trio_key])
+        trio_rank = percentile(trio_raw)
+    if mode in ("pair", "blend"):
+        pair_raw = {}
+        for a, b in itertools.combinations(pool, 2):
+            key = "|".join(sorted((a, b), key=int))
+            pair_key = tuple(sorted((a, b), key=int))
+            pair_raw[key] = float(item["learned_pair_scores"][pair_key])
+        pair_rank = percentile(pair_raw)
     best_subset, best_score, best_ability = None, float("-inf"), float("-inf")
     for subset in itertools.combinations(pool, 4):
         score = 0.0
