@@ -47,5 +47,36 @@ class TrioCandidateComparisonTests(unittest.TestCase):
         self.assertEqual(len(comparison._tickets("1", ("2", "3", "4", "5"))), 6)
 
 
+    def test_candidate_pool_keeps_axis_fixed_and_emits_six_tickets(self):
+        import itertools
+        trio_scores = {}
+        for a, b in itertools.combinations(("2", "3", "4", "5", "6", "7"), 2):
+            trio_scores[tuple(sorted(("1", a, b), key=int))] = (
+                0.9 if a in ("2", "3", "4", "5") and b in ("2", "3", "4", "5") else 0.1
+            )
+        race = {
+            "group": self.group,
+            "winner_model_scores": {str(i): 1.0 if i == 1 else 0.1 for i in range(1, 8)},
+            "model_rank_scores": self.ability,
+            "winner_axis_trio_scores": trio_scores,
+            "payout": {"trio": []},
+            "date": "2026-11-08",
+            "race_key": "test|20261108|1",
+        }
+        # Seven runners are valid for direct pool-6 evaluation.
+        result = comparison.evaluate_candidate_pool([race], 6, include_diagnostics=True)
+        self.assertEqual(result["races"], 1)
+        self.assertEqual(result["tickets_per_race"], 6)
+        self.assertEqual(result["stake_per_race_jpy"], 600)
+        diagnostic = result["race_diagnostics"][0]
+        self.assertEqual(diagnostic["axis"], "1")
+        self.assertEqual(len(diagnostic["selected_opponents"]), 4)
+        self.assertEqual(len(diagnostic["selected_tickets"]), 6)
+
+    def test_candidate_pool_rejects_unsupported_sizes(self):
+        with self.assertRaises(ValueError):
+            comparison.evaluate_candidate_pool([], 5)
+
+
 if __name__ == "__main__":
     unittest.main()
