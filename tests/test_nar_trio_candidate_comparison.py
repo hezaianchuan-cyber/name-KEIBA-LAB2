@@ -54,8 +54,10 @@ class TrioCandidateComparisonTests(unittest.TestCase):
             trio_scores[tuple(sorted(("1", a, b), key=int))] = (
                 0.9 if a in ("2", "3", "4", "5") and b in ("2", "3", "4", "5") else 0.1
             )
+        test_group = [dict(row, finish={1: 1, 2: 2, 3: 3}.get(int(row["horse_no"]), 4))
+                      for row in self.group]
         race = {
-            "group": self.group,
+            "group": test_group,
             "winner_model_scores": {str(i): 1.0 if i == 1 else 0.1 for i in range(1, 8)},
             "model_rank_scores": self.ability,
             "winner_axis_trio_scores": trio_scores,
