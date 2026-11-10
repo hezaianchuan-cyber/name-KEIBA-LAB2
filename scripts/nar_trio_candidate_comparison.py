@@ -84,6 +84,7 @@ def evaluate(races, mode, combo_weight=0.5, market_weight=0.25,\n             in
     import nar_backtest as nb
     totals = {"races": 0, "axis_wins": 0, "axis_podiums": 0,
               "hits": 0, "tickets": 0, "stake_jpy": 0, "return_jpy": 0}
+    diagnostics = []
     for item in races:
         group = item["group"]
         axis_scores = item["winner_model_scores"]
@@ -105,10 +106,6 @@ def evaluate(races, mode, combo_weight=0.5, market_weight=0.25,\n             in
         if include_diagnostics:
             ability_rank = percentile({str(r["horse_no"]): float(item["model_rank_scores"][str(r["horse_no"])]) for r in group})
             market_rank = percentile({str(r["horse_no"]): float(item["market_rank_scores"][str(r["horse_no"])]) for r in group})
-            selected_pairs = {}
-            for a, b in itertools.combinations(opponents, 2):
-                key = "|".join(sorted((a, b), key=int))
-                selected_pairs[key] = float(item["winner_axis_trio_scores"][tuple(sorted((axis, a, b), key=int))]) if tuple(sorted((axis, a, b), key=int)) in item["winner_axis_trio_scores"] else float(item["winner_axis_trio_scores"].get((a, b), 0.0))
             diagnostics.append({
                 "date": item.get("date"), "race_key": item.get("race_key"),
                 "axis": axis, "axis_finish": next((r.get("finish") for r in group if str(r["horse_no"]) == axis), None),
@@ -135,6 +132,8 @@ def evaluate(races, mode, combo_weight=0.5, market_weight=0.25,\n             in
         totals["tickets"] += len(tickets)
         totals["stake_jpy"] += len(tickets) * 100
         totals["return_jpy"] += payout
+    if include_diagnostics:
+        totals["race_diagnostics"] = diagnostics
     n, stake = totals["races"], totals["stake_jpy"]
     totals.update({
         "axis_win_rate_pct": round(100 * totals["axis_wins"] / n, 2) if n else None,
