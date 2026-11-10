@@ -64,7 +64,7 @@ def build_trio_training_data(groups, max_negative_triplets_per_race=12):
         "training_races": used_races,
         "positive_triplets": counts[1],
         "negative_triplets": counts[0],
-        "features": 60,
+        "features": 75,
         "negative_sample_cap_per_race": max_negative_triplets_per_race,
     }
 
