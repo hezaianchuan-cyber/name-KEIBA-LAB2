@@ -199,3 +199,128 @@ def compare_and_select(dev_races, holdout_races):
         "untouched_holdout": holdout,
         "research_only": True,
     }
+
+
+def evaluate_candidate_pool(races, pool_size, include_diagnostics=False):
+    """Keep the winner-classifier axis fixed; select four opponents from the top-N
+    LambdaRank ability pool by maximizing the sum of six axis-conditioned trio scores.
+    Exactly six unordered trio tickets (600 JPY) are emitted per race.
+    """
+    import nar_backtest as nb
+    import itertools
+
+    if pool_size not in (4, 6, 8):
+        raise ValueError("pool_size must be one of 4, 6, or 8")
+    totals = {"races": 0, "axis_wins": 0, "axis_podiums": 0,
+              "hits": 0, "tickets": 0, "stake_jpy": 0, "return_jpy": 0}
+    diagnostics = []
+    for item in races:
+        group = item["group"]
+        axis_scores = item["winner_model_scores"]
+        axis = min(axis_scores, key=lambda h: (-float(axis_scores[h]), int(h)))
+        ability = item["model_rank_scores"]
+        candidates = sorted(
+            (h for h in ability if h != axis),
+            key=lambda h: (-float(ability[h]), int(h)),
+        )
+        if len(candidates) < pool_size:
+            continue
+        pool = candidates[:pool_size]
+        trio_scores = item["winner_axis_trio_scores"]
+        best_subset, best_score, best_ability = None, float("-inf"), float("-inf")
+        for subset in itertools.combinations(pool, 4):
+            score = sum(
+                float(trio_scores[tuple(sorted((axis, a, b), key=int))])
+                for a, b in itertools.combinations(subset, 2)
+            )
+            ability_tiebreak = sum(float(ability[h]) for h in subset)
+            key = tuple(sorted(subset, key=int))
+            if (score > best_score + 1e-12 or
+                (abs(score - best_score) <= 1e-12 and ability_tiebreak > best_ability + 1e-12) or
+                (abs(score - best_score) <= 1e-12 and
+                 abs(ability_tiebreak - best_ability) <= 1e-12 and
+                 (best_subset is None or tuple(map(int, key)) < tuple(map(int, best_subset))))):
+                best_subset, best_score, best_ability = key, score, ability_tiebreak
+        tickets = _tickets(axis, best_subset)
+        returned = sum(nb.payout_for("trio", ticket, item["payout"]) or 0
+                       for ticket in tickets)
+        winners = {str(r["horse_no"]) for r in group if r.get("finish") == 1}
+        podium = {str(r["horse_no"]) for r in group if r.get("finish") in (1, 2, 3)}
+        if len(winners) != 1 or len(podium) != 3:
+            continue
+        totals["races"] += 1
+        totals["axis_wins"] += int(axis in winners)
+        totals["axis_podiums"] += int(axis in podium)
+        totals["hits"] += int(returned > 0)
+        totals["tickets"] += len(tickets)
+        totals["stake_jpy"] += len(tickets) * 100
+        totals["return_jpy"] += returned
+        if include_diagnostics:
+            diagnostics.append({
+                "date": item.get("date"), "race_key": item.get("race_key"),
+                "venue": str(group[0].get("venue") or "unknown"),
+                "axis": axis, "axis_finish": next(
+                    (r.get("finish") for r in group if str(r["horse_no"]) == axis), None),
+                "axis_in_podium": axis in podium,
+                "candidate_pool_size": pool_size, "candidate_pool": pool,
+                "selected_opponents": list(best_subset),
+                "actual_podium": sorted(podium, key=int),
+                "selected_tickets": tickets, "hit": returned > 0,
+                "return_jpy": int(returned),
+            })
+    n, stake = totals["races"], totals["stake_jpy"]
+    totals.update({
+        "candidate_pool_size": pool_size,
+        "axis_win_rate_pct": round(100 * totals["axis_wins"] / n, 2) if n else None,
+        "axis_podium_rate_pct": round(100 * totals["axis_podiums"] / n, 2) if n else None,
+        "trio_hit_rate_pct": round(100 * totals["hits"] / n, 2) if n else None,
+        "roi_pct": round(100 * totals["return_jpy"] / stake, 2) if stake else None,
+        "profit_jpy": totals["return_jpy"] - stake,
+        "tickets_per_race": round(totals["tickets"] / n, 2) if n else None,
+        "stake_per_race_jpy": 600,
+    })
+    if include_diagnostics:
+        totals["race_diagnostics"] = diagnostics
+    return totals
+
+
+def compare_candidate_pools(dev_races, holdout_races):
+    """Select pool size on development dates only; report 4/6/8 on untouched holdout."""
+    development = {
+        str(size): evaluate_candidate_pool(dev_races, size)
+        for size in (4, 6, 8)
+    }
+    def rank(result):
+        return (
+            result["trio_hit_rate_pct"] if result["trio_hit_rate_pct"] is not None else -1,
+            result["roi_pct"] if result["roi_pct"] is not None else -1,
+            result["profit_jpy"],
+        )
+    selected_size = max((6, 8), key=lambda size: rank(development[str(size)]))
+    holdout = {
+        str(size): evaluate_candidate_pool(holdout_races, size, include_diagnostics=True)
+        for size in (4, 6, 8)
+    }
+    venue_results = {}
+    venues = sorted({
+        str(item["group"][0].get("venue") or "unknown")
+        for item in holdout_races if item.get("group")
+    })
+    for venue in venues:
+        segment = [
+            item for item in holdout_races
+            if str(item["group"][0].get("venue") or "unknown") == venue
+        ]
+        venue_results[venue] = {
+            str(size): evaluate_candidate_pool(segment, size)
+            for size in (4, 6, 8)
+        }
+    return {
+        "policy": "Winner-classifier axis is fixed. Opponent pool is top 4/6/8 by the same LambdaRank ability scores; select exactly four opponents by maximizing the sum of six axis-conditioned supervised trio scores; exactly six unordered trio tickets at 100 JPY each. Pool size is selected on chronological development data only.",
+        "development": development,
+        "selected_pool_size_on_development": selected_size,
+        "untouched_holdout": holdout,
+        "holdout_by_venue": venue_results,
+        "banei_holdout": venue_results.get("帯広") or venue_results.get("ばんえい") or None,
+        "research_only": True,
+    }
