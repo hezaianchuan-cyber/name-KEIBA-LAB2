@@ -99,6 +99,13 @@ class TrioCandidateComparisonTests(unittest.TestCase):
             self.assertNotIn("1", result)
             self.assertEqual(len(comparison._tickets("1", result)), 6)
 
+    def test_ability_selector_does_not_require_unused_pair_or_trio_scores(self):
+        item = {"model_rank_scores": self.ability}
+        result = comparison._pool_selector_subset(
+            item, "1", ("2", "3", "4", "5", "6", "7"), "ability"
+        )
+        self.assertEqual(set(result), {"2", "3", "4", "5"})
+
     def test_candidate_pool_rejects_unsupported_sizes(self):
         with self.assertRaises(ValueError):
             comparison.evaluate_candidate_pool([], 5)
