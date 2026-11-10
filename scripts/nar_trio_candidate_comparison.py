@@ -80,7 +80,7 @@ def _tickets(axis, opponents):
             for a, b in itertools.combinations(opponents, 2)]
 
 
-def evaluate(races, mode, combo_weight=0.5, market_weight=0.25):
+def evaluate(races, mode, combo_weight=0.5, market_weight=0.25,\n             include_diagnostics=False):
     import nar_backtest as nb
     totals = {"races": 0, "axis_wins": 0, "axis_podiums": 0,
               "hits": 0, "tickets": 0, "stake_jpy": 0, "return_jpy": 0}
@@ -93,12 +93,41 @@ def evaluate(races, mode, combo_weight=0.5, market_weight=0.25):
             item["winner_axis_trio_scores"], mode, combo_weight, market_weight,
         )
         tickets = _tickets(axis, opponents)
-        payout = sum(nb.payout_for("trio", ticket, item["payout"]) or 0
-                     for ticket in tickets)
+        ticket_returns = {
+            tuple(ticket): (nb.payout_for("trio", ticket, item["payout"]) or 0)
+            for ticket in tickets
+        }
+        payout = sum(ticket_returns.values())
         winners = {str(r["horse_no"]) for r in group if r.get("finish") == 1}
         podium = {str(r["horse_no"]) for r in group if r.get("finish") in (1, 2, 3)}
         if len(winners) != 1 or len(podium) != 3:
             continue
+        if include_diagnostics:
+            ability_rank = percentile({str(r["horse_no"]): float(item["model_rank_scores"][str(r["horse_no"])]) for r in group})
+            market_rank = percentile({str(r["horse_no"]): float(item["market_rank_scores"][str(r["horse_no"])]) for r in group})
+            selected_pairs = {}
+            for a, b in itertools.combinations(opponents, 2):
+                key = "|".join(sorted((a, b), key=int))
+                selected_pairs[key] = float(item["winner_axis_trio_scores"][tuple(sorted((axis, a, b), key=int))]) if tuple(sorted((axis, a, b), key=int)) in item["winner_axis_trio_scores"] else float(item["winner_axis_trio_scores"].get((a, b), 0.0))
+            diagnostics.append({
+                "date": item.get("date"), "race_key": item.get("race_key"),
+                "axis": axis, "axis_finish": next((r.get("finish") for r in group if str(r["horse_no"]) == axis), None),
+                "axis_in_podium": axis in podium,
+                "selected_opponents": list(opponents),
+                "actual_podium": sorted(podium, key=int),
+                "selected_tickets": [{"horses": list(t), "return_jpy": float(v)} for t, v in ticket_returns.items()],
+                "hit": payout > 0, "total_return_jpy": float(payout),
+                "horses": [{
+                    "horse_no": str(r["horse_no"]), "finish": r.get("finish"),
+                    "ability_rank_score": float(ability_rank[str(r["horse_no"])]),
+                    "market_rank_score": float(market_rank[str(r["horse_no"])]),
+                    "combo_pair_scores": {
+                        "|".join(sorted((str(r["horse_no"]), other), key=int)):
+                            float(item["winner_axis_trio_scores"].get(tuple(sorted((axis, str(r["horse_no"]), other), key=int)), 0.0))
+                        for other in opponents if other != str(r["horse_no"])
+                    }
+                } for r in group]
+            })
         totals["races"] += 1
         totals["axis_wins"] += int(axis in winners)
         totals["axis_podiums"] += int(axis in podium)
@@ -151,13 +180,13 @@ def compare_and_select(dev_races, holdout_races):
     parts = d_key.split("_")
     d_market, d_combo = float(parts[3]), float(parts[5])
     holdout = {
-        "A_ability_only": evaluate(holdout_races, "ability"),
-        "B_combo_only": evaluate(holdout_races, "combo"),
+        "A_ability_only": evaluate(holdout_races, "ability", include_diagnostics=True),
+        "B_combo_only": evaluate(holdout_races, "combo", include_diagnostics=True),
         "C_ability_plus_combo_selected_on_development": evaluate(
-            holdout_races, "ability_combo", combo_weight=c_weight),
+            holdout_races, "ability_combo", combo_weight=c_weight, include_diagnostics=True),
         "D_ability_market_combo_selected_on_development": evaluate(
             holdout_races, "ability_market_combo", combo_weight=d_combo,
-            market_weight=d_market),
+            market_weight=d_market, include_diagnostics=True),
     }
     return {
         "policy": "Same winner-classifier axis and six 100-JPY trio tickets per race. A uses LambdaRank ability only; B uses supervised trio-combination scores only; C blends ability and combination score; D blends ability, same-race pre-off market rank and combination score. C/D weights selected only on chronological development races by trio hit rate, then ROI, then profit.",
