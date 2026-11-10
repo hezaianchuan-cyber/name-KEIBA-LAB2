@@ -68,6 +68,25 @@ class TrioLambdaRankMarketFusionTests(unittest.TestCase):
         self.assertTrue(all(len(ticket) == 3 for ticket in strategy["trio_tickets"]))
         self.assertEqual(len({tuple(ticket) for ticket in strategy["trio_tickets"]}), 6)
 
+    def test_axis_strategy_can_select_axis_with_separate_winner_model(self):
+        group = [{"horse_no": str(i), "finish": i} for i in range(1, 8)]
+        opponent_scores = {str(i): 1.0 - (i - 1) * 0.1 for i in range(1, 8)}
+        winner_scores = {"1": 0.1, "2": 0.2, "3": 1.0, "4": 0.4,
+                         "5": 0.3, "6": 0.2, "7": 0.1}
+        pair_scores = {
+            (str(a), str(b)): 0.2 + 0.05 * (8 - a - b)
+            for a in range(1, 8) for b in range(a + 1, 8)
+        }
+        market_probs = {str(i): (8 - i) / 28 for i in range(1, 8)}
+        strategy = fusion.build_axis_wide_trio_strategy(
+            group, opponent_scores, pair_scores, market_probs,
+            compatibility_weight=0.5, axis_scores=winner_scores,
+        )
+        self.assertEqual(strategy["axis"], "3")
+        self.assertEqual(strategy["wide_tickets"], [["3", "1"], ["3", "2"]])
+        self.assertEqual(len(strategy["trio_tickets"]), 6)
+        self.assertNotIn("3", strategy["trio_opponents"])
+
     def test_axis_strategy_evaluates_800_yen_per_race(self):
         group = [{"horse_no": str(i), "finish": i} for i in range(1, 7)]
         pair_scores = {
