@@ -39,9 +39,10 @@ def _subset(group, axis, ability, market, combo, mode, combo_weight=0.5,
     combo_values = {}
     for members, score in combo.items():
         members = tuple(map(str, members))
-        pair = tuple(sorted((h for h in members if h != axis), key=int))
+        pair = tuple(sorted(members if len(members) == 2
+                            else (h for h in members if h != axis), key=int))
         if len(pair) != 2:
-            raise ValueError("Each combination score must identify the two opponents and fixed axis")
+            raise ValueError("Each combination score must identify exactly two opponents")
         combo_values["|".join(pair)] = float(score)
     combo_rank = percentile(combo_values)
     if mode == "ability":
