@@ -21,11 +21,27 @@ def build_exacta_tickets(group, first_scores, second_scores, limit=6):
     return [item[3] for item in candidates[:limit]]
 
 
+def has_exacta_payout_data(payout):
+    """True only when the official archive contains at least one exacta payout row."""
+    if not isinstance(payout, dict):
+        return False
+    rows = payout.get("exacta")
+    if isinstance(rows, (list, tuple)) and rows:
+        return True
+    index = payout.get("_index")
+    exacta_index = index.get("exacta") if isinstance(index, dict) else None
+    return isinstance(exacta_index, dict) and bool(exacta_index)
+
+
 def evaluate(races):
     import nar_backtest as nb
-    totals = {"races": 0, "hits": 0, "tickets": 0, "stake_jpy": 0, "return_jpy": 0,
-              "first_pool_winner_hits": 0, "second_pool_runnerup_hits": 0}
+    totals = {
+        "races": 0, "eligible_result_races": 0, "payout_data_missing_races": 0,
+        "hits": 0, "tickets": 0, "stake_jpy": 0, "return_jpy": 0,
+        "first_pool_winner_hits": 0, "second_pool_runnerup_hits": 0,
+    }
     diagnostics = []
+    missing_payout_races = []
     for item in races:
         group = item["group"]
         first_scores = item["winner_model_probabilities"]
@@ -36,6 +52,15 @@ def evaluate(races):
         seconds = {str(r["horse_no"]) for r in group if r.get("finish") == 2}
         if len(winners) != 1 or len(seconds) != 1:
             continue
+
+        totals["eligible_result_races"] += 1
+        if not has_exacta_payout_data(payout):
+            totals["payout_data_missing_races"] += 1
+            missing_payout_races.append({
+                "date": item.get("date"), "race_key": item.get("race_key"),
+            })
+            continue
+
         first_pool = set(sorted(first_scores, key=lambda h: (-float(first_scores[h]), int(h)))[:2])
         second_pool = set(sorted(second_scores, key=lambda h: (-float(second_scores[h]), int(h)))[:4])
         returned_by_ticket = [nb.payout_for("exacta", ticket, payout) or 0 for ticket in tickets]
@@ -53,18 +78,22 @@ def evaluate(races):
             "return_jpy": int(returned),
             "winner_in_first_pool": bool(winners & first_pool),
             "runnerup_in_second_pool": bool(seconds & second_pool),
+            "exacta_payout_data_present": True,
         })
     n, stake = totals["races"], totals["stake_jpy"]
+    eligible = totals["eligible_result_races"]
     totals.update({
         "hit_rate_pct": round(100 * totals["hits"] / n, 2) if n else None,
         "roi_pct": round(100 * totals["return_jpy"] / stake, 2) if stake else None,
         "profit_jpy": totals["return_jpy"] - stake,
         "average_tickets_per_race": round(totals["tickets"] / n, 2) if n else None,
         "average_stake_per_race_jpy": round(stake / n, 2) if n else None,
+        "payout_data_coverage_pct": round(100 * n / eligible, 2) if eligible else None,
         "first_pool_winner_capture_pct": round(100 * totals["first_pool_winner_hits"] / n, 2) if n else None,
         "second_pool_runnerup_capture_pct": round(100 * totals["second_pool_runnerup_hits"] / n, 2) if n else None,
         "race_diagnostics": diagnostics,
+        "payout_data_missing_races_detail": missing_payout_races,
         "research_only": True,
-        "policy": "Six exacta tickets per race, 100 JPY each; first-place top-2 winner classifier probabilities x second-place top-4 podium classifier probabilities, excluding same-horse pairs and ranking by probability product. Same chronological holdout race cohort as the trio comparison.",
+        "policy": "Six exacta tickets per race, 100 JPY each; first-place top-2 winner classifier probabilities x second-place top-4 podium classifier probabilities, excluding same-horse pairs and ranking by probability product. ROI and hit rate use only races with an official exacta payout row; missing-payout races are reported and excluded, not silently treated as zero. Same chronological holdout race cohort as the trio comparison.",
     })
     return totals
