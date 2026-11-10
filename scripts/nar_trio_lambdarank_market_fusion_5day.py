@@ -20,6 +20,8 @@ import nar_trio_compatibility as tc
 import nar_trio_learned_compatibility as learned_tc
 import nar_trio_combination_model as trio_combo_model
 import nar_trio_candidate_comparison as trio_candidates
+import nar_exacta_research as exacta_research
+import nar_exacta_conditional_model as exacta_conditional
 import nar_axis_longshot_research as axis_longshot
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -694,6 +696,9 @@ def main():
           f"early_stop_rows={len(dev_rows)}", flush=True)
 
     training_groups_for_pairs = ml.group_rows(training_rows)
+    conditional_second_model = exacta_conditional.fit_conditional_second_model(
+        training_groups_for_pairs, max_negative_candidates_per_race=6
+    )
     learned_pair_model = learned_tc.fit_pair_model(training_groups_for_pairs)
     learned_trio_model = trio_combo_model.fit_trio_model(training_groups_for_pairs)
     test_rows = [row for row in rows if dt.date.fromisoformat(row["date"]) in test_date_set]
@@ -730,6 +735,9 @@ def main():
             "podium_model_scores": percentile_scores(podium_probs),
             "winner_model_probabilities": winner_probs,
             "podium_model_probabilities": podium_probs,
+            "conditional_second_scores": exacta_conditional.predict_for_first_candidates(
+                group, conditional_second_model
+            ),
             "market_rank_scores": {horse: market_ranks[horse] for horse in horse_numbers},
             "market_win_probabilities": {horse: market_prob[horse] for horse in horse_numbers},
             "snapshot_minutes_to_post": snapshot.get("minutes_to_post"),
@@ -754,6 +762,11 @@ def main():
     # Four comparable trio candidates: ability-only, combo-only, ability+combo,
     # and ability+pre-off-market+combo. C/D weights are selected on dev only.
     trio_candidate_comparison = trio_candidates.compare_and_select(dev_races, holdout_races)
+    # Common-cohort 4/6/8 candidate-pool comparison; winner-classifier axis stays fixed.
+    trio_candidate_pool_comparison = trio_candidates.compare_candidate_pools(dev_races, holdout_races)
+    trio_candidate_pool_selector_comparison = trio_candidates.compare_candidate_pool_selectors(dev_races, holdout_races)
+    exacta_holdout = exacta_research.evaluate(holdout_races)
+    exacta_conditional_holdout = exacta_research.evaluate_conditional(holdout_races)
 
     selected_weight, dev_results = select_market_weight(dev_races)
     axis_blend_weight, axis_blend_dev_results = select_win_podium_blend(dev_races)
@@ -1000,6 +1013,19 @@ def main():
             },
         },
         "four_way_trio_candidate_comparison": trio_candidate_comparison,
+        "trio_candidate_pool_comparison": trio_candidate_pool_comparison,
+        "trio_candidate_pool_selector_comparison": trio_candidate_pool_selector_comparison,
+        "six_ticket_exacta_holdout": exacta_holdout,
+        "six_ticket_exacta_conditional_holdout": exacta_conditional_holdout,
+        "conditional_second_place_model_training": {
+            "training_races": conditional_second_model["training_races"],
+            "training_pairs": conditional_second_model["training_pairs"],
+            "positive_pairs": conditional_second_model["positive_pairs"],
+            "negative_pairs": conditional_second_model["negative_pairs"],
+            "features": conditional_second_model["features"],
+            "conditioning_policy": conditional_second_model["conditioning_policy"],
+            "negative_sampling": "At most six deterministic runner-up negatives per historical race; one actual runner-up positive; only pre-window races are used.",
+        },
         "axis_wide_trio_strategy": {
             "ticket_policy": {
                 "axis": "Highest fused LambdaRank + pre-off market individual rank",
@@ -1060,3 +1086,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+# Re-run PR validation after candidate-pool selector comparison changes; no runtime behavior change.

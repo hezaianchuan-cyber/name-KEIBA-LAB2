@@ -47,5 +47,118 @@ class TrioCandidateComparisonTests(unittest.TestCase):
         self.assertEqual(len(comparison._tickets("1", ("2", "3", "4", "5"))), 6)
 
 
+    def test_candidate_pool_keeps_axis_fixed_and_emits_six_tickets(self):
+        import itertools
+        trio_scores = {}
+        for a, b in itertools.combinations(("2", "3", "4", "5", "6", "7"), 2):
+            trio_scores[tuple(sorted(("1", a, b), key=int))] = (
+                0.9 if a in ("2", "3", "4", "5") and b in ("2", "3", "4", "5") else 0.1
+            )
+        test_group = [dict(row, finish={1: 1, 2: 2, 3: 3}.get(int(row["horse_no"]), 4))
+                      for row in self.group]
+        race = {
+            "group": test_group,
+            "winner_model_scores": {str(i): 1.0 if i == 1 else 0.1 for i in range(1, 8)},
+            "model_rank_scores": self.ability,
+            "winner_axis_trio_scores": trio_scores,
+            "payout": {"trio": []},
+            "date": "2026-11-08",
+            "race_key": "test|20261108|1",
+        }
+        # Seven runners are valid for direct pool-6 evaluation.
+        result = comparison.evaluate_candidate_pool([race], 6, include_diagnostics=True)
+        self.assertEqual(result["races"], 1)
+        self.assertEqual(result["tickets_per_race"], 6)
+        self.assertEqual(result["stake_per_race_jpy"], 600)
+        diagnostic = result["race_diagnostics"][0]
+        self.assertEqual(diagnostic["axis"], "1")
+        self.assertEqual(len(diagnostic["selected_opponents"]), 4)
+        self.assertEqual(len(diagnostic["selected_tickets"]), 6)
+
+    def test_pool_selector_uses_fixed_axis_and_rank_scale_blend(self):
+        import itertools
+        pool = ("2", "3", "4", "5", "6", "7")
+        trio_scores = {
+            tuple(sorted(("1", a, b), key=int)):
+                (0.9 if a in ("2", "3", "4", "5") and b in ("2", "3", "4", "5") else 0.1)
+            for a, b in itertools.combinations(pool, 2)
+        }
+        pair_scores = {
+            tuple(sorted((a, b), key=int)):
+                (0.9 if a in ("2", "3", "4", "5") and b in ("2", "3", "4", "5") else 0.1)
+            for a, b in itertools.combinations(pool, 2)
+        }
+        item = {
+            "model_rank_scores": self.ability,
+            "winner_axis_trio_scores": trio_scores,
+            "learned_pair_scores": pair_scores,
+        }
+        for mode in ("trio", "pair", "blend"):
+            result = comparison._pool_selector_subset(item, "1", pool, mode, 0.5)
+            self.assertEqual(set(result), {"2", "3", "4", "5"})
+            self.assertNotIn("1", result)
+            self.assertEqual(len(comparison._tickets("1", result)), 6)
+
+    def test_ability_selector_does_not_require_unused_pair_or_trio_scores(self):
+        item = {"model_rank_scores": self.ability}
+        result = comparison._pool_selector_subset(
+            item, "1", ("2", "3", "4", "5", "6", "7"), "ability"
+        )
+        self.assertEqual(set(result), {"2", "3", "4", "5"})
+
+
+    def test_direct_six_pair_selector_can_cover_more_than_four_opponents(self):
+        import itertools
+        pool = ("2", "3", "4", "5", "6", "7")
+        chosen = {
+            frozenset(("2", "3")), frozenset(("2", "4")),
+            frozenset(("2", "5")), frozenset(("3", "6")),
+            frozenset(("4", "6")), frozenset(("5", "7")),
+        }
+        trio_scores = {
+            tuple(sorted(("1", a, b), key=int)):
+                (0.99 if frozenset((a, b)) in chosen else 0.10)
+            for a, b in itertools.combinations(pool, 2)
+        }
+        pair_scores = {
+            tuple(sorted((a, b), key=int)):
+                (0.99 if frozenset((a, b)) in chosen else 0.10)
+            for a, b in itertools.combinations(pool, 2)
+        }
+        item = {
+            "model_rank_scores": self.ability,
+            "winner_axis_trio_scores": trio_scores,
+            "learned_pair_scores": pair_scores,
+        }
+        tickets = comparison._direct_pair_tickets(item, "1", pool, "trio")
+        self.assertEqual(len(tickets), 6)
+        self.assertEqual({frozenset(pair) for pair in tickets}, chosen)
+        self.assertEqual(len({h for pair in tickets for h in pair}), 6)
+
+    def test_direct_pair_selector_rejects_unknown_mode(self):
+        import itertools
+        pool = ("2", "3", "4", "5", "6", "7")
+        trio_scores = {
+            tuple(sorted(("1", a, b), key=int)): 0.5
+            for a, b in itertools.combinations(pool, 2)
+        }
+        pair_scores = {
+            tuple(sorted((a, b), key=int)): 0.5
+            for a, b in itertools.combinations(pool, 2)
+        }
+        item = {
+            "model_rank_scores": self.ability,
+            "winner_axis_trio_scores": trio_scores,
+            "learned_pair_scores": pair_scores,
+        }
+        with self.assertRaises(ValueError):
+            comparison._direct_pair_tickets(item, "1", pool, "unknown")
+
+    def test_candidate_pool_rejects_unsupported_sizes(self):
+        with self.assertRaises(ValueError):
+            comparison.evaluate_candidate_pool([], 5)
+
+
 if __name__ == "__main__":
     unittest.main()
+# Selector regression coverage: keep the ability-only baseline independent of combo scores.
