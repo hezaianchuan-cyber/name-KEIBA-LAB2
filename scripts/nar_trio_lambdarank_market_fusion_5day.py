@@ -19,6 +19,7 @@ import nar_ml_challenger_backtest as ml
 import nar_trio_compatibility as tc
 import nar_trio_learned_compatibility as learned_tc
 import nar_trio_combination_model as trio_combo_model
+import nar_trio_candidate_comparison as trio_candidates
 import nar_axis_longshot_research as axis_longshot
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -750,6 +751,10 @@ def main():
     if len(dev_races) < 10 or len(holdout_races) < 10:
         raise RuntimeError(f"Insufficient fusion split: development={len(dev_races)} holdout={len(holdout_races)}")
 
+    # Four comparable trio candidates: ability-only, combo-only, ability+combo,
+    # and ability+pre-off-market+combo. C/D weights are selected on dev only.
+    trio_candidate_comparison = trio_candidates.compare_and_select(dev_races, holdout_races)
+
     selected_weight, dev_results = select_market_weight(dev_races)
     axis_blend_weight, axis_blend_dev_results = select_win_podium_blend(dev_races)
     axis_model_development = {
@@ -994,6 +999,7 @@ def main():
                 "all_days_descriptive": winner_axis_longshot_all_days,
             },
         },
+        "four_way_trio_candidate_comparison": trio_candidate_comparison,
         "axis_wide_trio_strategy": {
             "ticket_policy": {
                 "axis": "Highest fused LambdaRank + pre-off market individual rank",
