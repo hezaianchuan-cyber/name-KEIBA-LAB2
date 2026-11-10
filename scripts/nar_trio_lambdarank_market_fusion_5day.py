@@ -249,7 +249,8 @@ def evaluate_learned_compatibility(races, market_weight, compatibility_weight):
 
 
 def build_axis_wide_trio_strategy(group, scores, pair_scores, market_probabilities,
-                                  compatibility_weight=0.0, temperature=0.10):
+                                  compatibility_weight=0.0, temperature=0.10,
+                                  axis_scores=None):
     """Build 2 axis-wide tickets and 6 axis-trio tickets using a pre-off EV proxy.
 
     The axis is the highest fused individual rank. Wide opponents are ranks 2 and 3.
@@ -262,11 +263,17 @@ def build_axis_wide_trio_strategy(group, scores, pair_scores, market_probabiliti
     """
     if len(group) < 5:
         raise ValueError("Axis strategy requires at least five runners")
-    ranked = rank_horses(group, scores)
-    numbers = [str(row["horse_no"]) for row in ranked]
-    axis = numbers[0]
-    wide_opponents = numbers[1:3]
-    candidates = numbers[1:]
+    # Axis selection can use a specialist model independently from opponent ranking.
+    # Default behavior is unchanged when axis_scores is omitted.
+    axis_ranked = rank_horses(group, axis_scores if axis_scores is not None else scores)
+    axis = str(axis_ranked[0]["horse_no"])
+    candidates = [
+        str(row["horse_no"]) for row in sorted(
+            (row for row in group if str(row["horse_no"]) != axis),
+            key=lambda row: (-float(scores[str(row["horse_no"])]), int(row["horse_no"]))
+        )
+    ]
+    wide_opponents = candidates[:2]
     combos = list(itertools.combinations(candidates, 2))
     raw_scores = []
     for a, b in combos:
@@ -318,7 +325,8 @@ def build_axis_wide_trio_strategy(group, scores, pair_scores, market_probabiliti
     }
 
 
-def evaluate_axis_wide_trio_strategy(races, market_weight, compatibility_weight):
+def evaluate_axis_wide_trio_strategy(races, market_weight, compatibility_weight,
+                                      axis_score_key=None):
     """Evaluate fixed 2-wide + 6-trio tickets at 100 JPY each, plus rank-only baseline."""
     totals = {
         "races": 0, "axis_winner_hits": 0, "axis_podium_hits": 0,
@@ -333,6 +341,7 @@ def evaluate_axis_wide_trio_strategy(races, market_weight, compatibility_weight)
     }
     for item in races:
         scores = blend_rank_scores(item["model_rank_scores"], item["market_rank_scores"], market_weight)
+        axis_scores = item[axis_score_key] if axis_score_key else scores
         group = item["group"]
         podium = {str(row["horse_no"]) for row in group if row["finish"] in (1, 2, 3)}
         winners = {str(row["horse_no"]) for row in group if row["finish"] == 1}
@@ -340,10 +349,14 @@ def evaluate_axis_wide_trio_strategy(races, market_weight, compatibility_weight)
             continue
         strategy = build_axis_wide_trio_strategy(
             group, scores, item["learned_pair_scores"], item["market_win_probabilities"],
-            compatibility_weight=compatibility_weight,
+            compatibility_weight=compatibility_weight, axis_scores=axis_scores,
         )
-        ranked = rank_horses(group, scores)
-        rank_only_opponents = [str(row["horse_no"]) for row in ranked[1:5]]
+        rank_only_opponents = [
+            str(row["horse_no"]) for row in sorted(
+                (row for row in group if str(row["horse_no"]) != strategy["axis"]),
+                key=lambda row: (-float(scores[str(row["horse_no"])]), int(row["horse_no"]))
+            )[:4]
+        ]
         rank_only_tickets = [
             sorted((strategy["axis"], a, b), key=int)
             for a, b in itertools.combinations(rank_only_opponents, 2)
@@ -740,25 +753,51 @@ def main():
     axis_strategy_all_days = evaluate_axis_wide_trio_strategy(
         matched, selected_weight, selected_learned_compatibility_weight
     )
+    # Research candidate: use the winner specialist only for axis selection,
+    # while keeping the exact same fused opponent scores, pair model and ticket count.
+    axis_classifier_strategy_dev = evaluate_axis_wide_trio_strategy(
+        dev_races, selected_weight, selected_learned_compatibility_weight,
+        axis_score_key="winner_model_scores",
+    )
+    axis_classifier_strategy_holdout = evaluate_axis_wide_trio_strategy(
+        holdout_races, selected_weight, selected_learned_compatibility_weight,
+        axis_score_key="winner_model_scores",
+    )
+    axis_classifier_strategy_all_days = evaluate_axis_wide_trio_strategy(
+        matched, selected_weight, selected_learned_compatibility_weight,
+        axis_score_key="winner_model_scores",
+    )
     # Axis uses the individual fused ranking. Opponents are then re-ranked
     # conditionally on that fixed axis using the independently trained pair model.
     longshot_races = []
+    winner_axis_longshot_races = []
     for item in matched:
         individual_scores = blend_rank_scores(
             item["model_rank_scores"], item["market_rank_scores"], selected_weight
         )
-        axis = rank_horses(item["group"], individual_scores)[0]["horse_no"]
-        axis = str(axis)
+        axis = str(rank_horses(item["group"], individual_scores)[0]["horse_no"])
         opponent_scores = axis_longshot.build_axis_conditioned_opponent_scores(
             item["group"], axis, individual_scores, item["learned_pair_scores"],
             selected_learned_compatibility_weight
         )
-        longshot_races.append({
+        common = {
             "group": item["group"],
-            "axis_scores": individual_scores,
-            "opponent_scores": opponent_scores,
             "market_win_probabilities": item["market_win_probabilities"],
             "payout": item["payout"],
+        }
+        longshot_races.append({
+            **common, "axis_scores": individual_scores, "opponent_scores": opponent_scores,
+        })
+        # Separate axis specialist candidate; no holdout tuning and no live promotion.
+        winner_axis_scores = item["winner_model_scores"]
+        winner_axis = str(rank_horses(item["group"], winner_axis_scores)[0]["horse_no"])
+        winner_opponent_scores = axis_longshot.build_axis_conditioned_opponent_scores(
+            item["group"], winner_axis, winner_axis_scores, item["learned_pair_scores"],
+            selected_learned_compatibility_weight
+        )
+        winner_axis_longshot_races.append({
+            **common, "axis_scores": winner_axis_scores,
+            "opponent_scores": winner_opponent_scores,
         })
     longshot_dev = axis_longshot.evaluate_axis_longshot([
         race for race, item in zip(longshot_races, matched)
@@ -769,6 +808,15 @@ def main():
         if item["date"] in holdout_dates
     ])
     longshot_all_days = axis_longshot.evaluate_axis_longshot(longshot_races)
+    winner_axis_longshot_dev = axis_longshot.evaluate_axis_longshot([
+        race for race, item in zip(winner_axis_longshot_races, matched)
+        if item["date"] in dev_dates_for_fusion
+    ])
+    winner_axis_longshot_holdout = axis_longshot.evaluate_axis_longshot([
+        race for race, item in zip(winner_axis_longshot_races, matched)
+        if item["date"] in holdout_dates
+    ])
+    winner_axis_longshot_all_days = axis_longshot.evaluate_axis_longshot(winner_axis_longshot_races)
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "evaluated", "research_only": True,
@@ -837,7 +885,12 @@ def main():
         "axis_longshot_strategy": {
             "development": longshot_dev,
             "untouched_holdout": longshot_holdout,
-            "all_five_days_descriptive": longshot_all_days,
+            "all_days_descriptive": longshot_all_days,
+            "winner_classifier_axis_candidate": {
+                "development": winner_axis_longshot_dev,
+                "untouched_holdout": winner_axis_longshot_holdout,
+                "all_days_descriptive": winner_axis_longshot_all_days,
+            },
         },
         "axis_wide_trio_strategy": {
             "ticket_policy": {
@@ -851,7 +904,12 @@ def main():
             "not_calibrated_warning": "This is a relative EV proxy, not calibrated probability or yen expected value. Exact pre-off wide/trio odds are not available in the snapshot feed; no final odds or realized payout is used in selection. Official payouts are used only after the race for retrospective evaluation.",
             "development": axis_strategy_dev,
             "untouched_holdout": axis_strategy_holdout,
-            "all_five_days_descriptive": axis_strategy_all_days,
+            "all_days_descriptive": axis_strategy_all_days,
+            "winner_classifier_axis_candidate": {
+                "development": axis_classifier_strategy_dev,
+                "untouched_holdout": axis_classifier_strategy_holdout,
+                "all_days_descriptive": axis_classifier_strategy_all_days,
+            },
         },
         "untouched_holdout": holdout_results,
         "all_five_days_descriptive": {f"{weight:.2f}": evaluate_races(matched, weight) for weight in BLEND_WEIGHTS},
