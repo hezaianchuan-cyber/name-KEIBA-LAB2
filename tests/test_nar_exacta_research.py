@@ -51,5 +51,33 @@ class ExactaResearchTests(unittest.TestCase):
         self.assertEqual(result["stake_jpy"], 0)
 
 
+    def test_conditional_runnerup_diagnostics_include_missing_payout_races(self):
+        group = [
+            {"horse_no": str(i), "finish": 1 if i == 1 else 2 if i == 2 else i}
+            for i in range(1, 6)
+        ]
+        conditional_scores = {
+            str(first): {
+                str(second): (0.9 if first == 1 and second == 2 else 0.1)
+                for second in range(1, 6) if second != first
+            }
+            for first in range(1, 6)
+        }
+        race = {
+            "group": group,
+            "winner_model_probabilities": {str(i): 1 / i for i in range(1, 6)},
+            "conditional_second_scores": conditional_scores,
+            "payout": {"exacta": []},
+            "date": "2026-11-07",
+            "race_key": "conditional-test",
+        }
+        result = exacta.evaluate_conditional([race])
+        self.assertEqual(result["eligible_result_races"], 1)
+        self.assertEqual(result["races"], 0)
+        self.assertEqual(result["runnerup_top1_accuracy_pct"], 100.0)
+        self.assertEqual(result["runnerup_top4_accuracy_pct"], 100.0)
+        self.assertEqual(result["payout_data_coverage_pct"], 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()
