@@ -106,6 +106,54 @@ class TrioCandidateComparisonTests(unittest.TestCase):
         )
         self.assertEqual(set(result), {"2", "3", "4", "5"})
 
+
+    def test_direct_six_pair_selector_can_cover_more_than_four_opponents(self):
+        import itertools
+        pool = ("2", "3", "4", "5", "6", "7")
+        chosen = {
+            frozenset(("2", "3")), frozenset(("2", "4")),
+            frozenset(("2", "5")), frozenset(("3", "6")),
+            frozenset(("4", "6")), frozenset(("5", "7")),
+        }
+        trio_scores = {
+            tuple(sorted(("1", a, b), key=int)):
+                (0.99 if frozenset((a, b)) in chosen else 0.10)
+            for a, b in itertools.combinations(pool, 2)
+        }
+        pair_scores = {
+            tuple(sorted((a, b), key=int)):
+                (0.99 if frozenset((a, b)) in chosen else 0.10)
+            for a, b in itertools.combinations(pool, 2)
+        }
+        item = {
+            "model_rank_scores": self.ability,
+            "winner_axis_trio_scores": trio_scores,
+            "learned_pair_scores": pair_scores,
+        }
+        tickets = comparison._direct_pair_tickets(item, "1", pool, "trio")
+        self.assertEqual(len(tickets), 6)
+        self.assertEqual({frozenset(pair) for pair in tickets}, chosen)
+        self.assertEqual(len({h for pair in tickets for h in pair}), 6)
+
+    def test_direct_pair_selector_rejects_unknown_mode(self):
+        import itertools
+        pool = ("2", "3", "4", "5", "6", "7")
+        trio_scores = {
+            tuple(sorted(("1", a, b), key=int)): 0.5
+            for a, b in itertools.combinations(pool, 2)
+        }
+        pair_scores = {
+            tuple(sorted((a, b), key=int)): 0.5
+            for a, b in itertools.combinations(pool, 2)
+        }
+        item = {
+            "model_rank_scores": self.ability,
+            "winner_axis_trio_scores": trio_scores,
+            "learned_pair_scores": pair_scores,
+        }
+        with self.assertRaises(ValueError):
+            comparison._direct_pair_tickets(item, "1", pool, "unknown")
+
     def test_candidate_pool_rejects_unsupported_sizes(self):
         with self.assertRaises(ValueError):
             comparison.evaluate_candidate_pool([], 5)
