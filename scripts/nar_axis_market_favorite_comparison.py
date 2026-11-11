@@ -12,7 +12,7 @@ import random
 import re
 import sys
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,7 +37,7 @@ def market_favorite(snapshot):
     for item in snapshot.get("odds") or []:
         if "単勝" not in str(item.get("type") or ""):
             continue
-        no = re.sub(r"\\D", "", str(item.get("n1") or ""))
+        no = re.sub(r"\D", "", str(item.get("n1") or ""))
         odds = numeric(item.get("odds"))
         if not no or odds is None or odds <= 0:
             continue
@@ -124,7 +124,7 @@ def main():
         raw_date = str(snapshot.get("date") or snapshot.get("race_key") or "")
         parts = raw_date.split("|")
         date_text = parts[1] if len(parts) == 3 else raw_date
-        digits = re.sub(r"\\D", "", date_text)
+        digits = re.sub(r"\D", "", date_text)
         if len(digits) == 8:
             try:
                 snapshot_dates.append(datetime.strptime(digits, "%Y%m%d").date())
@@ -132,7 +132,7 @@ def main():
                 pass
     if snapshot_dates:
         nb.END = max(nb.END, max(snapshot_dates))
-        nb.START = nb.END - nb.datetime.timedelta(days=1460)
+        nb.START = nb.END - timedelta(days=1460)
     print(
         f"MARKET_COMPARE_WINDOW start={nb.START} end={nb.END} "
         f"snapshot_races={len(snapshots)} snapshot_dates="
