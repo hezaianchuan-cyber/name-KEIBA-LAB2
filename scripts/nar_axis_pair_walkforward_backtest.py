@@ -202,6 +202,88 @@ def evaluate(records, fitted=None):
     }
 
 
+def paired_comparison(records, fitted):
+    """Paired race-cluster bootstrap of conditional-pair vs ability-top4."""
+    paired = []
+    for record in records:
+        payout = record["payout"]
+        if not payout.get("trio") or not payout.get("win"):
+            continue
+        axis = str(record["axis_horse_no"])
+        by_no = {str(row["horse_no"]): row for row in record["group"]}
+        if axis not in by_no:
+            continue
+        opponents = [str(no) for no in record["candidate_horse_nos"] if str(no) != axis]
+        if len(opponents) < 4:
+            continue
+
+        baseline_pairs = _baseline_pairs(record)
+        ranked_pairs = rank_axis_partner_pairs(
+            record["group"], axis, record["candidate_horse_nos"],
+            record["individual_scores"], fitted,
+        )
+        model_pairs = [tuple(item["pair"]) for item in ranked_pairs[:TICKETS_PER_RACE]]
+        baseline_tickets = _tickets(axis, baseline_pairs)
+        model_tickets = _tickets(axis, model_pairs)
+        if len(baseline_tickets) != TICKETS_PER_RACE or len(model_tickets) != TICKETS_PER_RACE:
+            continue
+
+        baseline_returns = [nb.payout_for("trio", ticket, payout) or 0 for ticket in baseline_tickets]
+        model_returns = [nb.payout_for("trio", ticket, payout) or 0 for ticket in model_tickets]
+        paired.append((
+            sum(baseline_returns), sum(model_returns),
+            sum(value > 0 for value in baseline_returns),
+            sum(value > 0 for value in model_returns),
+            int(any(value > 0 for value in baseline_returns)),
+            int(any(value > 0 for value in model_returns)),
+        ))
+
+    n = len(paired)
+    if not n:
+        return {"races": 0, "error": "No paired races"}
+    delta_returns = [row[1] - row[0] for row in paired]
+    delta_ticket_hits = [row[3] - row[2] for row in paired]
+    delta_race_hits = [row[5] - row[4] for row in paired]
+    stake = n * TICKETS_PER_RACE * STAKE_PER_TICKET
+    roi_delta = 100.0 * sum(delta_returns) / stake
+    ticket_hit_delta = 100.0 * sum(delta_ticket_hits) / (n * TICKETS_PER_RACE)
+    race_hit_delta = 100.0 * sum(delta_race_hits) / n
+
+    rng = random.Random(20261112)
+    boot_roi, boot_ticket, boot_race = [], [], []
+    for _ in range(BOOTSTRAP_REPS):
+        sample = [paired[rng.randrange(n)] for _ in range(n)]
+        boot_roi.append(
+            100.0 * sum(row[1] - row[0] for row in sample)
+            / (n * TICKETS_PER_RACE * STAKE_PER_TICKET)
+        )
+        boot_ticket.append(
+            100.0 * sum(row[3] - row[2] for row in sample) / (n * TICKETS_PER_RACE)
+        )
+        boot_race.append(100.0 * sum(row[5] - row[4] for row in sample) / n)
+
+    def interval(values):
+        values.sort()
+        return [
+            round(values[int(0.025 * (len(values) - 1))], 2),
+            round(values[int(0.975 * (len(values) - 1))], 2),
+        ]
+
+    return {
+        "races": n,
+        "roi_delta_pp_model_minus_baseline": round(roi_delta, 2),
+        "roi_delta_95ci_paired_bootstrap_pp": interval(boot_roi),
+        "ticket_hit_rate_delta_pp_model_minus_baseline": round(ticket_hit_delta, 2),
+        "ticket_hit_rate_delta_95ci_paired_bootstrap_pp": interval(boot_ticket),
+        "race_hit_rate_delta_pp_model_minus_baseline": round(race_hit_delta, 2),
+        "race_hit_rate_delta_95ci_paired_bootstrap_pp": interval(boot_race),
+        "races_model_return_higher": sum(row[1] > row[0] for row in paired),
+        "races_baseline_return_higher": sum(row[0] > row[1] for row in paired),
+        "races_equal_return": sum(row[0] == row[1] for row in paired),
+        "note": "Race-level paired bootstrap; same races and virtual stake, 2,000 resamples. Interval crossing zero means the observed difference is not clearly separated from zero.",
+    }
+
+
 def main():
     print(
         f"PAIR_RESEARCH_ARCHIVE_WINDOW start={nb.START.isoformat()} end={nb.END.isoformat()}",
@@ -306,6 +388,7 @@ def main():
             "matched_races": len(holdout),
             "baseline_ability_top4": baseline_holdout,
             "conditional_pair_ranker": pair_holdout,
+            "paired_difference": paired_comparison(holdout, fitted),
             "same_races_and_budget": True,
         },
         "model": {
