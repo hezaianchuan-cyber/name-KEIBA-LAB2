@@ -393,8 +393,15 @@ def main():
         },
         "model": {
             "axis_source": "fixed pre-off win ranking from horse_evaluation_model via canonical chronological replay",
-            "opponent_pool_source": "LightGBM LambdaRank trained on first 60% of dates; six highest-ranked non-axis candidates",
-            "pair_universe": 15,
+            "opponent_pool_source": "LightGBM LambdaRank trained on first 60% of dates; up to six highest-ranked non-axis candidates",
+            "candidate_pool_size_distribution_holdout": {
+                str(size): sum(
+                    1 for record in holdout
+                    if len([no for no in record["candidate_horse_nos"] if str(no) != str(record["axis_horse_no"])]) == size
+                )
+                for size in (4, 5, 6)
+            },
+            "pair_universe_by_candidate_count": {str(size): size * (size - 1) // 2 for size in (4, 5, 6)},
             "selected_pairs": 6,
             "training_rule": "only pair-development races where the fixed axis finished top three; finishes used only as labels",
             "features": fitted["features"],
