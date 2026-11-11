@@ -1,0 +1,45 @@
+name: Research LAB axis probability calibration
+on:
+  push:
+    branches:
+      - research/conditional-axis-pair-ranker
+    paths:
+      - 'scripts/nar_axis_probability_calibration_backtest.py'
+      - 'scripts/nar_axis_pair_walkforward_backtest.py'
+      - 'scripts/nar_backtest.py'
+      - 'scripts/horse_evaluation_model.py'
+      - '.github/workflows/research-axis-probability-calibration.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-axis-probability-calibration
+  cancel-in-progress: false
+
+jobs:
+  calibration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/conditional-axis-pair-ranker
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install research dependencies
+        run: python -m pip install --disable-pip-version-check scikit-learn lightgbm
+      - name: Compile research modules
+        run: python -m py_compile scripts/nar_backtest.py scripts/horse_evaluation_model.py scripts/nar_axis_pair_walkforward_backtest.py scripts/nar_axis_probability_calibration_backtest.py
+      - name: Run calibration unit checks
+        run: python scripts/nar_axis_probability_calibration_backtest.py --self-test
+      - name: Run chronological calibration comparison
+        run: python scripts/nar_axis_probability_calibration_backtest.py
+      - name: Upload calibration report
+        uses: actions/upload-artifact@v4
+        with:
+          name: axis-probability-calibration
+          path: data/axis-probability-calibration-backtest.json
+          if-no-files-found: error
+          retention-days: 30
