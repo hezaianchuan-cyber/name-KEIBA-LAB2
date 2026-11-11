@@ -114,10 +114,35 @@ def summarize(rows):
 
 
 def main():
+    # Snapshot collection can extend into the current month, while the canonical
+    # archive backtest intentionally stops at the previous month. Extend only
+    # this research process's archive window to the latest snapshot date so
+    # completed current-month races can be joined to their official results.
+    snapshots = nb.load_odds_snapshots()
+    snapshot_dates = []
+    for snapshot in snapshots.values():
+        raw_date = str(snapshot.get("date") or snapshot.get("race_key") or "")
+        parts = raw_date.split("|")
+        date_text = parts[1] if len(parts) == 3 else raw_date
+        digits = re.sub(r"\\D", "", date_text)
+        if len(digits) == 8:
+            try:
+                snapshot_dates.append(datetime.strptime(digits, "%Y%m%d").date())
+            except ValueError:
+                pass
+    if snapshot_dates:
+        nb.END = max(nb.END, max(snapshot_dates))
+        nb.START = nb.END - nb.datetime.timedelta(days=1460)
+    print(
+        f"MARKET_COMPARE_WINDOW start={nb.START} end={nb.END} "
+        f"snapshot_races={len(snapshots)} snapshot_dates="
+        f"{min(snapshot_dates) if snapshot_dates else None}..{max(snapshot_dates) if snapshot_dates else None}",
+        flush=True,
+    )
     races, horses, payouts, months = nb.load_archives()
     print(f"MARKET_COMPARE_ARCHIVES races={len(races)} horse_races={len(horses)} months={len(months)}", flush=True)
     axis_by_key = collect_fixed_axes(races, horses, payouts)
-    snapshots = nb.load_odds_snapshots()
+    print(f"MARKET_COMPARE_AXES count={len(axis_by_key)}", flush=True)
     rows = []
     exclusion = defaultdict(int)
     favorite_sources = defaultdict(int)
