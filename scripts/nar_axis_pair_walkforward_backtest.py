@@ -314,6 +314,42 @@ def paired_comparison(records, fitted):
     }
 
 
+
+def venue_holdout_breakdown(records, fitted=None):
+    """Venue-level ticket results and leave-one-venue-out impact on the same holdout."""
+    overall = evaluate(records, fitted)
+    venues = sorted({str((row.get("group") or [{}])[0].get("venue") or "不明") for row in records})
+    by_venue = {}
+    for venue in venues:
+        selected = [row for row in records if str((row.get("group") or [{}])[0].get("venue") or "不明") == venue]
+        venue_result = evaluate(selected, fitted)
+        remaining = [row for row in records if str((row.get("group") or [{}])[0].get("venue") or "不明") != venue]
+        without = evaluate(remaining, fitted)
+        by_venue[venue] = {
+            "venue_result": venue_result,
+            "overall_without_venue": without,
+            "leave_one_out": {
+                "races_removed": venue_result["races"],
+                "overall_roi_change_pp": round(without["roi_pct"] - overall["roi_pct"], 2)
+                    if without.get("roi_pct") is not None and overall.get("roi_pct") is not None else None,
+                "overall_profit_change_jpy": without["profit_jpy"] - overall["profit_jpy"]
+                    if without.get("profit_jpy") is not None and overall.get("profit_jpy") is not None else None,
+                "overall_race_hit_rate_change_pp": round(without["race_hit_rate_pct"] - overall["race_hit_rate_pct"], 2)
+                    if without.get("race_hit_rate_pct") is not None and overall.get("race_hit_rate_pct") is not None else None,
+            },
+            "sample_warning": (
+                "100レース未満。見送り判断には使わず参考値として扱う"
+                if venue_result["races"] < 100 else
+                "最低サンプル数は満たすが、別期間での再現確認が必要"
+            ),
+        }
+    return {
+        "overall": overall,
+        "by_venue": by_venue,
+        "policy": "同一ホールドアウト・同一6点・1点100円の仮想3連複。各競馬場を除外した場合の全体ROI変化を算出。見送りルールの採用には別期間での再検証が必要。",
+    }
+
+
 def main():
     print(
         f"PAIR_RESEARCH_ARCHIVE_WINDOW start={nb.START.isoformat()} end={nb.END.isoformat()}",
@@ -420,6 +456,8 @@ def main():
             "conditional_pair_ranker": pair_holdout,
             "paired_difference": paired_comparison(holdout, fitted),
             "same_races_and_budget": True,
+            "venue_breakdown_baseline": venue_holdout_breakdown(holdout),
+            "venue_breakdown_conditional_pair_ranker": venue_holdout_breakdown(holdout, fitted),
         },
         "model": {
             "axis_source": "fixed pre-off win ranking from horse_evaluation_model via canonical chronological replay",
