@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-10T13:48:16.164719+00:00",
+  "generated_at": "2026-11-11T13:53:35.432953+00:00",
   "status": "collecting_sample",
   "decision_ready": false,
   "matched_race_days": [
@@ -8,7 +8,8 @@
     "20261107",
     "20261108",
     "20261109",
-    "20261110"
+    "20261110",
+    "20261111"
   ],
   "decision_thresholds": {
     "minimum_matched_races": 100,
@@ -26,32 +27,32 @@
     0.4
   ],
   "diagnostics": {
-    "files": 8,
-    "lines": 418,
-    "valid_locked_preoff": 334,
+    "files": 9,
+    "lines": 463,
+    "valid_locked_preoff": 379,
     "invalid_lock_or_shape": 84,
     "missing_trio_candidates_or_odds": 0,
     "official_payout_races": 5409,
     "official_payout_error": null
   },
-  "matched_races": 128,
+  "matched_races": 150,
   "model_versions": {
     "nar-chronological-v9-D-frame-preoff": 61,
-    "nar-sequential-daily-refit-v1": 67
+    "nar-sequential-daily-refit-v1": 89
   },
   "strategies": [
     {
       "strategy": "equal",
-      "races": 128,
-      "hit_races": 77,
-      "race_hit_rate_pct": 60.16,
-      "staked_tickets": 1536,
-      "stake_jpy": 243200,
-      "return_jpy": 158690,
-      "profit_jpy": -84510,
-      "roi_pct": 65.25,
+      "races": 150,
+      "hit_races": 89,
+      "race_hit_rate_pct": 59.33,
+      "staked_tickets": 1800,
+      "stake_jpy": 285000,
+      "return_jpy": 187530,
+      "profit_jpy": -97470,
+      "roi_pct": 65.8,
       "average_stake_per_race_jpy": 1900.0,
-      "max_drawdown_jpy": 90850,
+      "max_drawdown_jpy": 103810,
       "max_losing_streak": 9,
       "unspent_races": 0,
       "per_race": [
@@ -1206,23 +1207,221 @@
           "stake": 1900,
           "return": 1810,
           "profit": -90
+        },
+        {
+          "race_key": "園田|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 2320,
+          "profit": 420
+        },
+        {
+          "race_key": "園田|20261111|5",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|7",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 980,
+          "profit": -920
+        },
+        {
+          "race_key": "川崎|20261111|1",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|6",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 500,
+          "profit": -1400
+        },
+        {
+          "race_key": "園田|20261111|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1480,
+          "profit": -420
+        },
+        {
+          "race_key": "川崎|20261111|3",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 760,
+          "profit": -1140
+        },
+        {
+          "race_key": "園田|20261111|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1780,
+          "profit": -120
+        },
+        {
+          "race_key": "門別|20261111|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1200,
+          "profit": -700
+        },
+        {
+          "race_key": "川崎|20261111|6",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 2660,
+          "profit": 760
+        },
+        {
+          "race_key": "名古屋|20261111|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1480,
+          "profit": -420
+        },
+        {
+          "race_key": "川崎|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 8180,
+          "profit": 6280
+        },
+        {
+          "race_key": "川崎|20261111|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1500,
+          "profit": -400
+        },
+        {
+          "race_key": "門別|20261111|12",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 6000,
+          "profit": 4100
+        },
+        {
+          "race_key": "川崎|20261111|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
         }
       ]
     },
     {
       "strategy": "ev_only",
-      "races": 128,
+      "races": 150,
       "hit_races": 3,
-      "race_hit_rate_pct": 2.34,
-      "staked_tickets": 343,
-      "stake_jpy": 150900,
+      "race_hit_rate_pct": 2.0,
+      "staked_tickets": 408,
+      "stake_jpy": 178200,
       "return_jpy": 56880,
-      "profit_jpy": -94020,
-      "roi_pct": 37.69,
-      "average_stake_per_race_jpy": 1178.91,
-      "max_drawdown_jpy": 123200,
-      "max_losing_streak": 13,
-      "unspent_races": 22,
+      "profit_jpy": -121320,
+      "roi_pct": 31.92,
+      "average_stake_per_race_jpy": 1188.0,
+      "max_drawdown_jpy": 150500,
+      "max_losing_streak": 20,
+      "unspent_races": 25,
       "per_race": [
         {
           "race_key": "船橋|20261105|8",
@@ -2375,23 +2574,221 @@
           "stake": 1000,
           "return": 0,
           "profit": -1000
+        },
+        {
+          "race_key": "園田|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "園田|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "名古屋|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "園田|20261111|5",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "名古屋|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 5,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|7",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "川崎|20261111|1",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "名古屋|20261111|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "園田|20261111|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 5,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "川崎|20261111|3",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 7,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "門別|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "川崎|20261111|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "名古屋|20261111|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "川崎|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "名古屋|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "門別|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "門別|20261111|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "川崎|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "門別|20261111|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 500,
+          "return": 0,
+          "profit": -500
+        },
+        {
+          "race_key": "川崎|20261111|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
         }
       ]
     },
     {
       "strategy": "balanced_20",
-      "races": 128,
+      "races": 150,
       "hit_races": 3,
-      "race_hit_rate_pct": 2.34,
-      "staked_tickets": 347,
-      "stake_jpy": 103300,
+      "race_hit_rate_pct": 2.0,
+      "staked_tickets": 416,
+      "stake_jpy": 123100,
       "return_jpy": 36000,
-      "profit_jpy": -67300,
-      "roi_pct": 34.85,
-      "average_stake_per_race_jpy": 807.03,
-      "max_drawdown_jpy": 85000,
-      "max_losing_streak": 13,
-      "unspent_races": 22,
+      "profit_jpy": -87100,
+      "roi_pct": 29.24,
+      "average_stake_per_race_jpy": 820.67,
+      "max_drawdown_jpy": 104800,
+      "max_losing_streak": 20,
+      "unspent_races": 25,
       "per_race": [
         {
           "race_key": "船橋|20261105|8",
@@ -3544,23 +3941,221 @@
           "stake": 600,
           "return": 0,
           "profit": -600
+        },
+        {
+          "race_key": "園田|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 900,
+          "return": 0,
+          "profit": -900
+        },
+        {
+          "race_key": "園田|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 600,
+          "return": 0,
+          "profit": -600
+        },
+        {
+          "race_key": "名古屋|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 600,
+          "return": 0,
+          "profit": -600
+        },
+        {
+          "race_key": "園田|20261111|5",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 900,
+          "return": 0,
+          "profit": -900
+        },
+        {
+          "race_key": "名古屋|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 7,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|7",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1800,
+          "return": 0,
+          "profit": -1800
+        },
+        {
+          "race_key": "川崎|20261111|1",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 600,
+          "return": 0,
+          "profit": -600
+        },
+        {
+          "race_key": "名古屋|20261111|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 600,
+          "return": 0,
+          "profit": -600
+        },
+        {
+          "race_key": "園田|20261111|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 5,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "門別|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 900,
+          "return": 0,
+          "profit": -900
+        },
+        {
+          "race_key": "川崎|20261111|3",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 7,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 600,
+          "return": 0,
+          "profit": -600
+        },
+        {
+          "race_key": "門別|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1200,
+          "return": 0,
+          "profit": -1200
+        },
+        {
+          "race_key": "川崎|20261111|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "名古屋|20261111|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1200,
+          "return": 0,
+          "profit": -1200
+        },
+        {
+          "race_key": "川崎|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 600,
+          "return": 0,
+          "profit": -600
+        },
+        {
+          "race_key": "名古屋|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 900,
+          "return": 0,
+          "profit": -900
+        },
+        {
+          "race_key": "門別|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 900,
+          "return": 0,
+          "profit": -900
+        },
+        {
+          "race_key": "門別|20261111|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "川崎|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "門別|20261111|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 300,
+          "return": 0,
+          "profit": -300
+        },
+        {
+          "race_key": "川崎|20261111|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 8,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
         }
       ]
     },
     {
       "strategy": "balanced_30",
-      "races": 128,
+      "races": 150,
       "hit_races": 3,
-      "race_hit_rate_pct": 2.34,
-      "staked_tickets": 339,
-      "stake_jpy": 150900,
+      "race_hit_rate_pct": 2.0,
+      "staked_tickets": 405,
+      "stake_jpy": 178200,
       "return_jpy": 58440,
-      "profit_jpy": -92460,
-      "roi_pct": 38.73,
-      "average_stake_per_race_jpy": 1178.91,
-      "max_drawdown_jpy": 123200,
-      "max_losing_streak": 13,
-      "unspent_races": 22,
+      "profit_jpy": -119760,
+      "roi_pct": 32.79,
+      "average_stake_per_race_jpy": 1188.0,
+      "max_drawdown_jpy": 150500,
+      "max_losing_streak": 20,
+      "unspent_races": 25,
       "per_race": [
         {
           "race_key": "船橋|20261105|8",
@@ -4713,23 +5308,221 @@
           "stake": 1000,
           "return": 0,
           "profit": -1000
+        },
+        {
+          "race_key": "園田|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "園田|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "名古屋|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "園田|20261111|5",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "名古屋|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|7",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "川崎|20261111|1",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "名古屋|20261111|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "園田|20261111|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 5,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "川崎|20261111|3",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 7,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "門別|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "川崎|20261111|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "名古屋|20261111|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "川崎|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "名古屋|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "門別|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "門別|20261111|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "川崎|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "門別|20261111|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 500,
+          "return": 0,
+          "profit": -500
+        },
+        {
+          "race_key": "川崎|20261111|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
         }
       ]
     },
     {
       "strategy": "balanced_40",
-      "races": 128,
+      "races": 150,
       "hit_races": 3,
-      "race_hit_rate_pct": 2.34,
-      "staked_tickets": 329,
-      "stake_jpy": 173700,
+      "race_hit_rate_pct": 2.0,
+      "staked_tickets": 392,
+      "stake_jpy": 205600,
       "return_jpy": 77760,
-      "profit_jpy": -95940,
-      "roi_pct": 44.77,
-      "average_stake_per_race_jpy": 1357.03,
-      "max_drawdown_jpy": 141800,
-      "max_losing_streak": 13,
-      "unspent_races": 22,
+      "profit_jpy": -127840,
+      "roi_pct": 37.82,
+      "average_stake_per_race_jpy": 1370.67,
+      "max_drawdown_jpy": 173700,
+      "max_losing_streak": 20,
+      "unspent_races": 25,
       "per_race": [
         {
           "race_key": "船橋|20261105|8",
@@ -5882,6 +6675,204 @@
           "stake": 1400,
           "return": 0,
           "profit": -1400
+        },
+        {
+          "race_key": "園田|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1400,
+          "return": 0,
+          "profit": -1400
+        },
+        {
+          "race_key": "名古屋|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1400,
+          "return": 0,
+          "profit": -1400
+        },
+        {
+          "race_key": "園田|20261111|5",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|7",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "川崎|20261111|1",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1400,
+          "return": 0,
+          "profit": -1400
+        },
+        {
+          "race_key": "名古屋|20261111|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1400,
+          "return": 0,
+          "profit": -1400
+        },
+        {
+          "race_key": "園田|20261111|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "川崎|20261111|3",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 7,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1400,
+          "return": 0,
+          "profit": -1400
+        },
+        {
+          "race_key": "門別|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "川崎|20261111|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "名古屋|20261111|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "川崎|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1400,
+          "return": 0,
+          "profit": -1400
+        },
+        {
+          "race_key": "名古屋|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "川崎|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "門別|20261111|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 700,
+          "return": 0,
+          "profit": -700
+        },
+        {
+          "race_key": "川崎|20261111|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 5,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
         }
       ]
     }
@@ -5891,16 +6882,16 @@
       "market_weight": 0.0,
       "lab_weight": 1.0,
       "strategy": "equal",
-      "races": 128,
-      "hit_races": 56,
-      "race_hit_rate_pct": 43.75,
-      "staked_tickets": 1536,
-      "stake_jpy": 243200,
-      "return_jpy": 127060,
-      "profit_jpy": -116140,
-      "roi_pct": 52.25,
+      "races": 150,
+      "hit_races": 65,
+      "race_hit_rate_pct": 43.33,
+      "staked_tickets": 1800,
+      "stake_jpy": 285000,
+      "return_jpy": 150160,
+      "profit_jpy": -134840,
+      "roi_pct": 52.69,
       "average_stake_per_race_jpy": 1900.0,
-      "max_drawdown_jpy": 121200,
+      "max_drawdown_jpy": 139900,
       "max_losing_streak": 17,
       "unspent_races": 0,
       "per_race": [
@@ -7055,6 +8046,204 @@
           "stake": 1900,
           "return": 0,
           "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 2320,
+          "profit": 420
+        },
+        {
+          "race_key": "園田|20261111|5",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|7",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "川崎|20261111|1",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|6",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 500,
+          "profit": -1400
+        },
+        {
+          "race_key": "園田|20261111|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1480,
+          "profit": -420
+        },
+        {
+          "race_key": "川崎|20261111|3",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 760,
+          "profit": -1140
+        },
+        {
+          "race_key": "園田|20261111|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1780,
+          "profit": -120
+        },
+        {
+          "race_key": "門別|20261111|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 600,
+          "profit": -1300
+        },
+        {
+          "race_key": "川崎|20261111|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1480,
+          "profit": -420
+        },
+        {
+          "race_key": "川崎|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 8180,
+          "profit": 6280
+        },
+        {
+          "race_key": "川崎|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|12",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 6000,
+          "profit": 4100
+        },
+        {
+          "race_key": "川崎|20261111|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
         }
       ]
     },
@@ -7062,16 +8251,16 @@
       "market_weight": 0.25,
       "lab_weight": 0.75,
       "strategy": "equal",
-      "races": 128,
-      "hit_races": 69,
-      "race_hit_rate_pct": 53.91,
-      "staked_tickets": 1536,
-      "stake_jpy": 243200,
-      "return_jpy": 149330,
-      "profit_jpy": -93870,
-      "roi_pct": 61.4,
+      "races": 150,
+      "hit_races": 80,
+      "race_hit_rate_pct": 53.33,
+      "staked_tickets": 1800,
+      "stake_jpy": 285000,
+      "return_jpy": 175020,
+      "profit_jpy": -109980,
+      "roi_pct": 61.41,
       "average_stake_per_race_jpy": 1900.0,
-      "max_drawdown_jpy": 100930,
+      "max_drawdown_jpy": 117040,
       "max_losing_streak": 17,
       "unspent_races": 0,
       "per_race": [
@@ -8226,6 +9415,204 @@
           "stake": 1900,
           "return": 0,
           "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 2320,
+          "profit": 420
+        },
+        {
+          "race_key": "園田|20261111|5",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|7",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 490,
+          "profit": -1410
+        },
+        {
+          "race_key": "川崎|20261111|1",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|6",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 500,
+          "profit": -1400
+        },
+        {
+          "race_key": "園田|20261111|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1480,
+          "profit": -420
+        },
+        {
+          "race_key": "川崎|20261111|3",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 760,
+          "profit": -1140
+        },
+        {
+          "race_key": "園田|20261111|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1780,
+          "profit": -120
+        },
+        {
+          "race_key": "門別|20261111|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1200,
+          "profit": -700
+        },
+        {
+          "race_key": "川崎|20261111|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1480,
+          "profit": -420
+        },
+        {
+          "race_key": "川崎|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 8180,
+          "profit": 6280
+        },
+        {
+          "race_key": "川崎|20261111|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1500,
+          "profit": -400
+        },
+        {
+          "race_key": "門別|20261111|12",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 6000,
+          "profit": 4100
+        },
+        {
+          "race_key": "川崎|20261111|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
         }
       ]
     },
@@ -8233,16 +9620,16 @@
       "market_weight": 0.5,
       "lab_weight": 0.5,
       "strategy": "equal",
-      "races": 128,
-      "hit_races": 77,
-      "race_hit_rate_pct": 60.16,
-      "staked_tickets": 1536,
-      "stake_jpy": 243200,
-      "return_jpy": 158690,
-      "profit_jpy": -84510,
-      "roi_pct": 65.25,
+      "races": 150,
+      "hit_races": 89,
+      "race_hit_rate_pct": 59.33,
+      "staked_tickets": 1800,
+      "stake_jpy": 285000,
+      "return_jpy": 187530,
+      "profit_jpy": -97470,
+      "roi_pct": 65.8,
       "average_stake_per_race_jpy": 1900.0,
-      "max_drawdown_jpy": 90850,
+      "max_drawdown_jpy": 103810,
       "max_losing_streak": 9,
       "unspent_races": 0,
       "per_race": [
@@ -9397,6 +10784,204 @@
           "stake": 1900,
           "return": 1810,
           "profit": -90
+        },
+        {
+          "race_key": "園田|20261111|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 2320,
+          "profit": 420
+        },
+        {
+          "race_key": "園田|20261111|5",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|7",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 980,
+          "profit": -920
+        },
+        {
+          "race_key": "川崎|20261111|1",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|6",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 500,
+          "profit": -1400
+        },
+        {
+          "race_key": "園田|20261111|9",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1480,
+          "profit": -420
+        },
+        {
+          "race_key": "川崎|20261111|3",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 760,
+          "profit": -1140
+        },
+        {
+          "race_key": "園田|20261111|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1780,
+          "profit": -120
+        },
+        {
+          "race_key": "門別|20261111|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1200,
+          "profit": -700
+        },
+        {
+          "race_key": "川崎|20261111|6",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 2660,
+          "profit": 760
+        },
+        {
+          "race_key": "名古屋|20261111|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1480,
+          "profit": -420
+        },
+        {
+          "race_key": "川崎|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 8180,
+          "profit": 6280
+        },
+        {
+          "race_key": "川崎|20261111|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1500,
+          "profit": -400
+        },
+        {
+          "race_key": "門別|20261111|12",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 6000,
+          "profit": 4100
+        },
+        {
+          "race_key": "川崎|20261111|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
         }
       ]
     },
@@ -9404,16 +10989,16 @@
       "market_weight": 0.75,
       "lab_weight": 0.25,
       "strategy": "equal",
-      "races": 128,
-      "hit_races": 81,
-      "race_hit_rate_pct": 63.28,
-      "staked_tickets": 1536,
-      "stake_jpy": 243200,
-      "return_jpy": 162240,
-      "profit_jpy": -80960,
-      "roi_pct": 66.71,
+      "races": 150,
+      "hit_races": 95,
+      "race_hit_rate_pct": 63.33,
+      "staked_tickets": 1800,
+      "stake_jpy": 285000,
+      "return_jpy": 191710,
+      "profit_jpy": -93290,
+      "roi_pct": 67.27,
       "average_stake_per_race_jpy": 1900.0,
-      "max_drawdown_jpy": 87300,
+      "max_drawdown_jpy": 99630,
       "max_losing_streak": 11,
       "unspent_races": 0,
       "per_race": [
@@ -10568,6 +12153,204 @@
           "stake": 1900,
           "return": 1810,
           "profit": -90
+        },
+        {
+          "race_key": "園田|20261111|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1050,
+          "profit": -850
+        },
+        {
+          "race_key": "園田|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 4640,
+          "profit": 2740
+        },
+        {
+          "race_key": "園田|20261111|5",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261111|7",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 980,
+          "profit": -920
+        },
+        {
+          "race_key": "川崎|20261111|1",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|6",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 500,
+          "profit": -1400
+        },
+        {
+          "race_key": "園田|20261111|9",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1690,
+          "profit": -210
+        },
+        {
+          "race_key": "門別|20261111|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1480,
+          "profit": -420
+        },
+        {
+          "race_key": "川崎|20261111|3",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 760,
+          "profit": -1140
+        },
+        {
+          "race_key": "園田|20261111|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1780,
+          "profit": -120
+        },
+        {
+          "race_key": "門別|20261111|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1200,
+          "profit": -700
+        },
+        {
+          "race_key": "川崎|20261111|6",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 5320,
+          "profit": 3420
+        },
+        {
+          "race_key": "名古屋|20261111|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1480,
+          "profit": -420
+        },
+        {
+          "race_key": "川崎|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 4090,
+          "profit": 2190
+        },
+        {
+          "race_key": "川崎|20261111|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1500,
+          "profit": -400
+        },
+        {
+          "race_key": "門別|20261111|12",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3000,
+          "profit": 1100
+        },
+        {
+          "race_key": "川崎|20261111|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
         }
       ]
     },
@@ -10575,16 +12358,16 @@
       "market_weight": 1.0,
       "lab_weight": 0.0,
       "strategy": "equal",
-      "races": 128,
-      "hit_races": 80,
-      "race_hit_rate_pct": 62.5,
-      "staked_tickets": 1536,
-      "stake_jpy": 243200,
-      "return_jpy": 162640,
-      "profit_jpy": -80560,
-      "roi_pct": 66.88,
+      "races": 150,
+      "hit_races": 95,
+      "race_hit_rate_pct": 63.33,
+      "staked_tickets": 1800,
+      "stake_jpy": 285000,
+      "return_jpy": 201120,
+      "profit_jpy": -83880,
+      "roi_pct": 70.57,
       "average_stake_per_race_jpy": 1900.0,
-      "max_drawdown_jpy": 86900,
+      "max_drawdown_jpy": 90220,
       "max_losing_streak": 11,
       "unspent_races": 0,
       "per_race": [
@@ -11739,6 +13522,204 @@
           "stake": 1900,
           "return": 3620,
           "profit": 1720
+        },
+        {
+          "race_key": "園田|20261111|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1050,
+          "profit": -850
+        },
+        {
+          "race_key": "園田|20261111|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 4640,
+          "profit": 2740
+        },
+        {
+          "race_key": "園田|20261111|5",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 7320,
+          "profit": 5420
+        },
+        {
+          "race_key": "園田|20261111|7",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 980,
+          "profit": -920
+        },
+        {
+          "race_key": "川崎|20261111|1",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|6",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 500,
+          "profit": -1400
+        },
+        {
+          "race_key": "園田|20261111|9",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3380,
+          "profit": 1480
+        },
+        {
+          "race_key": "門別|20261111|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1480,
+          "profit": -420
+        },
+        {
+          "race_key": "川崎|20261111|3",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 760,
+          "profit": -1140
+        },
+        {
+          "race_key": "園田|20261111|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1780,
+          "profit": -120
+        },
+        {
+          "race_key": "門別|20261111|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1200,
+          "profit": -700
+        },
+        {
+          "race_key": "川崎|20261111|6",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 5320,
+          "profit": 3420
+        },
+        {
+          "race_key": "名古屋|20261111|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1480,
+          "profit": -420
+        },
+        {
+          "race_key": "川崎|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "名古屋|20261111|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "門別|20261111|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 4090,
+          "profit": 2190
+        },
+        {
+          "race_key": "川崎|20261111|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1500,
+          "profit": -400
+        },
+        {
+          "race_key": "門別|20261111|12",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3000,
+          "profit": 1100
+        },
+        {
+          "race_key": "川崎|20261111|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
         }
       ]
     }
