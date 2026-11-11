@@ -218,7 +218,7 @@ def main():
     # only each race's prior history. The candidate pool below is LambdaRank.
     axis_by_key = collect_fixed_axes(races, horses, payouts)
 
-    rows, all_dates = ml.build_rows(races, horses)
+    rows, all_dates = ml.build_rows(races, horses, include_unplaced=True)
     groups = ml.group_rows(rows)
     if len(all_dates) < 20:
         raise RuntimeError(f"Insufficient chronological dates: {len(all_dates)}")
@@ -285,6 +285,15 @@ def main():
             "rank_dev_dates": len(rank_dev_dates),
             "pair_development_dates": len(pair_dev_dates),
             "holdout_dates": len(holdout_dates),
+        },
+        "runner_data_quality": {
+            "runner_rows": len(rows),
+            "started_without_rank_rows": sum(1 for row in rows if row.get("finish") is None),
+            "started_without_rank_status_counts": {
+                status: sum(1 for row in rows if row.get("finish") is None and row.get("finish_raw") == status)
+                for status in sorted({row.get("finish_raw") for row in rows if row.get("finish") is None})
+            },
+            "policy": "Only explicit starter statuses containing 失格/中止/落馬 are retained without numeric finish; pre-race 取消/除外 and blank statuses remain excluded.",
         },
         "development": {
             "matched_races": len(development),
