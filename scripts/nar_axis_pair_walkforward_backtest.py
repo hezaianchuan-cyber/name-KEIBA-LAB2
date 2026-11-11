@@ -41,9 +41,22 @@ def collect_fixed_axes(races, horses, payouts):
         result = original_evaluator(field, history_by_name, race, *args, **kwargs)
         win_order = result.get("win_ranking") or []
         if win_order:
+            predictions = result.get("predictions") or []
+            prediction_by_no = {
+                str(row.get("horse_no")): {
+                    "name": row.get("name"),
+                    "score": row.get("score"),
+                    "win_probability": row.get("win_probability"),
+                    "top3_probability": row.get("top3_probability"),
+                    "axes": row.get("axes") or {},
+                }
+                for row in predictions
+            }
             axis_by_key["|".join(map(str, race["key"]))] = {
                 "axis": str(win_order[0]),
                 "top7": [str(no) for no in win_order[:7]],
+                "win_ranking": [str(no) for no in win_order],
+                "predictions": prediction_by_no,
             }
         return result
 
