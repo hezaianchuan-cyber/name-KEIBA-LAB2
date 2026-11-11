@@ -56,6 +56,17 @@ class AxisConditionalPairTests(unittest.TestCase):
                 **race, "candidate_horse_nos": ["2", "99"]
             }])
 
+    def test_nonfinishing_starters_are_kept_as_negative_pair_labels(self):
+        race = make_race(1)
+        race["group"][1]["finish"] = None
+        x, y, diagnostics = ranker.build_axis_pair_training_data([race])
+        # Six candidates produce all 15 pairs; the five pairs containing the
+        # non-finisher remain in the training set as negatives.
+        self.assertEqual(len(x), 15)
+        self.assertEqual(len(y), 15)
+        self.assertEqual(diagnostics["negative_pairs"], 14)
+        self.assertEqual(diagnostics["positive_pairs"], 1)
+
     def test_fit_and_rank(self):
         races = [make_race(i) for i in range(40)]
         fitted = ranker.fit_axis_pair_model(races)
