@@ -245,6 +245,9 @@ def main():
 
     rows.sort(key=lambda row: (row["date"], row["venue"]))
     axis_misses = [item for item in axis_diagnostics if not item["axis"]["finish"] or item["axis"]["finish"] > 3]
+    for item in axis_misses:
+        item["distance_band"] = distance_band(item["distance_m"])
+        item["field_size_band"] = field_band(item["field_size"])
     def miss_breakdown(field_name):
         grouped = defaultdict(list)
         for item in axis_misses:
@@ -266,9 +269,6 @@ def main():
         "by_distance_band": miss_breakdown("distance_band"),
         "by_field_size_band": miss_breakdown("field_size_band"),
     }
-    for item in axis_misses:
-        item["distance_band"] = distance_band(item["distance_m"])
-        item["field_size_band"] = field_band(item["field_size"])
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "status": "completed" if rows else "no_matched_races",
