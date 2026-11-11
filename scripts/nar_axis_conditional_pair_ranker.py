@@ -83,9 +83,12 @@ def build_axis_pair_training_data(races):
         positives_in_race = 0
         for left, right in itertools.combinations(candidates, 2):
             a, b = by_no[left], by_no[right]
-            if a.get("finish") is None or b.get("finish") is None:
-                continue
-            label = int(int(a["finish"]) <= 3 and int(b["finish"]) <= 3)
+            # A starter without a classified finish (e.g. DNF/disqualification)
+            # is a negative partner label, not a reason to remove the pair.
+            label = int(
+                a.get("finish") is not None and b.get("finish") is not None
+                and int(a["finish"]) <= 3 and int(b["finish"]) <= 3
+            )
             x_rows.append(axis_pair_features(axis, a, b, scores))
             labels.append(label)
             diagnostics["positive_pairs" if label else "negative_pairs"] += 1
