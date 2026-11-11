@@ -220,11 +220,74 @@ def build_records(races, horses, axis_by_key):
             "date": datetime.strptime(date_value, "%Y%m%d").date().isoformat(),
             "race_key": "|".join(parts),
             "axis_horse_no": axis,
+            "venue": str(race.get("venue") or "unknown"),
+            "distance": race.get("distance"),
             "predicted": probability,
             "actual": int(axis in podium),
         })
     records.sort(key=lambda row: (row["date"], row["race_key"]))
     return records, exclusions
+
+
+def condition_breakdown(test, predictions, min_group_races=100):
+    """Compare globally fitted calibrators inside untouched venue/distance groups."""
+    outcomes = [row["actual"] for row in test]
+    raw = predictions["uncalibrated"]
+    report = {"minimum_group_races": min_group_races, "venue": {}, "distance_band": {}}
+
+    def add_group(target, label, indices):
+        group_outcomes = [outcomes[i] for i in indices]
+        row = {"races": len(indices), "methods": {}}
+        if len(indices) < min_group_races:
+            row["status"] = "insufficient_sample_descriptive_only"
+            target[label] = row
+            return
+        row["status"] = "evaluated"
+        raw_group = [raw[i] for i in indices]
+        raw_score = metrics(raw_group, group_outcomes)["brier_score"]
+        for method, values in predictions.items():
+            selected = [values[i] for i in indices]
+            result = metrics(selected, group_outcomes)
+            if method != "uncalibrated":
+                result["brier_delta_vs_raw"] = round(result["brier_score"] - raw_score, 6)
+                result["brier_difference_vs_raw_95ci"] = paired_brier_difference_ci(
+                    raw_group, selected, group_outcomes
+                )
+            row["methods"][method] = result
+        target[label] = row
+
+    venues = sorted({str(row.get("venue") or "unknown") for row in test})
+    for venue in venues:
+        add_group(
+            report["venue"], venue,
+            [i for i, row in enumerate(test) if str(row.get("venue") or "unknown") == venue]
+        )
+
+    def distance_band(value):
+        try:
+            distance = int(value)
+        except (TypeError, ValueError):
+            return "unknown"
+        if distance <= 1200:
+            return "1200m以下"
+        if distance <= 1600:
+            return "1300-1600m"
+        if distance <= 2000:
+            return "1700-2000m"
+        return "2100m以上"
+
+    bands = sorted({distance_band(row.get("distance")) for row in test})
+    for band in bands:
+        add_group(
+            report["distance_band"], band,
+            [i for i, row in enumerate(test) if distance_band(row.get("distance")) == band]
+        )
+    report["interpretation"] = (
+        "All mappings are fitted once on the earlier global training period. "
+        "Venue/distance rows are untouched holdout diagnostics only; no subgroup "
+        "mapping is fitted. Groups below the minimum are descriptive only."
+    )
+    return report
 
 
 def self_test():
@@ -312,6 +375,7 @@ def main():
             "fit_policy": "Only the earlier 70% of distinct dates; holdout dates are never used to fit or choose a calibration mapping.",
         },
         "holdout_comparison": comparisons,
+        "condition_breakdown": condition_breakdown(test, test_predictions),
         "decision_policy": [
             "A calibration method is only a research candidate if holdout Brier and log-loss improve without a material ECE deterioration.",
             "The paired bootstrap interval for Brier difference should be inspected; if it crosses zero, improvement is uncertain.",
