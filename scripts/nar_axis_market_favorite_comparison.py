@@ -269,6 +269,38 @@ def main():
         "by_distance_band": miss_breakdown("distance_band"),
         "by_field_size_band": miss_breakdown("field_size_band"),
     }
+    # Check whether predicted top-three probabilities match observed axis outcomes.
+    # This is a calibration diagnostic, not a replacement model evaluation.
+    calibrated = [
+        (item["axis"].get("top3_probability"), item["axis"].get("finish") in (1, 2, 3))
+        for item in axis_diagnostics
+        if numeric(item["axis"].get("top3_probability")) is not None
+    ]
+    def calibration_group(values):
+        if not values:
+            return {"races": 0, "mean_predicted_pct": None, "observed_top3_pct": None}
+        probabilities = [max(0.0, min(1.0, float(p))) for p, _ in values]
+        outcomes = [bool(y) for _, y in values]
+        return {
+            "races": len(values),
+            "mean_predicted_pct": round(100 * sum(probabilities) / len(values), 2),
+            "observed_top3_pct": round(100 * sum(outcomes) / len(outcomes), 2),
+            "brier_score": round(sum((p - int(y)) ** 2 for p, y in zip(probabilities, outcomes)) / len(values), 5),
+        }
+    calibration_bins = []
+    for lower in range(0, 100, 10):
+        upper = lower + 10
+        group = [(p, y) for p, y in calibrated if lower <= float(p) * 100 < upper or (upper == 100 and float(p) == 1.0)]
+        if group:
+            calibration_bins.append({"range_pct": f"{lower}-{upper}%", **calibration_group(group)})
+    axis_probability_calibration = {
+        "all": calibration_group(calibrated),
+        "axis_hit": calibration_group([(p, y) for p, y in calibrated if y]),
+        "axis_miss": calibration_group([(p, y) for p, y in calibrated if not y]),
+        "bins": calibration_bins,
+        "note": "予測確率は発走前の値。実際の3着内率は公式着順から算出。確率帯ごとの頭数が少ない場合は参考値。",
+    }
+
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "status": "completed" if rows else "no_matched_races",
@@ -283,6 +315,7 @@ def main():
             "exclusions": dict(exclusion),
         },
         "overall": summarize(rows),
+        "axis_probability_calibration": axis_probability_calibration,
         "axis_miss_analysis": {
             "summary": miss_summary,
             "missed_races": axis_misses,
