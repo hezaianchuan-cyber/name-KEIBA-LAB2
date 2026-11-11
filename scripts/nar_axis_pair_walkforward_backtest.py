@@ -41,7 +41,10 @@ def collect_fixed_axes(races, horses, payouts):
         result = original_evaluator(field, history_by_name, race, *args, **kwargs)
         win_order = result.get("win_ranking") or []
         if win_order:
-            axis_by_key["|".join(map(str, race["key"]))] = str(win_order[0])
+            axis_by_key["|".join(map(str, race["key"]))] = {
+                "axis": str(win_order[0]),
+                "top7": [str(no) for no in win_order[:7]],
+            }
         return result
 
     nb.evaluate_field = capture_evaluator
@@ -65,9 +68,10 @@ def make_ranked_records(rows, groups, axis_by_key, payouts, ranker, category_map
     records = []
     for group in groups:
         race_key_text = str(group[0]["race_key"])
-        axis = axis_by_key.get(race_key_text)
-        if not axis:
+        axis_info = axis_by_key.get(race_key_text)
+        if not axis_info:
             continue
+        axis = axis_info["axis"]
         score_values = ranker.predict(_ranker_matrix(group, category_maps))
         score_by_no = {
             str(row["horse_no"]): float(score)
@@ -91,6 +95,7 @@ def make_ranked_records(rows, groups, axis_by_key, payouts, ranker, category_map
             "race_key": race_key_text,
             "group": group,
             "axis_horse_no": axis,
+            "axis_top7_horse_nos": axis_info["top7"],
             "candidate_horse_nos": candidates,
             "individual_scores": score_by_no,
             "payout": payouts.get(payout_key) or {},
@@ -134,6 +139,8 @@ def _bootstrap_ci(race_rows):
 def evaluate(records, fitted=None):
     races = ticket_hits = hit_races = stake = returned = 0
     axis_podium = candidate_covered = selected_covered = 0
+    top7_podium_horses = total_podium_horses = 0
+    full_podium_in_top7_races = races_with_three_classified_podium = 0
     race_rows = []
     for record in records:
         payout = record["payout"]
@@ -173,6 +180,12 @@ def evaluate(records, fitted=None):
             no for no, row in by_no.items()
             if row.get("finish") is not None and int(row["finish"]) <= 3
         }
+        top7 = set(str(no) for no in record.get("axis_top7_horse_nos", []))
+        total_podium_horses += len(podium)
+        top7_podium_horses += len(podium & top7)
+        if len(podium) == 3:
+            races_with_three_classified_podium += 1
+            full_podium_in_top7_races += int(podium.issubset(top7))
         if axis in podium:
             axis_podium += 1
             actual_partners = podium - {axis}
@@ -195,6 +208,10 @@ def evaluate(records, fitted=None):
         "roi_95ci_bootstrap_pct": _bootstrap_ci(race_rows),
         "axis_podium_races": axis_podium,
         "axis_top3_rate_pct": round(100 * axis_podium / races, 2) if races else None,
+        "top7_podium_coverage_pct": round(100 * top7_podium_horses / total_podium_horses, 2) if total_podium_horses else None,
+        "top7_full_podium_races": full_podium_in_top7_races,
+        "top7_full_podium_rate_pct": round(100 * full_podium_in_top7_races / races_with_three_classified_podium, 2) if races_with_three_classified_podium else None,
+        "races_with_three_classified_podium": races_with_three_classified_podium,
         "both_partners_in_candidate_pool": candidate_covered,
         "both_partners_selected": selected_covered,
         "partner_pair_capture_pct": round(100 * selected_covered / axis_podium, 2) if axis_podium else None,
