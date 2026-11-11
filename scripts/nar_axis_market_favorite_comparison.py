@@ -144,6 +144,7 @@ def main():
     axis_by_key = collect_fixed_axes(races, horses, payouts)
     print(f"MARKET_COMPARE_AXES count={len(axis_by_key)}", flush=True)
     rows = []
+    axis_diagnostics = []
     exclusion = defaultdict(int)
     favorite_sources = defaultdict(int)
 
@@ -175,9 +176,14 @@ def main():
         finish_by_no = {
             str(int(h["no"])): int(h["finish"])
             for h in field
-            if h.get("no") and h.get("finish") is not None and 1 <= int(h["finish"]) <= 3
+            if h.get("no") and h.get("finish") is not None
         }
-        podium = set(finish_by_no)
+        podium = {no for no, finish in finish_by_no.items() if 1 <= finish <= 3}
+        horse_by_no = {str(int(h["no"])): h for h in field if h.get("no")}
+        prediction_by_no = axis_info.get("predictions") or {}
+        win_rank_by_no = {
+            str(no): rank for rank, no in enumerate(axis_info.get("win_ranking") or [], start=1)
+        }
         axis = str(axis_info["axis"])
         top7 = set(str(x) for x in axis_info["top7"])
         if len(podium) != 3:
@@ -187,18 +193,82 @@ def main():
             exclusion["axis_or_favorite_not_in_field"] += 1
             continue
 
+        date_text = str(snapshot.get("date") or key[1])
+        venue_text = str(race.get("venue") or key[0])
+        distance_value = race.get("distance")
+        field_size_value = race.get("field_size") or len(field)
         rows.append({
-            "date": str(snapshot.get("date") or key[1]),
-            "venue": str(race.get("venue") or key[0]),
-            "distance_band": distance_band(race.get("distance")),
-            "field_size_band": field_band(race.get("field_size") or len(field)),
+            "date": date_text,
+            "venue": venue_text,
+            "distance_band": distance_band(distance_value),
+            "field_size_band": field_band(field_size_value),
             "axis_top3": axis in podium,
             "market_top3": favorite in podium,
             "podium": podium,
             "top7": top7,
         })
+        def runner_diagnostic(no):
+            horse = horse_by_no.get(str(no), {})
+            prediction = prediction_by_no.get(str(no), {})
+            return {
+                "horse_no": str(no),
+                "finish": finish_by_no.get(str(no)),
+                "win_rank": win_rank_by_no.get(str(no)),
+                "score": prediction.get("score"),
+                "win_probability": prediction.get("win_probability"),
+                "top3_probability": prediction.get("top3_probability"),
+                "axis_scores": prediction.get("axes") or {},
+                "age": horse.get("age"),
+                "sex": horse.get("sex"),
+                "jockey": horse.get("jockey"),
+                "carried_weight": horse.get("carried"),
+                "body_weight": horse.get("body_weight"),
+                "body_weight_change": horse.get("body_weight_change"),
+                "last3f": horse.get("last3f"),
+                "time_seconds": horse.get("time_seconds"),
+                "margin": horse.get("margin"),
+            }
+        axis_diagnostics.append({
+            "date": date_text,
+            "venue": venue_text,
+            "race_no": str(key[2]),
+            "distance_m": distance_value,
+            "surface": race.get("surface"),
+            "going": race.get("going"),
+            "field_size": int(field_size_value) if numeric(field_size_value) is not None else None,
+            "axis": runner_diagnostic(axis),
+            "market_favorite": runner_diagnostic(favorite),
+            "podium": [runner_diagnostic(no) for no in sorted(podium, key=lambda x: finish_by_no[x])],
+            "top7": [runner_diagnostic(no) for no in axis_info.get("top7", [])],
+            "top7_covers_full_podium": podium.issubset(top7),
+        })
 
     rows.sort(key=lambda row: (row["date"], row["venue"]))
+    axis_misses = [item for item in axis_diagnostics if not item["axis"]["finish"] or item["axis"]["finish"] > 3]
+    def miss_breakdown(field_name):
+        grouped = defaultdict(list)
+        for item in axis_misses:
+            grouped[str(item.get(field_name) or "不明")].append(item)
+        return {
+            key: {
+                "axis_misses": len(group),
+                "market_favorite_top3": sum(1 for item in group if item["market_favorite"]["finish"] in (1, 2, 3)),
+                "top7_full_podium": sum(1 for item in group if item["top7_covers_full_podium"]),
+            }
+            for key, group in sorted(grouped.items())
+        }
+    miss_summary = {
+        "axis_miss_races": len(axis_misses),
+        "market_favorite_top3_when_axis_missed": sum(1 for item in axis_misses if item["market_favorite"]["finish"] in (1, 2, 3)),
+        "both_axis_and_market_missed": sum(1 for item in axis_misses if item["market_favorite"]["finish"] not in (1, 2, 3)),
+        "top7_full_podium_despite_axis_miss": sum(1 for item in axis_misses if item["top7_covers_full_podium"]),
+        "by_venue": miss_breakdown("venue"),
+        "by_distance_band": miss_breakdown("distance_band"),
+        "by_field_size_band": miss_breakdown("field_size_band"),
+    }
+    for item in axis_misses:
+        item["distance_band"] = distance_band(item["distance_m"])
+        item["field_size_band"] = field_band(item["field_size"])
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "status": "completed" if rows else "no_matched_races",
@@ -213,6 +283,11 @@ def main():
             "exclusions": dict(exclusion),
         },
         "overall": summarize(rows),
+        "axis_miss_analysis": {
+            "summary": miss_summary,
+            "missed_races": axis_misses,
+            "diagnostic_note": "各馬の評価点・6軸の内訳は発走前の評価結果。着順・上がり3F・走破時計・着差は原因分析用のレース後情報であり、予測入力には使用しない。",
+        },
         "by_venue": {key: summarize(value) for key, value in sorted(
             ((k, [x for x in rows if x["venue"] == k]) for k in {x["venue"] for x in rows}),
             key=lambda item: item[0])},
