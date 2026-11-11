@@ -113,7 +113,7 @@ def add_race_relative_features(race_rows):
     return race_rows
 
 
-def build_rows(races, horses):
+def build_rows(races, horses, include_unplaced=False):
     history = defaultdict(list)
     sire_stats = defaultdict(lambda: {"runs": 0, "top3": 0, "wins": 0})
     jockey_stats = defaultdict(lambda: {"runs": 0, "top3": 0, "wins": 0})
@@ -150,7 +150,11 @@ def build_rows(races, horses):
                 _, parts = nb.score_runner({**h, "name": history_key}, history, sire_stats, jockey_stats, race, BASE_WEIGHTS)
                 score = sum(BASE_WEIGHTS[k] * parts[k] for k in BASE_WEIGHTS)
                 finish = nb.rank_value(h.get("finish"))
-                if finish is None:
+                finish_raw = str(h.get("finish_raw") or "").strip()
+                started_without_rank = any(
+                    marker in finish_raw for marker in ("失格", "中止", "落馬")
+                )
+                if finish is None and not (include_unplaced and started_without_rank):
                     continue
                 past = history.get(history_key, [])
                 recent = past[-5:]
@@ -206,7 +210,8 @@ def build_rows(races, horses):
                     "horse_identity_quality": identity_quality,
                     "date": race["date"].isoformat(),
                     "horse_no": str(h.get("no", "")),
-                    "finish": finish, "winner": int(finish == 1),
+                    "finish": finish, "finish_raw": finish_raw,
+                    "winner": int(finish == 1),
                     "lab_score": float(score),
                     "form": float(parts["form"]),
                     "venue_score": float(parts["venue"]),
@@ -538,7 +543,7 @@ def fit_lambdarank(train_groups, dev_groups, features, category_maps, params=Non
             sizes.append(len(group))
             data.extend(group)
             # Graded relevance: winner > second > third > other finishers.
-            labels.extend([max(0, 4 - int(r["finish"])) for r in group])
+            labels.extend([max(0, 4 - int(r["finish"])) if r.get("finish") is not None else 0 for r in group])
         x = np.asarray([[r[k] if k not in CATEGORICAL else category_maps[k].get(r[k], -1)
                          for k in features] for r in data], dtype=float)
         return x, np.asarray(labels, dtype=int), sizes
