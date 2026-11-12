@@ -73,7 +73,7 @@ def main():
                 if "帯広" not in race_key:
                     continue
                 for runner in runners:
-                    official[(race_key, str(runner.get("no") or ""))] = runner
+                    official[("|".join(race_key), str(runner.get("no") or ""))] = runner
         except Exception as exc:
             archive_errors.append({"month": f"{year}-{month:02d}", "error": str(exc)[:500]})
 
@@ -119,7 +119,7 @@ def main():
                 stats["missing_final_value"] += 1
                 continue
             stats["compared"] += 1
-            if any(value == final_value for value in observed):
+            if observed[-1] == final_value:
                 stats["matched"] += 1
             else:
                 stats["mismatched"] += 1
