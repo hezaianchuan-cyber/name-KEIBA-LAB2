@@ -34,13 +34,13 @@ TICKETS_PER_RACE = 6
 STAKE_PER_TICKET = 100
 
 
-def collect_fixed_axes(races, horses, payouts):
+def collect_fixed_axes(races, horses, payouts, suitability_mode="combined"):
     """Replay every race chronologically and capture the fixed pre-off win axis."""
     axis_by_key = {}
     original_evaluator = nb.evaluate_field
 
     def capture_evaluator(field, history_by_name, race, *args, **kwargs):
-        result = original_evaluator(field, history_by_name, race, *args, **kwargs)
+        result = original_evaluator(field, history_by_name, race, *args, suitability_mode=suitability_mode, **kwargs)
         win_order = result.get("win_ranking") or []
         if win_order:
             predictions = result.get("predictions") or []
@@ -59,6 +59,7 @@ def collect_fixed_axes(races, horses, payouts):
                 "top7": [str(no) for no in win_order[:7]],
                 "win_ranking": [str(no) for no in win_order],
                 "predictions": prediction_by_no,
+                "suitability_mode": suitability_mode,
             }
         return result
 
@@ -70,6 +71,157 @@ def collect_fixed_axes(races, horses, payouts):
     finally:
         nb.evaluate_field = original_evaluator
     return axis_by_key
+
+
+def _axis_variant_rows(groups, axis_by_key):
+    """Collect same-race axis outcomes for a fixed pre-off ranking variant."""
+    rows = []
+    for group in groups:
+        if not group:
+            continue
+        race_key = str(group[0].get("race_key") or "")
+        info = axis_by_key.get(race_key)
+        if not info:
+            continue
+        by_no = {str(row.get("horse_no")): row for row in group}
+        podium = {
+            no for no, row in by_no.items()
+            if row.get("finish") is not None and int(row["finish"]) <= 3
+        }
+        if len(podium) != 3:
+            continue
+        axis = str(info.get("axis") or "")
+        if axis not in by_no:
+            continue
+        top7 = {str(no) for no in info.get("top7", [])}
+        pred = (info.get("predictions") or {}).get(axis) or {}
+        probability = pred.get("top3_probability")
+        try:
+            probability = float(probability)
+            if not math.isfinite(probability) or not 0.0 <= probability <= 1.0:
+                probability = None
+        except (TypeError, ValueError):
+            probability = None
+        rows.append({
+            "race_key": race_key,
+            "venue": str(group[0].get("venue") or "不明"),
+            "axis_top3": int(axis in podium),
+            "axis_win": int(by_no[axis].get("finish") == 1),
+            "top7_podium_count": len(podium & top7),
+            "top7_full_podium": int(podium.issubset(top7)),
+            "top3_probability": probability,
+        })
+    return rows
+
+
+def _axis_variant_metrics(rows):
+    n = len(rows)
+    if not n:
+        return {"races": 0}
+    probability_rows = [row for row in rows if row["top3_probability"] is not None]
+    brier = None
+    logloss = None
+    ece = None
+    if probability_rows:
+        eps = 1e-12
+        brier = sum((row["top3_probability"] - row["axis_top3"]) ** 2 for row in probability_rows) / len(probability_rows)
+        logloss = -sum(
+            row["axis_top3"] * math.log(max(eps, row["top3_probability"])) +
+            (1 - row["axis_top3"]) * math.log(max(eps, 1 - row["top3_probability"]))
+            for row in probability_rows
+        ) / len(probability_rows)
+        bins = [[] for _ in range(10)]
+        for row in probability_rows:
+            index = min(9, int(row["top3_probability"] * 10))
+            bins[index].append(row)
+        ece = sum(
+            len(bucket) / len(probability_rows) *
+            abs(sum(row["top3_probability"] for row in bucket) / len(bucket) -
+                sum(row["axis_top3"] for row in bucket) / len(bucket))
+            for bucket in bins if bucket
+        )
+    return {
+        "races": n,
+        "axis_top3_rate_pct": round(100 * sum(row["axis_top3"] for row in rows) / n, 2),
+        "axis_win_rate_pct": round(100 * sum(row["axis_win"] for row in rows) / n, 2),
+        "top7_podium_coverage_pct": round(
+            100 * sum(row["top7_podium_count"] for row in rows) / (3 * n), 2
+        ),
+        "top7_full_podium_rate_pct": round(
+            100 * sum(row["top7_full_podium"] for row in rows) / n, 2
+        ),
+        "probability_races": len(probability_rows),
+        "top3_brier": round(brier, 6) if brier is not None else None,
+        "top3_logloss": round(logloss, 6) if logloss is not None else None,
+        "top3_ece_10_bins": round(ece, 6) if ece is not None else None,
+    }
+
+
+def compare_axis_suitability_variants(groups, baseline_axes, without_venue_axes):
+    """One-factor ablation: remove only same-venue matches from suitability history."""
+    baseline = {row["race_key"]: row for row in _axis_variant_rows(groups, baseline_axes)}
+    without = {row["race_key"]: row for row in _axis_variant_rows(groups, without_venue_axes)}
+    common = sorted(set(baseline) & set(without))
+    a_rows = [baseline[key] for key in common]
+    b_rows = [without[key] for key in common]
+    if not common:
+        return {"races": 0, "error": "No common classified holdout races"}
+    top3_delta = [b["axis_top3"] - a["axis_top3"] for a, b in zip(a_rows, b_rows)]
+    top7_delta = [
+        (b["top7_podium_count"] - a["top7_podium_count"]) / 3.0
+        for a, b in zip(a_rows, b_rows)
+    ]
+    rng = random.Random(20261113)
+    boot_top3, boot_top7 = [], []
+    n = len(common)
+    for _ in range(BOOTSTRAP_REPS):
+        indexes = [rng.randrange(n) for _ in range(n)]
+        boot_top3.append(100 * sum(top3_delta[i] for i in indexes) / n)
+        boot_top7.append(100 * sum(top7_delta[i] for i in indexes) / n)
+
+    def interval(values):
+        values.sort()
+        return [
+            round(values[int(0.025 * (len(values) - 1))], 2),
+            round(values[int(0.975 * (len(values) - 1))], 2),
+        ]
+
+    changed = sum(a["race_key"] != b["race_key"] for a, b in zip(a_rows, b_rows))
+    improved = sum(b["axis_top3"] > a["axis_top3"] for a, b in zip(a_rows, b_rows))
+    worsened = sum(b["axis_top3"] < a["axis_top3"] for a, b in zip(a_rows, b_rows))
+    by_venue = {}
+    venues = sorted({row["venue"] for row in a_rows})
+    for venue in venues:
+        indexes = [i for i, row in enumerate(a_rows) if row["venue"] == venue]
+        if not indexes:
+            continue
+        aa = [a_rows[i] for i in indexes]
+        bb = [b_rows[i] for i in indexes]
+        by_venue[venue] = {
+            "races": len(indexes),
+            "baseline_axis_top3_rate_pct": round(100 * sum(x["axis_top3"] for x in aa) / len(aa), 2),
+            "without_venue_axis_top3_rate_pct": round(100 * sum(x["axis_top3"] for x in bb) / len(bb), 2),
+            "delta_pp": round(100 * sum(bb[j]["axis_top3"] - aa[j]["axis_top3"] for j in range(len(aa))) / len(aa), 2),
+            "sample_warning": "100レース未満は参考値。競馬場別の結論には別期間での再現確認が必要。" if len(indexes) < 100 else "100レース以上だが探索的集計。重み調整には直結させない。",
+        }
+    return {
+        "baseline_combined_suitability": _axis_variant_metrics(a_rows),
+        "without_venue_match": _axis_variant_metrics(b_rows),
+        "paired_difference_without_venue_minus_baseline": {
+            "races": n,
+            "axis_top3_rate_delta_pp": round(100 * sum(top3_delta) / n, 2),
+            "axis_top3_rate_delta_95ci_paired_bootstrap_pp": interval(boot_top3),
+            "top7_podium_coverage_delta_pp": round(100 * sum(top7_delta) / n, 2),
+            "top7_podium_coverage_delta_95ci_paired_bootstrap_pp": interval(boot_top7),
+            "axis_changed_races": changed,
+            "axis_top3_improved_races": improved,
+            "axis_top3_worsened_races": worsened,
+            "axis_top3_unchanged_outcome_races": n - improved - worsened,
+        },
+        "by_venue": by_venue,
+        "experiment": "Aは現行の適性判定（同競馬場 OR 距離±200m OR 同馬場）。Bは同競馬場条件だけを外し（距離±200m OR 同馬場）、他の評価軸・重み・予測条件は固定。",
+        "policy": "同一の時系列ホールドアウトで比較。Bが改善しても競馬場適性の重みを直ちに変更しない。別期間で再現を確認する。",
+    }
 
 
 def _ranker_matrix(group, category_maps):
@@ -866,7 +1018,8 @@ def main():
 
     # The axis is captured from the fixed horse-evaluation win ranking using
     # only each race's prior history. The candidate pool below is LambdaRank.
-    axis_by_key = collect_fixed_axes(races, horses, payouts)
+    axis_by_key = collect_fixed_axes(races, horses, payouts, suitability_mode="combined")
+    axis_without_venue_by_key = collect_fixed_axes(races, horses, payouts, suitability_mode="without_venue")
 
     rows, all_dates = ml.build_rows(races, horses, include_unplaced=True)
     groups = ml.group_rows(rows)
@@ -912,6 +1065,9 @@ def main():
         raise RuntimeError(
             f"No matched axis/LambdaRank records: development={len(development)} holdout={len(holdout)}"
         )
+    axis_suitability_comparison = compare_axis_suitability_variants(
+        holdout_groups, axis_by_key, axis_without_venue_by_key
+    )
 
     x_rows, labels, diagnostics = build_axis_pair_training_data(development)
     fitted = fit_axis_pair_model(development)
@@ -983,6 +1139,7 @@ def main():
             "venue_breakdown_conditional_pair_ranker": venue_holdout_breakdown(holdout, fitted),
             "venue_distance_breakdown_conditional_pair_ranker": venue_distance_breakdown(holdout, fitted),
             "axis_partner_failure_diagnostics": axis_partner_failure_diagnostics(holdout, fitted),
+            "axis_suitability_ablation": axis_suitability_comparison,
         },
         "model": {
             "axis_source": "fixed pre-off win ranking from horse_evaluation_model via canonical chronological replay",
