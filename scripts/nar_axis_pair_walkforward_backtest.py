@@ -485,6 +485,17 @@ def axis_partner_failure_diagnostics(records, fitted):
     probability_buckets = {}
     axis_miss_examples = []
     partner_miss_examples = []
+    # Compare historical axis features between successful and failed axes.
+    axis_feature_fields = [
+        "prior_runs", "career_top3_rate", "recent_top3_rate",
+        "recent_margin_quality", "recent_opponent_strength",
+        "recent_first_corner_pct", "recent_last_corner_pct",
+        "venue_top3_rate", "distance_top3_rate", "going_top3_rate",
+    ]
+    axis_feature_samples = {
+        label: {field: [] for field in axis_feature_fields}
+        for label in ("軸3着内", "4〜6着", "7着以下", "その他")
+    }
 
     def probability_bucket(value):
         if value is None:
@@ -546,6 +557,23 @@ def axis_partner_failure_diagnostics(records, fitted):
         })
         p_cell["races"] += 1
         top7 = set(str(no) for no in record.get("axis_top7_horse_nos", []))
+
+        if axis_hit:
+            feature_label = "軸3着内"
+        elif axis_finish is not None and 4 <= int(axis_finish) <= 6:
+            feature_label = "4〜6着"
+        elif axis_finish is not None and int(axis_finish) >= 7:
+            feature_label = "7着以下"
+        else:
+            feature_label = "その他"
+        for field in axis_feature_fields:
+            value = axis_row.get(field)
+            try:
+                number = float(value)
+                if math.isfinite(number):
+                    axis_feature_samples[feature_label][field].append(number)
+            except (TypeError, ValueError):
+                pass
 
         if axis_hit:
             overall["axis_top3"] += 1
@@ -670,7 +698,27 @@ def axis_partner_failure_diagnostics(records, fitted):
             ) if pair_n else None,
         }
 
+    def summarize_feature_samples():
+        summary = {}
+        for label, fields in axis_feature_samples.items():
+            summary[label] = {}
+            for field, values in fields.items():
+                ordered = sorted(values)
+                n = len(ordered)
+                if not n:
+                    summary[label][field] = {"n": 0}
+                    continue
+                summary[label][field] = {
+                    "n": n,
+                    "mean": round(sum(ordered) / n, 5),
+                    "median": round(ordered[n // 2], 5),
+                    "q25": round(ordered[int((n - 1) * 0.25)], 5),
+                    "q75": round(ordered[int((n - 1) * 0.75)], 5),
+                }
+        return summary
+
     return {
+        "axis_feature_comparison": summarize_feature_samples(),
         "overall": {
             **overall,
             "axis_top3_rate_pct": round(100 * overall["axis_top3"] / overall["races"], 2) if overall["races"] else None,
