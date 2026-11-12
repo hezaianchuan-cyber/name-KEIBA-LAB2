@@ -37,10 +37,41 @@ def axis_pair_features(axis, a, b, scores):
     """Symmetric features for a partner pair conditional on a fixed axis."""
     sa, sb, sx = _score(scores, a["horse_no"]), _score(scores, b["horse_no"]), _score(scores, axis["horse_no"])
     base = pair_features(a, b)
+    def metric(row, key, default=0.0):
+        try:
+            value = float(row.get(key, default))
+            return value if value == value and abs(value) != float("inf") else default
+        except (TypeError, ValueError):
+            return default
+
+    # Reliability-adjusted distance/venue/going form. The underlying rates and
+    # sample counts are computed only from races before the target race.
+    def reliable_rate(row, rate_key, runs_key, prior=8.0):
+        runs = max(0.0, metric(row, runs_key))
+        rate = max(0.0, min(1.0, metric(row, rate_key, 0.5)))
+        return (rate * runs + 0.5 * prior) / (runs + prior)
+
+    da, db, dx = (
+        reliable_rate(a, "distance_top3_rate", "distance_runs"),
+        reliable_rate(b, "distance_top3_rate", "distance_runs"),
+        reliable_rate(axis, "distance_top3_rate", "distance_runs"),
+    )
+    va, vb = (
+        reliable_rate(a, "venue_top3_rate", "venue_runs"),
+        reliable_rate(b, "venue_top3_rate", "venue_runs"),
+    )
+    ga, gb = (
+        reliable_rate(a, "going_top3_rate", "going_runs"),
+        reliable_rate(b, "going_top3_rate", "going_runs"),
+    )
     return base + [
         (sa + sb) / 2.0, abs(sa - sb),
         (abs(sa - sx) + abs(sb - sx)) / 2.0,
         abs(abs(sa - sx) - abs(sb - sx)),
+        (da + db) / 2.0, abs(da - db), min(da, db),
+        (da + db) / 2.0 - dx, dx,
+        (va + vb) / 2.0, abs(va - vb),
+        (ga + gb) / 2.0, abs(ga - gb),
     ]
 
 
