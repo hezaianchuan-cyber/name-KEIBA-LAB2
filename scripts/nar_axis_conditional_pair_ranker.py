@@ -25,6 +25,20 @@ FEATURE_NAMES = (
     "venue_top3_mean", "venue_top3_gap",
     "going_top3_mean", "going_top3_gap",
 )
+DISTANCE_FEATURE_NAMES = ("distance_top3_mean", "distance_top3_gap", "distance_top3_min", "distance_advantage_over_axis", "axis_distance_top3")
+VENUE_DISTANCE_FEATURE_NAMES = ("venue_distance_top3_mean", "venue_distance_top3_gap", "venue_distance_top3_min", "venue_distance_advantage_over_axis", "axis_venue_distance_top3")
+VENUE_GOING_FEATURE_NAMES = ("venue_top3_mean", "venue_top3_gap", "going_top3_mean", "going_top3_gap")
+
+def feature_names(feature_mode):
+    if feature_mode == "full":
+        return list(FEATURE_NAMES)
+    if feature_mode == "no_distance":
+        return [name for name in FEATURE_NAMES if name not in DISTANCE_FEATURE_NAMES]
+    if feature_mode == "venue_distance":
+        names = [name for name in FEATURE_NAMES if name not in DISTANCE_FEATURE_NAMES]
+        insert_at = names.index("venue_top3_mean")
+        return names[:insert_at] + list(VENUE_DISTANCE_FEATURE_NAMES) + names[insert_at:]
+    raise ValueError(f"Unknown feature mode: {feature_mode}")
 
 
 def _score(scores, horse_no):
@@ -37,7 +51,7 @@ def _score(scores, horse_no):
     raise ValueError(f"Missing finite individual score for horse {horse_no}")
 
 
-def axis_pair_features(axis, a, b, scores):
+def axis_pair_features(axis, a, b, scores, feature_mode="full"):
     """Symmetric features for a partner pair conditional on a fixed axis."""
     sa, sb, sx = _score(scores, a["horse_no"]), _score(scores, b["horse_no"]), _score(scores, axis["horse_no"])
     base = pair_features(a, b)
@@ -64,19 +78,39 @@ def axis_pair_features(axis, a, b, scores):
         reliable_rate(a, "venue_top3_rate", "venue_runs"),
         reliable_rate(b, "venue_top3_rate", "venue_runs"),
     )
+    vda, vdb, vdx = (
+        reliable_rate(a, "venue_distance_top3_rate", "venue_distance_runs"),
+        reliable_rate(b, "venue_distance_top3_rate", "venue_distance_runs"),
+        reliable_rate(axis, "venue_distance_top3_rate", "venue_distance_runs"),
+    )
     ga, gb = (
         reliable_rate(a, "going_top3_rate", "going_runs"),
         reliable_rate(b, "going_top3_rate", "going_runs"),
     )
-    return base + [
+    score_features = [
         (sa + sb) / 2.0, abs(sa - sb),
         (abs(sa - sx) + abs(sb - sx)) / 2.0,
         abs(abs(sa - sx) - abs(sb - sx)),
+    ]
+    distance_features = [
         (da + db) / 2.0, abs(da - db), min(da, db),
         (da + db) / 2.0 - dx, dx,
+    ]
+    venue_distance_features = [
+        (vda + vdb) / 2.0, abs(vda - vdb), min(vda, vdb),
+        (vda + vdb) / 2.0 - vdx, vdx,
+    ]
+    venue_going_features = [
         (va + vb) / 2.0, abs(va - vb),
         (ga + gb) / 2.0, abs(ga - gb),
     ]
+    if feature_mode == "full":
+        return base + score_features + distance_features + venue_going_features
+    if feature_mode == "no_distance":
+        return base + score_features + venue_going_features
+    if feature_mode == "venue_distance":
+        return base + score_features + venue_distance_features + venue_going_features
+    raise ValueError(f"Unknown feature mode: {feature_mode}")
 
 
 def _candidate_rows(group, candidate_horse_nos):
@@ -89,7 +123,7 @@ def _candidate_rows(group, candidate_horse_nos):
     return by_no, candidates
 
 
-def build_axis_pair_training_data(races):
+def build_axis_pair_training_data(races, feature_mode="full"):
     """Create pair labels only for races where the preselected axis made top 3.
 
     Each race dict contains group, axis_horse_no, candidate_horse_nos and
@@ -124,7 +158,7 @@ def build_axis_pair_training_data(races):
                 a.get("finish") is not None and b.get("finish") is not None
                 and int(a["finish"]) <= 3 and int(b["finish"]) <= 3
             )
-            x_rows.append(axis_pair_features(axis, a, b, scores))
+            x_rows.append(axis_pair_features(axis, a, b, scores, feature_mode))
             labels.append(label)
             diagnostics["positive_pairs" if label else "negative_pairs"] += 1
             positives_in_race += label
@@ -132,13 +166,13 @@ def build_axis_pair_training_data(races):
     return x_rows, labels, diagnostics
 
 
-def fit_axis_pair_model(races):
+def fit_axis_pair_model(races, feature_mode="full"):
     """Fit a regularized logistic model on chronological training races only."""
     from sklearn.linear_model import LogisticRegression
     from sklearn.pipeline import make_pipeline
     from sklearn.preprocessing import StandardScaler
 
-    x_rows, labels, diagnostics = build_axis_pair_training_data(races)
+    x_rows, labels, diagnostics = build_axis_pair_training_data(races, feature_mode)
     if diagnostics["positive_pairs"] < 10 or diagnostics["negative_pairs"] < 10:
         raise ValueError("Insufficient conditional pair labels: " + str(diagnostics))
     model = make_pipeline(
@@ -148,7 +182,8 @@ def fit_axis_pair_model(races):
     model.fit(x_rows, labels)
     return {
         "model": model,
-        "features": list(FEATURE_NAMES),
+        "features": feature_names(feature_mode),
+        "feature_mode": feature_mode,
         "training_pairs": len(labels),
         "diagnostics": diagnostics,
     }
@@ -164,7 +199,7 @@ def rank_axis_partner_pairs(group, axis_horse_no, candidate_horse_nos, individua
     if len(candidates) < 2:
         raise ValueError("At least two non-axis candidates are required")
     pairs = list(itertools.combinations(candidates, 2))
-    features = [axis_pair_features(by_no[axis_no], by_no[a], by_no[b], individual_scores)
+    features = [axis_pair_features(by_no[axis_no], by_no[a], by_no[b], individual_scores, fitted.get("feature_mode", "full"))
                 for a, b in pairs]
     probabilities = fitted["model"].predict_proba(features)[:, 1].tolist()
     return sorted(
