@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-11-12T11:55:27.599579+09:00",
+  "generated_at": "2026-11-12T12:48:32.935017+09:00",
   "source": "official_nar_racecards_plus_preoff_snapshots",
   "plans": [
     {
@@ -105292,14 +105292,14 @@
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:27.348058+09:00",
       "date": "20261112",
       "raceId": "名古屋|20261112|2",
       "venue": "名古屋",
       "raceNo": "2",
       "decision": "SKIP",
-      "skipReason": "締切前オッズスナップショットなし。仮想候補のみ保存",
-      "skipReasonCode": "NO_PREOFF_SNAPSHOT",
+      "skipReason": "3連複の検証済みEV基準が未成立",
+      "skipReasonCode": "NO_VALIDATED_TICKET_THRESHOLD",
       "totalStake": 0,
       "tickets": [],
       "shadowTickets": [
@@ -105467,14 +105467,157 @@
           "4-7-8"
         ]
       },
-      "marketBlendShadowTickets": [],
+      "marketBlendShadowTickets": [
+        {
+          "type": "3連複",
+          "comb": "2-8-9",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.2194762482,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "2-4-8",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.1661677745,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "4-8-9",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0756202265,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "2-4-9",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0427958496,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "2-8-10",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0374915462,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "2-7-8",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0372635689,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "2-6-8",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0329047979,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "8-9-10",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0169391243,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "7-8-9",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0168358909,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "6-8-9",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0148626726,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "4-8-10",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0127599846,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "4-7-8",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0126821791,
+          "odds": null,
+          "ev": null
+        }
+      ],
       "marketBlendTicketSets": {
-        "3": [],
-        "6": [],
-        "9": [],
-        "12": []
+        "3": [
+          "2-8-9",
+          "2-4-8",
+          "4-8-9"
+        ],
+        "6": [
+          "2-8-9",
+          "2-4-8",
+          "4-8-9",
+          "2-4-9",
+          "2-8-10",
+          "2-7-8"
+        ],
+        "9": [
+          "2-8-9",
+          "2-4-8",
+          "4-8-9",
+          "2-4-9",
+          "2-8-10",
+          "2-7-8",
+          "2-6-8",
+          "8-9-10",
+          "7-8-9"
+        ],
+        "12": [
+          "2-8-9",
+          "2-4-8",
+          "4-8-9",
+          "2-4-9",
+          "2-8-10",
+          "2-7-8",
+          "2-6-8",
+          "8-9-10",
+          "7-8-9",
+          "6-8-9",
+          "4-8-10",
+          "4-7-8"
+        ]
       },
-      "marketBlendAvailable": false,
+      "marketBlendAvailable": true,
       "marketBlendWeight": 0.5,
       "marketBlendMode": "research_only_equal_weight_lab_market",
       "modelPredictions": [
@@ -105624,19 +105767,27 @@
           "winProbability": 0.00512992
         }
       ],
-      "marketFavoriteHorse": null,
-      "marketTop3": [],
+      "marketFavoriteHorse": "8",
+      "marketTop3": [
+        "8",
+        "2",
+        "9"
+      ],
       "modelLoaded": true,
-      "oddsCaptured": false,
-      "oddsRows": 0,
+      "oddsCaptured": true,
+      "oddsRows": 1312,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
-      "dataStatus": "READY"
+      "captureTime": "2026-11-12T12:48:27.348058+09:00",
+      "dataStatus": "READY",
+      "oddsMatchedCandidates": 0,
+      "validatedBetTypes": 0,
+      "raceReadinessStatus": "eligible_for_research_evaluation",
+      "raceReadinessReasons": []
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "名古屋|20261112|3",
       "venue": "名古屋",
@@ -105975,12 +106126,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "名古屋|20261112|4",
       "venue": "名古屋",
@@ -106319,12 +106470,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "名古屋|20261112|5",
       "venue": "名古屋",
@@ -106663,12 +106814,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "名古屋|20261112|6",
       "venue": "名古屋",
@@ -107020,12 +107171,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "名古屋|20261112|7",
       "venue": "名古屋",
@@ -107364,12 +107515,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "名古屋|20261112|8",
       "venue": "名古屋",
@@ -107721,12 +107872,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "名古屋|20261112|9",
       "venue": "名古屋",
@@ -108078,12 +108229,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "名古屋|20261112|10",
       "venue": "名古屋",
@@ -108356,12 +108507,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "名古屋|20261112|11",
       "venue": "名古屋",
@@ -108713,12 +108864,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "名古屋|20261112|12",
       "venue": "名古屋",
@@ -109070,12 +109221,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "園田|20261112|1",
       "venue": "園田",
@@ -109401,7 +109552,7 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
@@ -109875,7 +110026,7 @@
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "園田|20261112|3",
       "venue": "園田",
@@ -110201,7 +110352,7 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
@@ -110688,7 +110839,7 @@
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "園田|20261112|5",
       "venue": "園田",
@@ -111027,19 +111178,19 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:27.348058+09:00",
       "date": "20261112",
       "raceId": "園田|20261112|6",
       "venue": "園田",
       "raceNo": "6",
       "decision": "SKIP",
-      "skipReason": "締切前オッズスナップショットなし。仮想候補のみ保存",
-      "skipReasonCode": "NO_PREOFF_SNAPSHOT",
+      "skipReason": "3連複の検証済みEV基準が未成立",
+      "skipReasonCode": "NO_VALIDATED_TICKET_THRESHOLD",
       "totalStake": 0,
       "tickets": [],
       "shadowTickets": [
@@ -111207,14 +111358,157 @@
           "2-7-8"
         ]
       },
-      "marketBlendShadowTickets": [],
+      "marketBlendShadowTickets": [
+        {
+          "type": "3連複",
+          "comb": "2-7-9",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0810699436,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "2-6-7",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0682809659,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "2-6-9",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0591492213,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "2-7-10",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0467822484,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "2-7-8",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0411877808,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "2-9-10",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0405137262,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "1-2-7",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0359016907,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "2-8-9",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0356659914,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "2-6-10",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0341001831,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "1-2-9",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0310861451,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "2-6-8",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0300172714,
+          "odds": null,
+          "ev": null
+        },
+        {
+          "type": "3連複",
+          "comb": "1-2-6",
+          "stake": 100,
+          "basis": "model_probability_only",
+          "probability": 0.0261605908,
+          "odds": null,
+          "ev": null
+        }
+      ],
       "marketBlendTicketSets": {
-        "3": [],
-        "6": [],
-        "9": [],
-        "12": []
+        "3": [
+          "2-7-9",
+          "2-6-7",
+          "2-6-9"
+        ],
+        "6": [
+          "2-7-9",
+          "2-6-7",
+          "2-6-9",
+          "2-7-10",
+          "2-7-8",
+          "2-9-10"
+        ],
+        "9": [
+          "2-7-9",
+          "2-6-7",
+          "2-6-9",
+          "2-7-10",
+          "2-7-8",
+          "2-9-10",
+          "1-2-7",
+          "2-8-9",
+          "2-6-10"
+        ],
+        "12": [
+          "2-7-9",
+          "2-6-7",
+          "2-6-9",
+          "2-7-10",
+          "2-7-8",
+          "2-9-10",
+          "1-2-7",
+          "2-8-9",
+          "2-6-10",
+          "1-2-9",
+          "2-6-8",
+          "1-2-6"
+        ]
       },
-      "marketBlendAvailable": false,
+      "marketBlendAvailable": true,
       "marketBlendWeight": 0.5,
       "marketBlendMode": "research_only_equal_weight_lab_market",
       "modelPredictions": [
@@ -111351,19 +111645,27 @@
           "winProbability": 0.01113753
         }
       ],
-      "marketFavoriteHorse": null,
-      "marketTop3": [],
+      "marketFavoriteHorse": "2",
+      "marketTop3": [
+        "2",
+        "7",
+        "6"
+      ],
       "modelLoaded": true,
-      "oddsCaptured": false,
-      "oddsRows": 0,
+      "oddsCaptured": true,
+      "oddsRows": 947,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
-      "dataStatus": "READY"
+      "captureTime": "2026-11-12T12:48:27.348058+09:00",
+      "dataStatus": "READY",
+      "oddsMatchedCandidates": 0,
+      "validatedBetTypes": 0,
+      "raceReadinessStatus": "eligible_for_research_evaluation",
+      "raceReadinessReasons": []
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "園田|20261112|7",
       "venue": "園田",
@@ -111689,12 +111991,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "園田|20261112|8",
       "venue": "園田",
@@ -112046,12 +112348,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "園田|20261112|9",
       "venue": "園田",
@@ -112403,12 +112705,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "園田|20261112|10",
       "venue": "園田",
@@ -112760,12 +113062,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "園田|20261112|11",
       "venue": "園田",
@@ -113078,12 +113380,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "園田|20261112|12",
       "venue": "園田",
@@ -113435,12 +113737,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "川崎|20261112|1",
       "venue": "川崎",
@@ -113792,12 +114094,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "川崎|20261112|2",
       "venue": "川崎",
@@ -114084,12 +114386,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "川崎|20261112|3",
       "venue": "川崎",
@@ -114428,12 +114730,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "川崎|20261112|4",
       "venue": "川崎",
@@ -114785,12 +115087,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "川崎|20261112|5",
       "venue": "川崎",
@@ -115142,12 +115444,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "川崎|20261112|6",
       "venue": "川崎",
@@ -115499,12 +115801,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "川崎|20261112|7",
       "venue": "川崎",
@@ -115830,12 +116132,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "川崎|20261112|8",
       "venue": "川崎",
@@ -116174,12 +116476,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "川崎|20261112|9",
       "venue": "川崎",
@@ -116518,12 +116820,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "川崎|20261112|10",
       "venue": "川崎",
@@ -116888,12 +117190,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "川崎|20261112|11",
       "venue": "川崎",
@@ -117271,12 +117573,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "川崎|20261112|12",
       "venue": "川崎",
@@ -117654,12 +117956,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "門別|20261112|1",
       "venue": "門別",
@@ -118037,12 +118339,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "門別|20261112|2",
       "venue": "門別",
@@ -118381,12 +118683,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "門別|20261112|3",
       "venue": "門別",
@@ -118738,12 +119040,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "門別|20261112|4",
       "venue": "門別",
@@ -119095,12 +119397,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "門別|20261112|5",
       "venue": "門別",
@@ -119452,12 +119754,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "門別|20261112|6",
       "venue": "門別",
@@ -119835,12 +120137,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "門別|20261112|7",
       "venue": "門別",
@@ -120205,12 +120507,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "門別|20261112|8",
       "venue": "門別",
@@ -120549,12 +120851,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "門別|20261112|9",
       "venue": "門別",
@@ -120906,12 +121208,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "門別|20261112|10",
       "venue": "門別",
@@ -121263,12 +121565,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "門別|20261112|11",
       "venue": "門別",
@@ -121659,12 +121961,12 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     },
     {
       "version": 2,
-      "createdAt": "2026-11-12T11:55:27.599579+09:00",
+      "createdAt": "2026-11-12T12:48:32.935017+09:00",
       "date": "20261112",
       "raceId": "門別|20261112|12",
       "venue": "門別",
@@ -122042,7 +122344,7 @@
       "oddsRows": 0,
       "autoGenerated": true,
       "modelVersion": "nar-sequential-daily-refit-v1",
-      "captureTime": "2026-11-12T11:55:27.599579+09:00",
+      "captureTime": "2026-11-12T12:48:32.935017+09:00",
       "dataStatus": "READY"
     }
   ],
