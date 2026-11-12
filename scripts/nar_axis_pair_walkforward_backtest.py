@@ -463,6 +463,10 @@ def main():
     baseline_dev = evaluate(development)
     baseline_holdout = evaluate(holdout)
     pair_holdout = evaluate(holdout, fitted)
+    no_distance_fitted = fit_axis_pair_model(development, "no_distance")
+    no_distance_holdout = evaluate(holdout, no_distance_fitted)
+    venue_distance_fitted = fit_axis_pair_model(development, "venue_distance")
+    venue_distance_holdout = evaluate(holdout, venue_distance_fitted)
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "status": "research_only_evaluated",
@@ -502,6 +506,13 @@ def main():
             "baseline_ability_top4": baseline_holdout,
             "conditional_pair_ranker": pair_holdout,
             "paired_difference": paired_comparison(holdout, fitted),
+            "feature_ablation": {
+                "A_full_distance": {"feature_mode": "full", "metrics": pair_holdout, "paired_vs_baseline": paired_comparison(holdout, fitted)},
+                "B_no_distance": {"feature_mode": "no_distance", "metrics": no_distance_holdout, "paired_vs_baseline": paired_comparison(holdout, no_distance_fitted)},
+                "C_venue_distance": {"feature_mode": "venue_distance", "metrics": venue_distance_holdout, "paired_vs_baseline": paired_comparison(holdout, venue_distance_fitted)},
+                "same_development_and_holdout_races": True,
+                "note": "All three variants use identical chronological partitions, fixed axes, LambdaRank candidate pools, six virtual trio tickets per race and the same holdout. C replaces general distance suitability with same-venue and within-200m historical suitability. No holdout tuning.",
+            },
             "same_races_and_budget": True,
             "venue_breakdown_baseline": venue_holdout_breakdown(holdout),
             "venue_breakdown_conditional_pair_ranker": venue_holdout_breakdown(holdout, fitted),
