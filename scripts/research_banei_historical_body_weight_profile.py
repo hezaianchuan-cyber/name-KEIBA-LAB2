@@ -176,7 +176,7 @@ def race_metrics(records, probabilities):
     for race_key, entries in grouped.items():
         entries.sort(key=lambda x: (-x[0], int(x[1]["horse_no"]) if x[1]["horse_no"].isdigit() else x[1]["horse_no"]))
         actual_top3 = {r["horse_no"] for _, r in entries if r["label_top3"]}
-        if len(actual_top3) != 3:
+        if len(actual_top3) < 3:
             continue
         predicted_top3 = {r["horse_no"] for _, r in entries[:3]}
         axis = entries[0][1]["horse_no"]
