@@ -15,8 +15,8 @@ create table if not exists public.banei_body_weight_snapshots (
   minutes_to_post numeric not null,
   source text not null default 'NAR_OFFICIAL_DAILY_RACECARD',
   snapshot_hash text not null,
-  constraint banei_body_weight_snapshots_hash_unique
-    unique (race_id, horse_number, snapshot_hash),
+  constraint banei_body_weight_snapshots_time_unique
+    unique (race_id, horse_number, captured_at),
   constraint banei_body_weight_snapshots_banei_only
     check (venue = '帯広')
 );
