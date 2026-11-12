@@ -1,6 +1,12 @@
 name: Research Banei body-weight capture audit
 
 on:
+  pull_request:
+    paths:
+      - 'supabase/functions/nar-banei-weight-capture/**'
+      - 'supabase/migrations/*banei_body_weight_snapshots.sql'
+      - 'scripts/research_banei_body_weight_snapshot_audit.py'
+      - '.github/workflows/research-banei-weight-capture-audit.yml'
   workflow_dispatch:
     inputs:
       run_snapshot_audit:
