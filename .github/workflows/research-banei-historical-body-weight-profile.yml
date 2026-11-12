@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/research-banei-historical-body-weight-profile.yml'
       - 'scripts/research_banei_historical_body_weight_profile.py'
+      - 'scripts/research_banei_body_weight_feature_ablation.py'
       - 'scripts/nar_backtest.py'
   workflow_dispatch:
 
@@ -34,6 +35,17 @@ jobs:
         run: python -m py_compile scripts/nar_backtest.py scripts/research_banei_historical_body_weight_profile.py
       - name: Run historical body-weight profile comparison
         run: python scripts/research_banei_historical_body_weight_profile.py
+      - name: Compile feature-group ablation
+        run: python -m py_compile scripts/research_banei_body_weight_feature_ablation.py
+      - name: Run feature-group ablation
+        run: python scripts/research_banei_body_weight_feature_ablation.py
+      - name: Upload feature-group ablation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: banei-body-weight-feature-ablation
+          path: data/banei-body-weight-feature-ablation.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Upload Banei historical body-weight report
         uses: actions/upload-artifact@v4
         with:
