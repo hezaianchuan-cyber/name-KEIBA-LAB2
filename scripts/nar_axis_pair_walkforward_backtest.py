@@ -149,7 +149,7 @@ def _bootstrap_ci(race_rows):
     ]
 
 
-def evaluate(records, fitted=None):
+def evaluate(records, fitted=None, include_bootstrap=True):
     races = ticket_hits = hit_races = stake = returned = 0
     axis_podium = candidate_covered = selected_covered = 0
     top7_podium_horses = total_podium_horses = 0
@@ -218,7 +218,7 @@ def evaluate(records, fitted=None):
         "return_jpy": returned,
         "profit_jpy": returned - stake,
         "roi_pct": round(100 * returned / stake, 2) if stake else None,
-        "roi_95ci_bootstrap_pct": _bootstrap_ci(race_rows),
+        "roi_95ci_bootstrap_pct": _bootstrap_ci(race_rows) if include_bootstrap else None,
         "axis_podium_races": axis_podium,
         "axis_top3_rate_pct": round(100 * axis_podium / races, 2) if races else None,
         "top7_podium_coverage_pct": round(100 * top7_podium_horses / total_podium_horses, 2) if total_podium_horses else None,
@@ -322,9 +322,9 @@ def venue_holdout_breakdown(records, fitted=None):
     by_venue = {}
     for venue in venues:
         selected = [row for row in records if str((row.get("group") or [{}])[0].get("venue") or "不明") == venue]
-        venue_result = evaluate(selected, fitted)
+        venue_result = evaluate(selected, fitted, include_bootstrap=False)
         remaining = [row for row in records if str((row.get("group") or [{}])[0].get("venue") or "不明") != venue]
-        without = evaluate(remaining, fitted)
+        without = evaluate(remaining, fitted, include_bootstrap=False)
         by_venue[venue] = {
             "venue_result": venue_result,
             "overall_without_venue": without,
