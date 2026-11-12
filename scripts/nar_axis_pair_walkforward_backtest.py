@@ -389,6 +389,93 @@ def paired_model_comparison(records, fitted_a, fitted_b):
     }
 
 
+
+def changed_ticket_diagnostics(records, fitted_a, fitted_b, label):
+    """Explain changed partner tickets race by race; no feature is tuned on holdout."""
+    changed = []
+    summary = {"label": label, "races_checked": 0, "races_with_changed_tickets": 0,
+               "a_only_ticket_hits": 0, "b_only_ticket_hits": 0,
+               "a_only_return_jpy": 0, "b_only_return_jpy": 0}
+    for record in records:
+        payout = record["payout"]
+        if not payout.get("trio") or not payout.get("win"):
+            continue
+        axis = str(record["axis_horse_no"])
+        by_no = {str(row["horse_no"]): row for row in record["group"]}
+        if axis not in by_no:
+            continue
+        ranked_a = rank_axis_partner_pairs(record["group"], axis, record["candidate_horse_nos"], record["individual_scores"], fitted_a)
+        ranked_b = rank_axis_partner_pairs(record["group"], axis, record["candidate_horse_nos"], record["individual_scores"], fitted_b)
+        pairs_a = [tuple(item["pair"]) for item in ranked_a[:TICKETS_PER_RACE]]
+        pairs_b = [tuple(item["pair"]) for item in ranked_b[:TICKETS_PER_RACE]]
+        if len(pairs_a) != TICKETS_PER_RACE or len(pairs_b) != TICKETS_PER_RACE:
+            continue
+        summary["races_checked"] += 1
+        if set(pairs_a) == set(pairs_b):
+            continue
+        summary["races_with_changed_tickets"] += 1
+        a_only = sorted(set(pairs_a) - set(pairs_b))
+        b_only = sorted(set(pairs_b) - set(pairs_a))
+        def ticket_info(pair):
+            ticket = _tickets(axis, [pair])[0]
+            ret = nb.payout_for("trio", ticket, payout) or 0
+            return {"pair": list(pair), "ticket": list(ticket), "return_jpy": ret, "hit": ret > 0}
+        a_info, b_info = [ticket_info(p) for p in a_only], [ticket_info(p) for p in b_only]
+        summary["a_only_ticket_hits"] += sum(x["hit"] for x in a_info)
+        summary["b_only_ticket_hits"] += sum(x["hit"] for x in b_info)
+        summary["a_only_return_jpy"] += sum(x["return_jpy"] for x in a_info)
+        summary["b_only_return_jpy"] += sum(x["return_jpy"] for x in b_info)
+        podium = sorted([no for no, row in by_no.items() if row.get("finish") is not None and int(row["finish"]) <= 3], key=int)
+        relevant = sorted({no for pair in a_only + b_only for no in pair}, key=int)
+        horse_details = {}
+        for no in relevant:
+            row = by_no[no]
+            horse_details[no] = {
+                "name": row.get("name"), "finish": row.get("finish"),
+                "distance_top3_rate": row.get("distance_top3_rate"), "distance_runs": row.get("distance_runs"),
+                "venue_distance_top3_rate": row.get("venue_distance_top3_rate"), "venue_distance_runs": row.get("venue_distance_runs"),
+                "venue_top3_rate": row.get("venue_top3_rate"), "venue_runs": row.get("venue_runs"),
+                "going_top3_rate": row.get("going_top3_rate"), "going_runs": row.get("going_runs"),
+                "individual_score": record["individual_scores"].get(no),
+            }
+        changed.append({
+            "date": record["date"], "race_key": record["race_key"],
+            "venue": (record["group"] or [{}])[0].get("venue"),
+            "distance_m": (record["group"] or [{}])[0].get("distance_m"),
+            "axis_horse_no": axis, "axis_name": by_no[axis].get("name"),
+            "podium_horse_nos": podium, "A_only_pairs": a_info, "B_only_pairs": b_info,
+            "changed_horses": horse_details,
+        })
+    return {"summary": summary, "changed_races": changed,
+            "note": "変更された買い目、着順、過去の距離・競馬場距離実績、仮想払戻を記録。着順と払戻は評価用のみ。"}
+    
+
+def venue_distance_ablation(records, fitted_a, fitted_b, fitted_c):
+    """Descriptive venue-by-distance results for all variants; no subgroup tuning."""
+    def band(group):
+        distance = float((group or [{}])[0].get("distance_m") or 0)
+        if distance <= 0: return "距離不明"
+        if distance <= 1200: return "1200m以下"
+        if distance <= 1600: return "1300〜1600m"
+        return "1700m以上"
+    output = {}
+    venues = sorted({str((r.get("group") or [{}])[0].get("venue") or "不明") for r in records})
+    for venue in venues:
+        venue_rows = [r for r in records if str((r.get("group") or [{}])[0].get("venue") or "不明") == venue]
+        output[venue] = {}
+        for distance_band in ("1200m以下", "1300〜1600m", "1700m以上", "距離不明"):
+            subset = [r for r in venue_rows if band(r.get("group")) == distance_band]
+            if subset:
+                output[venue][distance_band] = {
+                    "A通常距離適性": evaluate(subset, fitted_a, include_bootstrap=False),
+                    "B距離適性なし": evaluate(subset, fitted_b, include_bootstrap=False),
+                    "C競馬場内距離適性": evaluate(subset, fitted_c, include_bootstrap=False),
+                    "sample_warning": "100レース未満は参考値。100レース以上でも別期間での再現確認が必要。重み調整には直結させない。",
+                }
+    return {"by_venue_and_distance": output,
+            "policy": "全競馬場・全距離帯の探索用集計。小標本に合わせて重みを最適化しない。"}
+
+
 def venue_holdout_breakdown(records, fitted=None):
     """Venue-level ticket results and leave-one-venue-out impact on the same holdout."""
     overall = evaluate(records, fitted)
@@ -589,6 +676,11 @@ def main():
                     "A_full_distance_vs_C_venue_distance": paired_model_comparison(holdout, fitted, venue_distance_fitted),
                     "B_no_distance_vs_C_venue_distance": paired_model_comparison(holdout, no_distance_fitted, venue_distance_fitted),
                 },
+                "changed_ticket_diagnostics": {
+                    "A_vs_B": changed_ticket_diagnostics(holdout, fitted, no_distance_fitted, "A距離適性あり vs B距離適性なし"),
+                    "A_vs_C": changed_ticket_diagnostics(holdout, fitted, venue_distance_fitted, "A通常距離適性 vs C競馬場内距離適性"),
+                },
+                "venue_distance_ablation": venue_distance_ablation(holdout, fitted, no_distance_fitted, venue_distance_fitted),
                 "same_development_and_holdout_races": True,
                 "note": "All three variants use identical chronological partitions, fixed axes, LambdaRank candidate pools, six virtual trio tickets per race and the same holdout. C replaces general distance suitability with same-venue and within-200m historical suitability. No holdout tuning.",
             },
