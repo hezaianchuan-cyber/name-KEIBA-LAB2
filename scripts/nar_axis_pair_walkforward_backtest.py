@@ -350,6 +350,53 @@ def venue_holdout_breakdown(records, fitted=None):
     }
 
 
+
+def venue_distance_breakdown(records, fitted=None):
+    """Distance-band diagnostics inside the four venues with weakest model ROI."""
+    target_venues = {"盛岡", "水沢", "園田", "門別"}
+
+    def band(group):
+        distance = float((group or [{}])[0].get("distance_m") or 0)
+        if distance <= 0:
+            return "距離不明"
+        if distance <= 1200:
+            return "1200m以下"
+        if distance <= 1600:
+            return "1300〜1600m"
+        return "1700m以上"
+
+    output = {}
+    for venue in sorted(target_venues):
+        venue_rows = [
+            row for row in records
+            if str((row.get("group") or [{}])[0].get("venue") or "不明") == venue
+        ]
+        by_band = {}
+        for distance_band in ("1200m以下", "1300〜1600m", "1700m以上", "距離不明"):
+            subset = [row for row in venue_rows if band(row.get("group")) == distance_band]
+            if not subset:
+                continue
+            baseline = evaluate(subset, include_bootstrap=False)
+            model = evaluate(subset, fitted, include_bootstrap=False)
+            by_band[distance_band] = {
+                "baseline_ability_top4": baseline,
+                "conditional_pair_ranker": model,
+                "roi_delta_pp_model_minus_baseline": round(
+                    model["roi_pct"] - baseline["roi_pct"], 2
+                ) if model.get("roi_pct") is not None and baseline.get("roi_pct") is not None else None,
+                "sample_warning": (
+                    "100レース未満。傾向確認のみ"
+                    if model["races"] < 100 else
+                    "100レース以上。別期間での再現確認が必要"
+                ),
+            }
+        output[venue] = by_band
+    return {
+        "by_venue_and_distance_band": output,
+        "policy": "同一ホールドアウト内の距離帯別診断。距離帯の小標本から見送りルールを採用しない。",
+    }
+
+
 def main():
     print(
         f"PAIR_RESEARCH_ARCHIVE_WINDOW start={nb.START.isoformat()} end={nb.END.isoformat()}",
@@ -458,6 +505,7 @@ def main():
             "same_races_and_budget": True,
             "venue_breakdown_baseline": venue_holdout_breakdown(holdout),
             "venue_breakdown_conditional_pair_ranker": venue_holdout_breakdown(holdout, fitted),
+            "venue_distance_breakdown_conditional_pair_ranker": venue_distance_breakdown(holdout, fitted),
         },
         "model": {
             "axis_source": "fixed pre-off win ranking from horse_evaluation_model via canonical chronological replay",
