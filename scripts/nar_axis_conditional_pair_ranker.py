@@ -20,6 +20,10 @@ FEATURE_NAMES = (
     "pair_carried_weight_gap", "pair_body_weight_delta_gap",
     "candidate_score_mean", "candidate_score_gap",
     "axis_score_mean", "axis_score_gap",
+    "distance_top3_mean", "distance_top3_gap", "distance_top3_min",
+    "distance_advantage_over_axis", "axis_distance_top3",
+    "venue_top3_mean", "venue_top3_gap",
+    "going_top3_mean", "going_top3_gap",
 )
 
 
