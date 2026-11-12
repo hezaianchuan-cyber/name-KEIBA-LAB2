@@ -1,0 +1,40 @@
+name: Research Banei body-weight capture audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_snapshot_audit:
+        description: Run the live snapshot-vs-final-archive audit (requires deployed table and GitHub secrets)
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check timestamped capture function
+        run: deno check supabase/functions/nar-banei-weight-capture/index.ts
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile research audit
+        run: python -m py_compile scripts/research_banei_body_weight_snapshot_audit.py scripts/nar_backtest.py
+      - name: Run live snapshot audit
+        if: ${{ inputs.run_snapshot_audit }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NAR_BANEI_WEIGHT_AUDIT_START: ${{ vars.NAR_BANEI_WEIGHT_AUDIT_START }}
+          NAR_BANEI_WEIGHT_AUDIT_END: ${{ vars.NAR_BANEI_WEIGHT_AUDIT_END }}
+        run: |
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_SERVICE_ROLE_KEY"
+          python scripts/research_banei_body_weight_snapshot_audit.py
