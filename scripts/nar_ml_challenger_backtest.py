@@ -191,6 +191,11 @@ def build_rows(races, horses, include_unplaced=False):
                     x for x in past if distance is not None and nb.number(x.get("distance")) is not None
                     and abs(nb.number(x.get("distance")) - distance) <= 200
                 ]
+                venue_distance_past = [
+                    x for x in past if x.get("venue") == race.get("venue")
+                    and distance is not None and nb.number(x.get("distance")) is not None
+                    and abs(nb.number(x.get("distance")) - distance) <= 200
+                ]
                 going_past = [
                     x for x in past if race.get("going") and x.get("going") == race.get("going")
                     and (not race.get("surface") or not x.get("surface") or x.get("surface") == race.get("surface"))
@@ -238,6 +243,8 @@ def build_rows(races, horses, include_unplaced=False):
                     "venue_top3_rate": float(rate(venue_past)),
                     "distance_runs": float(len(distance_past)),
                     "distance_top3_rate": float(rate(distance_past)),
+                    "venue_distance_runs": float(len(venue_distance_past)),
+                    "venue_distance_top3_rate": float(rate(venue_distance_past)),
                     "going_runs": float(len(going_past)),
                     "going_top3_rate": float(rate(going_past)),
                     "jockey_runs": float(js["runs"]),
