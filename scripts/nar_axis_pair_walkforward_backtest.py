@@ -112,6 +112,7 @@ def make_ranked_records(rows, groups, axis_by_key, payouts, ranker, category_map
             "axis_top7_horse_nos": axis_info["top7"],
             "candidate_horse_nos": candidates,
             "individual_scores": score_by_no,
+            "axis_prediction": (axis_info.get("predictions") or {}).get(axis) or {},
             "payout": payouts.get(payout_key) or {},
         })
     records.sort(key=lambda row: (row["date"], row["race_key"]))
@@ -450,20 +451,271 @@ def changed_ticket_diagnostics(records, fitted_a, fitted_b, label):
             "note": "変更された買い目、着順、過去の距離・競馬場距離実績、仮想払戻を記録。着順と払戻は評価用のみ。"}
     
 
+
+def distance_band_for_group(group):
+    """Keep Banei's 200m format separate from flat-racing sprint distances."""
+    row = (group or [{}])[0]
+    if str(row.get("venue") or "") == "帯広ば":
+        return "ばんえい（200m）"
+    distance = float(row.get("distance_m") or 0)
+    if distance <= 0:
+        return "距離不明"
+    if distance <= 1200:
+        return "1200m以下"
+    if distance <= 1600:
+        return "1300〜1600m"
+    return "1700m以上"
+
+
+def axis_partner_failure_diagnostics(records, fitted):
+    """Separate fixed-axis misses from partner-pair selection misses."""
+    overall = {
+        "races": 0, "axis_top3": 0, "axis_miss": 0,
+        "axis_miss_4_to_6": 0, "axis_miss_7_or_worse": 0,
+        "axis_miss_other_or_unclassified": 0,
+        "axis_miss_actual_podium_horses_in_top7": 0,
+        "axis_miss_actual_podium_horses_total": 0,
+        "axis_correct_with_three_podium": 0,
+        "both_actual_partners_in_candidate_pool": 0,
+        "actual_partner_pair_selected": 0,
+        "candidate_pool_miss": 0, "pair_ranker_selection_miss": 0,
+        "actual_pair_rank_sum": 0, "actual_pair_rank_count": 0,
+    }
+    venue_distance = {}
+    probability_buckets = {}
+    axis_miss_examples = []
+    partner_miss_examples = []
+
+    def probability_bucket(value):
+        if value is None:
+            return "確率なし"
+        try:
+            p = float(value)
+        except (TypeError, ValueError):
+            return "確率なし"
+        if p > 1.0 and p <= 100.0:
+            p /= 100.0
+        if not 0 <= p <= 1:
+            return "確率範囲外"
+        if p < 0.40: return "40%未満"
+        if p < 0.50: return "40〜50%"
+        if p < 0.60: return "50〜60%"
+        if p < 0.70: return "60〜70%"
+        return "70%以上"
+
+    for record in records:
+        payout = record.get("payout") or {}
+        if not payout.get("trio") or not payout.get("win"):
+            continue
+        group = record.get("group") or []
+        by_no = {str(row.get("horse_no")): row for row in group}
+        axis = str(record.get("axis_horse_no"))
+        if axis not in by_no:
+            continue
+        podium = {
+            no for no, row in by_no.items()
+            if row.get("finish") is not None and int(row["finish"]) <= 3
+        }
+        if not podium:
+            continue
+
+        venue = str(group[0].get("venue") or "不明")
+        distance_band = distance_band_for_group(group)
+        key = venue + "|" + distance_band
+        cell = venue_distance.setdefault(key, {
+            "venue": venue, "distance_band": distance_band,
+            "races": 0, "axis_top3": 0, "axis_miss": 0,
+            "axis_miss_4_to_6": 0, "axis_miss_7_or_worse": 0,
+            "axis_miss_top7_podium_horses": 0, "axis_miss_podium_horses": 0,
+            "axis_correct_three_podium": 0, "candidate_pool_covered": 0,
+            "pair_selected": 0, "candidate_pool_miss": 0,
+            "pair_selection_miss": 0,
+        })
+        overall["races"] += 1
+        cell["races"] += 1
+
+        axis_row = by_no[axis]
+        axis_finish = axis_row.get("finish")
+        axis_hit = axis in podium
+        axis_prediction = record.get("axis_prediction") or {}
+        p_top3 = axis_prediction.get("top3_probability")
+        p_win = axis_prediction.get("win_probability")
+        p_bucket = probability_bucket(p_top3)
+        p_cell = probability_buckets.setdefault(p_bucket, {
+            "races": 0, "axis_top3": 0, "axis_miss": 0,
+        })
+        p_cell["races"] += 1
+        top7 = set(str(no) for no in record.get("axis_top7_horse_nos", []))
+
+        if axis_hit:
+            overall["axis_top3"] += 1
+            cell["axis_top3"] += 1
+            p_cell["axis_top3"] += 1
+            if len(podium) != 3:
+                continue
+            overall["axis_correct_with_three_podium"] += 1
+            cell["axis_correct_three_podium"] += 1
+            actual_partners = podium - {axis}
+            if len(actual_partners) != 2:
+                continue
+            candidates = {str(no) for no in record.get("candidate_horse_nos", []) if str(no) != axis}
+            candidate_covered = actual_partners.issubset(candidates)
+            if candidate_covered:
+                overall["both_actual_partners_in_candidate_pool"] += 1
+                cell["candidate_pool_covered"] += 1
+            else:
+                overall["candidate_pool_miss"] += 1
+                cell["candidate_pool_miss"] += 1
+            ranked_pairs = rank_axis_partner_pairs(
+                group, axis, record["candidate_horse_nos"],
+                record["individual_scores"], fitted,
+            )
+            actual_pair = tuple(sorted(actual_partners, key=int))
+            actual_rank = next(
+                (index + 1 for index, item in enumerate(ranked_pairs)
+                 if tuple(sorted((str(item["pair"][0]), str(item["pair"][1])), key=int)) == actual_pair),
+                None,
+            )
+            selected = actual_rank is not None and actual_rank <= TICKETS_PER_RACE
+            if selected:
+                overall["actual_partner_pair_selected"] += 1
+                cell["pair_selected"] += 1
+            elif candidate_covered:
+                overall["pair_ranker_selection_miss"] += 1
+                cell["pair_selection_miss"] += 1
+            if actual_rank is not None:
+                overall["actual_pair_rank_sum"] += actual_rank
+                overall["actual_pair_rank_count"] += 1
+            if not selected and len(partner_miss_examples) < 5000:
+                partner_miss_examples.append({
+                    "date": record.get("date"), "race_key": record.get("race_key"),
+                    "venue": venue, "distance_m": group[0].get("distance_m"),
+                    "axis_horse_no": axis,
+                    "actual_partner_horses": sorted(actual_partners, key=int),
+                    "both_partners_in_candidate_pool": candidate_covered,
+                    "actual_pair_rank_among_candidates": actual_rank,
+                    "best_six_pairs": [list(item["pair"]) for item in ranked_pairs[:TICKETS_PER_RACE]],
+                    "actual_partner_details": {
+                        no: {
+                            "finish": by_no[no].get("finish"),
+                            "prior_runs": by_no[no].get("prior_runs"),
+                            "career_top3_rate": by_no[no].get("career_top3_rate"),
+                            "recent_top3_rate": by_no[no].get("recent_top3_rate"),
+                            "distance_top3_rate": by_no[no].get("distance_top3_rate"),
+                            "distance_runs": by_no[no].get("distance_runs"),
+                            "venue_top3_rate": by_no[no].get("venue_top3_rate"),
+                            "venue_runs": by_no[no].get("venue_runs"),
+                            "going_top3_rate": by_no[no].get("going_top3_rate"),
+                            "going_runs": by_no[no].get("going_runs"),
+                            "individual_score": record["individual_scores"].get(no),
+                        } for no in sorted(actual_partners, key=int)
+                    },
+                })
+        else:
+            overall["axis_miss"] += 1
+            cell["axis_miss"] += 1
+            p_cell["axis_miss"] += 1
+            if axis_finish is not None and 4 <= int(axis_finish) <= 6:
+                overall["axis_miss_4_to_6"] += 1
+                cell["axis_miss_4_to_6"] += 1
+                finish_band = "4〜6着"
+            elif axis_finish is not None and int(axis_finish) >= 7:
+                overall["axis_miss_7_or_worse"] += 1
+                cell["axis_miss_7_or_worse"] += 1
+                finish_band = "7着以下"
+            else:
+                overall["axis_miss_other_or_unclassified"] += 1
+                finish_band = "その他・着順不明"
+            covered = len(podium & top7)
+            overall["axis_miss_actual_podium_horses_in_top7"] += covered
+            overall["axis_miss_actual_podium_horses_total"] += len(podium)
+            cell["axis_miss_top7_podium_horses"] += covered
+            cell["axis_miss_podium_horses"] += len(podium)
+            if len(axis_miss_examples) < 5000:
+                axis_miss_examples.append({
+                    "date": record.get("date"), "race_key": record.get("race_key"),
+                    "venue": venue, "distance_m": group[0].get("distance_m"),
+                    "axis_horse_no": axis, "axis_finish": axis_finish,
+                    "axis_finish_band": finish_band,
+                    "axis_top3_probability": p_top3, "axis_win_probability": p_win,
+                    "axis_prior_runs": axis_row.get("prior_runs"),
+                    "axis_career_top3_rate": axis_row.get("career_top3_rate"),
+                    "axis_recent_top3_rate": axis_row.get("recent_top3_rate"),
+                    "axis_recent_margin_quality": axis_row.get("recent_margin_quality"),
+                    "axis_recent_opponent_strength": axis_row.get("recent_opponent_strength"),
+                    "axis_recent_first_corner_pct": axis_row.get("recent_first_corner_pct"),
+                    "axis_recent_last_corner_pct": axis_row.get("recent_last_corner_pct"),
+                    "axis_venue_top3_rate": axis_row.get("venue_top3_rate"),
+                    "axis_distance_top3_rate": axis_row.get("distance_top3_rate"),
+                    "axis_going_top3_rate": axis_row.get("going_top3_rate"),
+                    "actual_podium_horses": sorted(podium, key=int),
+                    "actual_podium_horses_in_top7": sorted(podium & top7, key=int),
+                })
+
+    def finalize_cell(cell):
+        n = cell["races"]
+        pair_n = cell["axis_correct_three_podium"]
+        return {
+            **cell,
+            "axis_top3_rate_pct": round(100 * cell["axis_top3"] / n, 2) if n else None,
+            "axis_miss_rate_pct": round(100 * cell["axis_miss"] / n, 2) if n else None,
+            "axis_miss_top7_podium_coverage_pct": round(
+                100 * cell["axis_miss_top7_podium_horses"] / cell["axis_miss_podium_horses"], 2
+            ) if cell["axis_miss_podium_horses"] else None,
+            "candidate_pool_coverage_pct_when_axis_correct": round(
+                100 * cell["candidate_pool_covered"] / pair_n, 2
+            ) if pair_n else None,
+            "pair_selection_rate_when_axis_correct": round(
+                100 * cell["pair_selected"] / pair_n, 2
+            ) if pair_n else None,
+        }
+
+    return {
+        "overall": {
+            **overall,
+            "axis_top3_rate_pct": round(100 * overall["axis_top3"] / overall["races"], 2) if overall["races"] else None,
+            "axis_miss_rate_pct": round(100 * overall["axis_miss"] / overall["races"], 2) if overall["races"] else None,
+            "axis_miss_4_to_6_share_pct": round(100 * overall["axis_miss_4_to_6"] / overall["axis_miss"], 2) if overall["axis_miss"] else None,
+            "axis_miss_7_or_worse_share_pct": round(100 * overall["axis_miss_7_or_worse"] / overall["axis_miss"], 2) if overall["axis_miss"] else None,
+            "axis_miss_top7_podium_coverage_pct": round(
+                100 * overall["axis_miss_actual_podium_horses_in_top7"] / overall["axis_miss_actual_podium_horses_total"], 2
+            ) if overall["axis_miss_actual_podium_horses_total"] else None,
+            "candidate_pool_coverage_pct_when_axis_correct": round(
+                100 * overall["both_actual_partners_in_candidate_pool"] / overall["axis_correct_with_three_podium"], 2
+            ) if overall["axis_correct_with_three_podium"] else None,
+            "pair_selection_rate_when_axis_correct": round(
+                100 * overall["actual_partner_pair_selected"] / overall["axis_correct_with_three_podium"], 2
+            ) if overall["axis_correct_with_three_podium"] else None,
+            "mean_actual_pair_rank_when_in_candidate_pool": round(
+                overall["actual_pair_rank_sum"] / overall["actual_pair_rank_count"], 2
+            ) if overall["actual_pair_rank_count"] else None,
+        },
+        "by_venue_and_distance": {
+            key: finalize_cell(value) for key, value in sorted(venue_distance.items())
+        },
+        "by_axis_predicted_top3_probability": {
+            key: {
+                **value,
+                "axis_top3_rate_pct": round(100 * value["axis_top3"] / value["races"], 2) if value["races"] else None,
+                "axis_miss_rate_pct": round(100 * value["axis_miss"] / value["races"], 2) if value["races"] else None,
+            } for key, value in probability_buckets.items()
+        },
+        "axis_miss_examples": axis_miss_examples,
+        "partner_pair_miss_examples": partner_miss_examples,
+        "note": "軸の不的中と、軸が3着以内のときの相手候補漏れ・組み合わせ選択漏れを分離。ばんえい200mは平地短距離から独立。着順は評価専用で学習・予測には使用しない。",
+    }
+
+
 def venue_distance_ablation(records, fitted_a, fitted_b, fitted_c):
     """Descriptive venue-by-distance results for all variants; no subgroup tuning."""
     def band(group):
-        distance = float((group or [{}])[0].get("distance_m") or 0)
-        if distance <= 0: return "距離不明"
-        if distance <= 1200: return "1200m以下"
-        if distance <= 1600: return "1300〜1600m"
-        return "1700m以上"
+        return distance_band_for_group(group)
     output = {}
     venues = sorted({str((r.get("group") or [{}])[0].get("venue") or "不明") for r in records})
     for venue in venues:
         venue_rows = [r for r in records if str((r.get("group") or [{}])[0].get("venue") or "不明") == venue]
         output[venue] = {}
-        for distance_band in ("1200m以下", "1300〜1600m", "1700m以上", "距離不明"):
+        for distance_band in ("1200m以下", "1300〜1600m", "1700m以上", "ばんえい（200m）", "距離不明"):
             subset = [r for r in venue_rows if band(r.get("group")) == distance_band]
             if subset:
                 output[venue][distance_band] = {
@@ -517,14 +769,7 @@ def venue_distance_breakdown(records, fitted=None):
     target_venues = {"盛岡", "水沢", "園田", "門別"}
 
     def band(group):
-        distance = float((group or [{}])[0].get("distance_m") or 0)
-        if distance <= 0:
-            return "距離不明"
-        if distance <= 1200:
-            return "1200m以下"
-        if distance <= 1600:
-            return "1300〜1600m"
-        return "1700m以上"
+        return distance_band_for_group(group)
 
     output = {}
     for venue in sorted(target_venues):
@@ -533,7 +778,7 @@ def venue_distance_breakdown(records, fitted=None):
             if str((row.get("group") or [{}])[0].get("venue") or "不明") == venue
         ]
         by_band = {}
-        for distance_band in ("1200m以下", "1300〜1600m", "1700m以上", "距離不明"):
+        for distance_band in ("1200m以下", "1300〜1600m", "1700m以上", "ばんえい（200m）", "距離不明"):
             subset = [row for row in venue_rows if band(row.get("group")) == distance_band]
             if not subset:
                 continue
@@ -688,6 +933,7 @@ def main():
             "venue_breakdown_baseline": venue_holdout_breakdown(holdout),
             "venue_breakdown_conditional_pair_ranker": venue_holdout_breakdown(holdout, fitted),
             "venue_distance_breakdown_conditional_pair_ranker": venue_distance_breakdown(holdout, fitted),
+            "axis_partner_failure_diagnostics": axis_partner_failure_diagnostics(holdout, fitted),
         },
         "model": {
             "axis_source": "fixed pre-off win ranking from horse_evaluation_model via canonical chronological replay",
