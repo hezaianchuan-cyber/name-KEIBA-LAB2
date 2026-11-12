@@ -184,7 +184,7 @@ def race_metrics(records, probabilities):
         result[race_key] = {
             "axis_top3": float(axis in actual_top3),
             "axis_win": float(axis == winner),
-            "top3_coverage": len(predicted_top3 & actual_top3) / 3.0,
+            "top3_coverage": len(predicted_top3 & actual_top3) / max(1, len(actual_top3)),
             "full_top3": float(actual_top3.issubset(predicted_top3)),
             "winner_in_top3": float(winner in predicted_top3) if winner else 0.0,
         }
@@ -247,7 +247,7 @@ def main():
     podium_counts = defaultdict(int)
     for row in holdout_raw:
         podium_counts[row["race_key"]] += row["label_top3"]
-    holdout_races = {key for key, count in podium_counts.items() if count == 3}
+    holdout_races = {key for key, count in podium_counts.items() if count >= 3}
     holdout = [r for r in holdout_raw if r["race_key"] in holdout_races]
     if not train or not holdout:
         raise RuntimeError("Empty chronological train or holdout")
