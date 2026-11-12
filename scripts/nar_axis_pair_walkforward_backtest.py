@@ -13,6 +13,7 @@ chronological partitions and holdout races.
 from __future__ import annotations
 
 import itertools
+import math
 import json
 import random
 from datetime import datetime, timezone
