@@ -7,7 +7,8 @@ and scores. A conditional pair model is fitted only on a later development
 window and evaluated once on an untouched chronological holdout.
 
 This writes an aggregate research artifact only. No live model/ticket files are
-changed and no real-money betting is performed.
+changed and no real-money betting is performed. Feature ablations share identical
+chronological partitions and holdout races.
 """
 from __future__ import annotations
 
