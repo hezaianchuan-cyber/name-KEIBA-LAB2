@@ -4,7 +4,7 @@ const RACE_URL = "https://www.keiba.go.jp/KeibaWeb/DataDownload/RaceDataDownload
 const START_MIN = 60;
 const END_MIN = 2;
 
-function digits(v: unknown): string { return String(v ?? "").replace(/\\D/g, ""); }
+function digits(v: unknown): string { return String(v ?? "").replace(/\D/g, ""); }
 function number(v: unknown): number | null {
   const raw = String(v ?? "").replace(/,/g, "").trim();
   if (!raw || raw === "-" || raw === "--") return null;
@@ -22,8 +22,8 @@ function csvRows(text:string):string[][] {
     const ch=text[i];
     if(ch==='"'){if(quoted&&text[i+1]==='"'){field+='"';i++;}else quoted=!quoted;}
     else if(ch===","&&!quoted){row.push(field);field="";}
-    else if((ch==="\\n"||ch==="\\r")&&!quoted){
-      if(ch==="\\r"&&text[i+1]==="\\n")i++;
+    else if((ch==="\n"||ch==="\r")&&!quoted){
+      if(ch==="\r"&&text[i+1]==="\n")i++;
       row.push(field);field="";if(row.some(x=>x.length))rows.push(row);row=[];
     } else field+=ch;
   }
@@ -38,7 +38,7 @@ function decode(bytes:Uint8Array):string {
   return candidates.reduce((a,b)=>score(b)>score(a)?b:a);
 }
 function classify(name:string):"races"|"horses"|null {
-  const base=name.replaceAll("\\\\","/").split("/").pop()!.toLowerCase();
+  const base=name.replaceAll("\\","/").split("/").pop()!.toLowerCase();
   if(/racelist|race.?list|レース一覧/.test(base))return "races";
   if(/horselist|horse.?list|出馬表/.test(base))return "horses";
   return null;
@@ -61,7 +61,7 @@ Deno.serve(async(req)=>{
   const url=Deno.env.get("SUPABASE_URL"),key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const token=Deno.env.get("NAR_BANEI_WEIGHT_CAPTURE_TOKEN");
   if(!url||!key||!token)return Response.json({ok:false,error:"Required secrets missing"},{status:500});
-  if((req.headers.get("authorization")||"").replace(/^Bearer\\s+/i,"")!==token)
+  if((req.headers.get("authorization")||"").replace(/^Bearer\s+/i,"")!==token)
     return Response.json({ok:false,error:"Unauthorized"},{status:401});
   try{
     const files=await fetchArchive(),races=new Map<string,{date:string;race:number;post:Date}>(),horses=new Map<string,any[]>();
@@ -88,6 +88,16 @@ Deno.serve(async(req)=>{
       }
     }
     const now=Date.now(),captured=new Date(now).toISOString(),inserts:any[]=[];
+    const today=new Date(now).toISOString().slice(0,10);
+    const existingUrl=url+"/rest/v1/banei_body_weight_snapshots?select=race_id,horse_number,carried_weight,body_weight,body_weight_change,captured_at&race_date=eq."+today+"&order=captured_at.desc&limit=20000";
+    const existingResponse=await fetch(existingUrl,{headers:{apikey:key,Authorization:"Bearer "+key},signal:AbortSignal.timeout(20000)});
+    if(!existingResponse.ok)throw new Error("Could not read existing Banei snapshots: HTTP "+existingResponse.status);
+    const existingRows=await existingResponse.json();
+    const latest=new Map<string,string>();
+    for(const item of Array.isArray(existingRows)?existingRows:[]){
+      const k=String(item.race_id)+"|"+String(item.horse_number);
+      if(!latest.has(k))latest.set(k,[item.carried_weight??"",item.body_weight??"",item.body_weight_change??""].join("|"));
+    }
     let racesInWindow=0,horseRows=0,rowsWithBodyWeight=0;
     for(const [raceId,race] of races){
       const minutes=(race.post.getTime()-now)/60000;
@@ -96,6 +106,9 @@ Deno.serve(async(req)=>{
       for(const horse of horses.get(raceId)||[]){
         horseRows++;if(horse.body!==null)rowsWithBodyWeight++;
         const snapshotHash=[horse.carried,horse.body,horse.change].map(x=>x===null?"":String(x)).join("|");
+        const horseKey=raceId+"|"+String(horse.horseNo);
+        if(latest.get(horseKey)===snapshotHash)continue;
+        latest.set(horseKey,snapshotHash);
         inserts.push({race_id:raceId,race_date:race.date.slice(0,4)+"-"+race.date.slice(4,6)+"-"+race.date.slice(6,8),
           venue:"帯広",race_number:race.race,horse_number:horse.horseNo,horse_name:horse.name,
           carried_weight:horse.carried,body_weight:horse.body,body_weight_change:horse.change,
@@ -103,18 +116,18 @@ Deno.serve(async(req)=>{
           minutes_to_post:Math.round(minutes*100)/100,source:"NAR_OFFICIAL_DAILY_RACECARD",snapshot_hash:snapshotHash});
       }
     }
-    let inserted=0;
+    let rowsSubmitted=0;
     for(let i=0;i<inserts.length;i+=500){
       const batch=inserts.slice(i,i+500);
-      const response=await fetch(url+"/rest/v1/banei_body_weight_snapshots?on_conflict=race_id,horse_number,snapshot_hash",{
+      const response=await fetch(url+"/rest/v1/banei_body_weight_snapshots",{
         method:"POST",headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json",
-          Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify(batch),signal:AbortSignal.timeout(25000)});
+          Prefer:"return=minimal"},body:JSON.stringify(batch),signal:AbortSignal.timeout(25000)});
       if(!response.ok)throw new Error("Supabase insert HTTP "+response.status+": "+(await response.text()).slice(0,400));
-      inserted+=batch.length;
+      rowsSubmitted+=batch.length;
     }
     return Response.json({ok:true,checked_at:captured,banei_races_in_window:racesInWindow,
       horse_rows_seen:horseRows,rows_with_body_weight:rowsWithBodyWeight,rows_submitted:inserts.length,
-      submitted_rows_including_unchanged:inserted,window_minutes:[START_MIN,END_MIN],
+      rows_submitted:rowsSubmitted,window_minutes:[START_MIN,END_MIN],
       note:"Rows are timestamped observations, not proof of the exact public announcement time. Unchanged values are deduplicated."});
   }catch(error){console.error(error);return Response.json({ok:false,error:String(error)},{status:502});}
 });
