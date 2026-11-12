@@ -516,7 +516,7 @@ def summarize_final_market_pair(bucket):
     }
 
 
-PARSED_ARCHIVE_CACHE_VERSION = "nar-monthly-parsed-v2-weight-frame"
+PARSED_ARCHIVE_CACHE_VERSION = "nar-monthly-parsed-v3-finish-status"
 
 def parse_month_archive(blob, y, m):
     """Parse one official monthly archive into compact race/runner/payout objects."""
@@ -562,7 +562,7 @@ def parse_month_archive(blob, y, m):
                         "jockey": norm(row[14]), "carried": number(row[16]),
                         "body_weight": number(row[22]) if len(row) > 22 else None,
                         "body_weight_change": number(row[23]) if len(row) > 23 else None,
-                        "finish": rank_value(row[31]),
+                        "finish": rank_value(row[31]), "finish_raw": norm(row[31]),
                         "time_seconds": parse_race_time(row[32]) if len(row) > 32 else None,
                         "margin": row[33] if len(row) > 33 else "",
                         "last3f": number(row[34]) if len(row) > 34 else None,

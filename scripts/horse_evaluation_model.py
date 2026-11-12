@@ -77,7 +77,9 @@ def _style(history):
     return "deep_closer"
 
 
-def _axis_scores(history, race, horse):
+def _axis_scores(history, race, horse, suitability_mode="combined"):
+    if suitability_mode not in ("combined", "without_venue"):
+        raise ValueError("suitability_mode must be combined or without_venue")
     recent = history if len(history) <= 5 else history[-5:]
     quality = []
     for row in recent:
@@ -140,7 +142,10 @@ def _axis_scores(history, race, horse):
         except (TypeError, ValueError):
             same_distance = False
         same_going = bool(going) and str(row.get("going") or "") == going
-        if same_venue or same_distance or same_going:
+        include_row = same_venue or same_distance or same_going
+        if suitability_mode == "without_venue":
+            include_row = same_distance or same_going
+        if include_row:
             q = _rank_quality(row)
             if q is not None:
                 comparable.append(q)
@@ -210,7 +215,8 @@ def _top3_probabilities(scores, temperature=0.10):
 
 
 def evaluate_field(field, history_by_name, race, jockey_stats=None,
-                   axis_weights=None, win_temperature=0.12, top3_temperature=0.10):
+                   axis_weights=None, win_temperature=0.12, top3_temperature=0.10,
+                   suitability_mode="combined"):
     """Return every runner, separately ranked/probabilized for win and top-three."""
     weights = dict(axis_weights or AXIS_WEIGHTS)
     if set(weights) != set(AXIS_WEIGHTS) or any(float(v) < 0 for v in weights.values()):
@@ -224,7 +230,7 @@ def evaluate_field(field, history_by_name, race, jockey_stats=None,
     for horse in field:
         name = str(horse.get("name") or "")
         history = history_by_name.get(name, [])
-        axes = _axis_scores(history, race, horse)
+        axes = _axis_scores(history, race, horse, suitability_mode=suitability_mode)
         score = sum(axes[k] * weights[k] for k in weights)
         rows.append({"horse_no": str(horse.get("no", "")), "name": name,
                      "score": score, "axes": axes})
