@@ -126,8 +126,7 @@ Deno.serve(async(req)=>{
       rowsSubmitted+=batch.length;
     }
     return Response.json({ok:true,checked_at:captured,banei_races_in_window:racesInWindow,
-      horse_rows_seen:horseRows,rows_with_body_weight:rowsWithBodyWeight,rows_submitted:inserts.length,
-      rows_submitted:rowsSubmitted,window_minutes:[START_MIN,END_MIN],
+      horse_rows_seen:horseRows,rows_with_body_weight:rowsWithBodyWeight,rows_submitted:rowsSubmitted,window_minutes:[START_MIN,END_MIN],
       note:"Rows are timestamped observations, not proof of the exact public announcement time. Unchanged values are deduplicated."});
   }catch(error){console.error(error);return Response.json({ok:false,error:String(error)},{status:502});}
 });
