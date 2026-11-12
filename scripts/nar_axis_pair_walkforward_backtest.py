@@ -316,6 +316,79 @@ def paired_comparison(records, fitted):
 
 
 
+
+def paired_model_comparison(records, fitted_a, fitted_b):
+    """Direct same-race comparison between two feature-ablation rankers."""
+    paired = []
+    for record in records:
+        payout = record["payout"]
+        if not payout.get("trio") or not payout.get("win"):
+            continue
+        axis = str(record["axis_horse_no"])
+        by_no = {str(row["horse_no"]): row for row in record["group"]}
+        if axis not in by_no:
+            continue
+        opponents = [str(no) for no in record["candidate_horse_nos"] if str(no) != axis]
+        if len(opponents) < 4:
+            continue
+        ranked_a = rank_axis_partner_pairs(
+            record["group"], axis, record["candidate_horse_nos"],
+            record["individual_scores"], fitted_a,
+        )
+        ranked_b = rank_axis_partner_pairs(
+            record["group"], axis, record["candidate_horse_nos"],
+            record["individual_scores"], fitted_b,
+        )
+        tickets_a = _tickets(axis, [tuple(item["pair"]) for item in ranked_a[:TICKETS_PER_RACE]])
+        tickets_b = _tickets(axis, [tuple(item["pair"]) for item in ranked_b[:TICKETS_PER_RACE]])
+        if len(tickets_a) != TICKETS_PER_RACE or len(tickets_b) != TICKETS_PER_RACE:
+            continue
+        returns_a = [nb.payout_for("trio", ticket, payout) or 0 for ticket in tickets_a]
+        returns_b = [nb.payout_for("trio", ticket, payout) or 0 for ticket in tickets_b]
+        paired.append((
+            sum(returns_a), sum(returns_b),
+            sum(value > 0 for value in returns_a),
+            sum(value > 0 for value in returns_b),
+            int(any(value > 0 for value in returns_a)),
+            int(any(value > 0 for value in returns_b)),
+        ))
+
+    n = len(paired)
+    if not n:
+        return {"races": 0, "error": "No paired races"}
+    roi_delta = 100.0 * sum(row[0] - row[1] for row in paired) / (n * TICKETS_PER_RACE * STAKE_PER_TICKET)
+    ticket_delta = 100.0 * sum(row[2] - row[3] for row in paired) / (n * TICKETS_PER_RACE)
+    race_delta = 100.0 * sum(row[4] - row[5] for row in paired) / n
+    rng = random.Random(20261113)
+    boot_roi, boot_ticket, boot_race = [], [], []
+    for _ in range(BOOTSTRAP_REPS):
+        sample = [paired[rng.randrange(n)] for _ in range(n)]
+        boot_roi.append(100.0 * sum(row[0] - row[1] for row in sample) / (n * TICKETS_PER_RACE * STAKE_PER_TICKET))
+        boot_ticket.append(100.0 * sum(row[2] - row[3] for row in sample) / (n * TICKETS_PER_RACE))
+        boot_race.append(100.0 * sum(row[4] - row[5] for row in sample) / n)
+
+    def interval(values):
+        values.sort()
+        return [
+            round(values[int(0.025 * (len(values) - 1))], 2),
+            round(values[int(0.975 * (len(values) - 1))], 2),
+        ]
+
+    return {
+        "races": n,
+        "roi_delta_pp_A_minus_B": round(roi_delta, 2),
+        "roi_delta_95ci_paired_bootstrap_pp": interval(boot_roi),
+        "ticket_hit_rate_delta_pp_A_minus_B": round(ticket_delta, 2),
+        "ticket_hit_rate_delta_95ci_paired_bootstrap_pp": interval(boot_ticket),
+        "race_hit_rate_delta_pp_A_minus_B": round(race_delta, 2),
+        "race_hit_rate_delta_95ci_paired_bootstrap_pp": interval(boot_race),
+        "races_A_return_higher": sum(row[0] > row[1] for row in paired),
+        "races_B_return_higher": sum(row[1] > row[0] for row in paired),
+        "races_equal_return": sum(row[0] == row[1] for row in paired),
+        "note": "Direct paired race-cluster bootstrap; A minus B, identical races and virtual stake, 2,000 resamples. ROI interval crossing zero means no clear evidence of superiority.",
+    }
+
+
 def venue_holdout_breakdown(records, fitted=None):
     """Venue-level ticket results and leave-one-venue-out impact on the same holdout."""
     overall = evaluate(records, fitted)
@@ -511,6 +584,11 @@ def main():
                 "A_full_distance": {"feature_mode": "full", "metrics": pair_holdout, "paired_vs_baseline": paired_comparison(holdout, fitted)},
                 "B_no_distance": {"feature_mode": "no_distance", "metrics": no_distance_holdout, "paired_vs_baseline": paired_comparison(holdout, no_distance_fitted)},
                 "C_venue_distance": {"feature_mode": "venue_distance", "metrics": venue_distance_holdout, "paired_vs_baseline": paired_comparison(holdout, venue_distance_fitted)},
+                "paired_comparisons": {
+                    "A_full_distance_vs_B_no_distance": paired_model_comparison(holdout, fitted, no_distance_fitted),
+                    "A_full_distance_vs_C_venue_distance": paired_model_comparison(holdout, fitted, venue_distance_fitted),
+                    "B_no_distance_vs_C_venue_distance": paired_model_comparison(holdout, no_distance_fitted, venue_distance_fitted),
+                },
                 "same_development_and_holdout_races": True,
                 "note": "All three variants use identical chronological partitions, fixed axes, LambdaRank candidate pools, six virtual trio tickets per race and the same holdout. C replaces general distance suitability with same-venue and within-200m historical suitability. No holdout tuning.",
             },
