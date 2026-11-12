@@ -23,6 +23,7 @@ GROUPS = {
     "past_carried_to_body_ratio": [6],
     "past_carried_weight_level": [7],
     "body_weight_record_count": [8],
+    "all": list(range(9)),
 }
 SEED = 20261113
 
@@ -74,25 +75,6 @@ def main():
             p = predict(train, holdout, "all", True)
         else:
             p = predict(train, holdout, name)
-        probs[name] = p
-        per_race[name], summaries[name] = profile.race_metrics(holdout, p)
-
-    # "all" is handled as the complete 9-feature body profile.
-    def predict_all(train_rows, test_rows, carried=False):
-        def vec(r):
-            v = list(r["base"]) + list(r["body_profile"])
-            if carried: v.append(r["carried_z"])
-            return v
-        xtr = np.asarray([vec(r) for r in train_rows], dtype=float)
-        ytr = np.asarray([r["label_top3"] for r in train_rows], dtype=int)
-        xte = np.asarray([vec(r) for r in test_rows], dtype=float)
-        model = make_pipeline(SimpleImputer(strategy="median", add_indicator=True),
-            StandardScaler(), LogisticRegression(C=0.5, max_iter=1500, random_state=SEED))
-        model.fit(xtr, ytr)
-        return model.predict_proba(xte)[:, 1]
-
-    for name, carried in [("all_past_body", False), ("all_past_body_plus_current_carried", True)]:
-        p = predict_all(train, holdout, carried)
         probs[name] = p
         per_race[name], summaries[name] = profile.race_metrics(holdout, p)
 
