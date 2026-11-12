@@ -1,0 +1,43 @@
+name: Research Banei historical body-weight profile
+
+on:
+  push:
+    branches:
+      - research/banei-body-weight-capture
+    paths:
+      - '.github/workflows/research-banei-historical-body-weight-profile.yml'
+      - 'scripts/research_banei_historical_body_weight_profile.py'
+      - 'scripts/nar_backtest.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-banei-historical-body-weight-profile
+  cancel-in-progress: false
+
+jobs:
+  historical-body-weight-profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/banei-body-weight-capture
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install research dependencies
+        run: python -m pip install --disable-pip-version-check numpy scikit-learn lightgbm
+      - name: Compile experiment and archive parser
+        run: python -m py_compile scripts/nar_backtest.py scripts/research_banei_historical_body_weight_profile.py
+      - name: Run historical body-weight profile comparison
+        run: python scripts/research_banei_historical_body_weight_profile.py
+      - name: Upload Banei historical body-weight report
+        uses: actions/upload-artifact@v4
+        with:
+          name: banei-historical-body-weight-profile
+          path: data/banei-historical-body-weight-profile.json
+          if-no-files-found: error
+          retention-days: 30
