@@ -88,7 +88,7 @@ Deno.serve(async(req)=>{
       }
     }
     const now=Date.now(),captured=new Date(now).toISOString(),inserts:any[]=[];
-    const today=new Date(now).toISOString().slice(0,10);
+    const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tokyo",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(now));
     const existingUrl=url+"/rest/v1/banei_body_weight_snapshots?select=race_id,horse_number,carried_weight,body_weight,body_weight_change,captured_at&race_date=eq."+today+"&order=captured_at.desc&limit=20000";
     const existingResponse=await fetch(existingUrl,{headers:{apikey:key,Authorization:"Bearer "+key},signal:AbortSignal.timeout(20000)});
     if(!existingResponse.ok)throw new Error("Could not read existing Banei snapshots: HTTP "+existingResponse.status);
