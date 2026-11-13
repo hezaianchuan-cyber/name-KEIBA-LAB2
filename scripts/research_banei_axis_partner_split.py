@@ -191,7 +191,7 @@ def split_role_rank(records, axis_scores, partner_scores):
 
 
 def main():
-    races, horses, _payouts = nb.load_archives()
+    races, horses, _payouts, _metadata = nb.load_archives()
     rows, identity_audit = build_rows_stable(races, horses)
     usable = [r for r in rows if r["finish"] is not None and r["field_size"] >= 5]
     dates = sorted({r["date"] for r in usable})
