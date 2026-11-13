@@ -470,6 +470,26 @@ def preoff_probability_ev_audit(payouts):
     }
 
 
+
+def write_checkpoint(status, scope, experiments, extra=None):
+    """Persist completed tracks so a late-stage failure never discards hours of work."""
+    payload = {
+        "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "status": status,
+        "scope": scope,
+        "experiments": experiments,
+        "checkpoint_extra": extra or {},
+        "deployment": "research only; no production state changed",
+    }
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+    print("FULL_IMPROVEMENTS_CHECKPOINT " + json.dumps({
+        "status": status,
+        "completed_tracks": list(experiments),
+        "report": str(OUT),
+    }, ensure_ascii=False), flush=True)
+
+
 def main():
     print("FULL_IMPROVEMENTS loading official archives", flush=True)
     races, horses, payouts, months = nb.load_archives()
