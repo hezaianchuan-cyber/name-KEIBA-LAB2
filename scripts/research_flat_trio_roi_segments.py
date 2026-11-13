@@ -186,7 +186,89 @@ def evaluate_group(group, scores, snapshot, payouts):
         "returned": returned,
         "ticket_odds_min": min(ticket_prices),
         "ticket_odds_max": max(ticket_prices),
+        "runner_diagnostics": [
+            {
+                "horse_no": int(row["horse_no"]),
+                "rank": rank + 1,
+                "finish": int(row["finish"]) if row.get("finish") is not None else None,
+                "is_axis": rank == 0,
+                "is_ticket_partner": 1 <= rank <= 4,
+            }
+            for rank, row in enumerate(
+                sorted(
+                    group,
+                    key=lambda r: (
+                        -float(scores[group.index(r)]),
+                        int(r["horse_no"]),
+                    ),
+                )
+            )
+        ],
     }, None
+
+
+def diagnose_field_size(records, target_band="9-11頭"):
+    selected = [r for r in records if r["field_size_band"] == target_band]
+    n = len(selected)
+    if not n:
+        return {"races": 0, "status": "no_races"}
+    axis_finish = [next((x["finish"] for x in r["runner_diagnostics"] if x["is_axis"]), None)
+                   for r in selected]
+    axis_top3 = sum(x is not None and x <= 3 for x in axis_finish)
+    axis_wins = sum(x == 1 for x in axis_finish)
+    axis_out = n - axis_top3
+    podium_rank_counts = defaultdict(int)
+    podium_runner_total = 0
+    podium_all_in_top5 = 0
+    podium_all_in_top7 = 0
+    races_with_podium_outside_top5 = 0
+    partner_candidates_top5 = 0
+    partner_candidates_top6_7 = 0
+    for r in selected:
+        podium = [x for x in r["runner_diagnostics"] if x["finish"] in (1, 2, 3)]
+        ranks = [x["rank"] for x in podium]
+        podium_runner_total += len(podium)
+        for rank in ranks:
+            bucket = "1-5位" if rank <= 5 else ("6-7位" if rank <= 7 else "8位以下")
+            podium_rank_counts[bucket] += 1
+        podium_all_in_top5 += int(len(ranks) == 3 and max(ranks) <= 5)
+        podium_all_in_top7 += int(len(ranks) == 3 and max(ranks) <= 7)
+        races_with_podium_outside_top5 += int(any(rank > 5 for rank in ranks))
+        partner_candidates_top5 += sum(1 for rank in ranks if 2 <= rank <= 5)
+        partner_candidates_top6_7 += sum(1 for rank in ranks if 6 <= rank <= 7)
+    hit_records = [r for r in selected if r["hit"]]
+    miss_records = [r for r in selected if not r["hit"]]
+    return {
+        "races": n,
+        "axis_top3_rate_pct": round(100 * axis_top3 / n, 3),
+        "axis_win_rate_pct": round(100 * axis_wins / n, 3),
+        "axis_outside_top3_races": axis_out,
+        "axis_outside_top3_rate_pct": round(100 * axis_out / n, 3),
+        "podium_rank_counts": dict(podium_rank_counts),
+        "podium_runners_total": podium_runner_total,
+        "podium_runner_share_by_rank_bucket_pct": {
+            k: round(100 * v / podium_runner_total, 3)
+            for k, v in podium_rank_counts.items()
+        },
+        "races_with_any_podium_outside_model_top5": races_with_podium_outside_top5,
+        "races_with_all_podium_inside_top5": podium_all_in_top5,
+        "races_with_all_podium_inside_top7": podium_all_in_top7,
+        "hit_group": summarize(hit_records),
+        "miss_group": summarize(miss_records),
+        "hit_vs_miss_axis_top3": {
+            "hit_races": len(hit_records),
+            "miss_races": len(miss_records),
+            "hit_axis_top3": sum(
+                any(x["is_axis"] and x["finish"] is not None and x["finish"] <= 3
+                    for x in r["runner_diagnostics"]) for r in hit_records
+            ),
+            "miss_axis_top3": sum(
+                any(x["is_axis"] and x["finish"] is not None and x["finish"] <= 3
+                    for x in r["runner_diagnostics"]) for r in miss_records
+            ),
+        },
+        "interpretation_note": "モデル順位の上位5頭外に3着以内馬がいるか、軸馬自体が3着外かを分離した記述統計。因果・将来成績を示さない。",
+    }
 
 
 def summarize(records):
