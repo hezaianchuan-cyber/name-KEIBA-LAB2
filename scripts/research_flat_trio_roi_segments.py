@@ -194,15 +194,13 @@ def evaluate_group(group, scores, snapshot, payouts):
                 "is_axis": rank == 0,
                 "is_ticket_partner": 1 <= rank <= 4,
             }
-            for rank, row in enumerate(
+            for rank, idx in enumerate(
                 sorted(
-                    group,
-                    key=lambda r: (
-                        -float(scores[group.index(r)]),
-                        int(r["horse_no"]),
-                    ),
+                    range(len(group)),
+                    key=lambda i: (-float(scores[i]), int(group[i]["horse_no"])),
                 )
             )
+            for row in [group[idx]]
         ],
     }, None
 
@@ -419,6 +417,7 @@ def main():
         "roi_ci95": bootstrap_roi_ci(records, 20261113),
         "by_ticket_odds_band": grouped_summary(records, "odds_band"),
         "by_field_size": grouped_summary(records, "field_size_band"),
+        "nine_to_eleven_runner_diagnostics": diagnose_field_size(records, "9-11頭"),
         "by_newcomer_status": grouped_summary(records, "race_type"),
         "by_field_size_and_newcomer": {
             f"{size} / {race_type}": summarize([
