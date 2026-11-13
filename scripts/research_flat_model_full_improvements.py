@@ -170,6 +170,51 @@ def run_fold(label, variant, races, horses, payouts, train_dates, test_dates, mo
     }
 
 
+def merge_recent_daily_payouts(payouts):
+    """Merge recent official daily payout records for the pre-off snapshot window."""
+    path = Path(__file__).resolve().parents[1] / "data" / "daily-payouts.json"
+    if not path.exists():
+        return {"file_present": False, "merged_races": 0, "date_count": 0}
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    merged = 0
+    dates = set()
+    for day in payload.get("days", []):
+        date_text = str(day.get("date") or "")
+        for race in day.get("races", []):
+            venue = str(race.get("venue") or "")
+            if any(token in venue for token in ("帯広", "ばんえい", "帯広ば")):
+                continue
+            parts = str(race.get("race_id") or "").split("|")
+            if len(parts) != 3:
+                continue
+            key = nb.race_key(parts[0], parts[1], parts[2])
+            if not key:
+                continue
+            current = payouts.setdefault(key, {
+                "win": [], "place": [], "quinella": [], "exacta": [],
+                "wide": [], "trio": [], "trifecta": [],
+            })
+            entries = race.get("payouts") or {}
+            for kind in ("win", "place", "quinella", "exacta", "wide", "trio", "trifecta"):
+                for entry in entries.get(kind, []) or []:
+                    numbers = [str(x) for x in entry.get("numbers", [])]
+                    pay = int(entry.get("pay_100") or 0)
+                    item = (numbers, pay)
+                    if numbers and item not in current.setdefault(kind, []):
+                        current[kind].append(item)
+            merged += 1
+            if date_text:
+                dates.add(date_text)
+    return {
+        "file_present": True,
+        "merged_races": merged,
+        "date_count": len(dates),
+        "first_date": min(dates) if dates else None,
+        "last_date": max(dates) if dates else None,
+        "source_period": payload.get("period"),
+    }
+
+
 def main():
     print("FULL_IMPROVEMENTS loading official archives", flush=True)
     races, horses, payouts, months = nb.load_archives()
