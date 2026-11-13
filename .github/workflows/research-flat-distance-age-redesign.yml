@@ -1,0 +1,58 @@
+name: Research flat distance and age feature redesign
+
+on:
+  push:
+    branches:
+      - research/flat-distance-age-redesign
+    paths:
+      - '.github/workflows/research-flat-distance-age-redesign.yml'
+      - 'scripts/research_flat_distance_age_redesign.py'
+      - 'scripts/nar_backtest.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-flat-distance-age-redesign
+  cancel-in-progress: false
+
+jobs:
+  feature-redesign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/flat-distance-age-redesign
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore official NAR archive caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache/nar-monthly
+            .cache/nar-parsed
+            .cache/nar-odds-monthly
+          key: nar-distance-age-redesign-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            nar-flat-feature-audit-${{ runner.os }}-
+            nar-monthly-v1-${{ runner.os }}-
+            nar-parsed-v1-${{ runner.os }}-
+            nar-odds-monthly-v1-${{ runner.os }}-
+      - name: Compile research and model code
+        run: python -m py_compile scripts/nar_backtest.py scripts/research_flat_distance_age_redesign.py
+      - name: Run flat-only distance and age redesign
+        env:
+          NAR_CACHE_DIR: .cache/nar-monthly
+          NAR_PARSED_CACHE_DIR: .cache/nar-parsed
+          NAR_ODDS_CACHE_DIR: .cache/nar-odds-monthly
+        run: python scripts/research_flat_distance_age_redesign.py
+      - name: Upload research report
+        uses: actions/upload-artifact@v4
+        with:
+          name: flat-distance-age-redesign
+          path: data/research-flat-distance-age-redesign.json
+          if-no-files-found: error
+          retention-days: 30
