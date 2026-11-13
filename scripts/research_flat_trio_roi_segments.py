@@ -122,6 +122,36 @@ def odds_band(value):
     return "200倍以上"
 
 
+def field_size_band(value):
+    size = int(value)
+    if size <= 8:
+        return "8頭以下"
+    if size <= 11:
+        return "9-11頭"
+    if size <= 14:
+        return "12-14頭"
+    return "15頭以上"
+
+
+def is_newcomer_race(name):
+    normalized = unicodedata.normalize("NFKC", str(name or "")).replace(" ", "")
+    return ("新馬" in normalized) or ("メイクデビュー" in normalized)
+
+
+def filter_scenario(records, exclude_small=False, exclude_newcomer=False):
+    kept = [
+        row for row in records
+        if not (exclude_small and row["field_size"] <= 8)
+        and not (exclude_newcomer and row["is_newcomer"])
+    ]
+    return {
+        "excluded_small_field": exclude_small,
+        "excluded_newcomer": exclude_newcomer,
+        "remaining": summarize(kept),
+        "roi_ci95": bootstrap_roi_ci(kept, 20261113 + len(kept)),
+    }
+
+
 def evaluate_group(group, scores, snapshot, payouts):
     tickets = make_tickets(group, scores)
     if len(tickets) != TICKETS_PER_RACE:
@@ -147,6 +177,7 @@ def evaluate_group(group, scores, snapshot, payouts):
         "venue": str(group[0].get("venue") or "不明"),
         "distance_band": distance_band(group[0].get("distance_m")),
         "field_size": len(group),
+        "field_size_band": field_size_band(len(group)),
         "ticket_median_odds": median_odds,
         "ticket_mean_odds": sum(ticket_prices) / len(ticket_prices),
         "odds_band": odds_band(median_odds),
@@ -263,6 +294,12 @@ def main():
     for (group, snapshot), (_, strategies) in zip(snapshot_groups, scored):
         result, reason = evaluate_group(group, strategies[MODEL], snapshot, payouts)
         if result:
+            parts = str(group[0]["race_key"]).split("|")
+            race_meta = races.get(nb.race_key(parts[0], parts[1], parts[2])) if len(parts) == 3 else None
+            race_name = str((race_meta or {}).get("name") or "")
+            result["race_name"] = race_name
+            result["is_newcomer"] = is_newcomer_race(race_name)
+            result["race_type"] = "新馬戦" if result["is_newcomer"] else "既走馬戦"
             records.append(result)
         else:
             skipped[reason] += 1
@@ -299,6 +336,24 @@ def main():
         "overall": summarize(records),
         "roi_ci95": bootstrap_roi_ci(records, 20261113),
         "by_ticket_odds_band": grouped_summary(records, "odds_band"),
+        "by_field_size": grouped_summary(records, "field_size_band"),
+        "by_newcomer_status": grouped_summary(records, "race_type"),
+        "by_field_size_and_newcomer": {
+            f"{size} / {race_type}": summarize([
+                row for row in records
+                if row["field_size_band"] == size and row["race_type"] == race_type
+            ])
+            for size in sorted({row["field_size_band"] for row in records})
+            for race_type in ("新馬戦", "既走馬戦")
+        },
+        "filter_scenarios": {
+            "baseline_all": filter_scenario(records),
+            "exclude_field_8_or_less": filter_scenario(records, exclude_small=True),
+            "exclude_newcomer": filter_scenario(records, exclude_newcomer=True),
+            "exclude_small_or_newcomer": filter_scenario(
+                records, exclude_small=True, exclude_newcomer=True
+            ),
+        },
         "by_venue": grouped_summary(records, "venue"),
         "by_distance": grouped_summary(records, "distance_band"),
         "skipped": dict(sorted(skipped.items())),
@@ -307,8 +362,10 @@ def main():
             "オッズ帯は購入予定6点の発走前3連複オッズ中央値で分類。",
             "全レース6点・600円で統一。6点すべてのオッズが取得できたレースのみ分析。",
             "発走2〜30分前の記録だけを使用。確定オッズ・着順・払戻は予測や買い目選定に不使用。",
-            "後方検証は直近スナップショット期間の探索的分析。小標本の競馬場・距離別結果は結論を保留。",
-            "本番モデル・買い目生成・DB・ライブ処理は変更しない。",
+            "後方検証は直近スナップショット期間の探索的分析。少頭数・新馬戦の区分と除外シナリオは事前定義した条件で比較。",
+            "少頭数は出走馬8頭以下、新馬戦はレース名に新馬またはメイクデビューを含むものとして定義。",
+            "見送りシナリオは発走前に判定できる出走頭数・レース名のみを使用。小標本では結論を保留。",
+            "本番モデル・買い目生成・DB・ライブ処理は変更しない。
         ],
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
