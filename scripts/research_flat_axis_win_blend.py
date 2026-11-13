@@ -23,7 +23,7 @@ import nar_ml_challenger_backtest as challenger
 
 OUT = ROOT / "data" / "flat-axis-win-blend-research.json"
 SIMILARITY_WEIGHTS = (0.60, 0.55, 0.50, 0.45, 0.40)
-EXCLUDED = {"body_weight", "body_weight_change", "body_weight_delta_pct"}
+EXCLUDED = {"body_weight", "body_weight_change", "body_weight_delta_pct", "race_rel_body_weight_delta_pct"}
 FEATURES = list(dict.fromkeys(
     [name for name in challenger.LAB_NUMERIC if name not in EXCLUDED]
     + [name for name in challenger.RAW_NUMERIC if name not in EXCLUDED]
@@ -236,6 +236,7 @@ def main():
             "used": FEATURES,
             "excluded": sorted(EXCLUDED),
             "current_race_body_weight_and_change_used": False,
+            "race_relative_current_body_weight_change_used": False,
             "current_carried_weight_used": True,
             "feature_timing": "Existing chronological builder constructs every race before updating history with that date's results; no same-day race result is used as a feature.",
         },
@@ -256,7 +257,7 @@ def main():
         "guardrails": [
             "Research-only branch and artifact. No merge to main, production deployment, database migration, or live prediction/ticket changes.",
             "Banei model and data remain separate.",
-            "Current-race body_weight, body_weight_change and body_weight_delta_pct are excluded because timestamped pre-off availability is not established.",
+            "Current-race body_weight, body_weight_change, body_weight_delta_pct and derived race_rel_body_weight_delta_pct are excluded because timestamped pre-off availability is not established.",
             "No odds or post-off information are used.",
             "Do not claim profitability from ranking metrics.",
         ],
