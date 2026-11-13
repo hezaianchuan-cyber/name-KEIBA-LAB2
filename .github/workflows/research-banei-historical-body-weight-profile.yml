@@ -9,6 +9,7 @@ on:
       - 'scripts/research_banei_historical_body_weight_profile.py'
       - 'scripts/research_banei_body_weight_feature_ablation.py'
       - 'scripts/research_banei_winner_profile_similarity.py'
+      - 'scripts/research_banei_winner_profile_ablation.py'
       - 'scripts/nar_backtest.py'
   workflow_dispatch:
 
@@ -45,6 +46,17 @@ jobs:
         with:
           name: banei-winner-profile-similarity
           path: data/banei-winner-profile-similarity.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Compile winner-profile feature ablation
+        run: python -m py_compile scripts/research_banei_winner_profile_ablation.py
+      - name: Run winner-profile feature ablation
+        run: python scripts/research_banei_winner_profile_ablation.py
+      - name: Upload winner-profile feature ablation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: banei-winner-profile-ablation
+          path: data/banei-winner-profile-ablation.json
           if-no-files-found: error
           retention-days: 30
       - name: Compile feature-group ablation
