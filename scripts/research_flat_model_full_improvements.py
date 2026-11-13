@@ -63,7 +63,7 @@ def install_feature_variant(variant):
                 finish = horse.get("finish")
                 if age is None or not finish:
                     continue
-                quality = nb.rank_quality(finish, horse.get("field_size") or len(field))
+                quality = nb.rank_quality(finish, horse.get("field_size") or len(field))\n                quality = (float(quality) / 100.0) if quality is not None else None
                 if quality is None:
                     continue
                 bucket = age_stats[age_stage(age)]
@@ -95,7 +95,7 @@ def install_feature_variant(variant):
                     delta = abs(old_distance - target_distance)
                     kernel = math.exp(-delta / 300.0)
                     weight = index * kernel
-                    weighted_sum += float(quality) * weight
+                    weighted_sum += (float(quality) / 100.0) * weight
                     weight_total += weight
             # Shrink sparse evidence toward neutral instead of treating one
             # nearby start as a definitive distance-specialist signal.
@@ -166,7 +166,7 @@ def run_fold(label, variant, races, horses, payouts, train_dates, test_dates, mo
         "trained_weights": fold.get("trained_weights"),
         "models": selected,
         "calibration": fold.get("calibration"),
-        "age_stage_training_counts": dict(age_stats),
+        "age_stage_update_counts": dict(age_stats),
     }
 
 
