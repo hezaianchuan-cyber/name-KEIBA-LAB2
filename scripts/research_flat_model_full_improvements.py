@@ -572,7 +572,7 @@ def main():
             "distance": "Replace the fixed +/-200m average with a recency-weighted exponential distance kernel (300m scale), shrunk toward neutral with three pseudo-runs.",
             "age": "Replace the fixed age score with a chronological age-stage prior learned from past runners only (2-3, 4-6, 7+); prior strength 30; update after each date's predictions.",
             "jockey_ticket_separation": "Compare the same fixed trio ticket builder with and without the jockey feature, and separately retain role-specific ticket diagnostics. Same races and ticket cost per policy.",
-            "ev": "Audit pre-off snapshots captured 2-30 minutes before post time. The current archive is a short recent sample; this run does not fit or deploy a new probability model.",
+            "ev": "Fit a race-wise temperature calibration on earlier snapshot dates, recalculate EV as calibrated win probability times captured pre-off odds, and evaluate on later dates. This is research-only and sample-limited.",
             "leakage": "Banei is excluded before fitting and scoring. Predictions for all races on a date precede updates from that date. Current-race results, payouts, and final odds are not predictor inputs.",
             "deployment": "No production weights, live predictions, tickets, or database records changed.",
         },
