@@ -498,6 +498,7 @@ def main():
     flat_keys = set(flat_races)
     flat_horses = {key: value for key, value in horses.items() if key in flat_keys}
     flat_payouts = {key: value for key, value in payouts.items() if key in flat_keys}
+    recent_payout_merge = merge_recent_daily_payouts(flat_payouts)
     dates = sorted({race["date"] for race in flat_races.values()})
     cutoff = nb.END - dt.timedelta(days=365)
     train_dates = [date for date in dates if date <= cutoff]
@@ -516,6 +517,7 @@ def main():
         "test_races": test_races,
     }
     print("FULL_IMPROVEMENTS scope " + json.dumps(scope, ensure_ascii=False), flush=True)
+    experiments = {}
 
     # Baseline and jockey ablation share the same fold and identical race/ticket budget.
     baseline = run_fold(
@@ -523,22 +525,30 @@ def main():
         flat_races, flat_horses, flat_payouts, train_dates, test_dates,
         ["C_performance_pace", "ablate_jockey"],
     )
+    experiments["original_baseline_and_jockey_ablation"] = baseline
+    write_checkpoint("partial_after_baseline", scope, experiments, {"recent_daily_payout_merge": recent_payout_merge})
     # Fixed, predeclared challengers: no threshold is selected on the holdout.
     distance = run_fold(
         "Continuous distance suitability", "distance_kernel",
         flat_races, flat_horses, flat_payouts, train_dates, test_dates,
         ["C_performance_pace"],
     )
+    experiments["distance_kernel"] = distance
+    write_checkpoint("partial_after_distance", scope, experiments, {"recent_daily_payout_merge": recent_payout_merge})
     age = run_fold(
         "Data-driven age-stage prior", "age_stage",
         flat_races, flat_horses, flat_payouts, train_dates, test_dates,
         ["C_performance_pace"],
     )
+    experiments["age_stage"] = age
+    write_checkpoint("partial_after_age", scope, experiments, {"recent_daily_payout_merge": recent_payout_merge})
     combined = run_fold(
         "Distance plus age-stage", "distance_plus_age",
         flat_races, flat_horses, flat_payouts, train_dates, test_dates,
         ["C_performance_pace"],
     )
+    experiments["distance_plus_age"] = combined
+    write_checkpoint("partial_after_all_four_tracks", scope, experiments, {"recent_daily_payout_merge": recent_payout_merge})
 
     # Existing role-specific trifecta diagnostics are a separate ticket-layer
     # comparison; jockey remains in horse ranking, while ticket roles are
@@ -558,7 +568,10 @@ def main():
     # Keep this separate from the year-long horse-ranking holdout and report
     # whether the sample is large enough to support any EV threshold.
     snapshot_inventory = nb.odds_snapshot_inventory()
-    calibrated_ev_audit = preoff_probability_ev_audit(flat_payouts)
+    try:
+        calibrated_ev_audit = preoff_probability_ev_audit(flat_payouts)
+    except Exception as exc:
+        calibrated_ev_audit = {"status": "unavailable", "reason": f"{type(exc).__name__}: {exc}"}
     try:
         ev_audit = nb.preoff_value_backtest(flat_payouts)
     except Exception as exc:
@@ -579,12 +592,7 @@ def main():
         "status": "research_only",
         "scope": scope,
         "source_months": months,
-        "experiments": {
-            "original_baseline_and_jockey_ablation": baseline,
-            "distance_kernel": distance,
-            "age_stage": age,
-            "distance_plus_age": combined,
-        },
+        "experiments": experiments,
         "ticket_layer": ticket_layer,
         "expected_value": ev_audit,
         "recent_daily_payout_merge": recent_payout_merge,
