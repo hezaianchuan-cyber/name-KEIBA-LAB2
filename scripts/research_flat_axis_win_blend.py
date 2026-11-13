@@ -180,8 +180,21 @@ def paired_bootstrap(scored, a, b, iterations=3000):
     return out
 
 
+
+def filter_flat_races(races):
+    """Exclude Banei/Obihiro races before building chronological features."""
+    flat = {
+        key: race for key, race in races.items()
+        if not any(token in str(race.get("venue") or "") for token in ("帯広", "ばんえい"))
+    }
+    excluded = len(races) - len(flat)
+    if not flat:
+        raise RuntimeError("平地レースが0件です。会場フィルターを確認してください")
+    return flat, excluded
+
 def main():
     races, horses, payouts, downloaded_months = nb.load_archives()
+    races, excluded_banei = filter_flat_races(races)
     rows, dates = challenger.build_rows(races, horses)
     dates = sorted({str(row["date"]) for row in rows})
     if len(dates) < 100:
@@ -219,6 +232,8 @@ def main():
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "research_only_flat_axis_win_blend",
         "scope": "地方競馬の平地のみ。ばんえいを含まない。本番モデル・買い目生成は未変更。",
+        "excluded_banei_race_count": excluded_banei,
+        "included_venues": sorted({str(r.get("venue") or "不明") for r in races.values()}),
         "data": {
             "downloaded_months": downloaded_months,
             "all_rows": len(rows),
