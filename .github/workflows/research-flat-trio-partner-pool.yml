@@ -1,0 +1,40 @@
+name: Research flat trio partner-pool test
+on:
+  workflow_dispatch:
+  push:
+    branches: [research/flat-axis-win-blend]
+    paths:
+      - 'scripts/research_flat_trio_partner_pool_test.py'
+      - '.github/workflows/research-flat-trio-partner-pool.yml'
+permissions:
+  contents: read
+concurrency:
+  group: research-flat-trio-partner-pool
+  cancel-in-progress: false
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/flat-axis-win-blend
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install research dependencies
+        run: python -m pip install --disable-pip-version-check numpy scipy scikit-learn catboost lightgbm
+      - name: Compile research script
+        run: python -m py_compile scripts/research_flat_axis_win_blend.py scripts/research_flat_trio_partner_pool_test.py scripts/nar_backtest.py scripts/nar_ml_challenger_backtest.py
+      - name: Run fixed-budget partner-pool comparison
+        env:
+          NAR_CACHE_DIR: .cache/nar-monthly
+          NAR_PARSED_CACHE_DIR: .cache/nar-parsed
+        run: python scripts/research_flat_trio_partner_pool_test.py
+      - name: Upload research report
+        uses: actions/upload-artifact@v4
+        with:
+          name: flat-trio-partner-pool-test
+          path: data/flat-trio-partner-pool-test.json
+          if-no-files-found: error
+          retention-days: 30
