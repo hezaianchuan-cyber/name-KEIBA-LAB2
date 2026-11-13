@@ -141,18 +141,29 @@ def build_rows_stable(races, horses):
     return records, audit
 
 
-def partner_probabilities(train, test, target_key="label_top3"):
+def partner_probabilities(train, test, target_key="label_top3", model_kind="logistic", feature_indices=None):
+    indices = feature_indices or PARTNER_INDICES
     def vec(row):
         all_features = row["base"] + row["body_profile"] + [row["carried_z"]]
-        return [all_features[i] for i in PARTNER_INDICES]
+        return [all_features[i] for i in indices]
     x_train = np.asarray([vec(r) for r in train], dtype=float)
     x_test = np.asarray([vec(r) for r in test], dtype=float)
     y = np.asarray([r[target_key] for r in train], dtype=int)
-    model = make_pipeline(
-        SimpleImputer(strategy="median", add_indicator=True),
-        StandardScaler(),
-        LogisticRegression(C=0.5, max_iter=1500, random_state=SEED),
-    )
+    if model_kind == "hist_gradient_boosting":
+        model = make_pipeline(
+            SimpleImputer(strategy="median", add_indicator=True),
+            HistGradientBoostingClassifier(
+                learning_rate=0.05, max_iter=160, max_leaf_nodes=15,
+                min_samples_leaf=30, l2_regularization=2.0,
+                early_stopping=True, random_state=SEED,
+            ),
+        )
+    else:
+        model = make_pipeline(
+            SimpleImputer(strategy="median", add_indicator=True),
+            StandardScaler(),
+            LogisticRegression(C=0.5, max_iter=1500, random_state=SEED),
+        )
     model.fit(x_train, y)
     return model.predict_proba(x_test)[:, 1]
 
@@ -239,6 +250,18 @@ def main():
     # Blend the partner rankings by within-race percentile, not raw score scale.
     partner_blend_scores = blend_partner_scores(holdout, partner_top3_scores, partner_23_scores)
     split_blend_races, split_blend_summary = split_role_rank(holdout, axis_scores, partner_blend_scores)
+
+    # Non-linear partner rankers use the same 2nd/3rd-place target and no
+    # current carried-weight-relative feature.
+    partner_23_hgb = partner_probabilities(
+        train, holdout, "label_nonwinner_podium", model_kind="hist_gradient_boosting"
+    )
+    split_23_hgb_races, split_23_hgb_summary = split_role_rank(holdout, axis_scores, partner_23_hgb)
+    partner_23_hgb_ext = partner_probabilities(
+        train, holdout, "label_nonwinner_podium", model_kind="hist_gradient_boosting",
+        feature_indices=PARTNER_INDICES_EXTENDED
+    )
+    split_23_hgb_ext_races, split_23_hgb_ext_summary = split_role_rank(holdout, axis_scores, partner_23_hgb_ext)
 
     axis_races, axis_summary = ranking_metrics(holdout, axis_scores)
     top3_all_races, top3_all_summary = ranking_metrics(holdout, partner_top3_scores)
