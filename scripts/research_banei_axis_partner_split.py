@@ -168,7 +168,7 @@ def partner_probabilities(train, test, target_key="label_top3", model_kind="logi
     return model.predict_proba(x_test)[:, 1]
 
 
-def blend_partner_scores(records, first, second):
+def blend_partner_scores(records, first, second, first_weight=0.5):
     """Blend partner models after converting scores to within-race percentiles."""
     grouped = defaultdict(list)
     for i, row in enumerate(records):
@@ -180,7 +180,7 @@ def blend_partner_scores(records, first, second):
             ranks = ({order[0]: 1.0} if len(order) == 1 else
                      {idx: rank / (len(order) - 1) for rank, idx in enumerate(order)})
             for idx in indices:
-                blended[idx] += ranks[idx] / 2.0
+                blended[idx] += ranks[idx] * (first_weight if scores is first else (1.0 - first_weight))
     return blended
 
 
@@ -263,6 +263,15 @@ def main():
     )
     split_23_hgb_ext_races, split_23_hgb_ext_summary = split_role_rank(holdout, axis_scores, partner_23_hgb_ext)
 
+    # Blend the nonlinear partner score with winner-similarity rank among
+    # non-axis candidates to reduce sensitivity to either ranking alone.
+    partner_hgb_axis_blend_25 = blend_partner_scores(holdout, partner_23_hgb_ext, axis_scores, 0.25)
+    split_hgb_axis_blend_25_races, split_hgb_axis_blend_25_summary = split_role_rank(holdout, axis_scores, partner_hgb_axis_blend_25)
+    partner_hgb_axis_blend_50 = blend_partner_scores(holdout, partner_23_hgb_ext, axis_scores, 0.50)
+    split_hgb_axis_blend_50_races, split_hgb_axis_blend_50_summary = split_role_rank(holdout, axis_scores, partner_hgb_axis_blend_50)
+    partner_hgb_axis_blend_75 = blend_partner_scores(holdout, partner_23_hgb_ext, axis_scores, 0.75)
+    split_hgb_axis_blend_75_races, split_hgb_axis_blend_75_summary = split_role_rank(holdout, axis_scores, partner_hgb_axis_blend_75)
+
     axis_races, axis_summary = ranking_metrics(holdout, axis_scores)
     top3_all_races, top3_all_summary = ranking_metrics(holdout, partner_top3_scores)
     podium23_all_races, podium23_all_summary = ranking_metrics(holdout, partner_23_scores)
@@ -281,6 +290,12 @@ def main():
         model_kind="hist_gradient_boosting", feature_indices=PARTNER_INDICES_EXTENDED
     )
     gap_split_races, gap_split_summary = split_role_rank(gap_rows, gap_axis_scores, gap_partner_scores)
+    gap_blend_25_scores = blend_partner_scores(gap_rows, gap_partner_scores, gap_axis_scores, 0.25)
+    gap_blend_25_races, gap_blend_25_summary = split_role_rank(gap_rows, gap_axis_scores, gap_blend_25_scores)
+    gap_blend_50_scores = blend_partner_scores(gap_rows, gap_partner_scores, gap_axis_scores, 0.50)
+    gap_blend_50_races, gap_blend_50_summary = split_role_rank(gap_rows, gap_axis_scores, gap_blend_50_scores)
+    gap_blend_75_scores = blend_partner_scores(gap_rows, gap_partner_scores, gap_axis_scores, 0.75)
+    gap_blend_75_races, gap_blend_75_summary = split_role_rank(gap_rows, gap_axis_scores, gap_blend_75_scores)
     gap_axis_races, gap_axis_summary = ranking_metrics(gap_rows, gap_axis_scores)
     gap_partner_top3 = partner_probabilities(train, gap_rows, "label_top3")
     gap_partner_races, gap_partner_summary = ranking_metrics(gap_rows, gap_partner_top3)
@@ -309,8 +324,14 @@ def main():
             },
             "winner_similarity_axis_only": gap_axis_summary,
             "split_axis_plus_second_third_hist_gradient_boosting_extended_features": gap_split_summary,
+            "split_axis_plus_hgb_75pct_similarity_25pct": gap_blend_25_summary,
+            "split_axis_plus_hgb_50pct_similarity_50pct": gap_blend_50_summary,
+            "split_axis_plus_hgb_25pct_similarity_75pct": gap_blend_75_summary,
             "top3_partner_model_all_slots": gap_partner_summary,
             "paired_vs_winner_similarity": paired_bootstrap(gap_axis_races, gap_split_races),
+            "paired_blend_25_vs_winner_similarity": paired_bootstrap(gap_axis_races, gap_blend_25_races),
+            "paired_blend_50_vs_winner_similarity": paired_bootstrap(gap_axis_races, gap_blend_50_races),
+            "paired_blend_75_vs_winner_similarity": paired_bootstrap(gap_axis_races, gap_blend_75_races),
             "paired_vs_top3_partner_all_slots": paired_bootstrap(gap_partner_races, gap_split_races),
             "note": "モデル選択後に、学習期間と最終検証期間の間に未使用だった期間で行う補助的な頑健性確認。将来の独立検証の代わりではない。",
         },
@@ -323,6 +344,9 @@ def main():
             "split_axis_plus_blended_partners": split_blend_summary,
             "split_axis_plus_second_third_hist_gradient_boosting": split_23_hgb_summary,
             "split_axis_plus_second_third_hist_gradient_boosting_extended_features": split_23_hgb_ext_summary,
+            "split_axis_plus_hgb_75pct_similarity_25pct": split_hgb_axis_blend_25_summary,
+            "split_axis_plus_hgb_50pct_similarity_50pct": split_hgb_axis_blend_50_summary,
+            "split_axis_plus_hgb_25pct_similarity_75pct": split_hgb_axis_blend_75_summary,
         },
         "paired_comparisons": {
             "split_top3_vs_winner_similarity": paired_bootstrap(axis_races, split_top3_races),
@@ -335,6 +359,9 @@ def main():
             "split_23_hgb_extended_vs_hgb": paired_bootstrap(split_23_hgb_races, split_23_hgb_ext_races),
             "split_23_hgb_extended_vs_winner_similarity": paired_bootstrap(axis_races, split_23_hgb_ext_races),
             "split_23_hgb_extended_vs_top3_partner_all_slots": paired_bootstrap(top3_all_races, split_23_hgb_ext_races),
+            "hgb_similarity_blend_25_vs_winner_similarity": paired_bootstrap(axis_races, split_hgb_axis_blend_25_races),
+            "hgb_similarity_blend_50_vs_winner_similarity": paired_bootstrap(axis_races, split_hgb_axis_blend_50_races),
+            "hgb_similarity_blend_75_vs_winner_similarity": paired_bootstrap(axis_races, split_hgb_axis_blend_75_races),
             "split_23_vs_top3_partner_all_slots": paired_bootstrap(top3_all_races, split_23_races),
         },
         "method": {
