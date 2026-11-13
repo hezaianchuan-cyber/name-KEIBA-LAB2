@@ -237,7 +237,8 @@ def preoff_probability_ev_audit(payouts):
             continue
         predictions = []
         for row in record.get("predictions") or []:
-            no = str(row.get("horse_no") or "").strip()
+            no = "".join(character for character in str(row.get("horse_no") or "") if character.isdigit())
+            no = str(int(no)) if no else ""
             probability = nb.number(row.get("win_probability"))
             odds = nb.number(row.get("win_odds"))
             if not no or probability is None or probability <= 0:
@@ -247,10 +248,15 @@ def preoff_probability_ev_audit(payouts):
                 "probability": float(probability),
                 "odds": float(odds) if odds is not None and odds > 0 else None,
             })
+        def normalize_no(value):
+            digits = "".join(character for character in str(value) if character.isdigit())
+            return str(int(digits)) if digits else ""
+
         winners = {
-            str(no)
+            normalize_no(no)
             for numbers, _pay in payout.get("win", [])
             for no in numbers
+            if normalize_no(no)
         }
         if not predictions or not winners or not any(row["no"] in winners for row in predictions):
             continue
@@ -384,7 +390,11 @@ def preoff_probability_ev_audit(payouts):
                     if item["no"] in row["winners"]:
                         hit_count += 1
                         # Use the official payout for this exact horse.
-                        payout_value = nb.payout_for("win", [item["no"]], row["payout"]) or 0
+                        payout_value = 0
+                        for numbers, pay in row["payout"].get("win", []):
+                            if numbers and str(int("".join(ch for ch in str(numbers[0]) if ch.isdigit()) or 0)) == item["no"]:
+                                payout_value = int(pay or 0)
+                                break
                         returned += payout_value
                         race_return += payout_value
                 if race_tickets:
@@ -528,17 +538,19 @@ def main():
     # Keep this separate from the year-long horse-ranking holdout and report
     # whether the sample is large enough to support any EV threshold.
     snapshot_inventory = nb.odds_snapshot_inventory()
+    calibrated_ev_audit = preoff_probability_ev_audit(flat_payouts)
     try:
         ev_audit = nb.preoff_value_backtest(flat_payouts)
     except Exception as exc:
         ev_audit = {"status": "unavailable", "reason": f"{type(exc).__name__}: {exc}"}
     ev_audit = {
         "snapshot_inventory": snapshot_inventory,
+        "chronological_probability_calibration": calibrated_ev_audit,
         "existing_preoff_ev_signal_audit": ev_audit,
         "interpretation": (
-            "This evaluates already-recorded pre-off predictions/expected_value against official payouts. "
-            "It is not a newly calibrated probability model. A new EV model requires a larger chronological "
-            "snapshot archive; do not adopt a threshold from this short recent window."
+            "Win probabilities are recalibrated by temperature using earlier snapshot dates only. "
+            "Expected value is recalculated as calibrated probability times captured pre-off odds. "
+            "This is research-only; the short snapshot window is not sufficient for deployment."
         ),
     }
 
@@ -555,6 +567,7 @@ def main():
         },
         "ticket_layer": ticket_layer,
         "expected_value": ev_audit,
+        "recent_daily_payout_merge": recent_payout_merge,
         "method": {
             "distance": "Replace the fixed +/-200m average with a recency-weighted exponential distance kernel (300m scale), shrunk toward neutral with three pseudo-runs.",
             "age": "Replace the fixed age score with a chronological age-stage prior learned from past runners only (2-3, 4-6, 7+); prior strength 30; update after each date's predictions.",
@@ -574,6 +587,7 @@ def main():
         "combined": combined["models"],
         "ticket_layer": ticket_layer,
         "expected_value": ev_audit,
+        "recent_daily_payout_merge": recent_payout_merge,
         "report": str(OUT),
     }, ensure_ascii=False, default=str), flush=True)
 
