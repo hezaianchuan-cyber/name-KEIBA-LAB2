@@ -63,7 +63,8 @@ def install_feature_variant(variant):
                 finish = horse.get("finish")
                 if age is None or not finish:
                     continue
-                quality = nb.rank_quality(finish, horse.get("field_size") or len(field))\n                quality = (float(quality) / 100.0) if quality is not None else None
+                quality = nb.rank_quality(finish, horse.get("field_size") or len(field))
+                quality = (float(quality) / 100.0) if quality is not None else None
                 if quality is None:
                     continue
                 bucket = age_stats[age_stage(age)]
