@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 import numpy as np
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -26,6 +27,7 @@ BOOTSTRAPS = 2000
 # performance/age + prior body-weight level only; it excludes noisy body
 # weight trend/variation and current carried-weight-relative-to-field.
 PARTNER_INDICES = list(range(0, 7))
+PARTNER_INDICES_EXTENDED = list(range(0, 7)) + [11, 12]
 
 
 def identity_key(horse):
@@ -264,6 +266,8 @@ def main():
             "split_axis_plus_top3_partners": split_top3_summary,
             "split_axis_plus_second_third_partners": split_23_summary,
             "split_axis_plus_blended_partners": split_blend_summary,
+            "split_axis_plus_second_third_hist_gradient_boosting": split_23_hgb_summary,
+            "split_axis_plus_second_third_hist_gradient_boosting_extended_features": split_23_hgb_ext_summary,
         },
         "paired_comparisons": {
             "split_top3_vs_winner_similarity": paired_bootstrap(axis_races, split_top3_races),
@@ -271,12 +275,17 @@ def main():
             "split_blend_vs_winner_similarity": paired_bootstrap(axis_races, split_blend_races),
             "split_23_vs_split_top3": paired_bootstrap(split_top3_races, split_23_races),
             "split_blend_vs_split_top3": paired_bootstrap(split_top3_races, split_blend_races),
+            "split_23_hgb_vs_logistic": paired_bootstrap(split_23_races, split_23_hgb_races),
+            "split_23_hgb_extended_vs_logistic": paired_bootstrap(split_23_races, split_23_hgb_ext_races),
+            "split_23_hgb_extended_vs_hgb": paired_bootstrap(split_23_hgb_races, split_23_hgb_ext_races),
             "split_23_vs_top3_partner_all_slots": paired_bootstrap(top3_all_races, split_23_races),
         },
         "method": {
             "axis": "勝ち馬特徴照合モデル（過去成績・年齢・過去馬体重・斤量相対値）",
             "partners": "3着内分類モデルと2・3着専用分類モデルを比較し、順位化して混合する方式も検証",
             "partner_feature_indices": PARTNER_INDICES,
+            "partner_extended_feature_indices": PARTNER_INDICES_EXTENDED,
+            "partner_model_algorithms": ["logistic_regression", "hist_gradient_boosting"],
             "current_race_body_weight_and_change_used": False,
             "current_carried_weight_relative_to_field_used_for_partners": False,
             "same_race_history_update_delayed_until_all_features_built": True,
