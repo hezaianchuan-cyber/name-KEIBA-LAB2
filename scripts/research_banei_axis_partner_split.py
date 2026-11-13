@@ -117,6 +117,7 @@ def build_rows_stable(races, horses):
                 "base": base, "body_profile": body, "carried_z": carried_z,
                 "finish": finish,
                 "label_top3": int(finish is not None and 0 < finish <= 3),
+                "label_nonwinner_podium": int(finish is not None and finish in (2, 3)),
                 "label_win": int(finish is not None and finish == 1),
                 "field_size": len(field),
             })
@@ -138,13 +139,13 @@ def build_rows_stable(races, horses):
     return records, audit
 
 
-def partner_probabilities(train, test):
+def partner_probabilities(train, test, target_key="label_top3"):
     def vec(row):
         all_features = row["base"] + row["body_profile"] + [row["carried_z"]]
         return [all_features[i] for i in PARTNER_INDICES]
     x_train = np.asarray([vec(r) for r in train], dtype=float)
     x_test = np.asarray([vec(r) for r in test], dtype=float)
-    y = np.asarray([r["label_top3"] for r in train], dtype=int)
+    y = np.asarray([r[target_key] for r in train], dtype=int)
     model = make_pipeline(
         SimpleImputer(strategy="median", add_indicator=True),
         StandardScaler(),
@@ -152,6 +153,22 @@ def partner_probabilities(train, test):
     )
     model.fit(x_train, y)
     return model.predict_proba(x_test)[:, 1]
+
+
+def blend_partner_scores(records, first, second):
+    """Blend partner models after converting scores to within-race percentiles."""
+    grouped = defaultdict(list)
+    for i, row in enumerate(records):
+        grouped[row["race_key"]].append(i)
+    blended = np.zeros(len(records), dtype=float)
+    for indices in grouped.values():
+        for scores in (first, second):
+            order = sorted(indices, key=lambda i: (float(scores[i]), -int(records[i]["horse_no"])))
+            ranks = ({order[0]: 1.0} if len(order) == 1 else
+                     {idx: rank / (len(order) - 1) for rank, idx in enumerate(order)})
+            for idx in indices:
+                blended[idx] += ranks[idx] / 2.0
+    return blended
 
 
 def split_role_rank(records, axis_scores, partner_scores):
@@ -210,12 +227,20 @@ def main():
         raise RuntimeError("学習または検証データが空です")
 
     axis_scores, prototype = fit_winner_similarity(train, holdout)
-    partner_scores = partner_probabilities(train, holdout)
-    split_races, split_summary = split_role_rank(holdout, axis_scores, partner_scores)
+    partner_top3_scores = partner_probabilities(train, holdout, "label_top3")
+    split_top3_races, split_top3_summary = split_role_rank(holdout, axis_scores, partner_top3_scores)
+
+    # Specialist partner model learns only second/third-place finishers.
+    partner_23_scores = partner_probabilities(train, holdout, "label_nonwinner_podium")
+    split_23_races, split_23_summary = split_role_rank(holdout, axis_scores, partner_23_scores)
+
+    # Blend the partner rankings by within-race percentile, not raw score scale.
+    partner_blend_scores = blend_partner_scores(holdout, partner_top3_scores, partner_23_scores)
+    split_blend_races, split_blend_summary = split_role_rank(holdout, axis_scores, partner_blend_scores)
+
     axis_races, axis_summary = ranking_metrics(holdout, axis_scores)
-    # Comparator: existing top-three model score used for all three positions.
-    base = partner_probabilities(train, holdout)
-    base_races, base_summary = ranking_metrics(holdout, base)
+    top3_all_races, top3_all_summary = ranking_metrics(holdout, partner_top3_scores)
+    podium23_all_races, podium23_all_summary = ranking_metrics(holdout, partner_23_scores)
 
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -234,16 +259,23 @@ def main():
         "identity_audit": identity_audit,
         "models": {
             "winner_similarity_axis_only_rank": axis_summary,
-            "top3_partner_model_all_slots": base_summary,
-            "split_axis_plus_two_partners": split_summary,
+            "top3_partner_model_all_slots": top3_all_summary,
+            "second_third_partner_model_all_slots": podium23_all_summary,
+            "split_axis_plus_top3_partners": split_top3_summary,
+            "split_axis_plus_second_third_partners": split_23_summary,
+            "split_axis_plus_blended_partners": split_blend_summary,
         },
         "paired_comparisons": {
-            "split_vs_winner_similarity": paired_bootstrap(axis_races, split_races),
-            "split_vs_partner_model": paired_bootstrap(base_races, split_races),
+            "split_top3_vs_winner_similarity": paired_bootstrap(axis_races, split_top3_races),
+            "split_23_vs_winner_similarity": paired_bootstrap(axis_races, split_23_races),
+            "split_blend_vs_winner_similarity": paired_bootstrap(axis_races, split_blend_races),
+            "split_23_vs_split_top3": paired_bootstrap(split_top3_races, split_23_races),
+            "split_blend_vs_split_top3": paired_bootstrap(split_top3_races, split_blend_races),
+            "split_23_vs_top3_partner_all_slots": paired_bootstrap(top3_all_races, split_23_races),
         },
         "method": {
             "axis": "勝ち馬特徴照合モデル（過去成績・年齢・過去馬体重・斤量相対値）",
-            "partners": "3着内分類モデル（過去成績・年齢・過去馬体重水準のみ）",
+            "partners": "3着内分類モデルと2・3着専用分類モデルを比較し、順位化して混合する方式も検証",
             "partner_feature_indices": PARTNER_INDICES,
             "current_race_body_weight_and_change_used": False,
             "current_carried_weight_relative_to_field_used_for_partners": False,
