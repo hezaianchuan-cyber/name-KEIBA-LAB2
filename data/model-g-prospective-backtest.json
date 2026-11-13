@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-12T20:00:06.113392+00:00",
+  "generated_at": "2026-11-13T19:59:54.651709+00:00",
   "model_version": "nar-model-g-experimental-1",
   "snapshot_policy": "Only genuine official snapshots captured 2-30 minutes before scheduled post time; final odds are never substituted.",
   "strategy_policy": {
@@ -10,11 +10,295 @@
     "bet_type": "One bet type selected per race from qualified candidates; races without evidence are skipped.",
     "threshold_selection": "Fixed before prospective evaluation; no holdout tuning."
   },
-  "snapshot_races": 214,
-  "snapshot_dates": 9,
-  "status": "awaiting_more_snapshot_dates",
-  "development": null,
-  "holdout": null,
+  "snapshot_races": 233,
+  "snapshot_dates": 10,
+  "status": "awaiting_holdout_sample",
+  "development": {
+    "races_with_bets": 0,
+    "skipped_races": 172,
+    "skip_reasons": {},
+    "tickets": 0,
+    "hits": 0,
+    "hit_rate_percent": null,
+    "stake_jpy": 0,
+    "return_jpy": 0,
+    "profit_jpy": 0,
+    "roi_percent": null,
+    "roi_ci95_race_cluster_low": null,
+    "roi_ci95_race_cluster_high": null,
+    "selected_bet_type_race_counts": {},
+    "max_race_stake_jpy": 0,
+    "race_budget_cap_jpy": 2000,
+    "minimum_sample_met": false
+  },
+  "holdout": {
+    "races_with_bets": 0,
+    "skipped_races": 61,
+    "skip_reasons": {},
+    "tickets": 0,
+    "hits": 0,
+    "hit_rate_percent": null,
+    "stake_jpy": 0,
+    "return_jpy": 0,
+    "profit_jpy": 0,
+    "roi_percent": null,
+    "roi_ci95_race_cluster_low": null,
+    "roi_ci95_race_cluster_high": null,
+    "selected_bet_type_race_counts": {},
+    "max_race_stake_jpy": 0,
+    "race_budget_cap_jpy": 2000,
+    "minimum_sample_met": false
+  },
   "profitable_candidate": false,
-  "promotion_policy": "Promote only after at least 100 holdout races and 300 tickets, with race-cluster bootstrap 95% ROI lower bound above 100%."
+  "promotion_policy": "Promote only after at least 100 holdout races and 300 tickets, with race-cluster bootstrap 95% ROI lower bound above 100%.",
+  "downloaded_payout_months": [
+    {
+      "month": "2022-11",
+      "bytes": 1232537,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2022-12",
+      "bytes": 1243445,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2023-01",
+      "bytes": 1046317,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2023-02",
+      "bytes": 922882,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2023-03",
+      "bytes": 1194980,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2023-04",
+      "bytes": 1124605,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2023-05",
+      "bytes": 1324489,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2023-06",
+      "bytes": 1286027,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2023-07",
+      "bytes": 1291848,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2023-08",
+      "bytes": 1283029,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2023-09",
+      "bytes": 1221968,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2023-10",
+      "bytes": 1364759,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2023-11",
+      "bytes": 1262423,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2023-12",
+      "bytes": 1290058,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2024-01",
+      "bytes": 1061092,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2024-02",
+      "bytes": 989054,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2024-03",
+      "bytes": 1111564,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2024-04",
+      "bytes": 1223169,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2024-05",
+      "bytes": 1313171,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2024-06",
+      "bytes": 1310361,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2024-07",
+      "bytes": 1359530,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2024-08",
+      "bytes": 1191409,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2024-09",
+      "bytes": 1284270,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2024-10",
+      "bytes": 1376249,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2024-11",
+      "bytes": 1251638,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2024-12",
+      "bytes": 1340706,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2025-01",
+      "bytes": 1110135,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2025-02",
+      "bytes": 943736,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2025-03",
+      "bytes": 1172720,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2025-04",
+      "bytes": 1165538,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2025-05",
+      "bytes": 1273529,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2025-06",
+      "bytes": 1321842,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2025-07",
+      "bytes": 1261231,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2025-08",
+      "bytes": 1100309,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2025-09",
+      "bytes": 1322983,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2025-10",
+      "bytes": 1404534,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2025-11",
+      "bytes": 1272919,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2025-12",
+      "bytes": 1305598,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2026-01",
+      "bytes": 1059227,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2026-02",
+      "bytes": 941511,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2026-03",
+      "bytes": 1262890,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2026-04",
+      "bytes": 1235458,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2026-05",
+      "bytes": 1360810,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2026-06",
+      "bytes": 1321050,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2026-07",
+      "bytes": 1357657,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2026-08",
+      "bytes": 1211113,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2026-09",
+      "bytes": 1359705,
+      "parsed_cache": "miss"
+    },
+    {
+      "month": "2026-10",
+      "bytes": 1420092,
+      "parsed_cache": "miss"
+    }
+  ],
+  "development_period": [
+    "20261104",
+    "20261110"
+  ],
+  "holdout_period": [
+    "20261111",
+    "20261113"
+  ]
 }
