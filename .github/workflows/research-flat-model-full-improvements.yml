@@ -48,10 +48,11 @@ jobs:
           NAR_PARSED_CACHE_DIR: .cache/nar-parsed
           NAR_ODDS_CACHE_DIR: .cache/nar-odds-monthly
         run: python scripts/research_flat_model_full_improvements.py
-      - name: Upload full improvement report
+      - name: Upload full improvement report or latest checkpoint
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: flat-model-full-improvements
           path: data/research-flat-model-full-improvements.json
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
