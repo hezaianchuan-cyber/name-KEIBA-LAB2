@@ -958,6 +958,12 @@ FEATURE_WEIGHT_VARIANTS = {
     "weight_distance_up_1_3": ("distance", 1.30),
     "weight_venue_down_0_7": ("venue", 0.70),
     "weight_venue_up_1_3": ("venue", 1.30),
+    # Research-only feature-shape candidates; weight multipliers stay at 1.0.
+    "shape_distance_exact_100": ("distance", 1.00),
+    "shape_distance_kernel_350": ("distance", 1.00),
+    "shape_age_smooth": ("age", 1.00),
+    "shape_age_neutral": ("age", 1.00),
+    "shape_distance_kernel_350_age_smooth": ("distance", 1.00),
 }
 
 # Combined challengers are research-only. All adjustments are applied together
@@ -2838,7 +2844,8 @@ def evaluate_holdout_fold(races, horses, payouts, train_dates, test_dates, final
     models.update({f"ablate_{feature}": learned for feature in ablation_features})
     weight_variant_names = FEATURE_WEIGHT_NAMES
     models.update({
-        name: scaled_model_weights(learned, feature, multiplier)
+        name: {**scaled_model_weights(learned, feature, multiplier),
+               "__shape_variant": name}
         for name, (feature, multiplier) in FEATURE_WEIGHT_VARIANTS.items()
     })
     models.update({
