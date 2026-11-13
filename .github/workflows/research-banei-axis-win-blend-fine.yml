@@ -1,0 +1,46 @@
+name: Research Banei axis win-score blend fine ratios
+
+on:
+  push:
+    branches:
+      - research/banei-axis-win-blend-fine
+    paths:
+      - '.github/workflows/research-banei-axis-win-blend-fine.yml'
+      - 'scripts/research_banei_axis_win_blend_fine.py'
+      - 'scripts/research_banei_axis_partner_split.py'
+      - 'scripts/research_banei_winner_profile_similarity.py'
+      - 'scripts/research_banei_historical_body_weight_profile.py'
+      - 'scripts/nar_backtest.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-banei-axis-win-blend-fine
+  cancel-in-progress: false
+
+jobs:
+  axis-win-blend-fine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/banei-axis-win-blend-fine
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install research dependencies
+        run: python -m pip install --disable-pip-version-check numpy scikit-learn
+      - name: Compile research scripts
+        run: python -m py_compile scripts/nar_backtest.py scripts/research_banei_historical_body_weight_profile.py scripts/research_banei_winner_profile_similarity.py scripts/research_banei_axis_partner_split.py scripts/research_banei_axis_win_blend_fine.py
+      - name: Run fine-ratio Banei axis blend experiment
+        run: python scripts/research_banei_axis_win_blend_fine.py
+      - name: Upload research report
+        uses: actions/upload-artifact@v4
+        with:
+          name: banei-axis-win-blend-fine
+          path: data/banei-axis-win-blend-fine.json
+          if-no-files-found: error
+          retention-days: 30
