@@ -267,6 +267,24 @@ def main():
     top3_all_races, top3_all_summary = ranking_metrics(holdout, partner_top3_scores)
     podium23_all_races, podium23_all_summary = ranking_metrics(holdout, partner_23_scores)
 
+    # Robustness check on the chronologically earlier 15% gap that was not
+    # used to fit any model. This is supplementary, not a future prospective test.
+    gap_raw = [r for r in usable if train_cut < r["date"] <= dev_cut]
+    gap_podium_counts = defaultdict(int)
+    for r in gap_raw:
+        gap_podium_counts[r["race_key"]] += r["label_top3"]
+    gap_keys = {k for k, n in gap_podium_counts.items() if n >= 3}
+    gap_rows = [r for r in gap_raw if r["race_key"] in gap_keys]
+    gap_axis_scores, _gap_prototype = fit_winner_similarity(train, gap_rows)
+    gap_partner_scores = partner_probabilities(
+        train, gap_rows, "label_nonwinner_podium",
+        model_kind="hist_gradient_boosting", feature_indices=PARTNER_INDICES_EXTENDED
+    )
+    gap_split_races, gap_split_summary = split_role_rank(gap_rows, gap_axis_scores, gap_partner_scores)
+    gap_axis_races, gap_axis_summary = ranking_metrics(gap_rows, gap_axis_scores)
+    gap_partner_top3 = partner_probabilities(train, gap_rows, "label_top3")
+    gap_partner_races, gap_partner_summary = ranking_metrics(gap_rows, gap_partner_top3)
+
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "status": "research_only_banei_axis_partner_split",
@@ -282,6 +300,20 @@ def main():
             "holdout_end": max(r["date"] for r in holdout),
         },
         "identity_audit": identity_audit,
+        "gap_period_robustness_check": {
+            "sample": {
+                "races": len(gap_keys),
+                "runner_rows": len(gap_rows),
+                "start": min((r["date"] for r in gap_rows), default=None),
+                "end": max((r["date"] for r in gap_rows), default=None),
+            },
+            "winner_similarity_axis_only": gap_axis_summary,
+            "split_axis_plus_second_third_hist_gradient_boosting_extended_features": gap_split_summary,
+            "top3_partner_model_all_slots": gap_partner_summary,
+            "paired_vs_winner_similarity": paired_bootstrap(gap_axis_races, gap_split_races),
+            "paired_vs_top3_partner_all_slots": paired_bootstrap(gap_partner_races, gap_split_races),
+            "note": "モデル選択後に、学習期間と最終検証期間の間に未使用だった期間で行う補助的な頑健性確認。将来の独立検証の代わりではない。",
+        },
         "models": {
             "winner_similarity_axis_only_rank": axis_summary,
             "top3_partner_model_all_slots": top3_all_summary,
