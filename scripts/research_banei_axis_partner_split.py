@@ -301,6 +301,8 @@ def main():
             "split_23_hgb_vs_logistic": paired_bootstrap(split_23_races, split_23_hgb_races),
             "split_23_hgb_extended_vs_logistic": paired_bootstrap(split_23_races, split_23_hgb_ext_races),
             "split_23_hgb_extended_vs_hgb": paired_bootstrap(split_23_hgb_races, split_23_hgb_ext_races),
+            "split_23_hgb_extended_vs_winner_similarity": paired_bootstrap(axis_races, split_23_hgb_ext_races),
+            "split_23_hgb_extended_vs_top3_partner_all_slots": paired_bootstrap(top3_all_races, split_23_hgb_ext_races),
             "split_23_vs_top3_partner_all_slots": paired_bootstrap(top3_all_races, split_23_races),
         },
         "method": {
