@@ -1,5 +1,8 @@
 import datetime as dt
 import unittest
+import tempfile
+from pathlib import Path
+from unittest import mock
 from zoneinfo import ZoneInfo
 
 from scripts import research_flat_lambdarank_a45_preoff_capture as capture
@@ -38,6 +41,29 @@ class A45PreoffCaptureTests(unittest.TestCase):
         scheduled, minutes = eligible[("大井", "20261114", "1")]
         self.assertEqual(scheduled.hour, 11)
         self.assertEqual(minutes, 60.0)
+
+
+    def test_daily_model_cache_reuses_same_day_and_retrains_next_day(self):
+        original_root = capture.ROOT
+        today = dt.date(2026, 11, 14)
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                capture.ROOT = Path(temp_dir)
+                with mock.patch.object(
+                    capture, "train_frozen_a45",
+                    return_value=("model", {"category": 1}, {"training_races": 10}),
+                ) as train:
+                    first = capture.load_or_train_frozen_a45([], today)
+                    second = capture.load_or_train_frozen_a45([], today)
+                    next_day = capture.load_or_train_frozen_a45([], today + dt.timedelta(days=1))
+
+                    self.assertFalse(first[3])
+                    self.assertTrue(second[3])
+                    self.assertFalse(next_day[3])
+                    self.assertEqual(train.call_count, 2)
+                    self.assertEqual(first[:3], second[:3])
+        finally:
+            capture.ROOT = original_root
 
 
 if __name__ == "__main__":
