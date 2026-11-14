@@ -90,7 +90,7 @@ jobs:
             echo "No new research capture records."
           else
             git commit -m "Archive frozen A45 pre-off research predictions"
-            git push origin HEAD:research/lambdarank-a45-preoff-capture
+            git push origin HEAD:research/a45-model-cache
           fi
 
       - name: Upload capture report
