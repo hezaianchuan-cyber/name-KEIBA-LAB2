@@ -87,6 +87,8 @@ class LocalResearchDBTests(unittest.TestCase):
         records,report=exporter.build_records(db,"flat")
         self.assertEqual(len(records),1)
         self.assertEqual(records[0]["evaluation_status"],"complete")
+        self.assertEqual(records[0]["trio_evaluation_status"],"complete")
+        self.assertEqual(records[0]["ranking_evaluation_status"],"complete")
         self.assertEqual(len(records[0]["trio_odds"]),1)
         self.assertEqual(len(records[0]["trio_payouts"]),1)
         db.close()
