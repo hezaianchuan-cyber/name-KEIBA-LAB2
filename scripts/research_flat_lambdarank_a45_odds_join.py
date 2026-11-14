@@ -141,7 +141,7 @@ def main():
     output = []
     no_snapshot = []
     for prediction in predictions:
-        date_text = str(prediction["race_date"])
+        date_raw = str(prediction["race_date"])\n        date_text = dt.datetime.strptime(date_raw, "%Y%m%d").date().isoformat()
         if date_text not in by_date:
             by_date[date_text] = load_odds_snapshots(date_text)
         selected = select_snapshot(prediction, by_date[date_text])
@@ -182,7 +182,7 @@ def main():
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(
-        "".join(json.dumps(item, ensure_ascii=False, allow_nan=False) + "\\n" for item in output),
+        "".join(json.dumps(item, ensure_ascii=False, allow_nan=False) + "\n" for item in output),
         encoding="utf-8",
     )
     joined = sum(1 for item in output if item["odds_status"] == "joined")
@@ -197,7 +197,7 @@ def main():
         "results_or_payouts_used": False,
         "output": str(OUT.relative_to(ROOT)),
     }
-    REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("A45_ODDS_JOIN_REPORT " + json.dumps(report, ensure_ascii=False), flush=True)
 
 
