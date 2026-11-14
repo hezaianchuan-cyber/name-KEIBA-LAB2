@@ -205,7 +205,7 @@ def main():
             "predictions_written": 0,
             "model_version": MODEL_VERSION,
         }
-        REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+        REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print("A45_CAPTURE_REPORT " + json.dumps(report, ensure_ascii=False), flush=True)
         return
 
@@ -263,7 +263,7 @@ def main():
             "predictions_written": 0,
             "model_version": MODEL_VERSION,
         }
-        REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+        REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print("A45_CAPTURE_REPORT " + json.dumps(report, ensure_ascii=False), flush=True)
         return
 
@@ -319,7 +319,7 @@ def main():
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("a", encoding="utf-8") as stream:
         for record in records:
-            stream.write(json.dumps(record, ensure_ascii=False, allow_nan=False) + "\\n")
+            stream.write(json.dumps(record, ensure_ascii=False, allow_nan=False) + "\n")
     report = {
         "generated_at": now.isoformat(),
         "status": "success",
@@ -339,7 +339,7 @@ def main():
             "Historical model identity remains limited by the monthly archive's available horse identifiers.",
         ],
     }
-    REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("A45_CAPTURE_REPORT " + json.dumps(report, ensure_ascii=False), flush=True)
 
 
