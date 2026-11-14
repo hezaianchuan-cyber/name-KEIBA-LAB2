@@ -37,6 +37,18 @@ jobs:
       - name: Build local SQLite database from frozen A45 data
         run: python scripts/import_research_db.py
 
+      - name: Verify importer is idempotent
+        run: |
+          python scripts/import_research_db.py
+          python - <<'PY'
+          import sqlite3
+          db = sqlite3.connect("data/keibalab-research.sqlite")
+          expected = {"races": 3, "runners": 34, "model_predictions": 34, "odds_snapshots": 66}
+          actual = {t: db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in expected}
+          assert actual == expected, {"expected": expected, "actual": actual}
+          print("Idempotency verified:", actual)
+          PY
+
       - name: Verify database integrity and print counts
         run: |
           python - <<'PY'
