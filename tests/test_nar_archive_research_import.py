@@ -23,10 +23,10 @@ class OfficialArchiveImporterTests(unittest.TestCase):
         self.assertEqual(importer.canonical_payout_key("trio", ["11", "2", "5"]), "2-5-11")
 
     def test_import_month_is_repeatable_and_keeps_results_separate(self):
-        key = ("佐賀", "20261001", "1")
+        key = ("帯広ば", "20261001", "1")
         race = {
             "key": key, "date": datetime(2026, 10, 1).date(),
-            "venue": "佐賀", "race": "1", "name": "テスト競走",
+            "venue": "帯広ば", "race": "1", "name": "テスト競走",
             "distance": 1400, "field_size": 3, "surface": "ダート",
             "going": "良", "corner_positions": [],
         }
@@ -52,6 +52,7 @@ class OfficialArchiveImporterTests(unittest.TestCase):
         self.assertEqual(first["parsed_races"], 1)
         self.assertEqual(second["parsed_runner_rows"], 3)
         self.assertEqual(self.db.execute("SELECT COUNT(*) FROM races").fetchone()[0], 1)
+        self.assertEqual(self.db.execute("SELECT race_type FROM races").fetchone()[0], "banei")
         self.assertEqual(self.db.execute("SELECT COUNT(*) FROM runners").fetchone()[0], 3)
         self.assertEqual(self.db.execute("SELECT COUNT(*) FROM official_results").fetchone()[0], 3)
         self.assertEqual(self.db.execute("SELECT COUNT(*) FROM payouts").fetchone()[0], 1)
