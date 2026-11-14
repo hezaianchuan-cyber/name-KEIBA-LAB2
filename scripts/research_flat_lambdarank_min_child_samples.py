@@ -200,7 +200,7 @@ def main():
     selected_holdout = predict_groups(selected_model, holdout_groups, features, category_maps)
     baseline_metrics = suite.evaluate_scores("baseline_min_child_samples_80", baseline_holdout)
     selected_metrics = suite.evaluate_scores(
-        f"selected_min_child_samples_{selected['num_leaves']}", selected_holdout
+        f"selected_min_child_samples_{selected['min_child_samples']}", selected_holdout
     )
     deltas = paired_metrics(baseline_holdout, selected_holdout)
 
