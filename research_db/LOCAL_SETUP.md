@@ -31,7 +31,7 @@ https://github.com/hezaianchuan-cyber/name-KEIBA-LAB2/actions/runs/43581365448
 5. Register the daily local task:
    powershell -ExecutionPolicy Bypass -File scripts/setup_research_db_task.ps1
 
-   It runs at 02:15 local time. Windows must be on and the same account must be logged in. If the PC is off, Task Scheduler starts it at the next available opportunity after login.
+   It runs hourly from 00:15 through 23:15 local time. This is deliberate: the official daily race ZIP rolls over, so syncing only once the following morning could miss the previous day's finishing positions. Windows must be on and the same account must be logged in. If the PC is off, Task Scheduler starts an overdue run after login, but a long outage can still miss a daily result archive.
 
 ## Backtest export
 
@@ -47,7 +47,7 @@ Output files:
 ## Important limits
 
 - GitHub Actions artifacts expire. They are only the transfer method for the initial 4-year database; after extraction, your local SQLite file is the durable copy.
-- The daily local sync requires the PC to be on, GitHub access, and the Windows account to be logged in. It also imports any updated daily official race-result and payout files committed to main.
+- The hourly local sync requires the PC to be on, GitHub access, and the Windows account to be logged in. It imports the latest official daily race archive (including finish positions), rolling payout report, and every committed odds snapshot archive. Frequent syncing helps preserve race results before the official daily archive rolls over.
 - The source collector is already scheduled on GitHub Actions, but collection can fail if the official NAR daily archive is unavailable. The sync only imports what was actually committed.
 - The current daily collector stores odds snapshots and frozen live predictions. A45 research predictions are imported when the A45 capture workflow has produced them; that separate workflow is not automatically scheduled by this setup.
 - This does not backfill historical intraday odds for 2022-2026. Monthly official archives provide results and payouts; timestamped odds coverage starts only where daily snapshot archives exist.
