@@ -141,7 +141,8 @@ def main():
     output = []
     no_snapshot = []
     for prediction in predictions:
-        date_raw = str(prediction["race_date"])\n        date_text = dt.datetime.strptime(date_raw, "%Y%m%d").date().isoformat()
+        date_raw = str(prediction["race_date"])
+        date_text = dt.datetime.strptime(date_raw, "%Y%m%d").date().isoformat()
         if date_text not in by_date:
             by_date[date_text] = load_odds_snapshots(date_text)
         selected = select_snapshot(prediction, by_date[date_text])
