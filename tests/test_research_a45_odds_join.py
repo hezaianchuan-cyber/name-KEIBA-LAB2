@@ -5,6 +5,10 @@ from scripts import research_flat_lambdarank_a45_odds_join as joiner
 
 
 class A45OddsJoinTests(unittest.TestCase):
+    def test_normalize_no_strips_labels_and_separators(self):
+        self.assertEqual(joiner.normalize_no("馬番 03"), "3")
+        self.assertEqual(joiner.normalize_no("03-"), "3")
+
     def test_select_snapshot_requires_after_prediction_and_before_post(self):
         prediction = {
             "race_id": "佐賀|20261114|4",
