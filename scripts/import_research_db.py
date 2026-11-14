@@ -77,11 +77,11 @@ def import_files(db: sqlite3.Connection, predictions_path: Path, odds_path: Path
             )
             db.execute(
                 """INSERT INTO races
-                (race_id,race_date,venue,race_number,race_name,surface,distance_m,
+                (race_id,race_date,venue,race_type,race_number,race_name,surface,distance_m,
                  going,scheduled_post_at,field_size,source,first_seen_at,last_seen_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(race_id) DO UPDATE SET last_seen_at=excluded.last_seen_at""",
-                (race_id,race_date,venue,race_number,item.get("race_name"),
+                (race_id,race_date,venue,"banei" if "帯広" in venue else "flat",race_number,item.get("race_name"),
                  first_features.get("surface"),positive_or_none(first_features.get("distance_m")),
                  first_features.get("going"),scheduled,field_size,
                  str(item.get("source") or "research_a45_prediction"),
