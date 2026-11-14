@@ -1,4 +1,4 @@
-import hashlib, json, sqlite3, sys, unittest
+import csv, hashlib, io, json, sqlite3, sys, unittest, zipfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"scripts"))
@@ -25,6 +25,40 @@ class LocalResearchDBTests(unittest.TestCase):
         self.assertTrue(sync.verify_prediction_lock(record))
         record["predictions"]=[{"horse_no":"1"}]
         self.assertFalse(sync.verify_prediction_lock(record))
+
+
+    def test_daily_archive_imports_official_finish_positions(self):
+        db=sqlite3.connect(":memory:")
+        db.execute("PRAGMA foreign_keys=ON")
+        db.executescript((ROOT/"research_db"/"sqlite_schema_v1.sql").read_text())
+        race=[""]*27
+        race[0]="佐賀"; race[1]="20261114"; race[2]="1"; race[3]="1430"; race[5]="テスト競走"
+        race[21]="ダート"; race[23]="1400"; race[25]="良"; race[26]="1"
+        horse=[""]*32
+        horse[0]="佐賀"; horse[1]="20261114"; horse[2]="1"; horse[3]="1"; horse[5]="1"
+        horse[6]="テスト馬"; horse[7]="牡"; horse[8]="4"; horse[11]="父"; horse[14]="騎手"
+        horse[16]="56"; horse[31]="1"
+        buf=io.BytesIO()
+        with zipfile.ZipFile(buf,"w") as z:
+            z.writestr("RaceList.csv",",".join(race)+"\n")
+            z.writestr("HorseList.csv",",".join(horse)+"\n")
+        result=sync.import_daily_race_archive(db,buf.getvalue(),"test-batch")
+        self.assertEqual(result["results"],1)
+        self.assertEqual(db.execute("SELECT finish_position FROM official_results").fetchone()[0],1)
+        db.close()
+
+    def test_daily_payout_report_imports_trio(self):
+        db=sqlite3.connect(":memory:")
+        db.execute("PRAGMA foreign_keys=ON")
+        db.executescript((ROOT/"research_db"/"sqlite_schema_v1.sql").read_text())
+        report={"generated_at":"2026-11-14T22:00:00+09:00","days":[{"races":[
+          {"race_id":"佐賀|20261114|1","payouts":{"trio":[{"numbers":["11","2","5"],"pay_100":1250}]}}
+        ]}]}
+        result=sync.import_daily_payout_report(db,json.dumps(report,ensure_ascii=False).encode(),"batch")
+        row=db.execute("SELECT combination_key,payout_yen FROM payouts WHERE bet_type='trio'").fetchone()
+        self.assertEqual(row,("2-5-11",1250))
+        self.assertEqual(result["payouts"],1)
+        db.close()
 
     def test_backtest_timestamp_policy(self):
         snaps=[{"captured_at":"2026-11-14T14:01:00+09:00"},{"captured_at":"2026-11-14T14:02:00+09:00"}]
