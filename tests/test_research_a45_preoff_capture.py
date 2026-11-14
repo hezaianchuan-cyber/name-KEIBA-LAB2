@@ -11,6 +11,10 @@ class A45PreoffCaptureTests(unittest.TestCase):
         self.assertEqual(capture.parse_post_time("1545"), dt.time(15, 45))
         self.assertIsNone(capture.parse_post_time("2560"))
 
+    def test_parse_post_time_strips_separators(self):
+        self.assertEqual(capture.parse_post_time("09:30"), dt.time(9, 30))
+        self.assertEqual(capture.parse_post_time("9時30分"), dt.time(9, 30))
+
     def test_capture_window_is_preoff_and_excludes_banei(self):
         jst = ZoneInfo("Asia/Tokyo")
         now = dt.datetime(2026, 11, 14, 10, 0, tzinfo=jst)
