@@ -1,0 +1,38 @@
+name: Research flat LambdaRank scope audit
+on:
+  push:
+    branches: [research/flat-lambdarank-scope-audit]
+    paths:
+      - 'scripts/research_flat_lambdarank_scope_audit.py'
+      - 'scripts/nar_backtest.py'
+      - '.github/workflows/research-flat-lambdarank-scope-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: research-flat-lambdarank-scope-audit
+  cancel-in-progress: false
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile audit
+        run: python -m py_compile scripts/research_flat_lambdarank_scope_audit.py scripts/nar_backtest.py
+      - name: Run scope audit
+        env:
+          NAR_CACHE_DIR: .cache/nar-monthly
+          NAR_PARSED_CACHE_DIR: .cache/nar-parsed
+        run: python scripts/research_flat_lambdarank_scope_audit.py
+      - name: Upload scope audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flat-lambdarank-scope-audit
+          path: data/flat-lambdarank-scope-audit.json
+          if-no-files-found: warn
+          retention-days: 30
