@@ -1,0 +1,30 @@
+name: Test A45 daily model cache
+
+on:
+  push:
+    branches: [research/a45-model-cache]
+    paths:
+      - 'scripts/research_flat_lambdarank_a45_preoff_capture.py'
+      - 'tests/test_research_a45_preoff_capture.py'
+      - '.github/workflows/test-a45-model-cache.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/a45-model-cache
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install research dependencies
+        run: python -m pip install --disable-pip-version-check numpy scipy scikit-learn catboost lightgbm
+      - name: Compile and run focused tests
+        run: |
+          python -m py_compile scripts/research_flat_lambdarank_a45_preoff_capture.py
+          python -m unittest discover -s tests -p 'test_research_a45_preoff_capture.py' -v
