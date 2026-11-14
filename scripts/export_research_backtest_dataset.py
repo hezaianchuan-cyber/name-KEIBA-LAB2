@@ -27,7 +27,7 @@ def build_records(db,race_type="flat"):
     groups=db.execute("""SELECT DISTINCT mp.race_id,mp.model_name,mp.model_version,mp.predicted_at,mp.scheduled_post_at,
       r.race_date,r.venue,r.race_type,r.race_number FROM model_predictions mp JOIN races r ON r.race_id=mp.race_id
       WHERE (?='all' OR r.race_type=?) ORDER BY r.race_date,mp.race_id,mp.model_name,mp.predicted_at""",(race_type,race_type)).fetchall()
-    output=[]; diag={"candidate_groups":len(groups),"exported":0,"missing_results":0,"missing_trio_odds":0,"missing_trio_payout":0,"partial_result_groups":0}
+    output=[]; diag={"candidate_groups":len(groups),"exported":0,"trio_evaluation_ready":0,"ranking_evaluation_ready":0,"missing_results":0,"missing_trio_odds":0,"missing_trio_payout":0,"partial_result_groups":0}
     for g in groups:
         rid=g["race_id"]
         preds=db.execute("""SELECT horse_no,rank_position,score,features_json,model_name,model_version FROM model_predictions
@@ -44,6 +44,10 @@ def build_records(db,race_type="flat"):
         quotes=db.execute("""SELECT combination_key,odds FROM odds_snapshots WHERE race_id=? AND bet_type='trio' AND captured_at=?
           ORDER BY combination_key""",(rid,snap["captured_at"])).fetchall()
         if not payouts: diag["missing_trio_payout"]+=1
+        trio_ready=bool(quotes and payouts)
+        ranking_ready=bool(results and len(results)>=len(preds))
+        if trio_ready: diag["trio_evaluation_ready"]+=1
+        if ranking_ready: diag["ranking_evaluation_ready"]+=1
         output.append({
           "race_id":rid,"race_date":g["race_date"],"venue":g["venue"],"race_type":g["race_type"],"race_number":g["race_number"],
           "model_name":g["model_name"],"model_version":g["model_version"],"predicted_at":g["predicted_at"],
@@ -52,7 +56,9 @@ def build_records(db,race_type="flat"):
           "predictions":[{**dict(x),"features":json.loads(x["features_json"])} for x in preds],
           "official_results":[dict(x) for x in results],"trio_odds":[dict(x) for x in quotes],
           "trio_payouts":[dict(x) for x in payouts],
-          "evaluation_status":"complete" if results and len(results)>=len(preds) and quotes and payouts else "partial"})
+          "trio_evaluation_status":"complete" if trio_ready else "partial",
+          "ranking_evaluation_status":"complete" if ranking_ready else "partial",
+          "evaluation_status":"complete" if trio_ready and ranking_ready else "partial"})
     diag["exported"]=len(output); return output,diag
 
 def main():
