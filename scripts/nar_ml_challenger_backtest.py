@@ -113,7 +113,7 @@ def add_race_relative_features(race_rows):
     return race_rows
 
 
-def build_rows(races, horses):
+def build_rows(races, horses, include_unfinished=False):
     history = defaultdict(list)
     sire_stats = defaultdict(lambda: {"runs": 0, "top3": 0, "wins": 0})
     jockey_stats = defaultdict(lambda: {"runs": 0, "top3": 0, "wins": 0})
@@ -150,7 +150,7 @@ def build_rows(races, horses):
                 _, parts = nb.score_runner({**h, "name": history_key}, history, sire_stats, jockey_stats, race, BASE_WEIGHTS)
                 score = sum(BASE_WEIGHTS[k] * parts[k] for k in BASE_WEIGHTS)
                 finish = nb.rank_value(h.get("finish"))
-                if finish is None:
+                if finish is None and not include_unfinished:
                     continue
                 past = history.get(history_key, [])
                 recent = past[-5:]
