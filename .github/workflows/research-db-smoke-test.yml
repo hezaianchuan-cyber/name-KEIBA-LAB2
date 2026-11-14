@@ -55,6 +55,11 @@ jobs:
           print("Idempotency verified:", actual)
           PY
 
+      - name: Sync live odds, frozen predictions, daily results and payouts
+        run: |
+          python scripts/sync_research_db_local.py
+          python scripts/export_research_backtest_dataset.py --race-type flat
+
       - name: Verify database integrity and print counts
         run: |
           python - <<'PY'
