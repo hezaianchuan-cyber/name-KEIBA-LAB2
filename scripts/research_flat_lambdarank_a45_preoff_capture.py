@@ -184,6 +184,41 @@ def train_frozen_a45(rows):
     }
 
 
+def load_or_train_frozen_a45(rows, today):
+    """Reuse one immutable A45 model per JST calendar day; retrain on the next day."""
+    from joblib import dump, load
+
+    cache_dir = ROOT / ".cache" / "a45-model"
+    cache_file = cache_dir / "a45-model.joblib"
+    expected_features = list(suite.RAW_FEATURES)
+    if cache_file.is_file():
+        try:
+            payload = load(cache_file)
+            if (
+                payload.get("model_version") == MODEL_VERSION
+                and payload.get("trained_on") == today.isoformat()
+                and payload.get("feature_names") == expected_features
+            ):
+                return payload["model"], payload["maps"], payload["training"], True
+        except Exception as exc:
+            print(f"A45 model cache ignored: {type(exc).__name__}: {exc}", flush=True)
+
+    model, maps, training = train_frozen_a45(rows)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "model_version": MODEL_VERSION,
+        "trained_on": today.isoformat(),
+        "feature_names": expected_features,
+        "model": model,
+        "maps": maps,
+        "training": training,
+    }
+    temporary = cache_file.with_suffix(".joblib.tmp")
+    dump(payload, temporary)
+    temporary.replace(cache_file)
+    return model, maps, training, False
+
+
 def main():
     now = dt.datetime.now(JST)
     # Freeze the already evaluated schema: exclude current-race bodyweight fields.
@@ -267,7 +302,7 @@ def main():
         print("A45_CAPTURE_REPORT " + json.dumps(report, ensure_ascii=False), flush=True)
         return
 
-    model, maps, training = train_frozen_a45(training_rows)
+    model, maps, training, model_cache_hit = load_or_train_frozen_a45(training_rows, now.date())
     # Training can take long enough for a race to start. Re-check the capture
     # window after fitting; never backdate a prediction to the job start time.
     capture_now = dt.datetime.now(JST)
@@ -361,6 +396,8 @@ def main():
         "predictions_written": len(valid_records),
         "predictions_discarded_after_time_recheck": len(records) - len(valid_records),
         "training": training,
+        "model_cache": "hit" if model_cache_hit else "trained",
+        "model_cache_policy": "one training per JST calendar day; cache miss or next day retrains",
         "historical_scope": scope,
         "feature_schema": features,
         "output": str(OUT.relative_to(ROOT)),
