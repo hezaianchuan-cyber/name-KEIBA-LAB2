@@ -33,7 +33,7 @@ EXISTING_BODY_WEIGHT = set(base.EXCLUDED_BODY_WEIGHT)
 
 
 def parse_post_time(value: str) -> dt.time | None:
-    digits = re.sub(r"\\D", "", str(value or ""))
+    digits = re.sub(r"\D", "", str(value or ""))
     if len(digits) not in (3, 4):
         return None
     digits = digits.zfill(4)
@@ -79,7 +79,7 @@ def read_daily_racecards(path: Path):
                     key = nb.race_key(row[0], row[1], row[2])
                     if not key:
                         continue
-                    number = re.sub(r"\\D", "", str(row[5] or ""))
+                    number = re.sub(r"\D", "", str(row[5] or ""))
                     name = nb.norm(row[6])
                     if not number or not name:
                         continue
@@ -91,7 +91,7 @@ def read_daily_racecards(path: Path):
                         "frame_no": nb.rank_value(row[3]) if len(row) > 3 else None,
                         "sex": nb.norm(row[7]) if len(row) > 7 else "",
                         "age": nb.number(row[8]) if len(row) > 8 else None,
-                        "birth_date": re.sub(r"\\D", "", str(row[10] or "")) if len(row) > 10 else "",
+                        "birth_date": re.sub(r"\D", "", str(row[10] or "")) if len(row) > 10 else "",
                         "sire": nb.norm(row[11]) if len(row) > 11 else "",
                         "dam": nb.norm(row[12]) if len(row) > 12 else "",
                         "damsire": nb.norm(row[13]) if len(row) > 13 else "",
