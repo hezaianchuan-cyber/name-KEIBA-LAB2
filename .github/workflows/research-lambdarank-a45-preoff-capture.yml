@@ -2,14 +2,13 @@ name: Research A45 pre-off prediction capture
 
 on:
   push:
-    branches: [research/lambdarank-a45-preoff-capture]
+    branches: [research/a45-model-cache]
     paths:
       - 'scripts/research_flat_lambdarank_a45_preoff_capture.py'
       - 'scripts/nar_ml_challenger_backtest.py'
       - 'scripts/research_flat_lambdarank_feature_ablation.py'
       - 'tests/test_research_a45_preoff_capture.py'
       - 'tests/test_nar_ml_challenger_backtest.py'
-      - '.github/workflows/research-lambdarank-a45-preoff-capture.yml'
   workflow_dispatch:
 
 permissions:
@@ -27,7 +26,7 @@ jobs:
       - name: Checkout research branch
         uses: actions/checkout@v4
         with:
-          ref: research/lambdarank-a45-preoff-capture
+          ref: research/a45-model-cache
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -43,6 +42,15 @@ jobs:
           key: nar-a45-${{ runner.os }}-${{ hashFiles('scripts/nar_backtest.py', 'scripts/nar_ml_challenger_backtest.py') }}
           restore-keys: |
             nar-a45-${{ runner.os }}-
+
+      - name: Restore daily A45 trained-model cache
+        uses: actions/cache@v4
+        with:
+          path: .cache/a45-model
+          # A new key per run allows a restored model to be re-saved as the newest cache.
+          key: ${{ runner.os }}-a45-model-v1-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-a45-model-v1-
 
       - name: Install research dependencies
         run: python -m pip install --disable-pip-version-check numpy scipy scikit-learn catboost lightgbm
