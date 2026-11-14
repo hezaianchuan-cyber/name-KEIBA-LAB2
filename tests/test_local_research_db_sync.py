@@ -69,6 +69,7 @@ class LocalResearchDBTests(unittest.TestCase):
         self.assertIsNone(exporter.choose_trio_snapshot(pred,post,snaps,"LiveModel"))
         same=[{"captured_at":pred}]
         self.assertEqual(exporter.choose_trio_snapshot(pred,post,same,"LiveModel")["captured_at"],pred)
+        self.assertEqual(exporter.choose_trio_snapshot(pred,post,snaps,"LambdaRank","lambdarank-a45-research-v1")["captured_at"],snaps[1]["captured_at"])
 
     def test_exporter_separates_data_and_marks_complete(self):
         db=sqlite3.connect(":memory:")
