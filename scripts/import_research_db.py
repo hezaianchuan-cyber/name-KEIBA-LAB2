@@ -20,6 +20,15 @@ def stable_id(*parts: object) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
+def positive_or_none(value):
+    """Normalize source placeholders such as 0/-1 to SQL NULL for positive-only fields."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None
+
+
 def read_jsonl(path: Path):
     if not path.exists():
         return []
@@ -73,7 +82,7 @@ def import_files(db: sqlite3.Connection, predictions_path: Path, odds_path: Path
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(race_id) DO UPDATE SET last_seen_at=excluded.last_seen_at""",
                 (race_id,race_date,venue,race_number,item.get("race_name"),
-                 first_features.get("surface"),first_features.get("distance_m"),
+                 first_features.get("surface"),positive_or_none(first_features.get("distance_m")),
                  first_features.get("going"),scheduled,field_size,
                  str(item.get("source") or "research_a45_prediction"),
                  captured,captured),
@@ -91,7 +100,7 @@ def import_files(db: sqlite3.Connection, predictions_path: Path, odds_path: Path
                       horse_name=excluded.horse_name,last_seen_at=excluded.last_seen_at""",
                     (race_id,horse_no,str(horse.get("name") or f"horse-{horse_no}"),
                      features.get("frame_no"),features.get("age"),
-                     features.get("jockey"),features.get("carried_weight"),
+                     features.get("jockey"),positive_or_none(features.get("carried_weight")),
                      features.get("sire"),"research_a45_prediction",captured,captured),
                 )
                 prediction_id = stable_id(
