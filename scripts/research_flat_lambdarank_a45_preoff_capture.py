@@ -253,10 +253,10 @@ def main():
                     existing.add(item.get("race_id"))
             except json.JSONDecodeError:
                 continue
-    pending_keys = set(target_by_race) - existing
-    if not pending_keys:
+    candidate_pending = set(target_by_race) - existing
+    if not candidate_pending:
         report = {
-            "generated_at": now.isoformat(),
+            "generated_at": dt.datetime.now(JST).isoformat(),
             "status": "all_eligible_races_already_locked",
             "eligible_races": len(eligible),
             "already_locked": len(target_by_race),
@@ -268,6 +268,25 @@ def main():
         return
 
     model, maps, training = train_frozen_a45(training_rows)
+    # Training can take long enough for a race to start. Re-check the capture
+    # window after fitting; never backdate a prediction to the job start time.
+    capture_now = dt.datetime.now(JST)
+    eligible_at_capture = eligible_races(daily_races, daily_horses, capture_now)
+    pending_keys = candidate_pending & set(target_by_race) & set(eligible_at_capture)
+    if not pending_keys:
+        report = {
+            "generated_at": capture_now.isoformat(),
+            "status": "capture_window_elapsed_during_training",
+            "initially_eligible_races": len(eligible),
+            "eligible_after_training": len(eligible_at_capture),
+            "predictions_written": 0,
+            "model_version": MODEL_VERSION,
+            "training": training,
+        }
+        REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print("A45_CAPTURE_REPORT " + json.dumps(report, ensure_ascii=False), flush=True)
+        return
+
     records = []
     for race_key in sorted(pending_keys):
         rows = target_by_race[race_key]
@@ -279,7 +298,7 @@ def main():
         )
         rank_by_index = {index: rank + 1 for rank, index in enumerate(order)}
         race_tuple = tuple(race_key.split("|"))
-        scheduled, minutes = eligible[race_tuple]
+        scheduled, minutes = eligible_at_capture[race_tuple]
         runners = []
         for index, row in enumerate(rows):
             runners.append({
@@ -297,7 +316,7 @@ def main():
             "race_date": race_tuple[1],
             "venue": race_tuple[0],
             "race_number": race_tuple[2],
-            "captured_at": now.isoformat(),
+            "captured_at": None,
             "scheduled_post_time": scheduled.isoformat(),
             "minutes_to_post": round(minutes, 3),
             "model_version": MODEL_VERSION,
@@ -316,18 +335,31 @@ def main():
         }
         records.append(record)
 
+    # Timestamp after scoring is conservative: it cannot make a late
+    # prediction appear earlier than it really was.
+    prediction_completed_at = dt.datetime.now(JST)
+    valid_records = []
+    for record in records:
+        post = dt.datetime.fromisoformat(record["scheduled_post_time"])
+        minutes = (post - prediction_completed_at).total_seconds() / 60.0
+        if 2.0 <= minutes <= 60.0:
+            record["captured_at"] = prediction_completed_at.isoformat()
+            record["minutes_to_post"] = round(minutes, 3)
+            valid_records.append(record)
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("a", encoding="utf-8") as stream:
-        for record in records:
+        for record in valid_records:
             stream.write(json.dumps(record, ensure_ascii=False, allow_nan=False) + "\n")
     report = {
-        "generated_at": now.isoformat(),
-        "status": "success",
+        "generated_at": prediction_completed_at.isoformat(),
+        "status": "success" if valid_records else "capture_window_elapsed_during_scoring",
         "model_version": MODEL_VERSION,
         "daily_racecard_races": len(daily_races),
         "eligible_races": len(eligible),
         "already_locked": len(existing),
-        "predictions_written": len(records),
+        "predictions_written": len(valid_records),
+        "predictions_discarded_after_time_recheck": len(records) - len(valid_records),
         "training": training,
         "historical_scope": scope,
         "feature_schema": features,
