@@ -7,6 +7,10 @@ on:
       - research/keibalab-db-foundation
     paths:
       - ".github/workflows/research-db-four-year-build.yml"
+      - "scripts/import_research_db.py"
+      - "scripts/import_nar_archive_to_research_db.py"
+      - "scripts/sync_research_db_local.py"
+      - "scripts/export_research_backtest_dataset.py"
 
 permissions:
   contents: read
@@ -33,6 +37,12 @@ jobs:
         run: |
           python scripts/import_nar_archive_to_research_db.py \
             --start-date 2022-11-01 --end-date 2026-10-31
+
+      - name: Sync timestamped pre-off odds, predictions, daily results and payouts
+        run: python scripts/sync_research_db_local.py
+
+      - name: Export timestamp-safe 3連複 backtest dataset
+        run: python scripts/export_research_backtest_dataset.py --race-type flat
 
       - name: Verify four-year coverage, Banei separation and integrity
         run: |
@@ -88,6 +98,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: keibalab-research-sqlite-four-years
-          path: data/keibalab-research.sqlite
+          path: |
+            data/keibalab-research.sqlite
+            data/research-backtest-dataset.jsonl
+            data/research-backtest-dataset.report.json
           retention-days: 90
           if-no-files-found: error
