@@ -31,7 +31,7 @@ https://github.com/hezaianchuan-cyber/name-KEIBA-LAB2/actions/runs/43581365448
 5. Register the daily local task:
    powershell -ExecutionPolicy Bypass -File scripts/setup_research_db_task.ps1
 
-   It runs hourly from 00:15 through 23:15 local time. This is deliberate: the official daily race ZIP rolls over, so syncing only once the following morning could miss the previous day's finishing positions. Windows must be on and the same account must be logged in. If the PC is off, Task Scheduler starts an overdue run after login, but a long outage can still miss a daily result archive.
+   It runs hourly from 00:15 through 23:15 local time. The sync log is saved at data/research-db-sync.log. This is deliberate: the official daily race ZIP rolls over, so syncing only once the following morning could miss the previous day's finishing positions. Windows must be on and the same account must be logged in. If the PC is off, Task Scheduler starts an overdue run after login, but a long outage can still miss a daily result archive.
 
 ## Backtest export
 
