@@ -8,7 +8,7 @@ Start with SQLite: it is a real relational database, runs locally without a serv
 
 ## Data model
 
-- `races`: one row per local race identity (date + venue + race number).
+- `races`: one row per local race identity (date + venue + race number), with explicit `race_type` = `flat` or `banei`.
 - `runners`: one row per horse per race.
 - `odds_snapshots`: append-only time series; old odds are never overwritten.
 - `model_predictions`: immutable model/rank/score/features with model and feature versions.
@@ -30,6 +30,8 @@ Start with SQLite: it is a real relational database, runs locally without a serv
 
 ## Historical official archive importer
 
+The current schema adds a race-type discriminator so Banei records cannot be accidentally mixed into the flat-racing model dataset.
+
 `scripts/import_nar_archive_to_research_db.py` reuses the existing NAR monthly ZIP parser and imports:
 - race metadata and runners;
 - official finishing position, time, and last-3F values;
@@ -45,6 +47,7 @@ python scripts/import_nar_archive_to_research_db.py \
 The importer stores source checksums and batch IDs, upserts corrected race/result/payout rows, and is repeatable. `confirmed_at` in the historical result/payout tables currently records the source race date (day precision only); the monthly archive does not provide the exact time at which a result was confirmed.
 
 Important separation:
+- Banei (帯広ば) is stored in the same database but explicitly tagged `race_type='banei'`; flat-racing training/evaluation must filter to `race_type='flat'` unless a separate Banei model is being evaluated.
 - Monthly archives contain final outcomes and payouts, not historical pre-race odds snapshots.
 - Do not use final odds or payouts as model features.
 - Historical odds snapshots and frozen pre-race predictions must be imported from their own timestamped sources.
