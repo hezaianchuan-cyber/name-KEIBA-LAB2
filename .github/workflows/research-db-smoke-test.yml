@@ -8,6 +8,10 @@ on:
     paths:
       - "research_db/**"
       - "scripts/import_research_db.py"
+      - "scripts/sync_research_db_local.py"
+      - "scripts/export_research_backtest_dataset.py"
+      - "scripts/setup_research_db_task.ps1"
+      - "tests/test_local_research_db_sync.py"
       - "tests/test_research_db_schema.py"
       - "tests/test_nar_archive_research_import.py"
       - "scripts/import_nar_archive_to_research_db.py"
