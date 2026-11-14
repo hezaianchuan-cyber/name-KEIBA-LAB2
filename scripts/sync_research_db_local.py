@@ -6,7 +6,7 @@ research/keibalab-db-foundation branch. It reads origin/main odds snapshots
 and the A45 research branch; it never writes to GitHub or production systems.
 """
 from __future__ import annotations
-import argparse, datetime as dt, gzip, hashlib, io, json, re, sqlite3, subprocess, unicodedata
+import argparse, csv, datetime as dt, gzip, hashlib, io, json, re, sqlite3, subprocess, unicodedata, zipfile
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -139,11 +139,126 @@ def finish_batch(db,batch_id,read,inserted,rejected):
     db.execute("""UPDATE ingestion_batches SET completed_at=?,status='completed',rows_read=?,rows_inserted=?,rows_rejected=? WHERE batch_id=?""",
       (dt.datetime.now(dt.timezone.utc).isoformat(),read,inserted,rejected,batch_id))
 
+
+def archive_member_kind(filename):
+    base=unicodedata.normalize("NFKC",filename.replace("\\\\","/").split("/")[-1]).lower()
+    if re.search(r"racelist|race.?list|レース一覧",base): return "races"
+    if re.search(r"horselist|horse.?list|出馬表",base): return "horses"
+    return None
+
+def decode_csv(raw):
+    choices=[]
+    for encoding in ("utf-8-sig","cp932"):
+        try: choices.append(raw.decode(encoding))
+        except UnicodeDecodeError: pass
+    if not choices: return raw.decode("cp932",errors="replace")
+    venues=("帯広","門別","盛岡","水沢","浦和","船橋","大井","川崎","金沢","笠松","名古屋","園田","姫路","高知","佐賀")
+    return max(choices,key=lambda text:sum(text.count(v) for v in venues))
+
+def number_or_none(value):
+    digits=re.sub(r"[^0-9.]","",str(value or ""))
+    try: return float(digits) if digits else None
+    except ValueError: return None
+
+def parse_finish(value):
+    text=str(value or "").strip()
+    return int(text) if text.isdigit() and int(text)>0 else None
+
+def import_daily_race_archive(db,raw,batch_id):
+    races={}; horses={}; seen=dt.datetime.now(dt.timezone.utc).isoformat()
+    with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+        for member in archive.namelist():
+            kind=archive_member_kind(member)
+            if kind not in ("races","horses") or member.endswith("/"): continue
+            rows=csv.reader(io.StringIO(decode_csv(archive.read(member))))
+            for row in rows:
+                if kind=="races":
+                    if len(row)<27: continue
+                    venue=str(row[0]).strip(); date_raw=re.sub(r"\\D","",str(row[1] or "")); race_no=re.sub(r"\\D","",str(row[2] or ""))
+                    if not venue or len(date_raw)!=8 or not race_no: continue
+                    key=(venue,date_raw,str(int(race_no)))
+                    races[key]={"name":row[5] if len(row)>5 else None,"surface":row[21] if len(row)>21 else None,
+                      "distance":number_or_none(row[23]) if len(row)>23 else None,"going":row[25] if len(row)>25 else None,
+                      "field_size":int(number_or_none(row[26]) or 0) if len(row)>26 else 0,"post_raw":row[3] if len(row)>3 else ""}
+                else:
+                    if len(row)<=31: continue
+                    venue=str(row[0]).strip(); date_raw=re.sub(r"\\D","",str(row[1] or "")); race_no=re.sub(r"\\D","",str(row[2] or ""))
+                    no=re.sub(r"\\D","",str(row[5] or "")); name=str(row[6] or "").strip()
+                    if not venue or len(date_raw)!=8 or not race_no or not no or not name: continue
+                    key=(venue,date_raw,str(int(race_no)))
+                    horses.setdefault(key,[]).append({"no":int(no),"name":name,
+                      "frame":int(number_or_none(row[3]) or 0) or None,"age":int(number_or_none(row[8]) or 0) or None,
+                      "sire":str(row[11] or "").strip() or None,"jockey":str(row[14] or "").strip() or None,
+                      "carried":number_or_none(row[16]),"finish":parse_finish(row[31])})
+    inserted_results=inserted_runners=0
+    for key,race in races.items():
+        venue,date_raw,race_no=key; race_id="|".join(key)
+        scheduled=None
+        digits=re.sub(r"\\D","",str(race.get("post_raw") or ""))
+        if len(digits) in (3,4):
+            digits=digits.zfill(4)
+            try: scheduled=f"{date_raw[:4]}-{date_raw[4:6]}-{date_raw[6:8]}T{digits[:2]}:{digits[2:]}:00+09:00"
+            except Exception: scheduled=None
+        insert_race(db,race_id,venue,date_raw,race_no,scheduled,race.get("field_size") or len(horses.get(key,[])),
+                    "nar_daily_archive",seen)
+        db.execute("UPDATE races SET race_name=COALESCE(?,race_name),surface=COALESCE(?,surface),distance_m=COALESCE(?,distance_m),going=COALESCE(?,going) WHERE race_id=?",
+          (race.get("name"),race.get("surface"),int(race["distance"]) if race.get("distance") else None,race.get("going"),race_id))
+    for key,field in horses.items():
+        venue,date_raw,race_no=key; race_id="|".join(key)
+        if not db.execute("SELECT 1 FROM races WHERE race_id=?",(race_id,)).fetchone():
+            insert_race(db,race_id,venue,date_raw,race_no,None,len(field),"nar_daily_archive",seen)
+        for horse in field:
+            db.execute("""INSERT INTO runners(race_id,horse_no,horse_name,frame_no,age,jockey,carried_weight,sire,source,first_seen_at,last_seen_at)
+              VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(race_id,horse_no) DO UPDATE SET horse_name=excluded.horse_name,last_seen_at=excluded.last_seen_at""",
+              (race_id,horse["no"],horse["name"],horse["frame"],horse["age"],horse["jockey"],positive(horse["carried"]),horse["sire"],"nar_daily_archive",seen,seen))
+            inserted_runners+=db.execute("SELECT changes()").fetchone()[0]
+            if horse["finish"] is not None:
+                db.execute("""INSERT INTO official_results(race_id,horse_no,finish_position,confirmed_at,source,batch_id)
+                  VALUES(?,?,?,?,?,?) ON CONFLICT(race_id,horse_no) DO UPDATE SET finish_position=excluded.finish_position,
+                  confirmed_at=excluded.confirmed_at,source=excluded.source,batch_id=excluded.batch_id""",
+                  (race_id,horse["no"],horse["finish"],dt.datetime.strptime(date_raw,"%Y%m%d").date().isoformat(),"nar_daily_archive",batch_id))
+                inserted_results+=db.execute("SELECT changes()").fetchone()[0]
+    return {"races":len(races),"runners":inserted_runners,"results":inserted_results}
+
+def import_daily_payout_report(db,raw,batch_id):
+    report=json.loads(raw.decode("utf-8")); inserted=0; races_seen=0
+    unordered={"place","quinella","wide","trio"}
+    for day in report.get("days") or []:
+        for race in day.get("races") or []:
+            race_id=str(race.get("race_id") or ""); parts=race_id.split("|")
+            if len(parts)!=3: continue
+            venue,date_raw,race_no=parts
+            insert_race(db,race_id,venue,date_raw,race_no,None,None,"nar_daily_payouts",str(report.get("generated_at") or dt.datetime.now(dt.timezone.utc).isoformat()))
+            races_seen+=1
+            for kind,entries in (race.get("payouts") or {}).items():
+                for entry in entries or []:
+                    nums=[str(int(x)) for x in (entry.get("numbers") or []) if str(x).isdigit()]
+                    if not nums or len(set(nums))!=len(nums): continue
+                    if kind in unordered: nums.sort(key=int)
+                    amount=int(entry.get("pay_100") or entry.get("payout_yen") or 0)
+                    if amount<=0: continue
+                    db.execute("""INSERT INTO payouts(race_id,bet_type,combination_key,payout_yen,stake_unit_yen,confirmed_at,source,batch_id)
+                      VALUES(?,?,?,?,100,?,?,?) ON CONFLICT(race_id,bet_type,combination_key) DO UPDATE SET
+                      payout_yen=excluded.payout_yen,confirmed_at=excluded.confirmed_at,source=excluded.source,batch_id=excluded.batch_id""",
+                      (race_id,kind,"-".join(nums),amount,dt.datetime.strptime(date_raw,"%Y%m%d").date().isoformat(),"nar_daily_payout_report",batch_id))
+                    inserted+=db.execute("SELECT changes()").fetchone()[0]
+    return {"races":races_seen,"payouts":inserted}
+
+def import_main_auxiliary(db,ref,path,source,importer):
+    blob=run_git("rev-parse",f"{ref}:{path}",check=False)
+    if blob.returncode: return None
+    blob_sha=blob.stdout.decode().strip(); batch_id,do_import=start_batch(db,source,path,blob_sha)
+    if not do_import: return {"skipped":True}
+    raw=read_blob(ref,path); result=importer(db,raw,batch_id)
+    finish_batch(db,batch_id,1,sum(v for k,v in result.items() if isinstance(v,int)),0)
+    db.commit()
+    return result
+
 def sync(db):
     if not (ROOT/".git").exists(): raise RuntimeError("Run this script inside a Git clone of the research branch.")
     run_git("fetch","--no-tags","origin","+refs/heads/main:refs/remotes/origin/main")
     a45=run_git("fetch","--no-tags","origin",f"+refs/heads/research/lambdarank-a45-preoff-capture:{A45_REF}",check=False)
-    summary={"odds_archives_seen":0,"odds_archives_imported":0,"live_snapshots_read":0,"live_predictions_inserted":0,"odds_quotes_inserted":0,"a45_records_read":0,"a45_predictions_inserted":0,"rejected_snapshots":0}
+    summary={"odds_archives_seen":0,"odds_archives_imported":0,"live_snapshots_read":0,"live_predictions_inserted":0,"odds_quotes_inserted":0,"a45_records_read":0,"a45_predictions_inserted":0,"daily_results_inserted":0,"daily_payouts_inserted":0,"rejected_snapshots":0}
     for path,blob_sha in archive_paths(MAIN_REF):
         summary["odds_archives_seen"]+=1; batch_id,do_import=start_batch(db,"main_odds_archive",path,blob_sha)
         if not do_import: continue
@@ -156,6 +271,12 @@ def sync(db):
         summary["odds_archives_imported"]+=1; summary["live_snapshots_read"]+=read_count
         summary["live_predictions_inserted"]+=pred_count; summary["odds_quotes_inserted"]+=odds_count
         summary["rejected_snapshots"]+=rejected
+    daily_results=import_main_auxiliary(db,MAIN_REF,"data/latest-race.zip","nar_daily_race_archive",import_daily_race_archive)
+    if daily_results:
+        summary["daily_results_inserted"]=daily_results.get("results",0)
+    daily_payouts=import_main_auxiliary(db,MAIN_REF,"data/daily-payouts.json","nar_daily_payout_report",import_daily_payout_report)
+    if daily_payouts:
+        summary["daily_payouts_inserted"]=daily_payouts.get("payouts",0)
     if a45.returncode==0:
         path="data/research-a45-predictions.jsonl"; blob=run_git("rev-parse",f"{A45_REF}:{path}",check=False)
         if blob.returncode==0:
