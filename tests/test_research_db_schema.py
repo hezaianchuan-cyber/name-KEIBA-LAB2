@@ -27,6 +27,16 @@ class ResearchDatabaseSchemaTests(unittest.TestCase):
             "official_results", "payouts", "ingestion_batches", "schema_meta",
         }.issubset(names))
 
+    def test_race_type_defaults_to_flat(self):
+        stamp = "2026-11-14T16:00:00+09:00"
+        self.db.execute(
+            """INSERT INTO races
+            (race_id,race_date,venue,race_number,source,first_seen_at,last_seen_at)
+            VALUES (?,?,?,?,?,?,?)""",
+            ("saga|20261114|4", "2026-11-14", "佐賀", 4, "test", stamp, stamp),
+        )
+        self.assertEqual(self.db.execute("SELECT race_type FROM races").fetchone()[0], "flat")
+
     def test_race_identity_is_unique(self):
         race = ("saga|20261114|4", "2026-11-14", "佐賀", 4, "test", "2026-11-14T16:00:00+09:00")
         self.db.execute(
