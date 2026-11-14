@@ -74,14 +74,15 @@ def import_month(db: sqlite3.Connection, year: int, month: int, imported_at: str
         field_size = int(race.get("field_size") or len(field) or 0)
         db.execute(
             """INSERT INTO races
-            (race_id,race_date,venue,race_number,race_name,surface,distance_m,
+            (race_id,race_date,venue,race_type,race_number,race_name,surface,distance_m,
              going,scheduled_post_at,field_size,source,first_seen_at,last_seen_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             ON CONFLICT(race_id) DO UPDATE SET
               race_name=excluded.race_name,surface=excluded.surface,
               distance_m=excluded.distance_m,going=excluded.going,
               field_size=excluded.field_size,last_seen_at=excluded.last_seen_at""",
-            (race_id, race_date, str(race.get("venue") or key[0]), int(key[2]),
+            (race_id, race_date, str(race.get("venue") or key[0]),
+             "banei" if "帯広" in str(race.get("venue") or key[0]) else "flat", int(key[2]),
              race.get("name") or None, race.get("surface") or None,
              int(race["distance"]) if race.get("distance") else None,
              race.get("going") or None, None, field_size,
