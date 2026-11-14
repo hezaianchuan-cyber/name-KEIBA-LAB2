@@ -42,6 +42,7 @@ class LocalResearchDBTests(unittest.TestCase):
         with zipfile.ZipFile(buf,"w") as z:
             z.writestr("RaceList.csv",",".join(race)+"\n")
             z.writestr("HorseList.csv",",".join(horse)+"\n")
+        db.execute("INSERT INTO ingestion_batches(batch_id,source,started_at,status) VALUES(?,?,?,?)",("test-batch","test","2026-11-14T00:00:00Z","running"))
         result=sync.import_daily_race_archive(db,buf.getvalue(),"test-batch")
         self.assertEqual(result["results"],1)
         self.assertEqual(db.execute("SELECT finish_position FROM official_results").fetchone()[0],1)
@@ -54,6 +55,7 @@ class LocalResearchDBTests(unittest.TestCase):
         report={"generated_at":"2026-11-14T22:00:00+09:00","days":[{"races":[
           {"race_id":"佐賀|20261114|1","payouts":{"trio":[{"numbers":["11","2","5"],"pay_100":1250}]}}
         ]}]}
+        db.execute("INSERT INTO ingestion_batches(batch_id,source,started_at,status) VALUES(?,?,?,?)",("batch","test","2026-11-14T00:00:00Z","running"))
         result=sync.import_daily_payout_report(db,json.dumps(report,ensure_ascii=False).encode(),"batch")
         row=db.execute("SELECT combination_key,payout_yen FROM payouts WHERE bet_type='trio'").fetchone()
         self.assertEqual(row,("2-5-11",1250))
