@@ -1,0 +1,39 @@
+name: Research LambdaRank A-B feature strata diagnostics
+on:
+  push:
+    branches: [research/lambdarank-ab-feature-strata]
+    paths:
+      - 'scripts/research_flat_lambdarank_ab_feature_strata.py'
+      - '.github/workflows/research-lambdarank-ab-feature-strata.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: research-lambdarank-ab-feature-strata
+  cancel-in-progress: false
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check numpy scipy scikit-learn catboost lightgbm
+      - name: Compile research scripts
+        run: python -m py_compile scripts/research_flat_lambdarank_ab_feature_strata.py scripts/research_flat_lambdarank_feature_ablation.py scripts/nar_ml_challenger_backtest.py scripts/nar_backtest.py
+      - name: Run frozen A-B feature strata diagnostics
+        env:
+          NAR_CACHE_DIR: .cache/nar-monthly
+          NAR_PARSED_CACHE_DIR: .cache/nar-parsed
+        run: python scripts/research_flat_lambdarank_ab_feature_strata.py
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flat-lambdarank-ab-feature-strata
+          path: data/flat-lambdarank-ab-feature-strata.json
+          if-no-files-found: warn
+          retention-days: 30
