@@ -256,7 +256,7 @@ def import_main_auxiliary(db,ref,path,source,importer):
 
 def sync(db):
     if not (ROOT/".git").exists(): raise RuntimeError("Run this script inside a Git clone of the research branch.")
-    run_git("fetch","--no-tags","--depth=1","origin","+refs/heads/main:refs/remotes/origin/main")
+    run_git("fetch","--no-tags","--depth=1","--filter=blob:none","origin","+refs/heads/main:refs/remotes/origin/main")
     a45=run_git("fetch","--no-tags","--depth=1","origin",f"+refs/heads/research/lambdarank-a45-preoff-capture:{A45_REF}",check=False)
     summary={"odds_archives_seen":0,"odds_archives_imported":0,"live_snapshots_read":0,"live_predictions_inserted":0,"odds_quotes_inserted":0,"a45_records_read":0,"a45_predictions_inserted":0,"daily_results_inserted":0,"daily_payouts_inserted":0,"rejected_snapshots":0}
     for path,blob_sha in archive_paths(MAIN_REF):
