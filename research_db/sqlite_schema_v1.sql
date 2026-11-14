@@ -1,4 +1,4 @@
--- KEIBALAB Research DB v1
+-- KEIBALAB Research DB schema v2
 -- SQLite-first, portable to PostgreSQL. Research branch only.
 PRAGMA foreign_keys = ON;
 
@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS races (
   race_id TEXT PRIMARY KEY,
   race_date TEXT NOT NULL,
   venue TEXT NOT NULL,
+  race_type TEXT NOT NULL DEFAULT 'flat' CHECK (race_type IN ('flat','banei','unknown')),
   race_number INTEGER NOT NULL CHECK (race_number > 0),
   race_name TEXT,
   surface TEXT,
@@ -117,6 +118,7 @@ CREATE TABLE IF NOT EXISTS payouts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_races_date_venue ON races(race_date, venue);
+CREATE INDEX IF NOT EXISTS idx_races_type_date ON races(race_type, race_date);
 CREATE INDEX IF NOT EXISTS idx_odds_race_time ON odds_snapshots(race_id, captured_at);
 CREATE INDEX IF NOT EXISTS idx_odds_type_time ON odds_snapshots(bet_type, captured_at);
 CREATE INDEX IF NOT EXISTS idx_predictions_race_model ON model_predictions(race_id, model_version, predicted_at);
@@ -124,3 +126,6 @@ CREATE INDEX IF NOT EXISTS idx_results_finish ON official_results(race_id, finis
 
 INSERT OR IGNORE INTO schema_meta(version, applied_at, description)
 VALUES (1, CURRENT_TIMESTAMP, 'Initial KEIBALAB research database schema');
+
+INSERT OR IGNORE INTO schema_meta(version, applied_at, description)
+VALUES (2, CURRENT_TIMESTAMP, 'Classify flat and Banei races separately');
