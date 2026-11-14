@@ -1,0 +1,98 @@
+name: Research A45 pre-off prediction capture
+
+on:
+  push:
+    branches: [research/lambdarank-a45-preoff-capture]
+    paths:
+      - 'scripts/research_flat_lambdarank_a45_preoff_capture.py'
+      - 'scripts/nar_ml_challenger_backtest.py'
+      - 'scripts/research_flat_lambdarank_feature_ablation.py'
+      - 'tests/test_research_a45_preoff_capture.py'
+      - 'tests/test_nar_ml_challenger_backtest.py'
+      - '.github/workflows/research-lambdarank-a45-preoff-capture.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research-a45-preoff-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Checkout research branch
+        uses: actions/checkout@v4
+        with:
+          ref: research/lambdarank-a45-preoff-capture
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Restore parsed NAR monthly archive cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache/nar-monthly
+            .cache/nar-parsed
+          key: nar-a45-${{ runner.os }}-${{ hashFiles('scripts/nar_backtest.py', 'scripts/nar_ml_challenger_backtest.py') }}
+          restore-keys: |
+            nar-a45-${{ runner.os }}-
+
+      - name: Install research dependencies
+        run: python -m pip install --disable-pip-version-check numpy scipy scikit-learn catboost lightgbm
+
+      - name: Compile and test outcome-free feature generation
+        run: |
+          python -m py_compile scripts/research_flat_lambdarank_a45_preoff_capture.py scripts/nar_ml_challenger_backtest.py scripts/research_flat_lambdarank_feature_ablation.py scripts/nar_backtest.py
+          python -m unittest discover -s tests -p 'test_nar_ml_challenger_backtest.py' -v
+          python -m unittest discover -s tests -p 'test_research_a45_preoff_capture.py' -v
+
+      - name: Download current official NAR daily racecard
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p data
+          curl -fLsS --retry 2 --retry-delay 3 --max-time 90 \
+            'https://www.keiba.go.jp/KeibaWeb/DataDownload/RaceDataDownload?type=daily' \
+            -o data/latest-race.zip
+          unzip -t data/latest-race.zip >/dev/null
+
+      - name: Build frozen A45 rankings for eligible pre-off races
+        env:
+          NAR_CACHE_DIR: .cache/nar-monthly
+          NAR_PARSED_CACHE_DIR: .cache/nar-parsed
+        run: python scripts/research_flat_lambdarank_a45_preoff_capture.py
+
+      - name: Persist immutable research predictions on research branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/research-a45-capture-report.json
+          if [ -f data/research-a45-predictions.jsonl ]; then
+            git add data/research-a45-predictions.jsonl
+          fi
+          if git diff --cached --quiet; then
+            echo "No new research capture records."
+          else
+            git commit -m "Archive frozen A45 pre-off research predictions"
+            git push origin HEAD:research/lambdarank-a45-preoff-capture
+          fi
+
+      - name: Upload capture report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-a45-preoff-capture
+          path: |
+            data/research-a45-capture-report.json
+            data/research-a45-predictions.jsonl
+          if-no-files-found: warn
+          retention-days: 30
