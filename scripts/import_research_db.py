@@ -58,6 +58,9 @@ def import_files(db: sqlite3.Connection, predictions_path: Path, odds_path: Path
             race_number = int(item.get("race_number") or race_id.split("|")[2])
             scheduled = item.get("scheduled_post_time")
             captured = str(item["captured_at"])
+            first_features = next(
+                (p.get("features") or {} for p in item.get("predictions", [])), {}
+            )
             field_size = max(
                 (int(p.get("features", {}).get("field_size") or 0)
                  for p in item.get("predictions", [])),
@@ -70,7 +73,8 @@ def import_files(db: sqlite3.Connection, predictions_path: Path, odds_path: Path
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(race_id) DO UPDATE SET last_seen_at=excluded.last_seen_at""",
                 (race_id,race_date,venue,race_number,item.get("race_name"),
-                 None,None,None,scheduled,field_size,
+                 first_features.get("surface"),first_features.get("distance_m"),
+                 first_features.get("going"),scheduled,field_size,
                  str(item.get("source") or "research_a45_prediction"),
                  captured,captured),
             )
