@@ -100,6 +100,30 @@ def trio_odds_lookup(snapshot):
     return lookup
 
 
+
+def market_ranked_numbers(snapshot, horse_numbers):
+    """Rank the same field by win odds from the exact joined pre-off snapshot."""
+    win_odds = {}
+    for item in snapshot.get("odds") or []:
+        label = unicodedata.normalize("NFKC", str(item.get("type") or "")).replace(" ", "")
+        if "単勝" not in label:
+            continue
+        no = normalize_no(item.get("n1"))
+        if not no:
+            continue
+        try:
+            value = float(item.get("odds"))
+        except (TypeError, ValueError):
+            continue
+        if value > 0:
+            win_odds[no] = value
+    ordered = sorted(
+        {normalize_no(no) for no in horse_numbers if normalize_no(no)},
+        key=lambda no: (win_odds.get(no, float("inf")), int(no)),
+    )
+    return ordered, len(win_odds), win_odds
+
+
 def build_strategies(ranked_numbers, odds_lookup):
     axis = ranked_numbers[0]
     strategies = {
@@ -163,6 +187,10 @@ def main():
         ranked = sorted(prediction["predictions"], key=lambda x: int(x["rank"]))
         ranked_numbers = [normalize_no(x["horse_no"]) for x in ranked]
         strategies = build_strategies(ranked_numbers, odds_lookup)
+        market_numbers, market_coverage, market_win_odds = market_ranked_numbers(
+            snapshot, ranked_numbers
+        )
+        market_strategies = build_strategies(market_numbers, odds_lookup)
         trio_count = len(odds_lookup)
         output.append({
             "race_id": prediction["race_id"],
@@ -176,6 +204,9 @@ def main():
             "odds_source": f"main/data/odds-snapshots/{date_text}.jsonl.gz",
             "trio_combinations_quoted": trio_count,
             "a45_top7": ranked_numbers[:7],
+            "market_top7": market_numbers[:7],
+            "market_win_odds_coverage": market_coverage,
+            "market_strategies": market_strategies,
             "strategies": strategies,
             "results_used": False,
             "payouts_used": False,
@@ -195,6 +226,7 @@ def main():
         "no_valid_odds_snapshot": no_snapshot,
         "odds_policy": "Latest 3連複 snapshot captured after the fixed A45 prediction and 2-60 minutes before scheduled post.",
         "stake_assumption_yen_per_ticket": 100,
+        "market_baseline": "Same pre-off snapshot's win-odds ranking, using the same ticket structures and stakes as A45.",
         "results_or_payouts_used": False,
         "output": str(OUT.relative_to(ROOT)),
     }
