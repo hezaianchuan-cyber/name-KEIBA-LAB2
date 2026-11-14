@@ -36,7 +36,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin main
+          git fetch origin main --depth=1
           mkdir -p data/research-a45-odds-source
           dates="$(python - <<'PY'
           import datetime, json
