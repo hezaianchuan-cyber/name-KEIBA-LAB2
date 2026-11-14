@@ -1,0 +1,69 @@
+name: KEIBALAB Official NAR Archive Import Smoke Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research/keibalab-db-foundation
+    paths:
+      - "scripts/import_nar_archive_to_research_db.py"
+      - ".github/workflows/research-db-historical-smoke-test.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  import-one-completed-month:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout research branch
+        uses: actions/checkout@v4
+        with:
+          ref: research/keibalab-db-foundation
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Import one completed official archive month
+        run: |
+          python scripts/import_nar_archive_to_research_db.py \
+            --start-date 2026-10-01 --end-date 2026-10-31 --max-months 1
+
+      - name: Verify official archive rows and database integrity
+        run: |
+          python - <<'PY'
+          import json, sqlite3
+          db = sqlite3.connect("data/keibalab-research.sqlite")
+          db.execute("PRAGMA foreign_keys=ON")
+          counts = {
+              table: db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+              for table in ("races", "runners", "official_results", "payouts")
+          }
+          integrity = db.execute("PRAGMA integrity_check").fetchone()[0]
+          violations = db.execute("PRAGMA foreign_key_check").fetchall()
+          official = db.execute(
+              "SELECT COUNT(*) FROM races WHERE source='official_nar_monthly_archive'"
+          ).fetchone()[0]
+          print(json.dumps({
+              "official_archive_races": official,
+              "counts": counts,
+              "integrity_check": integrity,
+              "foreign_key_violations": violations
+          }, ensure_ascii=False, indent=2))
+          assert official > 0, "No official archive races were imported"
+          assert counts["runners"] > 0
+          assert counts["official_results"] > 0
+          assert integrity == "ok"
+          assert not violations
+          PY
+
+      - name: Upload verified SQLite database
+        uses: actions/upload-artifact@v4
+        with:
+          name: keibalab-research-sqlite-with-official-archive
+          path: data/keibalab-research.sqlite
+          retention-days: 7
+          if-no-files-found: error
