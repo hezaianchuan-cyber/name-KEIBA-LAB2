@@ -38,7 +38,7 @@ https://github.com/hezaianchuan-cyber/name-KEIBA-LAB2/actions/runs/43581365448
 After syncing, run:
    python scripts/export_research_backtest_dataset.py --race-type flat
 
-The exporter keeps predictions, odds, official results, and trio payouts in separate fields. For A45 it selects a trio-odds snapshot strictly after the frozen prediction and before post time. For live models whose predictions are generated from the same pre-off snapshot, it selects odds at or before the prediction timestamp. Incomplete races are marked partial and must not silently be counted as completed evaluation cases.
+The exporter keeps predictions, odds, official results, and trio payouts in separate fields. For A45 it selects a trio-odds snapshot strictly after the frozen prediction and before post time. For live models whose predictions are generated from the same pre-off snapshot, it selects odds at or before the prediction timestamp. Incomplete races are marked partial and must not silently be counted as completed evaluation cases. The export also reports separate trio_evaluation_status and ranking_evaluation_status fields: a 3連複 ticket backtest can be ready from pre-off trio quotes plus official trio payouts even when the individual finishing-position file is missing; horse top-3/ranking metrics require the official finish positions.
 
 Output files:
 - data/research-backtest-dataset.jsonl
