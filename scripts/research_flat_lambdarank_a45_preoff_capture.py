@@ -414,3 +414,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# Model cache implementation verified by focused unit tests.
