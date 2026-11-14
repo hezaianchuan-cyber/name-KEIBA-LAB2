@@ -1,0 +1,95 @@
+name: Research A45 pre-off trio odds join
+
+on:
+  push:
+    branches: [research/lambdarank-a45-preoff-capture]
+    paths:
+      - 'scripts/research_flat_lambdarank_a45_odds_join.py'
+      - 'tests/test_research_a45_odds_join.py'
+      - '.github/workflows/research-lambdarank-a45-odds-join.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research-a45-odds-join
+  cancel-in-progress: false
+
+jobs:
+  join:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout research branch
+        uses: actions/checkout@v4
+        with:
+          ref: research/lambdarank-a45-preoff-capture
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Fetch main branch odds archives for prediction dates
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          mkdir -p data/research-a45-odds-source
+          dates="$(python - <<'PY'
+          import datetime, json
+          from pathlib import Path
+          path = Path("data/research-a45-predictions.jsonl")
+          values = set()
+          for line in path.read_text(encoding="utf-8").splitlines():
+              if line.strip():
+                  item = json.loads(line)
+                  values.add(datetime.datetime.strptime(item["race_date"], "%Y%m%d").date().isoformat())
+          print(" ".join(sorted(values)))
+          PY
+          )"
+          for date in $dates; do
+            source="data/odds-snapshots/$date.jsonl.gz"
+            target="data/research-a45-odds-source/$date.jsonl.gz"
+            if git cat-file -e "origin/main:$source" 2>/dev/null; then
+              git show "origin/main:$source" > "$target"
+              echo "Fetched $source"
+            else
+              echo "Missing main odds archive: $source"
+            fi
+          done
+
+      - name: Compile and test strict pre-off odds join
+        run: |
+          python -m py_compile scripts/research_flat_lambdarank_a45_odds_join.py
+          python -m unittest discover -s tests -p 'test_research_a45_odds_join.py' -v
+
+      - name: Join frozen A45 predictions to pre-off 3連複 odds
+        run: python scripts/research_flat_lambdarank_a45_odds_join.py
+
+      - name: Persist research odds join
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/research-a45-odds-joined.jsonl data/research-a45-odds-join-report.json
+          if git diff --cached --quiet; then
+            echo "No changes to the A45 odds join."
+          else
+            git commit -m "Archive A45 pre-off trio odds join"
+            git push origin HEAD:research/lambdarank-a45-preoff-capture
+          fi
+
+      - name: Upload joined odds and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-a45-preoff-trio-odds
+          path: |
+            data/research-a45-odds-joined.jsonl
+            data/research-a45-odds-join-report.json
+          if-no-files-found: warn
+          retention-days: 30
