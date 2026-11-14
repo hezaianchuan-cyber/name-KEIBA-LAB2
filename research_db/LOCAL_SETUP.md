@@ -47,7 +47,7 @@ Output files:
 ## Important limits
 
 - GitHub Actions artifacts expire. They are only the transfer method for the initial 4-year database; after extraction, your local SQLite file is the durable copy.
-- The daily local sync requires the PC to be on, GitHub access, and the Windows account to be logged in.
+- The daily local sync requires the PC to be on, GitHub access, and the Windows account to be logged in. It also imports any updated daily official race-result and payout files committed to main.
 - The source collector is already scheduled on GitHub Actions, but collection can fail if the official NAR daily archive is unavailable. The sync only imports what was actually committed.
 - The current daily collector stores odds snapshots and frozen live predictions. A45 research predictions are imported when the A45 capture workflow has produced them; that separate workflow is not automatically scheduled by this setup.
 - This does not backfill historical intraday odds for 2022-2026. Monthly official archives provide results and payouts; timestamped odds coverage starts only where daily snapshot archives exist.
