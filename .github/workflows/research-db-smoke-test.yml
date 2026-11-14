@@ -2,6 +2,16 @@ name: KEIBALAB Research DB Smoke Test
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - research/keibalab-db-foundation
+    paths:
+      - "research_db/**"
+      - "scripts/import_research_db.py"
+      - "tests/test_research_db_schema.py"
+      - "data/research-a45-predictions.jsonl"
+      - "data/research-a45-odds-joined.jsonl"
+      - ".github/workflows/research-db-smoke-test.yml"
 
 permissions:
   contents: read
