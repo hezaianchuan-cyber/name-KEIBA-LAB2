@@ -143,5 +143,26 @@ class RichPreRaceFeatureTests(unittest.TestCase):
         self.assertTrue(expected.issubset(set(ml.RAW_FEATURES)))
 
 
+    def test_unfinished_racecards_can_be_scored_without_using_outcomes(self):
+        races, horses = self._fixture()
+        key = ("大井", "20260105", "2")
+        race = dict(races[("大井", "20260104", "1")])
+        race.update({"key": key, "date": dt.date(2026, 1, 5), "race": "2"})
+        races[key] = race
+        horses[key] = [
+            {**runner, "finish": None, "time_seconds": None, "last3f": None}
+            for runner in horses[("大井", "20260104", "1")]
+        ]
+
+        historical_rows, _ = ml.build_rows(races, horses)
+        live_rows, _ = ml.build_rows(races, horses, include_unfinished=True)
+        self.assertFalse(any(row["date"] == "2026-01-05" for row in historical_rows))
+        target = [row for row in live_rows if row["date"] == "2026-01-05"]
+        self.assertEqual(len(target), 3)
+        self.assertTrue(all(row["finish"] is None for row in target))
+        self.assertTrue(all(row["winner"] == 0 for row in target))
+        self.assertTrue(all(row["prior_runs"] == 4.0 for row in target))
+
+
 if __name__ == "__main__":
     unittest.main()
