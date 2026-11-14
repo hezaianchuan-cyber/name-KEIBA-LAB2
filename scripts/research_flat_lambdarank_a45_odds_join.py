@@ -23,7 +23,7 @@ REPORT = ROOT / "data" / "research-a45-odds-join-report.json"
 
 
 def normalize_no(value):
-    digits = re.sub(r"\\D", "", str(value or ""))
+    digits = re.sub(r"\D", "", str(value or ""))
     return str(int(digits)) if digits else None
 
 
