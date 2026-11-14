@@ -1,0 +1,58 @@
+name: KEIBALAB Research DB Smoke Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout research DB branch
+        uses: actions/checkout@v4
+        with:
+          ref: research/keibalab-db-foundation
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run schema tests
+        run: python -m unittest discover -s tests -p "test_research_db_schema.py" -v
+
+      - name: Build local SQLite database from frozen A45 data
+        run: python scripts/import_research_db.py
+
+      - name: Verify database integrity and print counts
+        run: |
+          python - <<'PY'
+          import json, sqlite3
+          db = sqlite3.connect("data/keibalab-research.sqlite")
+          db.execute("PRAGMA foreign_keys=ON")
+          integrity = db.execute("PRAGMA integrity_check").fetchone()[0]
+          foreign_keys = db.execute("PRAGMA foreign_key_check").fetchall()
+          counts = {}
+          for table in ("races", "runners", "model_predictions", "odds_snapshots"):
+              counts[table] = db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+          print(json.dumps({
+              "integrity_check": integrity,
+              "foreign_key_violations": foreign_keys,
+              "counts": counts
+          }, ensure_ascii=False, indent=2))
+          assert integrity == "ok"
+          assert not foreign_keys
+          assert counts["races"] > 0
+          assert counts["model_predictions"] > 0
+          PY
+
+      - name: Upload SQLite database artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: keibalab-research-sqlite
+          path: data/keibalab-research.sqlite
+          retention-days: 7
+          if-no-files-found: error
