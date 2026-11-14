@@ -21,9 +21,9 @@ The existing nar-preoff-odds.yml workflow already captures and commits timestamp
    If the repository is private, sign in with your normal GitHub credential manager. Never paste a personal access token into scripts or chat.
 
 3. Download the keibalab-research-sqlite-four-years artifact from this successful build:
-https://github.com/hezaianchuan-cyber/name-KEIBA-LAB2/actions/runs/43581365448
+https://github.com/hezaianchuan-cyber/name-KEIBA-LAB2/actions/runs/43582857697
 
-   Extract keibalab-research.sqlite into the clone's data folder. The exact path must be data/keibalab-research.sqlite.
+   Extract keibalab-research.sqlite into the clone's data folder. The exact path must be data/keibalab-research.sqlite. The same artifact also includes the initial research-backtest-dataset.jsonl and its report.
 
 4. Run the initial sync:
    python scripts/sync_research_db_local.py
