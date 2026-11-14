@@ -184,7 +184,7 @@ def main():
         "aggregate": aggregate,
         "races": per_race,
     }
-    OUT.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    OUT.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     report = {
         "generated_at_utc": output["generated_at_utc"],
         "status": output["status"],
@@ -193,7 +193,7 @@ def main():
         "races_pending": pending,
         "output": str(OUT.relative_to(ROOT)),
     }
-    REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("A45_TRIO_EVALUATION_REPORT " + json.dumps(report, ensure_ascii=False), flush=True)
 
 
