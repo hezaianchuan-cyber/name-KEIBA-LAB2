@@ -22,6 +22,17 @@ class A45OddsJoinTests(unittest.TestCase):
         self.assertEqual(selected[0].isoformat(), "2026-11-14T16:42:37+09:00")
         self.assertAlmostEqual(selected[1], 17.383333, places=4)
 
+    def test_market_ranking_uses_same_snapshot_win_odds(self):
+        snapshot = {"odds": [
+            {"type": "単勝", "n1": "1", "odds": 5.0},
+            {"type": "単勝", "n1": "2", "odds": 2.0},
+            {"type": "単勝", "n1": "3", "odds": 9.0},
+        ]}
+        ranked, coverage, win_odds = joiner.market_ranked_numbers(snapshot, ["1", "2", "3", "4"])
+        self.assertEqual(ranked, ["2", "1", "3", "4"])
+        self.assertEqual(coverage, 3)
+        self.assertEqual(win_odds["2"], 2.0)
+
     def test_trio_odds_normalization_and_ticket_policy_sizes(self):
         odds = [
             {"type": "３連複", "n1": "1", "n2": "2", "n3": "3", "odds": 12.5},
