@@ -9,16 +9,16 @@ def parse_iso(value):
     try: return dt.datetime.fromisoformat(value) if value else None
     except (TypeError,ValueError): return None
 
-def choose_trio_snapshot(predicted_at,scheduled_post_at,snapshots,model_name):
+def choose_trio_snapshot(predicted_at,scheduled_post_at,snapshots,model_name,model_version=''):
     predicted=parse_iso(predicted_at); post=parse_iso(scheduled_post_at)
+    is_a45=('A45' in model_name.upper()) or ('LAMBDARANK-A45' in model_version.upper())
     if predicted is None or post is None: return None
-    a45="A45" in model_name
     candidates=[]
     for row in snapshots:
         captured=parse_iso(row["captured_at"])
         if captured is None or captured>=post: continue
-        if a45 and captured<=predicted: continue
-        if not a45 and captured>predicted: continue
+        if is_a45 and captured<=predicted: continue
+        if not is_a45 and captured>predicted: continue
         candidates.append((captured,row))
     return max(candidates,key=lambda x:x[0])[1] if candidates else None
 
@@ -37,7 +37,7 @@ def build_records(db,race_type="flat"):
         payouts=db.execute("""SELECT combination_key,payout_yen,stake_unit_yen FROM payouts
           WHERE race_id=? AND bet_type='trio' ORDER BY combination_key""",(rid,)).fetchall()
         snapshots=db.execute("SELECT DISTINCT captured_at FROM odds_snapshots WHERE race_id=? AND bet_type='trio' ORDER BY captured_at",(rid,)).fetchall()
-        snap=choose_trio_snapshot(g["predicted_at"],g["scheduled_post_at"],snapshots,g["model_name"])
+        snap=choose_trio_snapshot(g["predicted_at"],g["scheduled_post_at"],snapshots,g["model_name"],g["model_version"])
         if not results: diag["missing_results"]+=1
         if len(results)<len(preds): diag["partial_result_groups"]+=1
         if not snap: diag["missing_trio_odds"]+=1; continue
@@ -48,7 +48,7 @@ def build_records(db,race_type="flat"):
           "race_id":rid,"race_date":g["race_date"],"venue":g["venue"],"race_type":g["race_type"],"race_number":g["race_number"],
           "model_name":g["model_name"],"model_version":g["model_version"],"predicted_at":g["predicted_at"],
           "scheduled_post_at":g["scheduled_post_at"],"odds_captured_at":snap["captured_at"],
-          "odds_timing_policy":"strictly_after_prediction" if "A45" in g["model_name"] else "at_or_before_prediction",
+          "odds_timing_policy":"strictly_after_prediction" if ("A45" in g["model_name"].upper() or "LAMBDARANK-A45" in g["model_version"].upper()) else "at_or_before_prediction",
           "predictions":[{**dict(x),"features":json.loads(x["features_json"])} for x in preds],
           "official_results":[dict(x) for x in results],"trio_odds":[dict(x) for x in quotes],
           "trio_payouts":[dict(x) for x in payouts],
