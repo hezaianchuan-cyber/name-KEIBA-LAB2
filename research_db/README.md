@@ -28,13 +28,33 @@ Start with SQLite: it is a real relational database, runs locally without a serv
 7. Every import is recorded in `ingestion_batches`; repeated imports must be idempotent.
 8. Research database work stays isolated from `main` and production Supabase until separately reviewed.
 
-## Current scope and next implementation steps
+## Historical official archive importer
 
-This commit establishes the schema only. Before creating a persistent database file or import job:
-- validate schema with SQLite and foreign-key checks;
-- map existing NAR monthly archive and daily racecard fields;
-- write an idempotent importer with rejected-row reporting;
-- import a small sample and reconcile counts against source files;
-- add backup/restore and artifact-retention checks.
+`scripts/import_nar_archive_to_research_db.py` reuses the existing NAR monthly ZIP parser and imports:
+- race metadata and runners;
+- official finishing position, time, and last-3F values;
+- official payouts, including the 3-horse `trio` combination.
+
+Example for one completed month:
+
+```bash
+python scripts/import_nar_archive_to_research_db.py \
+  --start-date 2026-10-01 --end-date 2026-10-31 --max-months 1
+```
+
+The importer stores source checksums and batch IDs, upserts corrected race/result/payout rows, and is repeatable. `confirmed_at` in the historical result/payout tables currently records the source race date (day precision only); the monthly archive does not provide the exact time at which a result was confirmed.
+
+Important separation:
+- Monthly archives contain final outcomes and payouts, not historical pre-race odds snapshots.
+- Do not use final odds or payouts as model features.
+- Historical odds snapshots and frozen pre-race predictions must be imported from their own timestamped sources.
+- The importer does not write to production Supabase or alter the production app.
+
+## Remaining work
+
+- Run a real one-month archive import and reconcile race/runner/result/payout counts against the source.
+- Expand to the full completed archive window only after the one-month reconciliation passes.
+- Add backup/restore and durable local storage instructions; GitHub Actions artifacts are temporary.
+- Design a separate daily capture import for timestamped odds and frozen predictions.
 
 No automated polling schedule is enabled yet. No paid service is created.
