@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-08T19:36:35.680262+00:00",
+  "generated_at": "2026-11-15T19:16:56.463223+00:00",
   "period": {
     "start": "2022-11-01",
     "end": "2026-10-31"
@@ -631360,14 +631360,14 @@
     "comparison_policy": "A-E are reported separately. D is marked unevaluable until enough genuine pre-off snapshots exist. No strategy is declared profitable unless sample minimums are met and the 95% race-cluster ROI lower bound exceeds 100%."
   },
   "odds_snapshot_archive": {
-    "snapshot_files": 6,
-    "snapshot_records": 327,
-    "races": 148,
-    "predicted_races": 148,
-    "odds_rows": 175347,
+    "snapshot_files": 13,
+    "snapshot_records": 641,
+    "races": 299,
+    "predicted_races": 299,
+    "odds_rows": 367664,
     "first_date": "20261103",
-    "last_date": "20261108",
-    "last_captured_at": "2026-11-08T20:22:47.709462+09:00",
+    "last_date": "20261115",
+    "last_captured_at": "2026-11-15T20:25:12.744306+09:00",
     "model_versions": [
       "nar-chronological-v7-fieldsize-calibrated",
       "nar-chronological-v8-abcd-C-preoff",
@@ -631378,7 +631378,7 @@
   },
   "preoff_value_backtest": {
     "status": "awaiting_settled_snapshots",
-    "snapshot_races": 148,
+    "snapshot_races": 299,
     "settled_evaluated_races": 0,
     "date_count": 0,
     "development_date_count": 0,
@@ -631507,7 +631507,7 @@
     "status": "awaiting_snapshots",
     "snapshot_races": 0,
     "date_count": 0,
-    "legacy_snapshot_races_excluded": 70,
+    "legacy_snapshot_races_excluded": 221,
     "required_model_version": "nar-chronological-v9-D-frame-preoff",
     "development_date_count": 0,
     "holdout_date_count": 0,
@@ -632417,7 +632417,7 @@
   "preoff_ranking_strategy_backtest": {
     "status": "awaiting_C_model_preoff_snapshots",
     "snapshot_races": 0,
-    "legacy_snapshot_races_excluded": 70,
+    "legacy_snapshot_races_excluded": 221,
     "required_model_version": "nar-chronological-v9-D-frame-preoff",
     "date_count": 0,
     "development_date_count": 0,
@@ -633172,16 +633172,16 @@
   },
   "performance_profile": {
     "stage_seconds": {
-      "load_archives": 4.033,
+      "load_archives": 3.37,
       "chronological_run_backtest": 0.0,
-      "production_calibration": 8.483,
-      "final_odds_archive_load": 10.66,
-      "walk_forward_holdout_validation": 1237.997,
-      "preoff_ticket_type_backtest": 1.901,
-      "race_budget_strategy_backtest": 2.19,
-      "preoff_ranking_strategy_backtest": 1.471
+      "production_calibration": 7.468,
+      "final_odds_archive_load": 9.371,
+      "walk_forward_holdout_validation": 0.0,
+      "preoff_ticket_type_backtest": 3.375,
+      "race_budget_strategy_backtest": 3.382,
+      "preoff_ranking_strategy_backtest": 3.603
     },
-    "total_seconds_before_report_serialization": 1274.432,
+    "total_seconds_before_report_serialization": 42.717,
     "note": "Wall-clock stage timings for identifying the next safe optimization target; timings do not affect model scores or selection."
   },
   "online_learning": {
