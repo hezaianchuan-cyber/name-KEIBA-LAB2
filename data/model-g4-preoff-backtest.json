@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-11-15T21:32:11.382704+00:00",
+  "generated_at": "2026-11-16T21:44:04.054943+00:00",
   "performance": {
     "stage_seconds": {
       "g1_load_seconds": 0.0,
-      "official_outcomes_load_seconds": 5.129,
-      "snapshots_load_and_supabase_join_seconds": 6.232,
-      "snapshot_outcome_evaluation_seconds": 8.452,
-      "report_aggregation_seconds": 3.507,
-      "total_seconds_before_write": 17.088
+      "official_outcomes_load_seconds": 4.213,
+      "snapshots_load_and_supabase_join_seconds": 4.899,
+      "snapshot_outcome_evaluation_seconds": 6.927,
+      "report_aggregation_seconds": 2.806,
+      "total_seconds_before_write": 13.946
     },
-    "total_seconds": 17.088,
+    "total_seconds": 13.946,
     "optimization": "bisect_right latest-prior model lookup plus single-worker per-day odds retrieval with 20-row JSONB pages and GitHub-archive-primary model snapshots; outputs and selection rules unchanged"
   },
   "feature": "G4_real_preoff_odds_evaluation",
@@ -2415,8 +2415,8 @@
     "thresholds": "Fixed before G4 evaluation; no tuning on holdout."
   },
   "diagnostics": {
-    "files": 13,
-    "lines": 641,
+    "files": 14,
+    "lines": 667,
     "invalid_json": 0,
     "outside_window": 0,
     "missing_predictions": 0,
@@ -2426,7 +2426,7 @@
     "valid_snapshots": 637,
     "supabase_query_rows": 0,
     "supabase_snapshots_joined": 0,
-    "supabase_model_races": 480,
+    "supabase_model_races": 506,
     "supabase_race_key_matches": 0,
     "supabase_no_prior_model": 0,
     "supabase_model_too_old": 0,
@@ -2444,7 +2444,8 @@
       "20261112",
       "20261113",
       "20261114",
-      "20261115"
+      "20261115",
+      "20261116"
     ],
     "supabase_model_key_samples": [
       "佐賀|20261107|1",
@@ -2462,6 +2463,7 @@
       "佐賀",
       "名古屋",
       "園田",
+      "大井",
       "川崎",
       "帯広ば",
       "水沢",
@@ -2476,17 +2478,17 @@
     "supabase_common_venues": [],
     "model_snapshot_table_rows": 0,
     "model_snapshot_table_status": "skipped_github_archive_primary",
-    "github_model_snapshot_rows": 641,
-    "github_model_snapshot_races": 480,
+    "github_model_snapshot_rows": 667,
+    "github_model_snapshot_races": 506,
     "supabase_model_snapshot_rows": 0,
     "supabase_model_snapshot_races": 0,
-    "github_fallback_only_races": 480,
-    "merged_model_snapshot_rows": 641,
-    "supabase_odds_days_requested": 13,
+    "github_fallback_only_races": 506,
+    "merged_model_snapshot_rows": 667,
+    "supabase_odds_days_requested": 14,
     "supabase_odds_fetch_parallelism": 1,
     "supabase_status": "unavailable",
     "supabase_error": "HTTP Error 402: Payment Required",
-    "snapshots_from_github_five_minute": 641,
+    "snapshots_from_github_five_minute": 667,
     "snapshots_from_supabase_one_minute": 0,
     "supabase_result_rows": 0,
     "supabase_result_dates": [
@@ -2502,12 +2504,15 @@
       "20261112",
       "20261113",
       "20261114",
-      "20261115"
+      "20261115",
+      "20261116"
     ],
-    "supabase_result_errors": [],
-    "official_outcome_races": 5403,
+    "supabase_result_errors": [
+      "2026-11-16: HTTP Error 402: Payment Required"
+    ],
+    "official_outcome_races": 5325,
     "snapshots_with_official_result": 641,
-    "snapshots_missing_official_result": 0,
+    "snapshots_missing_official_result": 26,
     "recalibrated_with_g1_temperature": 637,
     "insufficient_odds_coverage": 4
   },
