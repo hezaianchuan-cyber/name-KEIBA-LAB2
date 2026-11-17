@@ -149,24 +149,26 @@ def parse_result(html: str, source_url: str) -> dict:
 
     date_match = re.search(
         r"(20\d{2}年\d{1,2}月\d{1,2}日\([^)]+\))\s*"
-        r"(\d+回[^\s]+?\d+日)\s*発走時刻:([0-9時分]+)",
+        r"(\d+回[^\s]+?\d+日)",
         page_text,
     )
+    post_time_match = re.search(r"発走時刻:?([0-9時分]+)", page_text)
     venue_match = re.search(r"\d+回(札幌|函館|福島|新潟|東京|中山|中京|京都|阪神|小倉)\d+日", page_text)
     race_match = re.search(r"(\d{1,2})レース", page_text)
-    course_match = re.search(r"コース:([0-9,]+)メートル\(([^)]+)\)", page_text)
+    course_match = re.search(r"([0-9,]+)メートル\(([^)]+)\)", page_text)
     weather_match = re.search(r"天候([^ ]+)", page_text)
     going_match = re.search(r"(芝|ダート)(良|稍重|重|不良)", page_text)
 
+    payout_text = re.sub(r"\s+", "", page_text)
     trifecta_match = re.search(
-        r"3連複\s*(\d{1,2}-\d{1,2}-\d{1,2})\s*([0-9,]+)円\s*(\d+)番人気",
-        page_text,
+        r"3連複(\d{1,2}-\d{1,2}-\d{1,2})([0-9,]+)円(\d+)番人気",
+        payout_text,
     )
 
     race = {
         "date_label": date_match.group(1) if date_match else None,
         "meeting_day": date_match.group(2) if date_match else None,
-        "post_time": date_match.group(3) if date_match else None,
+        "post_time": post_time_match.group(1) if post_time_match else None,
         "venue": venue_match.group(1) if venue_match else None,
         "race_number": int(race_match.group(1)) if race_match else None,
         "distance_m": int(course_match.group(1).replace(",", "")) if course_match else None,
@@ -202,6 +204,7 @@ def parse_result(html: str, source_url: str) -> dict:
             "page_text_tail": page_text[-1800:],
             "date_context": page_text[max(0, page_text.find("2026年") - 80):page_text.find("2026年") + 240] if "2026年" in page_text else None,
             "payout_context": page_text[max(0, page_text.find("3連複") - 80):page_text.find("3連複") + 240] if "3連複" in page_text else None,
+            "course_context": page_text[max(0, page_text.find("メートル") - 80):page_text.find("メートル") + 120] if "メートル" in page_text else None,
         },
     }
 
