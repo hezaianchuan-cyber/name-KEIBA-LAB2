@@ -50,10 +50,12 @@ class PageParser(HTMLParser):
             self.row = []
         elif tag in ("td", "th") and self.row is not None:
             self.cell_parts = []
-        elif tag == "img" and self.cell_parts is not None:
+        elif tag == "img":
             alt = clean(attrs.get("alt", ""))
             if alt:
-                self.cell_parts.append(alt)
+                self.text_parts.append(alt)
+                if self.cell_parts is not None:
+                    self.cell_parts.append(alt)
 
     def handle_data(self, data: str) -> None:
         if data:
@@ -147,12 +149,12 @@ def parse_result(html: str, source_url: str) -> dict:
 
     date_match = re.search(
         r"(20\d{2}年\d{1,2}月\d{1,2}日\([^)]+\))\s*"
-        r"(\d+回[^\s]+?\d+日)\s*発走時刻：([0-9時分]+)",
+        r"(\d+回[^\s]+?\d+日)\s*発走時刻:([0-9時分]+)",
         page_text,
     )
     venue_match = re.search(r"\d+回(札幌|函館|福島|新潟|東京|中山|中京|京都|阪神|小倉)\d+日", page_text)
     race_match = re.search(r"(\d{1,2})レース", page_text)
-    course_match = re.search(r"コース：([0-9,]+)メートル\(([^)]+)\)", page_text)
+    course_match = re.search(r"コース:([0-9,]+)メートル\(([^)]+)\)", page_text)
     weather_match = re.search(r"天候([^ ]+)", page_text)
     going_match = re.search(r"(芝|ダート)(良|稍重|重|不良)", page_text)
 
@@ -197,6 +199,9 @@ def parse_result(html: str, source_url: str) -> dict:
             "table_row_lengths": [len(row) for row in parser.rows[:12]],
             "sample_table_rows": parser.rows[:4],
             "page_text_preview": page_text[:900],
+            "page_text_tail": page_text[-1800:],
+            "date_context": page_text[max(0, page_text.find("2026年") - 80):page_text.find("2026年") + 240] if "2026年" in page_text else None,
+            "payout_context": page_text[max(0, page_text.find("3連複") - 80):page_text.find("3連複") + 240] if "3連複" in page_text else None,
         },
     }
 
