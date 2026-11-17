@@ -17,7 +17,7 @@ import urllib.request
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import unquote, urljoin
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data" / "jra-free-data-probe.json"
@@ -142,11 +142,12 @@ def fetch_html(url: str) -> str:
 
 
 def parse_result(html: str, source_url: str) -> dict:
+    source_url = unquote(source_url)
     parser = PageParser()
     parser.feed(html)
     page_text = clean(" ".join(parser.text_parts))
     related_result_links = sorted({
-        urljoin(source_url, href)
+        unquote(urljoin(source_url, href))
         for href in parser.links
         if "accessS.html" in href and "CNAME=" in href
     })
@@ -251,14 +252,14 @@ def parse_result(html: str, source_url: str) -> dict:
 
 
 def collect_target_day(sample_report: dict, target_ymd: str = "20261115") -> dict:
-    reports = {sample_report["source_url"]: sample_report}
+    reports = {unquote(sample_report["source_url"]): sample_report}
     errors: list[dict] = []
 
     # A result page exposes the 11R pages for all venues on that date.
     # Those three seed pages expose the remaining 1R-12R links for each venue.
     seed_pattern = re.compile(rf"11{target_ymd}/")
     seed_urls = sorted({
-        url for url in sample_report.get("related_result_links", [])
+        unquote(url) for url in sample_report.get("related_result_links", [])
         if target_ymd in url and seed_pattern.search(url)
     })
 
@@ -293,8 +294,15 @@ def collect_target_day(sample_report: dict, target_ymd: str = "20261115") -> dic
         report for report in reports.values()
         if (report.get("race") or {}).get("date_label", "").startswith("2026年11月15日")
     ]
-    summaries = []
+    unique_reports = {}
     for report in valid_reports:
+        race = report.get("race") or {}
+        key = (race.get("date_label"), race.get("venue"), race.get("race_number"))
+        unique_reports.setdefault(key, report)
+    duplicate_page_count = len(valid_reports) - len(unique_reports)
+
+    summaries = []
+    for report in unique_reports.values():
         race = report.get("race") or {}
         summaries.append({
             "venue": race.get("venue"),
@@ -311,6 +319,8 @@ def collect_target_day(sample_report: dict, target_ymd: str = "20261115") -> dic
     return {
         "target_date": "2026-11-15",
         "target_url_count": len(target_urls),
+        "race_page_count": len(valid_reports),
+        "duplicate_page_count": duplicate_page_count,
         "race_count": len(summaries),
         "venue_count": len(venues),
         "venues": venues,
@@ -352,7 +362,7 @@ def main() -> int:
         "batch": {
             key: batch[key]
             for key in (
-                "target_date", "target_url_count", "race_count", "venue_count",
+                "target_date", "target_url_count", "race_page_count", "duplicate_page_count", "race_count", "venue_count",
                 "venues", "runner_count_total", "trifecta_payout_count",
                 "races_missing_payout", "errors",
             )
