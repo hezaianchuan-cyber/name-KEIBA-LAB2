@@ -25,7 +25,7 @@ SAMPLE_URL = (
     "https://www.jra.go.jp/JRADB/accessS.html?"
     "CNAME=pw01sde1003202603041120261115%2F13"
 )
-USER_AGENT = "KEIBALAB-JRA-free-data-probe/0.1"
+USER_AGENT = "KEIBALAB-JRA-free-data-probe/0.2"
 EQUIPMENT_LABELS = (
     "ブリンカー着用",
     "チークピーシズ着用",
