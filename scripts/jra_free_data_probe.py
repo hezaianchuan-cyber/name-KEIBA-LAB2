@@ -73,6 +73,28 @@ class PageParser(HTMLParser):
             self.table_depth -= 1
 
 
+def decode_html(raw: bytes, declared_charset: str | None) -> str:
+    candidates = []
+    if declared_charset:
+        candidates.append(declared_charset)
+    meta = re.search(rb"<meta[^>]+charset=[\\"']?([A-Za-z0-9._-]+)", raw[:4096], re.I)
+    if meta:
+        candidates.append(meta.group(1).decode("ascii", errors="ignore"))
+    candidates.extend(["utf-8-sig", "cp932", "euc_jp"])
+    decoded = []
+    for charset in dict.fromkeys(candidates):
+        try:
+            value = raw.decode(charset, errors="replace")
+        except LookupError:
+            continue
+        japanese_chars = len(re.findall(r"[ぁ-んァ-ヶ一-龥]", value))
+        replacement_chars = value.count("\\ufffd")
+        decoded.append((japanese_chars - replacement_chars * 1000, value))
+    if not decoded:
+        return raw.decode("cp932", errors="replace")
+    return max(decoded, key=lambda item: item[0])[1]
+
+
 def fetch_html(url: str) -> str:
     request = urllib.request.Request(
         url,
@@ -84,8 +106,8 @@ def fetch_html(url: str) -> str:
     )
     with urllib.request.urlopen(request, timeout=25) as response:
         raw = response.read()
-        charset = response.headers.get_content_charset() or "utf-8"
-    return raw.decode(charset, errors="replace")
+        charset = response.headers.get_content_charset()
+    return decode_html(raw, charset)
 
 
 def parse_result(html: str, source_url: str) -> dict:
@@ -129,7 +151,7 @@ def parse_result(html: str, source_url: str) -> dict:
     )
     venue_match = re.search(r"\d+回(札幌|函館|福島|新潟|東京|中山|中京|京都|阪神|小倉)\d+日", page_text)
     race_match = re.search(r"(\d{1,2})レース", page_text)
-    course_match = re.search(r"コース：([0-9,]+)メートル（([^）]+)）", page_text)
+    course_match = re.search(r"コース：([0-9,]+)メートル\\(([^)]+)\\)", page_text)
     weather_match = re.search(r"天候([^ ]+)", page_text)
     going_match = re.search(r"(芝|ダート)(良|稍重|重|不良)", page_text)
 
