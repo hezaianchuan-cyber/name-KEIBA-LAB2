@@ -207,10 +207,12 @@ def parse_result(html: str, source_url: str) -> dict:
     weather_match = re.search(r"天候\s*([^ ]+)", page_text)
     going_match = re.search(r"(芝|ダート)\s*(良|稍重|重|不良)", page_text)
 
-    payout_text = re.sub(r"\s+", "", page_text)
+    # Keep separators between the combination, payout and popularity.
+    # Removing all whitespace makes a 9-horse combination + 220-yen payout
+    # ambiguous ("2-3-9 220" becomes "2-3-9220").
     trifecta_match = re.search(
-        r"3連複(\d{1,2}-\d{1,2}-\d{1,2})([0-9,]+)円(\d+)番人気",
-        payout_text,
+        r"3連複\s*(\d{1,2}-\d{1,2}-\d{1,2})\s*([0-9,]+)円\s*(\d+)番人気",
+        page_text,
     )
 
     race = {
