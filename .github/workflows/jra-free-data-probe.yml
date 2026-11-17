@@ -59,16 +59,37 @@ jobs:
           print("ERRORS:", batch["errors"])
           PY
 
+      - name: Upload full-day probe report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jra-free-data-probe
+          path: data/jra-free-data-probe.json
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Publish probe result to pilot branch
         shell: bash
         run: |
           set -euo pipefail
+          cp data/jra-free-data-probe.json /tmp/jra-free-data-probe.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/jra-free-data-probe.json
-          if git diff --cached --quiet; then
-            echo "Probe output is unchanged."
-            exit 0
-          fi
-          git commit -m "Record JRA full-day free-data probe"
-          git push origin HEAD:jra-free-data-pilot
+          for attempt in 1 2 3 4 5; do
+            git fetch origin jra-free-data-pilot
+            git reset --hard origin/jra-free-data-pilot
+            mkdir -p data
+            cp /tmp/jra-free-data-probe.json data/jra-free-data-probe.json
+            git add data/jra-free-data-probe.json
+            if git diff --cached --quiet; then
+              echo "Probe output is already current."
+              exit 0
+            fi
+            git commit -m "Record JRA full-day free-data probe"
+            if git push origin HEAD:jra-free-data-pilot; then
+              exit 0
+            fi
+            echo "Concurrent pilot-branch update; retrying (attempt $attempt)"
+            sleep 2
+          done
+          echo "Could not publish the JRA probe report after five attempts."
+          exit 1
