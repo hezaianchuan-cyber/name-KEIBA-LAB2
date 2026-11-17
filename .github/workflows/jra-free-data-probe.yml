@@ -42,23 +42,27 @@ jobs:
       - name: Compile probe
         run: python3 -m py_compile scripts/jra_free_data_probe.py
 
-      - name: Fetch and parse one JRA official result page
+      - name: Fetch one full JRA race day at a modest request rate
         run: python3 scripts/jra_free_data_probe.py
 
-      - name: Validate extracted data
+      - name: Validate the three-venue race-day sample
         run: |
           python3 - <<'PY'
           import json
           from pathlib import Path
           report = json.loads(Path("data/jra-free-data-probe.json").read_text(encoding="utf-8"))
-          assert report["runner_count"] >= 10, f"Too few runners parsed: {report['runner_count']}"
-          assert report["trifecta_payout"], "Trifecta payout was not parsed"
-          assert report["race"]["venue"], "Venue was not parsed"
-          assert report["race"]["distance_m"], "Distance was not parsed"
-          print("JRA_FREE_DATA_PROBE=PASS")
-          print("RACE:", report["race"])
-          print("RUNNERS:", report["runner_count"])
-          print("TRIFECTA:", report["trifecta_payout"])
+          assert report["runner_count"] >= 10, f"Sample race has too few runners: {report['runner_count']}"
+          assert report["trifecta_payout"], "Sample race has no parsed trifecta payout"
+          batch = report["batch"]
+          assert batch["race_count"] >= 30, f"Too few races parsed: {batch['race_count']}"
+          assert batch["venue_count"] == 3, f"Expected three venues: {batch['venues']}"
+          assert batch["trifecta_payout_count"] >= 30, f"Too few trifecta payouts: {batch['trifecta_payout_count']}"
+          assert batch["runner_count_total"] >= 300, f"Too few runners parsed: {batch['runner_count_total']}"
+          print("JRA_FREE_DAY_PROBE=PASS")
+          print("RACES:", batch["race_count"], "VENUES:", batch["venues"])
+          print("RUNNERS:", batch["runner_count_total"])
+          print("TRIFECTA PAYOUTS:", batch["trifecta_payout_count"])
+          print("ERRORS:", batch["errors"])
           PY
 
       - name: Publish probe result to pilot branch
@@ -73,5 +77,5 @@ jobs:
             echo "Probe output is unchanged."
             exit 0
           fi
-          git commit -m "Record JRA free-data probe result"
+          git commit -m "Record JRA full-day free-data probe"
           git push origin HEAD:jra-free-data-pilot
