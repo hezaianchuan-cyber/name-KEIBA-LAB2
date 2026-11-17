@@ -2,9 +2,9 @@
 """One-race, low-volume probe of JRA's publicly accessible result page.
 
 This is deliberately separate from every NAR collector/model. It downloads one
-public JRA result page, extracts the result-table fields and 3-renpuku payout,
-and writes a compact diagnostic JSON. It does not collect betting-account data,
-submit bets, or use post-race fields as prediction features.
+public JRA result page, extracts result fields and the 3-renpuku payout, and
+writes a compact diagnostic JSON. It does not submit bets or use post-race
+fields as prediction features.
 """
 from __future__ import annotations
 
@@ -24,11 +24,34 @@ SAMPLE_URL = (
     "CNAME=pw01sde1003202603041120261115%2F13"
 )
 USER_AGENT = "KEIBALAB-JRA-free-data-probe/0.1"
+EQUIPMENT_LABELS = (
+    "ブリンカー着用",
+    "チークピーシズ着用",
+    "シャドーロール着用",
+    "ホライゾネット着用",
+)
 
 
 def clean(value: str) -> str:
     value = unicodedata.normalize("NFKC", value or "")
     return re.sub(r"\s+", " ", value).strip()
+
+
+def parse_horse_name(value: str) -> tuple[str, str, list[str], bool]:
+    raw = clean(value)
+    equipment = [label for label in EQUIPMENT_LABELS if label in raw]
+    is_foreign_bred = "マルガイ" in raw
+    name = raw.replace("マルガイ", "")
+    for label in equipment:
+        name = name.replace(label, "")
+    return raw, clean(name), equipment, is_foreign_bred
+
+
+def parse_body_weight(value: str) -> tuple[int | None, int | None]:
+    match = re.search(r"(\d+)\s*\(([+-]?\d+)\)", clean(value))
+    if not match:
+        return None, None
+    return int(match.group(1)), int(match.group(2))
 
 
 class PageParser(HTMLParser):
@@ -118,33 +141,48 @@ def parse_result(html: str, source_url: str) -> dict:
     parser.feed(html)
     page_text = clean(" ".join(parser.text_parts))
 
-    # JRA's standard result table: finish, frame, horse number, horse name,
-    # sex/age, carried weight, jockey, time, margin, corner positions,
-    # estimated final 3F, body weight, trainer, win popularity.
+    # JRA result table columns:
+    # finish, frame, horse number, horse name, sex/age, carried weight,
+    # jockey, time, margin, corner positions, estimated final 3F,
+    # body weight, trainer, win popularity.
     runner_rows = []
     for row in parser.rows:
         if len(row) < 14 or not re.fullmatch(r"\d{1,2}", clean(row[0])):
             continue
         finish = int(row[0])
-        if not 1 <= finish <= 30:
+        if not 1 <= finish <= 30 or not re.search(r"[一-龥ぁ-んァ-ン]", row[3]):
             continue
-        if not clean(row[3]) or not re.search(r"[一-龥ぁ-んァ-ン]", row[3]):
-            continue
+
+        horse_raw, horse_name, equipment, is_foreign_bred = parse_horse_name(row[3])
+        body_weight_kg, body_weight_change_kg = parse_body_weight(row[11])
+        sex_age = clean(row[4])
+        age_match = re.search(r"\d+", sex_age)
+        frame_match = re.search(r"\d+", clean(row[1]))
+        carried_weight_match = re.search(r"\d+(?:\.\d+)?", clean(row[5]))
+        last_3f_match = re.search(r"\d+(?:\.\d+)?", clean(row[10]))
+
         runner_rows.append({
             "finish": finish,
-            "frame": clean(row[1]),
+            "frame_number": int(frame_match.group(0)) if frame_match else None,
             "horse_number": clean(row[2]),
-            "horse_name": clean(row[3]),
-            "sex_age": clean(row[4]),
-            "carried_weight": clean(row[5]),
+            "horse_name": horse_name,
+            "horse_name_raw": horse_raw,
+            "is_foreign_bred": is_foreign_bred,
+            "equipment_flags": equipment,
+            "sex_age_raw": sex_age,
+            "age": int(age_match.group(0)) if age_match else None,
+            "sex": sex_age.replace(age_match.group(0), "") if age_match else sex_age,
+            "carried_weight_kg": float(carried_weight_match.group(0)) if carried_weight_match else None,
             "jockey": clean(row[6]),
             "time": clean(row[7]),
             "margin": clean(row[8]),
-            "corner_positions": clean(row[9]),
-            "estimated_last_3f": clean(row[10]),
-            "body_weight": clean(row[11]),
+            "corner_positions": [int(v) for v in re.findall(r"\d+", row[9])],
+            "estimated_last_3f_sec": float(last_3f_match.group(0)) if last_3f_match else None,
+            "body_weight_kg": body_weight_kg,
+            "body_weight_change_kg": body_weight_change_kg,
             "trainer": clean(row[12]),
-            "win_popularity": clean(row[13]),
+            # This is popularity rank, not a decimal odds value.
+            "win_popularity": int(row[13]) if clean(row[13]).isdigit() else None,
         })
 
     date_match = re.search(
@@ -152,7 +190,6 @@ def parse_result(html: str, source_url: str) -> dict:
         r"(\d+回[^\s]+?\d+日)",
         page_text,
     )
-    post_time_match = re.search(r"発走時刻:?([0-9時分]+)", page_text)
     venue_match = re.search(r"\d+回(札幌|函館|福島|新潟|東京|中山|中京|京都|阪神|小倉)\d+日", page_text)
     race_match = re.search(r"(\d{1,2})レース", page_text)
     course_match = re.search(r"([0-9,]+)\s*メートル\s*\(([^)]+)\)", page_text)
@@ -168,7 +205,6 @@ def parse_result(html: str, source_url: str) -> dict:
     race = {
         "date_label": date_match.group(1) if date_match else None,
         "meeting_day": date_match.group(2) if date_match else None,
-        "post_time": post_time_match.group(1) if post_time_match else None,
         "venue": venue_match.group(1) if venue_match else None,
         "race_number": int(race_match.group(1)) if race_match else None,
         "distance_m": int(course_match.group(1).replace(",", "")) if course_match else None,
@@ -198,13 +234,6 @@ def parse_result(html: str, source_url: str) -> dict:
             "runner_rows_detected": len(runner_rows),
             "has_trifecta_payout": payout is not None,
             "page_text_chars": len(page_text),
-            "table_row_lengths": [len(row) for row in parser.rows[:12]],
-            "sample_table_rows": parser.rows[:4],
-            "page_text_preview": page_text[:900],
-            "page_text_tail": page_text[-1800:],
-            "date_context": page_text[max(0, page_text.find("2026年") - 80):page_text.find("2026年") + 240] if "2026年" in page_text else None,
-            "payout_context": page_text[max(0, page_text.find("3連複") - 80):page_text.find("3連複") + 240] if "3連複" in page_text else None,
-            "course_context": page_text[max(0, page_text.find("メートル") - 80):page_text.find("メートル") + 120] if "メートル" in page_text else None,
         },
     }
 
