@@ -1,0 +1,70 @@
+name: JRA free-data feasibility probe
+
+on:
+  push:
+    branches: [jra-free-data-pilot]
+    paths:
+      - "scripts/jra_free_data_probe.py"
+      - "tests/test_jra_free_data_probe.py"
+      - ".github/workflows/jra-free-data-probe.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: jra-free-data-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout isolated pilot branch
+        uses: actions/checkout@v4
+        with:
+          ref: jra-free-data-pilot
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test parser
+        run: python3 -m unittest discover -s tests -p "test_jra_free_data_probe.py" -v
+
+      - name: Compile probe
+        run: python3 -m py_compile scripts/jra_free_data_probe.py
+
+      - name: Fetch and parse one JRA official result page
+        run: python3 scripts/jra_free_data_probe.py
+
+      - name: Validate extracted data
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("data/jra-free-data-probe.json").read_text(encoding="utf-8"))
+          assert report["runner_count"] >= 10, f"Too few runners parsed: {report['runner_count']}"
+          assert report["trifecta_payout"], "Trifecta payout was not parsed"
+          assert report["race"]["venue"], "Venue was not parsed"
+          assert report["race"]["distance_m"], "Distance was not parsed"
+          print("JRA_FREE_DATA_PROBE=PASS")
+          print("RACE:", report["race"])
+          print("RUNNERS:", report["runner_count"])
+          print("TRIFECTA:", report["trifecta_payout"])
+          PY
+
+      - name: Publish probe result to pilot branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/jra-free-data-probe.json
+          if git diff --cached --quiet; then
+            echo "Probe output is unchanged."
+            exit 0
+          fi
+          git commit -m "Record JRA free-data probe result"
+          git push origin HEAD:jra-free-data-pilot
