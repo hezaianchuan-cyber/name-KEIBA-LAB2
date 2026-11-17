@@ -171,6 +171,9 @@ def parse_result(html: str, source_url: str) -> dict:
             "runner_rows_detected": len(runner_rows),
             "has_trifecta_payout": payout is not None,
             "page_text_chars": len(page_text),
+            "table_row_lengths": [len(row) for row in parser.rows[:12]],
+            "sample_table_rows": parser.rows[:4],
+            "page_text_preview": page_text[:900],
         },
     }
 
