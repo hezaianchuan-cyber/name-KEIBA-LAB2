@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+import time
 import unicodedata
 import urllib.request
 from datetime import datetime, timezone
@@ -249,26 +250,116 @@ def parse_result(html: str, source_url: str) -> dict:
     }
 
 
+def collect_target_day(sample_report: dict, target_ymd: str = "20261115") -> dict:
+    reports = {sample_report["source_url"]: sample_report}
+    errors: list[dict] = []
+
+    # A result page exposes the 11R pages for all venues on that date.
+    # Those three seed pages expose the remaining 1R-12R links for each venue.
+    seed_pattern = re.compile(rf"11{target_ymd}/")
+    seed_urls = sorted({
+        url for url in sample_report.get("related_result_links", [])
+        if target_ymd in url and seed_pattern.search(url)
+    })
+
+    for url in seed_urls:
+        if url in reports:
+            continue
+        time.sleep(1.0)
+        try:
+            reports[url] = parse_result(fetch_html(url), url)
+        except Exception as exc:
+            errors.append({"url": url, "error": f"{type(exc).__name__}: {exc}"})
+
+    target_urls = {sample_report["source_url"]}
+    for report in reports.values():
+        target_urls.update(
+            url for url in report.get("related_result_links", [])
+            if target_ymd in url and "accessS.html" in url
+        )
+
+    # Fetch each unique official race-result page once, sequentially, with a
+    # one-second pause to keep the exploratory request rate modest.
+    for url in sorted(target_urls):
+        if url in reports:
+            continue
+        time.sleep(1.0)
+        try:
+            reports[url] = parse_result(fetch_html(url), url)
+        except Exception as exc:
+            errors.append({"url": url, "error": f"{type(exc).__name__}: {exc}"})
+
+    valid_reports = [
+        report for report in reports.values()
+        if (report.get("race") or {}).get("date_label", "").startswith("2026年11月15日")
+    ]
+    summaries = []
+    for report in valid_reports:
+        race = report.get("race") or {}
+        summaries.append({
+            "venue": race.get("venue"),
+            "race_number": race.get("race_number"),
+            "distance_m": race.get("distance_m"),
+            "course_detail": race.get("course_detail"),
+            "runner_count": report.get("runner_count", 0),
+            "trifecta_payout": report.get("trifecta_payout"),
+            "source_url": report.get("source_url"),
+        })
+    summaries.sort(key=lambda row: (row.get("venue") or "", row.get("race_number") or 0))
+
+    venues = sorted({row["venue"] for row in summaries if row.get("venue")})
+    return {
+        "target_date": "2026-11-15",
+        "target_url_count": len(target_urls),
+        "race_count": len(summaries),
+        "venue_count": len(venues),
+        "venues": venues,
+        "runner_count_total": sum(row["runner_count"] for row in summaries),
+        "trifecta_payout_count": sum(bool(row["trifecta_payout"]) for row in summaries),
+        "races_missing_payout": [
+            f'{row.get("venue")} {row.get("race_number")}R'
+            for row in summaries if not row["trifecta_payout"]
+        ],
+        "race_summaries": summaries,
+        "errors": errors,
+    }
+
+
 def main() -> int:
     try:
-        html = fetch_html(SAMPLE_URL)
-        report = parse_result(html, SAMPLE_URL)
+        sample = parse_result(fetch_html(SAMPLE_URL), SAMPLE_URL)
+        batch = collect_target_day(sample)
     except Exception as exc:
         print(f"JRA_FREE_DATA_PROBE_FAILED: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1
 
+    report = dict(sample)
+    report.pop("related_result_links", None)
+    report["batch"] = batch
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    passed = (
+        batch["race_count"] >= 30
+        and batch["venue_count"] == 3
+        and batch["trifecta_payout_count"] >= 30
+        and batch["runner_count_total"] >= 300
+    )
     print(json.dumps({
-        "status": "PASS" if report["runner_count"] >= 10 and report["trifecta_payout"] else "INCOMPLETE",
-        "race": report["race"],
-        "runner_count": report["runner_count"],
-        "trifecta_payout": report["trifecta_payout"],
-        "diagnostics": report["diagnostics"],
+        "status": "PASS" if passed else "INCOMPLETE",
+        "sample_race": report["race"],
+        "sample_runner_count": report["runner_count"],
+        "batch": {
+            key: batch[key]
+            for key in (
+                "target_date", "target_url_count", "race_count", "venue_count",
+                "venues", "runner_count_total", "trifecta_payout_count",
+                "races_missing_payout", "errors",
+            )
+        },
         "output": str(OUTPUT.relative_to(ROOT)),
     }, ensure_ascii=False, indent=2))
-    return 0 if report["runner_count"] >= 10 and report["trifecta_payout"] else 2
-
+    return 0 if passed else 2
 
 if __name__ == "__main__":
     raise SystemExit(main())
