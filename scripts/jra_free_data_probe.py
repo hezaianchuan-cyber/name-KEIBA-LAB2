@@ -16,6 +16,7 @@ import urllib.request
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import urljoin
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data" / "jra-free-data-probe.json"
@@ -61,12 +62,15 @@ class PageParser(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.text_parts: list[str] = []
         self.rows: list[list[str]] = []
+        self.links: list[str] = []
         self.table_depth = 0
         self.row: list[str] | None = None
         self.cell_parts: list[str] | None = None
 
     def handle_starttag(self, tag: str, attrs) -> None:
         attrs = dict(attrs)
+        if tag == "a" and attrs.get("href"):
+            self.links.append(attrs["href"])
         if tag == "table":
             self.table_depth += 1
         elif tag == "tr" and self.table_depth:
@@ -140,6 +144,11 @@ def parse_result(html: str, source_url: str) -> dict:
     parser = PageParser()
     parser.feed(html)
     page_text = clean(" ".join(parser.text_parts))
+    related_result_links = sorted({
+        urljoin(source_url, href)
+        for href in parser.links
+        if "accessS.html" in href and "CNAME=" in href
+    })
 
     # JRA result table columns:
     # finish, frame, horse number, horse name, sex/age, carried weight,
@@ -229,11 +238,13 @@ def parse_result(html: str, source_url: str) -> dict:
         "runner_count": len(runner_rows),
         "runners": runner_rows,
         "trifecta_payout": payout,
+        "related_result_links": related_result_links,
         "diagnostics": {
             "html_table_rows": len(parser.rows),
             "runner_rows_detected": len(runner_rows),
             "has_trifecta_payout": payout is not None,
             "page_text_chars": len(page_text),
+            "related_result_link_count": len(related_result_links),
         },
     }
 
