@@ -7,12 +7,6 @@ on:
       - "scripts/jra_free_data_probe.py"
       - "tests/test_jra_free_data_probe.py"
       - ".github/workflows/jra-free-data-probe.yml"
-  pull_request:
-    branches: [main]
-    paths:
-      - "scripts/jra_free_data_probe.py"
-      - "tests/test_jra_free_data_probe.py"
-      - ".github/workflows/jra-free-data-probe.yml"
 
 permissions:
   contents: write
@@ -66,7 +60,6 @@ jobs:
           PY
 
       - name: Publish probe result to pilot branch
-        if: github.event_name == 'push'
         shell: bash
         run: |
           set -euo pipefail
