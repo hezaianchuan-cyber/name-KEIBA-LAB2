@@ -155,9 +155,9 @@ def parse_result(html: str, source_url: str) -> dict:
     post_time_match = re.search(r"発走時刻:?([0-9時分]+)", page_text)
     venue_match = re.search(r"\d+回(札幌|函館|福島|新潟|東京|中山|中京|京都|阪神|小倉)\d+日", page_text)
     race_match = re.search(r"(\d{1,2})レース", page_text)
-    course_match = re.search(r"([0-9,]+)メートル\(([^)]+)\)", page_text)
-    weather_match = re.search(r"天候([^ ]+)", page_text)
-    going_match = re.search(r"(芝|ダート)(良|稍重|重|不良)", page_text)
+    course_match = re.search(r"([0-9,]+)\s*メートル\s*\(([^)]+)\)", page_text)
+    weather_match = re.search(r"天候\s*([^ ]+)", page_text)
+    going_match = re.search(r"(芝|ダート)\s*(良|稍重|重|不良)", page_text)
 
     payout_text = re.sub(r"\s+", "", page_text)
     trifecta_match = re.search(
