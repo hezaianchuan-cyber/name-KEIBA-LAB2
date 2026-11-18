@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-11-17T13:55:14.891781+00:00",
-  "status": "collecting_sample",
-  "decision_ready": false,
+  "generated_at": "2026-11-18T13:55:06.450225+00:00",
+  "status": "ready_for_review",
+  "decision_ready": true,
   "matched_race_days": [
     "20261105",
     "20261106",
@@ -15,7 +15,8 @@
     "20261114",
     "20261115",
     "20261116",
-    "20261117"
+    "20261117",
+    "20261118"
   ],
   "decision_thresholds": {
     "minimum_matched_races": 100,
@@ -33,32 +34,32 @@
     0.4
   ],
   "diagnostics": {
-    "files": 15,
-    "lines": 699,
-    "valid_locked_preoff": 615,
+    "files": 16,
+    "lines": 731,
+    "valid_locked_preoff": 647,
     "invalid_lock_or_shape": 84,
     "missing_trio_candidates_or_odds": 0,
-    "official_payout_races": 5409,
+    "official_payout_races": 5377,
     "official_payout_error": null
   },
-  "matched_races": 264,
+  "matched_races": 280,
   "model_versions": {
     "nar-chronological-v9-D-frame-preoff": 61,
-    "nar-sequential-daily-refit-v1": 203
+    "nar-sequential-daily-refit-v1": 219
   },
   "strategies": [
     {
       "strategy": "equal",
-      "races": 264,
-      "hit_races": 166,
-      "race_hit_rate_pct": 62.88,
-      "staked_tickets": 3166,
-      "stake_jpy": 501600,
-      "return_jpy": 339930,
-      "profit_jpy": -161670,
-      "roi_pct": 67.77,
+      "races": 280,
+      "hit_races": 175,
+      "race_hit_rate_pct": 62.5,
+      "staked_tickets": 3358,
+      "stake_jpy": 532000,
+      "return_jpy": 365840,
+      "profit_jpy": -166160,
+      "roi_pct": 68.77,
       "average_stake_per_race_jpy": 1900.0,
-      "max_drawdown_jpy": 166740,
+      "max_drawdown_jpy": 171230,
       "max_losing_streak": 14,
       "unspent_races": 0,
       "per_race": [
@@ -2437,23 +2438,167 @@
           "stake": 1900,
           "return": 4800,
           "profit": 2900
+        },
+        {
+          "race_key": "笠松|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 6100,
+          "profit": 4200
+        },
+        {
+          "race_key": "笠松|20261118|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 6360,
+          "profit": 4460
+        },
+        {
+          "race_key": "笠松|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|5",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 2420,
+          "profit": 520
+        },
+        {
+          "race_key": "笠松|20261118|8",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 2460,
+          "profit": 560
+        },
+        {
+          "race_key": "園田|20261118|8",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 620,
+          "profit": -1280
+        },
+        {
+          "race_key": "大井|20261118|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3800,
+          "profit": 1900
+        },
+        {
+          "race_key": "笠松|20261118|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "笠松|20261118|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1770,
+          "profit": -130
+        },
+        {
+          "race_key": "大井|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 640,
+          "profit": -1260
+        },
+        {
+          "race_key": "大井|20261118|12",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1740,
+          "profit": -160
         }
       ]
     },
     {
       "strategy": "ev_only",
-      "races": 264,
-      "hit_races": 9,
-      "race_hit_rate_pct": 3.41,
-      "staked_tickets": 710,
-      "stake_jpy": 318100,
-      "return_jpy": 134280,
-      "profit_jpy": -183820,
-      "roi_pct": 42.21,
-      "average_stake_per_race_jpy": 1204.92,
-      "max_drawdown_jpy": 235320,
-      "max_losing_streak": 21,
-      "unspent_races": 40,
+      "races": 280,
+      "hit_races": 10,
+      "race_hit_rate_pct": 3.57,
+      "staked_tickets": 756,
+      "stake_jpy": 337000,
+      "return_jpy": 137460,
+      "profit_jpy": -199540,
+      "roi_pct": 40.79,
+      "average_stake_per_race_jpy": 1203.57,
+      "max_drawdown_jpy": 251040,
+      "max_losing_streak": 20,
+      "unspent_races": 41,
       "per_race": [
         {
           "race_key": "船橋|20261105|8",
@@ -4830,23 +4975,167 @@
           "stake": 1900,
           "return": 0,
           "profit": -1900
+        },
+        {
+          "race_key": "笠松|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "園田|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "笠松|20261118|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 5,
+          "stake": 1900,
+          "return": 3180,
+          "profit": 1280
+        },
+        {
+          "race_key": "笠松|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "園田|20261118|5",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 5,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "笠松|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 500,
+          "return": 0,
+          "profit": -500
+        },
+        {
+          "race_key": "園田|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "笠松|20261118|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 500,
+          "return": 0,
+          "profit": -500
+        },
+        {
+          "race_key": "笠松|20261118|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 500,
+          "return": 0,
+          "profit": -500
+        },
+        {
+          "race_key": "園田|20261118|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 5,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 500,
+          "return": 0,
+          "profit": -500
+        },
+        {
+          "race_key": "大井|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 500,
+          "return": 0,
+          "profit": -500
+        },
+        {
+          "race_key": "大井|20261118|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "大井|20261118|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
         }
       ]
     },
     {
       "strategy": "balanced_20",
-      "races": 264,
-      "hit_races": 10,
-      "race_hit_rate_pct": 3.79,
-      "staked_tickets": 728,
-      "stake_jpy": 216700,
-      "return_jpy": 93030,
-      "profit_jpy": -123670,
-      "roi_pct": 42.93,
-      "average_stake_per_race_jpy": 820.83,
-      "max_drawdown_jpy": 155380,
-      "max_losing_streak": 21,
-      "unspent_races": 40,
+      "races": 280,
+      "hit_races": 11,
+      "race_hit_rate_pct": 3.93,
+      "staked_tickets": 775,
+      "stake_jpy": 230800,
+      "return_jpy": 102570,
+      "profit_jpy": -128230,
+      "roi_pct": 44.44,
+      "average_stake_per_race_jpy": 824.29,
+      "max_drawdown_jpy": 159940,
+      "max_losing_streak": 20,
+      "unspent_races": 41,
       "per_race": [
         {
           "race_key": "船橋|20261105|8",
@@ -7223,23 +7512,167 @@
           "stake": 1800,
           "return": 7200,
           "profit": 5400
+        },
+        {
+          "race_key": "笠松|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 900,
+          "return": 0,
+          "profit": -900
+        },
+        {
+          "race_key": "園田|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "笠松|20261118|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 5,
+          "stake": 1500,
+          "return": 9540,
+          "profit": 8040
+        },
+        {
+          "race_key": "笠松|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 600,
+          "return": 0,
+          "profit": -600
+        },
+        {
+          "race_key": "園田|20261118|5",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 5,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "笠松|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 300,
+          "return": 0,
+          "profit": -300
+        },
+        {
+          "race_key": "園田|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1800,
+          "return": 0,
+          "profit": -1800
+        },
+        {
+          "race_key": "大井|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 900,
+          "return": 0,
+          "profit": -900
+        },
+        {
+          "race_key": "笠松|20261118|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1800,
+          "return": 0,
+          "profit": -1800
+        },
+        {
+          "race_key": "大井|20261118|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 300,
+          "return": 0,
+          "profit": -300
+        },
+        {
+          "race_key": "笠松|20261118|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 300,
+          "return": 0,
+          "profit": -300
+        },
+        {
+          "race_key": "園田|20261118|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1800,
+          "return": 0,
+          "profit": -1800
+        },
+        {
+          "race_key": "大井|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 300,
+          "return": 0,
+          "profit": -300
+        },
+        {
+          "race_key": "大井|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 300,
+          "return": 0,
+          "profit": -300
+        },
+        {
+          "race_key": "大井|20261118|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 600,
+          "return": 0,
+          "profit": -600
+        },
+        {
+          "race_key": "大井|20261118|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1200,
+          "return": 0,
+          "profit": -1200
         }
       ]
     },
     {
       "strategy": "balanced_30",
-      "races": 264,
-      "hit_races": 9,
-      "race_hit_rate_pct": 3.41,
-      "staked_tickets": 706,
-      "stake_jpy": 318100,
-      "return_jpy": 135840,
-      "profit_jpy": -182260,
-      "roi_pct": 42.7,
-      "average_stake_per_race_jpy": 1204.92,
-      "max_drawdown_jpy": 235320,
-      "max_losing_streak": 21,
-      "unspent_races": 40,
+      "races": 280,
+      "hit_races": 10,
+      "race_hit_rate_pct": 3.57,
+      "staked_tickets": 752,
+      "stake_jpy": 337000,
+      "return_jpy": 139020,
+      "profit_jpy": -197980,
+      "roi_pct": 41.25,
+      "average_stake_per_race_jpy": 1203.57,
+      "max_drawdown_jpy": 251040,
+      "max_losing_streak": 20,
+      "unspent_races": 41,
       "per_race": [
         {
           "race_key": "船橋|20261105|8",
@@ -9616,23 +10049,167 @@
           "stake": 1900,
           "return": 0,
           "profit": -1900
+        },
+        {
+          "race_key": "笠松|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "園田|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "笠松|20261118|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 5,
+          "stake": 1900,
+          "return": 3180,
+          "profit": 1280
+        },
+        {
+          "race_key": "笠松|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "園田|20261118|5",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 5,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "笠松|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 500,
+          "return": 0,
+          "profit": -500
+        },
+        {
+          "race_key": "園田|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1500,
+          "return": 0,
+          "profit": -1500
+        },
+        {
+          "race_key": "笠松|20261118|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 500,
+          "return": 0,
+          "profit": -500
+        },
+        {
+          "race_key": "笠松|20261118|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 500,
+          "return": 0,
+          "profit": -500
+        },
+        {
+          "race_key": "園田|20261118|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 5,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 500,
+          "return": 0,
+          "profit": -500
+        },
+        {
+          "race_key": "大井|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 500,
+          "return": 0,
+          "profit": -500
+        },
+        {
+          "race_key": "大井|20261118|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1000,
+          "return": 0,
+          "profit": -1000
+        },
+        {
+          "race_key": "大井|20261118|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
         }
       ]
     },
     {
       "strategy": "balanced_40",
-      "races": 264,
-      "hit_races": 9,
-      "race_hit_rate_pct": 3.41,
-      "staked_tickets": 685,
-      "stake_jpy": 367700,
-      "return_jpy": 160130,
-      "profit_jpy": -207570,
-      "roi_pct": 43.55,
-      "average_stake_per_race_jpy": 1392.8,
-      "max_drawdown_jpy": 275640,
-      "max_losing_streak": 21,
-      "unspent_races": 40,
+      "races": 280,
+      "hit_races": 10,
+      "race_hit_rate_pct": 3.57,
+      "staked_tickets": 730,
+      "stake_jpy": 389200,
+      "return_jpy": 163310,
+      "profit_jpy": -225890,
+      "roi_pct": 41.96,
+      "average_stake_per_race_jpy": 1390.0,
+      "max_drawdown_jpy": 293960,
+      "max_losing_streak": 20,
+      "unspent_races": 41,
       "per_race": [
         {
           "race_key": "船橋|20261105|8",
@@ -12009,6 +12586,150 @@
           "stake": 1900,
           "return": 0,
           "profit": -1900
+        },
+        {
+          "race_key": "笠松|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0
+        },
+        {
+          "race_key": "笠松|20261118|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 5,
+          "stake": 1900,
+          "return": 3180,
+          "profit": 1280
+        },
+        {
+          "race_key": "笠松|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1400,
+          "return": 0,
+          "profit": -1400
+        },
+        {
+          "race_key": "園田|20261118|5",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "笠松|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 700,
+          "return": 0,
+          "profit": -700
+        },
+        {
+          "race_key": "園田|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 3,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "笠松|20261118|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 6,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 700,
+          "return": 0,
+          "profit": -700
+        },
+        {
+          "race_key": "笠松|20261118|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 700,
+          "return": 0,
+          "profit": -700
+        },
+        {
+          "race_key": "園田|20261118|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 5,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 700,
+          "return": 0,
+          "profit": -700
+        },
+        {
+          "race_key": "大井|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 1,
+          "stake": 700,
+          "return": 0,
+          "profit": -700
+        },
+        {
+          "race_key": "大井|20261118|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 2,
+          "stake": 1400,
+          "return": 0,
+          "profit": -1400
+        },
+        {
+          "race_key": "大井|20261118|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 4,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
         }
       ]
     }
@@ -12018,17 +12739,17 @@
       "market_weight": 0.0,
       "lab_weight": 1.0,
       "strategy": "equal",
-      "races": 264,
-      "hit_races": 120,
-      "race_hit_rate_pct": 45.45,
-      "staked_tickets": 3166,
-      "stake_jpy": 501600,
-      "return_jpy": 272160,
-      "profit_jpy": -229440,
-      "roi_pct": 54.26,
+      "races": 280,
+      "hit_races": 125,
+      "race_hit_rate_pct": 44.64,
+      "staked_tickets": 3358,
+      "stake_jpy": 532000,
+      "return_jpy": 288340,
+      "profit_jpy": -243660,
+      "roi_pct": 54.2,
       "average_stake_per_race_jpy": 1900.0,
-      "max_drawdown_jpy": 237120,
-      "max_losing_streak": 20,
+      "max_drawdown_jpy": 251340,
+      "max_losing_streak": 19,
       "unspent_races": 0,
       "per_race": [
         {
@@ -14406,6 +15127,150 @@
           "stake": 1900,
           "return": 4800,
           "profit": 2900
+        },
+        {
+          "race_key": "笠松|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 6100,
+          "profit": 4200
+        },
+        {
+          "race_key": "笠松|20261118|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 6360,
+          "profit": 4460
+        },
+        {
+          "race_key": "笠松|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|5",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "笠松|20261118|8",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 2460,
+          "profit": 560
+        },
+        {
+          "race_key": "園田|20261118|8",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 620,
+          "profit": -1280
+        },
+        {
+          "race_key": "大井|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "笠松|20261118|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "笠松|20261118|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|11",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 640,
+          "profit": -1260
+        },
+        {
+          "race_key": "大井|20261118|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
         }
       ]
     },
@@ -14413,17 +15278,17 @@
       "market_weight": 0.25,
       "lab_weight": 0.75,
       "strategy": "equal",
-      "races": 264,
-      "hit_races": 144,
-      "race_hit_rate_pct": 54.55,
-      "staked_tickets": 3166,
-      "stake_jpy": 501600,
-      "return_jpy": 315640,
-      "profit_jpy": -185960,
-      "roi_pct": 62.93,
+      "races": 280,
+      "hit_races": 154,
+      "race_hit_rate_pct": 55.0,
+      "staked_tickets": 3358,
+      "stake_jpy": 532000,
+      "return_jpy": 341500,
+      "profit_jpy": -190500,
+      "roi_pct": 64.19,
       "average_stake_per_race_jpy": 1900.0,
-      "max_drawdown_jpy": 193640,
-      "max_losing_streak": 20,
+      "max_drawdown_jpy": 198180,
+      "max_losing_streak": 19,
       "unspent_races": 0,
       "per_race": [
         {
@@ -16801,6 +17666,150 @@
           "stake": 1900,
           "return": 4800,
           "profit": 2900
+        },
+        {
+          "race_key": "笠松|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 6100,
+          "profit": 4200
+        },
+        {
+          "race_key": "笠松|20261118|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 6360,
+          "profit": 4460
+        },
+        {
+          "race_key": "笠松|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|5",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1210,
+          "profit": -690
+        },
+        {
+          "race_key": "笠松|20261118|8",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 2460,
+          "profit": 560
+        },
+        {
+          "race_key": "園田|20261118|8",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 620,
+          "profit": -1280
+        },
+        {
+          "race_key": "大井|20261118|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1900,
+          "profit": 0
+        },
+        {
+          "race_key": "笠松|20261118|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3060,
+          "profit": 1160
+        },
+        {
+          "race_key": "大井|20261118|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "笠松|20261118|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1770,
+          "profit": -130
+        },
+        {
+          "race_key": "大井|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 640,
+          "profit": -1260
+        },
+        {
+          "race_key": "大井|20261118|12",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1740,
+          "profit": -160
         }
       ]
     },
@@ -16808,16 +17817,16 @@
       "market_weight": 0.5,
       "lab_weight": 0.5,
       "strategy": "equal",
-      "races": 264,
-      "hit_races": 166,
-      "race_hit_rate_pct": 62.88,
-      "staked_tickets": 3166,
-      "stake_jpy": 501600,
-      "return_jpy": 339930,
-      "profit_jpy": -161670,
-      "roi_pct": 67.77,
+      "races": 280,
+      "hit_races": 175,
+      "race_hit_rate_pct": 62.5,
+      "staked_tickets": 3358,
+      "stake_jpy": 532000,
+      "return_jpy": 365840,
+      "profit_jpy": -166160,
+      "roi_pct": 68.77,
       "average_stake_per_race_jpy": 1900.0,
-      "max_drawdown_jpy": 166740,
+      "max_drawdown_jpy": 171230,
       "max_losing_streak": 14,
       "unspent_races": 0,
       "per_race": [
@@ -19196,6 +20205,150 @@
           "stake": 1900,
           "return": 4800,
           "profit": 2900
+        },
+        {
+          "race_key": "笠松|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 6100,
+          "profit": 4200
+        },
+        {
+          "race_key": "笠松|20261118|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 6360,
+          "profit": 4460
+        },
+        {
+          "race_key": "笠松|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|5",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 2420,
+          "profit": 520
+        },
+        {
+          "race_key": "笠松|20261118|8",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 2460,
+          "profit": 560
+        },
+        {
+          "race_key": "園田|20261118|8",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 620,
+          "profit": -1280
+        },
+        {
+          "race_key": "大井|20261118|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3800,
+          "profit": 1900
+        },
+        {
+          "race_key": "笠松|20261118|10",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "笠松|20261118|12",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1770,
+          "profit": -130
+        },
+        {
+          "race_key": "大井|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 640,
+          "profit": -1260
+        },
+        {
+          "race_key": "大井|20261118|12",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1740,
+          "profit": -160
         }
       ]
     },
@@ -19203,16 +20356,16 @@
       "market_weight": 0.75,
       "lab_weight": 0.25,
       "strategy": "equal",
-      "races": 264,
-      "hit_races": 179,
-      "race_hit_rate_pct": 67.8,
-      "staked_tickets": 3166,
-      "stake_jpy": 501600,
-      "return_jpy": 373620,
-      "profit_jpy": -127980,
-      "roi_pct": 74.49,
+      "races": 280,
+      "hit_races": 190,
+      "race_hit_rate_pct": 67.86,
+      "staked_tickets": 3358,
+      "stake_jpy": 532000,
+      "return_jpy": 408080,
+      "profit_jpy": -123920,
+      "roi_pct": 76.71,
       "average_stake_per_race_jpy": 1900.0,
-      "max_drawdown_jpy": 137030,
+      "max_drawdown_jpy": 132970,
       "max_losing_streak": 14,
       "unspent_races": 0,
       "per_race": [
@@ -21591,6 +22744,150 @@
           "stake": 1900,
           "return": 4800,
           "profit": 2900
+        },
+        {
+          "race_key": "笠松|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 6100,
+          "profit": 4200
+        },
+        {
+          "race_key": "笠松|20261118|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 6360,
+          "profit": 4460
+        },
+        {
+          "race_key": "笠松|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|5",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 2420,
+          "profit": 520
+        },
+        {
+          "race_key": "笠松|20261118|8",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 2460,
+          "profit": 560
+        },
+        {
+          "race_key": "園田|20261118|8",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 620,
+          "profit": -1280
+        },
+        {
+          "race_key": "大井|20261118|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3800,
+          "profit": 1900
+        },
+        {
+          "race_key": "笠松|20261118|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3060,
+          "profit": 1160
+        },
+        {
+          "race_key": "大井|20261118|4",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "笠松|20261118|12",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1980,
+          "profit": 80
+        },
+        {
+          "race_key": "園田|20261118|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3540,
+          "profit": 1640
+        },
+        {
+          "race_key": "大井|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 640,
+          "profit": -1260
+        },
+        {
+          "race_key": "大井|20261118|12",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3480,
+          "profit": 1580
         }
       ]
     },
@@ -21598,16 +22895,16 @@
       "market_weight": 1.0,
       "lab_weight": 0.0,
       "strategy": "equal",
-      "races": 264,
-      "hit_races": 179,
-      "race_hit_rate_pct": 67.8,
-      "staked_tickets": 3166,
-      "stake_jpy": 501600,
-      "return_jpy": 388520,
-      "profit_jpy": -113080,
-      "roi_pct": 77.46,
+      "races": 280,
+      "hit_races": 191,
+      "race_hit_rate_pct": 68.21,
+      "staked_tickets": 3358,
+      "stake_jpy": 532000,
+      "return_jpy": 421680,
+      "profit_jpy": -110320,
+      "roi_pct": 79.26,
       "average_stake_per_race_jpy": 1900.0,
-      "max_drawdown_jpy": 120470,
+      "max_drawdown_jpy": 117710,
       "max_losing_streak": 11,
       "unspent_races": 0,
       "per_race": [
@@ -23986,6 +25283,150 @@
           "stake": 1900,
           "return": 4800,
           "profit": 2900
+        },
+        {
+          "race_key": "笠松|20261118|2",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 6100,
+          "profit": 4200
+        },
+        {
+          "race_key": "笠松|20261118|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3180,
+          "profit": 1280
+        },
+        {
+          "race_key": "笠松|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "園田|20261118|5",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 2420,
+          "profit": 520
+        },
+        {
+          "race_key": "笠松|20261118|8",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1230,
+          "profit": -670
+        },
+        {
+          "race_key": "園田|20261118|8",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 620,
+          "profit": -1280
+        },
+        {
+          "race_key": "大井|20261118|2",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3800,
+          "profit": 1900
+        },
+        {
+          "race_key": "笠松|20261118|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3060,
+          "profit": 1160
+        },
+        {
+          "race_key": "大井|20261118|4",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3110,
+          "profit": 1210
+        },
+        {
+          "race_key": "笠松|20261118|12",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 1980,
+          "profit": 80
+        },
+        {
+          "race_key": "園田|20261118|11",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3540,
+          "profit": 1640
+        },
+        {
+          "race_key": "大井|20261118|6",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|8",
+          "hit": false,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 0,
+          "profit": -1900
+        },
+        {
+          "race_key": "大井|20261118|10",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 640,
+          "profit": -1260
+        },
+        {
+          "race_key": "大井|20261118|12",
+          "hit": true,
+          "ticket_count": 12,
+          "staked_tickets": 12,
+          "stake": 1900,
+          "return": 3480,
+          "profit": 1580
         }
       ]
     }
