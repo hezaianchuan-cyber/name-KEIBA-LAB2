@@ -1,201 +1,201 @@
 {
   "version": "nar-daily-review-v1",
-  "generated_at": "2026-11-24T07:24:07.888273+09:00",
-  "as_of_date_jst": "2026-11-24",
+  "generated_at": "2026-11-25T06:53:52.696017+09:00",
+  "as_of_date_jst": "2026-11-25",
   "status": "ok",
   "daily_official_results": {
-    "report_generated_at": "2026-11-23T22:34:14.310913+09:00",
-    "report_age_hours": 8.83,
+    "report_generated_at": "2026-11-24T22:29:57.305757+09:00",
+    "report_age_hours": 8.4,
     "daily_archive_available": true,
-    "today_payout_races": 45,
+    "today_payout_races": 36,
     "monthly_archive_available": true
   },
   "prospective_preoff_evaluation_G4": {
-    "generated_at": "2026-11-23T21:48:45.047376+00:00",
-    "age_hours": 0.59,
+    "generated_at": "2026-11-24T21:53:41.900671+00:00",
+    "age_hours": 0.0,
     "status": "evaluated_not_profitable_or_not_confirmed",
     "evaluation_period": [
       "20261103",
-      "20261123"
+      "20261124"
     ],
     "latest_completed_day": {
-      "date": "20261123",
-      "unique_races": 35,
+      "date": "20261124",
+      "unique_races": 33,
       "model_top": {
-        "races_bet": 35,
-        "hits": 11,
-        "hit_rate_pct": 31.43,
-        "stake_jpy": 3500,
-        "return_jpy": 2850,
-        "profit_jpy": -650,
-        "roi_pct": 81.43,
+        "races_bet": 33,
+        "hits": 7,
+        "hit_rate_pct": 21.21,
+        "stake_jpy": 3300,
+        "return_jpy": 2890,
+        "profit_jpy": -410,
+        "roi_pct": 87.58,
         "roi_95ci": {
           "method": "race-level bootstrap percentile interval",
           "replicates": 2000,
           "roi_95ci": [
-            33.4286,
-            141.4286
+            24.5455,
+            171.8182
           ]
         }
       },
       "market_favorite": {
-        "races_bet": 35,
-        "hits": 16,
-        "hit_rate_pct": 45.71,
-        "stake_jpy": 3500,
-        "return_jpy": 5760,
-        "profit_jpy": 2260,
-        "roi_pct": 164.57,
+        "races_bet": 33,
+        "hits": 12,
+        "hit_rate_pct": 36.36,
+        "stake_jpy": 3300,
+        "return_jpy": 2740,
+        "profit_jpy": -560,
+        "roi_pct": 83.03,
         "roi_95ci": {
           "method": "race-level bootstrap percentile interval",
           "replicates": 2000,
           "roi_95ci": [
-            60.2857,
-            324.0
+            44.2424,
+            127.2727
           ]
         }
       },
       "fixed_50_50_model_market_blend": {
-        "races_bet": 35,
-        "hits": 15,
-        "hit_rate_pct": 42.86,
-        "stake_jpy": 3500,
-        "return_jpy": 3180,
-        "profit_jpy": -320,
-        "roi_pct": 90.86,
+        "races_bet": 33,
+        "hits": 12,
+        "hit_rate_pct": 36.36,
+        "stake_jpy": 3300,
+        "return_jpy": 2710,
+        "profit_jpy": -590,
+        "roi_pct": 82.12,
         "roi_95ci": {
           "method": "race-level bootstrap percentile interval",
           "replicates": 2000,
           "roi_95ci": [
-            48.0,
-            145.7143
+            42.1212,
+            127.5758
           ]
         }
       },
       "blend_candidate_comparison": {
         "0.00": {
           "market_probability_weight_pct": 0.0,
-          "races": 35,
+          "races": 33,
           "top1": {
-            "races_bet": 35,
-            "hits": 11,
-            "hit_rate_pct": 31.43,
-            "stake_jpy": 3500,
-            "return_jpy": 2850,
-            "profit_jpy": -650,
-            "roi_pct": 81.43,
+            "races_bet": 33,
+            "hits": 7,
+            "hit_rate_pct": 21.21,
+            "stake_jpy": 3300,
+            "return_jpy": 2890,
+            "profit_jpy": -410,
+            "roi_pct": 87.58,
             "roi_95ci": {
               "method": "race-level bootstrap percentile interval",
               "replicates": 2000,
               "roi_95ci": [
-                33.4286,
-                141.4286
+                24.5455,
+                171.8182
+              ]
+            }
+          },
+          "top3_coverage_hits": 17,
+          "top3_coverage_pct": 51.52
+        },
+        "0.25": {
+          "market_probability_weight_pct": 25.0,
+          "races": 33,
+          "top1": {
+            "races_bet": 33,
+            "hits": 8,
+            "hit_rate_pct": 24.24,
+            "stake_jpy": 3300,
+            "return_jpy": 1950,
+            "profit_jpy": -1350,
+            "roi_pct": 59.09,
+            "roi_95ci": {
+              "method": "race-level bootstrap percentile interval",
+              "replicates": 2000,
+              "roi_95ci": [
+                23.0303,
+                102.4242
+              ]
+            }
+          },
+          "top3_coverage_hits": 21,
+          "top3_coverage_pct": 63.64
+        },
+        "0.50": {
+          "market_probability_weight_pct": 50.0,
+          "races": 33,
+          "top1": {
+            "races_bet": 33,
+            "hits": 12,
+            "hit_rate_pct": 36.36,
+            "stake_jpy": 3300,
+            "return_jpy": 2710,
+            "profit_jpy": -590,
+            "roi_pct": 82.12,
+            "roi_95ci": {
+              "method": "race-level bootstrap percentile interval",
+              "replicates": 2000,
+              "roi_95ci": [
+                42.1212,
+                127.5758
               ]
             }
           },
           "top3_coverage_hits": 23,
-          "top3_coverage_pct": 65.71
-        },
-        "0.25": {
-          "market_probability_weight_pct": 25.0,
-          "races": 35,
-          "top1": {
-            "races_bet": 35,
-            "hits": 15,
-            "hit_rate_pct": 42.86,
-            "stake_jpy": 3500,
-            "return_jpy": 3440,
-            "profit_jpy": -60,
-            "roi_pct": 98.29,
-            "roi_95ci": {
-              "method": "race-level bootstrap percentile interval",
-              "replicates": 2000,
-              "roi_95ci": [
-                52.0,
-                158.5714
-              ]
-            }
-          },
-          "top3_coverage_hits": 26,
-          "top3_coverage_pct": 74.29
-        },
-        "0.50": {
-          "market_probability_weight_pct": 50.0,
-          "races": 35,
-          "top1": {
-            "races_bet": 35,
-            "hits": 15,
-            "hit_rate_pct": 42.86,
-            "stake_jpy": 3500,
-            "return_jpy": 3180,
-            "profit_jpy": -320,
-            "roi_pct": 90.86,
-            "roi_95ci": {
-              "method": "race-level bootstrap percentile interval",
-              "replicates": 2000,
-              "roi_95ci": [
-                48.0,
-                145.7143
-              ]
-            }
-          },
-          "top3_coverage_hits": 26,
-          "top3_coverage_pct": 74.29
+          "top3_coverage_pct": 69.7
         },
         "0.75": {
           "market_probability_weight_pct": 75.0,
-          "races": 35,
+          "races": 33,
           "top1": {
-            "races_bet": 35,
-            "hits": 14,
-            "hit_rate_pct": 40.0,
-            "stake_jpy": 3500,
-            "return_jpy": 2940,
+            "races_bet": 33,
+            "hits": 12,
+            "hit_rate_pct": 36.36,
+            "stake_jpy": 3300,
+            "return_jpy": 2740,
             "profit_jpy": -560,
-            "roi_pct": 84.0,
+            "roi_pct": 83.03,
             "roi_95ci": {
               "method": "race-level bootstrap percentile interval",
               "replicates": 2000,
               "roi_95ci": [
-                42.2857,
-                138.8571
+                44.2424,
+                127.2727
               ]
             }
           },
           "top3_coverage_hits": 28,
-          "top3_coverage_pct": 80.0
+          "top3_coverage_pct": 84.85
         },
         "1.00": {
           "market_probability_weight_pct": 100.0,
-          "races": 35,
+          "races": 33,
           "top1": {
-            "races_bet": 35,
-            "hits": 16,
-            "hit_rate_pct": 45.71,
-            "stake_jpy": 3500,
-            "return_jpy": 5760,
-            "profit_jpy": 2260,
-            "roi_pct": 164.57,
+            "races_bet": 33,
+            "hits": 12,
+            "hit_rate_pct": 36.36,
+            "stake_jpy": 3300,
+            "return_jpy": 2740,
+            "profit_jpy": -560,
+            "roi_pct": 83.03,
             "roi_95ci": {
               "method": "race-level bootstrap percentile interval",
               "replicates": 2000,
               "roi_95ci": [
-                60.2857,
-                324.0
+                44.2424,
+                127.2727
               ]
             }
           },
           "top3_coverage_hits": 29,
-          "top3_coverage_pct": 82.86
+          "top3_coverage_pct": 87.88
         }
       },
       "value_rule": {
-        "races_bet": 35,
+        "races_bet": 33,
         "hits": 0,
         "hit_rate_pct": 0.0,
-        "stake_jpy": 3500,
+        "stake_jpy": 3300,
         "return_jpy": 0,
-        "profit_jpy": -3500,
+        "profit_jpy": -3300,
         "roi_pct": 0.0,
         "roi_95ci": {
           "method": "race-level bootstrap percentile interval",
@@ -206,201 +206,10 @@
           ]
         }
       },
-      "value_rule_bets": 35,
+      "value_rule_bets": 33,
       "note": "One closest-to-post captured pre-off snapshot per race; official result joined after the race."
     },
     "recent_daily_results": [
-      {
-        "date": "20261117",
-        "unique_races": 32,
-        "model_top": {
-          "races_bet": 32,
-          "hits": 9,
-          "hit_rate_pct": 28.12,
-          "stake_jpy": 3200,
-          "return_jpy": 2150,
-          "profit_jpy": -1050,
-          "roi_pct": 67.19,
-          "roi_95ci": {
-            "method": "race-level bootstrap percentile interval",
-            "replicates": 2000,
-            "roi_95ci": [
-              21.5625,
-              128.4375
-            ]
-          }
-        },
-        "market_favorite": {
-          "races_bet": 32,
-          "hits": 12,
-          "hit_rate_pct": 37.5,
-          "stake_jpy": 3200,
-          "return_jpy": 2580,
-          "profit_jpy": -620,
-          "roi_pct": 80.62,
-          "roi_95ci": {
-            "method": "race-level bootstrap percentile interval",
-            "replicates": 2000,
-            "roi_95ci": [
-              40.625,
-              126.25
-            ]
-          }
-        },
-        "fixed_50_50_model_market_blend": {
-          "races_bet": 32,
-          "hits": 11,
-          "hit_rate_pct": 34.38,
-          "stake_jpy": 3200,
-          "return_jpy": 2290,
-          "profit_jpy": -910,
-          "roi_pct": 71.56,
-          "roi_95ci": {
-            "method": "race-level bootstrap percentile interval",
-            "replicates": 2000,
-            "roi_95ci": [
-              33.125,
-              113.125
-            ]
-          }
-        },
-        "blend_candidate_comparison": {
-          "0.00": {
-            "market_probability_weight_pct": 0.0,
-            "races": 32,
-            "top1": {
-              "races_bet": 32,
-              "hits": 9,
-              "hit_rate_pct": 28.12,
-              "stake_jpy": 3200,
-              "return_jpy": 2150,
-              "profit_jpy": -1050,
-              "roi_pct": 67.19,
-              "roi_95ci": {
-                "method": "race-level bootstrap percentile interval",
-                "replicates": 2000,
-                "roi_95ci": [
-                  21.5625,
-                  128.4375
-                ]
-              }
-            },
-            "top3_coverage_hits": 21,
-            "top3_coverage_pct": 65.62
-          },
-          "0.25": {
-            "market_probability_weight_pct": 25.0,
-            "races": 32,
-            "top1": {
-              "races_bet": 32,
-              "hits": 10,
-              "hit_rate_pct": 31.25,
-              "stake_jpy": 3200,
-              "return_jpy": 2340,
-              "profit_jpy": -860,
-              "roi_pct": 73.12,
-              "roi_95ci": {
-                "method": "race-level bootstrap percentile interval",
-                "replicates": 2000,
-                "roi_95ci": [
-                  27.5,
-                  133.4375
-                ]
-              }
-            },
-            "top3_coverage_hits": 23,
-            "top3_coverage_pct": 71.88
-          },
-          "0.50": {
-            "market_probability_weight_pct": 50.0,
-            "races": 32,
-            "top1": {
-              "races_bet": 32,
-              "hits": 11,
-              "hit_rate_pct": 34.38,
-              "stake_jpy": 3200,
-              "return_jpy": 2290,
-              "profit_jpy": -910,
-              "roi_pct": 71.56,
-              "roi_95ci": {
-                "method": "race-level bootstrap percentile interval",
-                "replicates": 2000,
-                "roi_95ci": [
-                  33.125,
-                  113.125
-                ]
-              }
-            },
-            "top3_coverage_hits": 26,
-            "top3_coverage_pct": 81.25
-          },
-          "0.75": {
-            "market_probability_weight_pct": 75.0,
-            "races": 32,
-            "top1": {
-              "races_bet": 32,
-              "hits": 12,
-              "hit_rate_pct": 37.5,
-              "stake_jpy": 3200,
-              "return_jpy": 2580,
-              "profit_jpy": -620,
-              "roi_pct": 80.62,
-              "roi_95ci": {
-                "method": "race-level bootstrap percentile interval",
-                "replicates": 2000,
-                "roi_95ci": [
-                  40.625,
-                  126.25
-                ]
-              }
-            },
-            "top3_coverage_hits": 26,
-            "top3_coverage_pct": 81.25
-          },
-          "1.00": {
-            "market_probability_weight_pct": 100.0,
-            "races": 32,
-            "top1": {
-              "races_bet": 32,
-              "hits": 12,
-              "hit_rate_pct": 37.5,
-              "stake_jpy": 3200,
-              "return_jpy": 2580,
-              "profit_jpy": -620,
-              "roi_pct": 80.62,
-              "roi_95ci": {
-                "method": "race-level bootstrap percentile interval",
-                "replicates": 2000,
-                "roi_95ci": [
-                  40.625,
-                  126.25
-                ]
-              }
-            },
-            "top3_coverage_hits": 25,
-            "top3_coverage_pct": 78.12
-          }
-        },
-        "value_rule": {
-          "races_bet": 32,
-          "hits": 1,
-          "hit_rate_pct": 3.12,
-          "stake_jpy": 3200,
-          "return_jpy": 3870,
-          "profit_jpy": 670,
-          "roi_pct": 120.94,
-          "roi_95ci": {
-            "method": "race-level bootstrap percentile interval",
-            "replicates": 2000,
-            "roi_95ci": [
-              0.0,
-              362.8125
-            ]
-          }
-        },
-        "value_rule_bets": 32,
-        "note": "One closest-to-post captured pre-off snapshot per race; official result joined after the race."
-      },
       {
         "date": "20261118",
         "unique_races": 32,
@@ -1546,301 +1355,492 @@
         },
         "value_rule_bets": 35,
         "note": "One closest-to-post captured pre-off snapshot per race; official result joined after the race."
+      },
+      {
+        "date": "20261124",
+        "unique_races": 33,
+        "model_top": {
+          "races_bet": 33,
+          "hits": 7,
+          "hit_rate_pct": 21.21,
+          "stake_jpy": 3300,
+          "return_jpy": 2890,
+          "profit_jpy": -410,
+          "roi_pct": 87.58,
+          "roi_95ci": {
+            "method": "race-level bootstrap percentile interval",
+            "replicates": 2000,
+            "roi_95ci": [
+              24.5455,
+              171.8182
+            ]
+          }
+        },
+        "market_favorite": {
+          "races_bet": 33,
+          "hits": 12,
+          "hit_rate_pct": 36.36,
+          "stake_jpy": 3300,
+          "return_jpy": 2740,
+          "profit_jpy": -560,
+          "roi_pct": 83.03,
+          "roi_95ci": {
+            "method": "race-level bootstrap percentile interval",
+            "replicates": 2000,
+            "roi_95ci": [
+              44.2424,
+              127.2727
+            ]
+          }
+        },
+        "fixed_50_50_model_market_blend": {
+          "races_bet": 33,
+          "hits": 12,
+          "hit_rate_pct": 36.36,
+          "stake_jpy": 3300,
+          "return_jpy": 2710,
+          "profit_jpy": -590,
+          "roi_pct": 82.12,
+          "roi_95ci": {
+            "method": "race-level bootstrap percentile interval",
+            "replicates": 2000,
+            "roi_95ci": [
+              42.1212,
+              127.5758
+            ]
+          }
+        },
+        "blend_candidate_comparison": {
+          "0.00": {
+            "market_probability_weight_pct": 0.0,
+            "races": 33,
+            "top1": {
+              "races_bet": 33,
+              "hits": 7,
+              "hit_rate_pct": 21.21,
+              "stake_jpy": 3300,
+              "return_jpy": 2890,
+              "profit_jpy": -410,
+              "roi_pct": 87.58,
+              "roi_95ci": {
+                "method": "race-level bootstrap percentile interval",
+                "replicates": 2000,
+                "roi_95ci": [
+                  24.5455,
+                  171.8182
+                ]
+              }
+            },
+            "top3_coverage_hits": 17,
+            "top3_coverage_pct": 51.52
+          },
+          "0.25": {
+            "market_probability_weight_pct": 25.0,
+            "races": 33,
+            "top1": {
+              "races_bet": 33,
+              "hits": 8,
+              "hit_rate_pct": 24.24,
+              "stake_jpy": 3300,
+              "return_jpy": 1950,
+              "profit_jpy": -1350,
+              "roi_pct": 59.09,
+              "roi_95ci": {
+                "method": "race-level bootstrap percentile interval",
+                "replicates": 2000,
+                "roi_95ci": [
+                  23.0303,
+                  102.4242
+                ]
+              }
+            },
+            "top3_coverage_hits": 21,
+            "top3_coverage_pct": 63.64
+          },
+          "0.50": {
+            "market_probability_weight_pct": 50.0,
+            "races": 33,
+            "top1": {
+              "races_bet": 33,
+              "hits": 12,
+              "hit_rate_pct": 36.36,
+              "stake_jpy": 3300,
+              "return_jpy": 2710,
+              "profit_jpy": -590,
+              "roi_pct": 82.12,
+              "roi_95ci": {
+                "method": "race-level bootstrap percentile interval",
+                "replicates": 2000,
+                "roi_95ci": [
+                  42.1212,
+                  127.5758
+                ]
+              }
+            },
+            "top3_coverage_hits": 23,
+            "top3_coverage_pct": 69.7
+          },
+          "0.75": {
+            "market_probability_weight_pct": 75.0,
+            "races": 33,
+            "top1": {
+              "races_bet": 33,
+              "hits": 12,
+              "hit_rate_pct": 36.36,
+              "stake_jpy": 3300,
+              "return_jpy": 2740,
+              "profit_jpy": -560,
+              "roi_pct": 83.03,
+              "roi_95ci": {
+                "method": "race-level bootstrap percentile interval",
+                "replicates": 2000,
+                "roi_95ci": [
+                  44.2424,
+                  127.2727
+                ]
+              }
+            },
+            "top3_coverage_hits": 28,
+            "top3_coverage_pct": 84.85
+          },
+          "1.00": {
+            "market_probability_weight_pct": 100.0,
+            "races": 33,
+            "top1": {
+              "races_bet": 33,
+              "hits": 12,
+              "hit_rate_pct": 36.36,
+              "stake_jpy": 3300,
+              "return_jpy": 2740,
+              "profit_jpy": -560,
+              "roi_pct": 83.03,
+              "roi_95ci": {
+                "method": "race-level bootstrap percentile interval",
+                "replicates": 2000,
+                "roi_95ci": [
+                  44.2424,
+                  127.2727
+                ]
+              }
+            },
+            "top3_coverage_hits": 29,
+            "top3_coverage_pct": 87.88
+          }
+        },
+        "value_rule": {
+          "races_bet": 33,
+          "hits": 0,
+          "hit_rate_pct": 0.0,
+          "stake_jpy": 3300,
+          "return_jpy": 0,
+          "profit_jpy": -3300,
+          "roi_pct": 0.0,
+          "roi_95ci": {
+            "method": "race-level bootstrap percentile interval",
+            "replicates": 2000,
+            "roi_95ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "value_rule_bets": 33,
+        "note": "One closest-to-post captured pre-off snapshot per race; official result joined after the race."
       }
     ],
-    "valid_snapshots": 905,
-    "snapshots_with_official_result": 911,
+    "valid_snapshots": 938,
+    "snapshots_with_official_result": 944,
     "snapshots_missing_official_result": 0,
     "supabase_snapshots_joined": 0,
     "closest_to_post": {
-      "unique_races": 740,
-      "development_races": 505,
-      "holdout_races": 235,
+      "unique_races": 773,
+      "development_races": 537,
+      "holdout_races": 236,
       "holdout_model_top": {
-        "races": 235,
-        "hits": 75,
-        "hit_rate_pct": 31.91,
-        "roi_pct": 69.06
+        "races": 236,
+        "hits": 73,
+        "hit_rate_pct": 30.93,
+        "roi_pct": 71.91
       },
       "holdout_market_favorite": {
-        "races": 235,
+        "races": 236,
         "hits": 105,
-        "hit_rate_pct": 44.68,
-        "roi_pct": 101.19
+        "hit_rate_pct": 44.49,
+        "roi_pct": 101.44
       },
       "holdout_value_rule": {
-        "races": 235,
-        "hits": 7,
-        "hit_rate_pct": 2.98,
-        "roi_pct": 103.49
+        "races": 236,
+        "hits": 6,
+        "hit_rate_pct": 2.54,
+        "roi_pct": 86.65
       },
       "development_blend_candidate_comparison": {
         "0.00": {
           "market_probability_weight_pct": 0.0,
-          "races": 505,
+          "races": 537,
           "top1": {
-            "races_bet": 505,
-            "hits": 138,
-            "hit_rate_pct": 27.33,
-            "stake_jpy": 50500,
-            "return_jpy": 31030,
-            "profit_jpy": -19470,
-            "roi_pct": 61.45,
+            "races_bet": 537,
+            "hits": 147,
+            "hit_rate_pct": 27.37,
+            "stake_jpy": 53700,
+            "return_jpy": 33180,
+            "profit_jpy": -20520,
+            "roi_pct": 61.79,
             "roi_95ci": {
               "method": "race-level bootstrap percentile interval",
               "replicates": 2000,
               "roi_95ci": [
-                50.1584,
-                73.4653
+                50.6331,
+                72.8492
               ]
             }
           },
-          "top3_coverage_hits": 313,
-          "top3_coverage_pct": 61.98
+          "top3_coverage_hits": 334,
+          "top3_coverage_pct": 62.2
         },
         "0.25": {
           "market_probability_weight_pct": 25.0,
-          "races": 505,
+          "races": 537,
           "top1": {
-            "races_bet": 505,
-            "hits": 170,
-            "hit_rate_pct": 33.66,
-            "stake_jpy": 50500,
-            "return_jpy": 31990,
-            "profit_jpy": -18510,
-            "roi_pct": 63.35,
+            "races_bet": 537,
+            "hits": 180,
+            "hit_rate_pct": 33.52,
+            "stake_jpy": 53700,
+            "return_jpy": 34330,
+            "profit_jpy": -19370,
+            "roi_pct": 63.93,
             "roi_95ci": {
               "method": "race-level bootstrap percentile interval",
               "replicates": 2000,
               "roi_95ci": [
-                54.198,
-                73.2277
+                54.9348,
+                73.1471
               ]
             }
           },
-          "top3_coverage_hits": 364,
-          "top3_coverage_pct": 72.08
+          "top3_coverage_hits": 387,
+          "top3_coverage_pct": 72.07
         },
         "0.50": {
           "market_probability_weight_pct": 50.0,
-          "races": 505,
+          "races": 537,
           "top1": {
-            "races_bet": 505,
-            "hits": 192,
-            "hit_rate_pct": 38.02,
-            "stake_jpy": 50500,
-            "return_jpy": 36270,
-            "profit_jpy": -14230,
-            "roi_pct": 71.82,
+            "races_bet": 537,
+            "hits": 203,
+            "hit_rate_pct": 37.8,
+            "stake_jpy": 53700,
+            "return_jpy": 38560,
+            "profit_jpy": -15140,
+            "roi_pct": 71.81,
             "roi_95ci": {
               "method": "race-level bootstrap percentile interval",
               "replicates": 2000,
               "roi_95ci": [
-                62.9901,
-                80.7525
+                62.9609,
+                80.7635
               ]
             }
           },
-          "top3_coverage_hits": 367,
-          "top3_coverage_pct": 72.67
+          "top3_coverage_hits": 393,
+          "top3_coverage_pct": 73.18
         },
         "0.75": {
           "market_probability_weight_pct": 75.0,
-          "races": 505,
+          "races": 537,
           "top1": {
-            "races_bet": 505,
-            "hits": 201,
-            "hit_rate_pct": 39.8,
-            "stake_jpy": 50500,
-            "return_jpy": 39100,
-            "profit_jpy": -11400,
-            "roi_pct": 77.43,
+            "races_bet": 537,
+            "hits": 213,
+            "hit_rate_pct": 39.66,
+            "stake_jpy": 53700,
+            "return_jpy": 41680,
+            "profit_jpy": -12020,
+            "roi_pct": 77.62,
             "roi_95ci": {
               "method": "race-level bootstrap percentile interval",
               "replicates": 2000,
               "roi_95ci": [
-                68.3762,
-                87.2673
+                68.4544,
+                86.8529
               ]
             }
           },
-          "top3_coverage_hits": 372,
-          "top3_coverage_pct": 73.66
+          "top3_coverage_hits": 398,
+          "top3_coverage_pct": 74.12
         },
         "1.00": {
           "market_probability_weight_pct": 100.0,
-          "races": 505,
+          "races": 537,
           "top1": {
-            "races_bet": 505,
-            "hits": 204,
-            "hit_rate_pct": 40.4,
-            "stake_jpy": 50500,
-            "return_jpy": 41340,
-            "profit_jpy": -9160,
-            "roi_pct": 81.86,
+            "races_bet": 537,
+            "hits": 216,
+            "hit_rate_pct": 40.22,
+            "stake_jpy": 53700,
+            "return_jpy": 43920,
+            "profit_jpy": -9780,
+            "roi_pct": 81.79,
             "roi_95ci": {
               "method": "race-level bootstrap percentile interval",
               "replicates": 2000,
               "roi_95ci": [
-                71.802,
-                92.7327
+                71.9926,
+                92.4022
               ]
             }
           },
-          "top3_coverage_hits": 370,
-          "top3_coverage_pct": 73.27
+          "top3_coverage_hits": 395,
+          "top3_coverage_pct": 73.56
         }
       },
       "holdout_blend_candidate_comparison": {
         "0.00": {
           "market_probability_weight_pct": 0.0,
-          "races": 235,
+          "races": 236,
           "top1": {
-            "races_bet": 235,
-            "hits": 75,
-            "hit_rate_pct": 31.91,
-            "stake_jpy": 23500,
-            "return_jpy": 16230,
-            "profit_jpy": -7270,
-            "roi_pct": 69.06,
+            "races_bet": 236,
+            "hits": 73,
+            "hit_rate_pct": 30.93,
+            "stake_jpy": 23600,
+            "return_jpy": 16970,
+            "profit_jpy": -6630,
+            "roi_pct": 71.91,
             "roi_95ci": {
               "method": "race-level bootstrap percentile interval",
               "replicates": 2000,
               "roi_95ci": [
-                51.4043,
-                87.0638
+                53.178,
+                91.1864
               ]
             }
           },
-          "top3_coverage_hits": 152,
-          "top3_coverage_pct": 64.68
+          "top3_coverage_hits": 148,
+          "top3_coverage_pct": 62.71
         },
         "0.25": {
           "market_probability_weight_pct": 25.0,
-          "races": 235,
+          "races": 236,
           "top1": {
-            "races_bet": 235,
-            "hits": 89,
-            "hit_rate_pct": 37.87,
-            "stake_jpy": 23500,
-            "return_jpy": 17740,
-            "profit_jpy": -5760,
-            "roi_pct": 75.49,
+            "races_bet": 236,
+            "hits": 87,
+            "hit_rate_pct": 36.86,
+            "stake_jpy": 23600,
+            "return_jpy": 17350,
+            "profit_jpy": -6250,
+            "roi_pct": 73.52,
             "roi_95ci": {
               "method": "race-level bootstrap percentile interval",
               "replicates": 2000,
               "roi_95ci": [
-                59.617,
-                91.7021
+                58.4746,
+                90.0424
               ]
             }
           },
-          "top3_coverage_hits": 168,
-          "top3_coverage_pct": 71.49
+          "top3_coverage_hits": 166,
+          "top3_coverage_pct": 70.34
         },
         "0.50": {
           "market_probability_weight_pct": 50.0,
-          "races": 235,
+          "races": 236,
           "top1": {
-            "races_bet": 235,
-            "hits": 99,
-            "hit_rate_pct": 42.13,
-            "stake_jpy": 23500,
-            "return_jpy": 18890,
-            "profit_jpy": -4610,
-            "roi_pct": 80.38,
+            "races_bet": 236,
+            "hits": 100,
+            "hit_rate_pct": 42.37,
+            "stake_jpy": 23600,
+            "return_jpy": 19310,
+            "profit_jpy": -4290,
+            "roi_pct": 81.82,
             "roi_95ci": {
               "method": "race-level bootstrap percentile interval",
               "replicates": 2000,
               "roi_95ci": [
-                65.5745,
-                95.8298
+                67.2034,
+                97.839
+              ]
+            }
+          },
+          "top3_coverage_hits": 174,
+          "top3_coverage_pct": 73.73
+        },
+        "0.75": {
+          "market_probability_weight_pct": 75.0,
+          "races": 236,
+          "top1": {
+            "races_bet": 236,
+            "hits": 100,
+            "hit_rate_pct": 42.37,
+            "stake_jpy": 23600,
+            "return_jpy": 20410,
+            "profit_jpy": -3190,
+            "roi_pct": 86.48,
+            "roi_95ci": {
+              "method": "race-level bootstrap percentile interval",
+              "replicates": 2000,
+              "roi_95ci": [
+                67.5424,
+                109.0254
               ]
             }
           },
           "top3_coverage_hits": 177,
-          "top3_coverage_pct": 75.32
-        },
-        "0.75": {
-          "market_probability_weight_pct": 75.0,
-          "races": 235,
-          "top1": {
-            "races_bet": 235,
-            "hits": 100,
-            "hit_rate_pct": 42.55,
-            "stake_jpy": 23500,
-            "return_jpy": 20250,
-            "profit_jpy": -3250,
-            "roi_pct": 86.17,
-            "roi_95ci": {
-              "method": "race-level bootstrap percentile interval",
-              "replicates": 2000,
-              "roi_95ci": [
-                68.0851,
-                107.2766
-              ]
-            }
-          },
-          "top3_coverage_hits": 175,
-          "top3_coverage_pct": 74.47
+          "top3_coverage_pct": 75.0
         },
         "1.00": {
           "market_probability_weight_pct": 100.0,
-          "races": 235,
+          "races": 236,
           "top1": {
-            "races_bet": 235,
+            "races_bet": 236,
             "hits": 105,
-            "hit_rate_pct": 44.68,
-            "stake_jpy": 23500,
-            "return_jpy": 23780,
-            "profit_jpy": 280,
-            "roi_pct": 101.19,
+            "hit_rate_pct": 44.49,
+            "stake_jpy": 23600,
+            "return_jpy": 23940,
+            "profit_jpy": 340,
+            "roi_pct": 101.44,
             "roi_95ci": {
               "method": "race-level bootstrap percentile interval",
               "replicates": 2000,
               "roi_95ci": [
-                76.6809,
-                131.9574
+                75.339,
+                131.6949
               ]
             }
           },
-          "top3_coverage_hits": 176,
-          "top3_coverage_pct": 74.89
+          "top3_coverage_hits": 180,
+          "top3_coverage_pct": 76.27
         }
       },
       "development_rank_disagreement": {
         "model_ranks_5plus_above_market": {
-          "horses": 247,
-          "races": 191,
+          "horses": 263,
+          "races": 205,
           "winners": 14,
-          "horse_level_win_rate_pct": 5.67
+          "horse_level_win_rate_pct": 5.32
         },
         "market_ranks_5plus_above_model": {
-          "horses": 327,
-          "races": 253,
-          "winners": 34,
-          "horse_level_win_rate_pct": 10.4
+          "horses": 348,
+          "races": 269,
+          "winners": 36,
+          "horse_level_win_rate_pct": 10.34
         }
       },
       "holdout_rank_disagreement": {
         "model_ranks_5plus_above_market": {
-          "horses": 127,
-          "races": 105,
+          "horses": 123,
+          "races": 102,
           "winners": 4,
-          "horse_level_win_rate_pct": 3.15
+          "horse_level_win_rate_pct": 3.25
         },
         "market_ranks_5plus_above_model": {
           "horses": 155,
-          "races": 118,
-          "winners": 12,
-          "horse_level_win_rate_pct": 7.74
+          "races": 117,
+          "winners": 13,
+          "horse_level_win_rate_pct": 8.39
         }
       },
       "time_bucket_market_movement": {
         "selected_races_by_bucket": {
-          "T10": 119,
-          "T5": 68,
-          "T2": 29
+          "T10": 123,
+          "T5": 72,
+          "T2": 31
         },
         "T10_to_T5": {
           "matched_races": 4,
@@ -1892,240 +1892,240 @@
       "market_edge_conditions": {
         "development": {
           "model_agrees_with_market_favorite": {
-            "races": 221,
-            "model_top1_hit_rate_pct": 44.34,
-            "market_favorite_hit_rate_pct": 44.34,
-            "model_top3_coverage_pct": 70.59,
-            "market_top3_coverage_pct": 79.64,
+            "races": 237,
+            "model_top1_hit_rate_pct": 44.3,
+            "market_favorite_hit_rate_pct": 44.3,
+            "model_top3_coverage_pct": 71.31,
+            "market_top3_coverage_pct": 80.59,
             "blend_top1": {
               "0.25": {
-                "races_bet": 221,
-                "hits": 98,
-                "hit_rate_pct": 44.34,
-                "stake_jpy": 22100,
-                "return_jpy": 16740,
-                "profit_jpy": -5360,
-                "roi_pct": 75.75,
+                "races_bet": 237,
+                "hits": 105,
+                "hit_rate_pct": 44.3,
+                "stake_jpy": 23700,
+                "return_jpy": 17750,
+                "profit_jpy": -5950,
+                "roi_pct": 74.89,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    61.9005,
-                    89.457
+                    61.8143,
+                    87.2996
                   ]
                 }
               },
               "0.50": {
-                "races_bet": 221,
-                "hits": 98,
-                "hit_rate_pct": 44.34,
-                "stake_jpy": 22100,
-                "return_jpy": 16740,
-                "profit_jpy": -5360,
-                "roi_pct": 75.75,
+                "races_bet": 237,
+                "hits": 105,
+                "hit_rate_pct": 44.3,
+                "stake_jpy": 23700,
+                "return_jpy": 17750,
+                "profit_jpy": -5950,
+                "roi_pct": 74.89,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    61.9005,
-                    89.457
+                    61.8143,
+                    87.2996
                   ]
                 }
               },
               "0.75": {
-                "races_bet": 221,
-                "hits": 98,
-                "hit_rate_pct": 44.34,
-                "stake_jpy": 22100,
-                "return_jpy": 16740,
-                "profit_jpy": -5360,
-                "roi_pct": 75.75,
+                "races_bet": 237,
+                "hits": 105,
+                "hit_rate_pct": 44.3,
+                "stake_jpy": 23700,
+                "return_jpy": 17750,
+                "profit_jpy": -5950,
+                "roi_pct": 74.89,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    61.9005,
-                    89.457
+                    61.8143,
+                    87.2996
                   ]
                 }
               }
             }
           },
           "model_disagrees_with_market_favorite": {
-            "races": 284,
-            "model_top1_hit_rate_pct": 14.08,
-            "market_favorite_hit_rate_pct": 37.32,
-            "model_top3_coverage_pct": 55.28,
-            "market_top3_coverage_pct": 68.31,
+            "races": 300,
+            "model_top1_hit_rate_pct": 14.0,
+            "market_favorite_hit_rate_pct": 37.0,
+            "model_top3_coverage_pct": 55.0,
+            "market_top3_coverage_pct": 68.0,
             "blend_top1": {
               "0.25": {
-                "races_bet": 284,
-                "hits": 72,
-                "hit_rate_pct": 25.35,
-                "stake_jpy": 28400,
-                "return_jpy": 15250,
-                "profit_jpy": -13150,
-                "roi_pct": 53.7,
+                "races_bet": 300,
+                "hits": 75,
+                "hit_rate_pct": 25.0,
+                "stake_jpy": 30000,
+                "return_jpy": 16580,
+                "profit_jpy": -13420,
+                "roi_pct": 55.27,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    41.162,
-                    67.3239
+                    42.8667,
+                    69.2
                   ]
                 }
               },
               "0.50": {
-                "races_bet": 284,
-                "hits": 94,
-                "hit_rate_pct": 33.1,
-                "stake_jpy": 28400,
-                "return_jpy": 19530,
-                "profit_jpy": -8870,
-                "roi_pct": 68.77,
+                "races_bet": 300,
+                "hits": 98,
+                "hit_rate_pct": 32.67,
+                "stake_jpy": 30000,
+                "return_jpy": 20810,
+                "profit_jpy": -9190,
+                "roi_pct": 69.37,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    55.9859,
-                    81.6197
+                    57.2,
+                    82.3333
                   ]
                 }
               },
               "0.75": {
-                "races_bet": 284,
-                "hits": 103,
-                "hit_rate_pct": 36.27,
-                "stake_jpy": 28400,
-                "return_jpy": 22360,
-                "profit_jpy": -6040,
-                "roi_pct": 78.73,
+                "races_bet": 300,
+                "hits": 108,
+                "hit_rate_pct": 36.0,
+                "stake_jpy": 30000,
+                "return_jpy": 23930,
+                "profit_jpy": -6070,
+                "roi_pct": 79.77,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    64.8944,
-                    92.6408
+                    65.7667,
+                    93.4333
                   ]
                 }
               }
             }
           },
           "model_top_is_market_rank_1_to_3": {
-            "races": 397,
-            "model_top1_hit_rate_pct": 32.24,
-            "market_favorite_hit_rate_pct": 42.32,
-            "model_top3_coverage_pct": 66.5,
-            "market_top3_coverage_pct": 76.32,
+            "races": 424,
+            "model_top1_hit_rate_pct": 32.08,
+            "market_favorite_hit_rate_pct": 42.22,
+            "model_top3_coverage_pct": 66.51,
+            "market_top3_coverage_pct": 76.89,
             "blend_top1": {
               "0.25": {
-                "races_bet": 397,
-                "hits": 145,
-                "hit_rate_pct": 36.52,
-                "stake_jpy": 39700,
-                "return_jpy": 25850,
-                "profit_jpy": -13850,
-                "roi_pct": 65.11,
+                "races_bet": 424,
+                "hits": 154,
+                "hit_rate_pct": 36.32,
+                "stake_jpy": 42400,
+                "return_jpy": 27370,
+                "profit_jpy": -15030,
+                "roi_pct": 64.55,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    56.0202,
-                    75.0126
+                    55.5896,
+                    73.7736
                   ]
                 }
               },
               "0.50": {
-                "races_bet": 397,
-                "hits": 164,
-                "hit_rate_pct": 41.31,
-                "stake_jpy": 39700,
-                "return_jpy": 30460,
-                "profit_jpy": -9240,
-                "roi_pct": 76.73,
+                "races_bet": 424,
+                "hits": 174,
+                "hit_rate_pct": 41.04,
+                "stake_jpy": 42400,
+                "return_jpy": 32370,
+                "profit_jpy": -10030,
+                "roi_pct": 76.34,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    65.7935,
-                    87.2796
+                    66.4151,
+                    86.6038
                   ]
                 }
               },
               "0.75": {
-                "races_bet": 397,
-                "hits": 167,
-                "hit_rate_pct": 42.07,
-                "stake_jpy": 39700,
-                "return_jpy": 31140,
-                "profit_jpy": -8560,
-                "roi_pct": 78.44,
+                "races_bet": 424,
+                "hits": 178,
+                "hit_rate_pct": 41.98,
+                "stake_jpy": 42400,
+                "return_jpy": 33340,
+                "profit_jpy": -9060,
+                "roi_pct": 78.63,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    68.0605,
-                    88.9924
+                    68.0425,
+                    88.75
                   ]
                 }
               }
             }
           },
           "model_top_is_market_rank_4_to_6": {
-            "races": 75,
-            "model_top1_hit_rate_pct": 9.33,
-            "market_favorite_hit_rate_pct": 40.0,
-            "model_top3_coverage_pct": 46.67,
-            "market_top3_coverage_pct": 68.0,
+            "races": 80,
+            "model_top1_hit_rate_pct": 10.0,
+            "market_favorite_hit_rate_pct": 38.75,
+            "model_top3_coverage_pct": 47.5,
+            "market_top3_coverage_pct": 66.25,
             "blend_top1": {
               "0.25": {
-                "races_bet": 75,
-                "hits": 19,
-                "hit_rate_pct": 25.33,
-                "stake_jpy": 7500,
-                "return_jpy": 3910,
-                "profit_jpy": -3590,
-                "roi_pct": 52.13,
+                "races_bet": 80,
+                "hits": 20,
+                "hit_rate_pct": 25.0,
+                "stake_jpy": 8000,
+                "return_jpy": 4730,
+                "profit_jpy": -3270,
+                "roi_pct": 59.12,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    30.0,
-                    74.4
+                    33.625,
+                    89.0
                   ]
                 }
               },
               "0.50": {
-                "races_bet": 75,
-                "hits": 21,
-                "hit_rate_pct": 28.0,
-                "stake_jpy": 7500,
-                "return_jpy": 4220,
-                "profit_jpy": -3280,
-                "roi_pct": 56.27,
+                "races_bet": 80,
+                "hits": 22,
+                "hit_rate_pct": 27.5,
+                "stake_jpy": 8000,
+                "return_jpy": 4600,
+                "profit_jpy": -3400,
+                "roi_pct": 57.5,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
                     36.0,
-                    78.2667
+                    80.75
                   ]
                 }
               },
               "0.75": {
-                "races_bet": 75,
-                "hits": 28,
-                "hit_rate_pct": 37.33,
-                "stake_jpy": 7500,
-                "return_jpy": 6540,
-                "profit_jpy": -960,
-                "roi_pct": 87.2,
+                "races_bet": 80,
+                "hits": 29,
+                "hit_rate_pct": 36.25,
+                "stake_jpy": 8000,
+                "return_jpy": 6920,
+                "profit_jpy": -1080,
+                "roi_pct": 86.5,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    58.9333,
-                    116.9333
+                    59.125,
+                    116.125
                   ]
                 }
               }
@@ -2192,180 +2192,180 @@
             }
           },
           "market_favorite_is_model_rank_1_to_3": {
-            "races": 373,
-            "model_top1_hit_rate_pct": 32.44,
-            "market_favorite_hit_rate_pct": 43.16,
-            "model_top3_coverage_pct": 69.71,
-            "market_top3_coverage_pct": 76.68,
+            "races": 398,
+            "model_top1_hit_rate_pct": 32.16,
+            "market_favorite_hit_rate_pct": 42.71,
+            "model_top3_coverage_pct": 69.85,
+            "market_top3_coverage_pct": 77.14,
             "blend_top1": {
               "0.25": {
-                "races_bet": 373,
-                "hits": 142,
-                "hit_rate_pct": 38.07,
-                "stake_jpy": 37300,
-                "return_jpy": 26500,
-                "profit_jpy": -10800,
-                "roi_pct": 71.05,
+                "races_bet": 398,
+                "hits": 150,
+                "hit_rate_pct": 37.69,
+                "stake_jpy": 39800,
+                "return_jpy": 27700,
+                "profit_jpy": -12100,
+                "roi_pct": 69.6,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    60.1072,
-                    83.0295
+                    59.397,
+                    80.8794
                   ]
                 }
               },
               "0.50": {
-                "races_bet": 373,
-                "hits": 154,
-                "hit_rate_pct": 41.29,
-                "stake_jpy": 37300,
-                "return_jpy": 28810,
-                "profit_jpy": -8490,
-                "roi_pct": 77.24,
+                "races_bet": 398,
+                "hits": 163,
+                "hit_rate_pct": 40.95,
+                "stake_jpy": 39800,
+                "return_jpy": 30390,
+                "profit_jpy": -9410,
+                "roi_pct": 76.36,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    66.6488,
-                    88.4718
+                    66.1055,
+                    87.2362
                   ]
                 }
               },
               "0.75": {
-                "races_bet": 373,
-                "hits": 160,
-                "hit_rate_pct": 42.9,
-                "stake_jpy": 37300,
-                "return_jpy": 30120,
-                "profit_jpy": -7180,
-                "roi_pct": 80.75,
+                "races_bet": 398,
+                "hits": 169,
+                "hit_rate_pct": 42.46,
+                "stake_jpy": 39800,
+                "return_jpy": 31700,
+                "profit_jpy": -8100,
+                "roi_pct": 79.65,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    69.7855,
-                    91.6354
+                    69.4724,
+                    90.4523
                   ]
                 }
               }
             }
           },
           "market_favorite_is_model_rank_4_to_6": {
-            "races": 93,
-            "model_top1_hit_rate_pct": 15.05,
-            "market_favorite_hit_rate_pct": 36.56,
-            "model_top3_coverage_pct": 45.16,
-            "market_top3_coverage_pct": 65.59,
+            "races": 99,
+            "model_top1_hit_rate_pct": 16.16,
+            "market_favorite_hit_rate_pct": 36.36,
+            "model_top3_coverage_pct": 45.45,
+            "market_top3_coverage_pct": 64.65,
             "blend_top1": {
               "0.25": {
-                "races_bet": 93,
-                "hits": 23,
-                "hit_rate_pct": 24.73,
-                "stake_jpy": 9300,
-                "return_jpy": 4400,
-                "profit_jpy": -4900,
-                "roi_pct": 47.31,
+                "races_bet": 99,
+                "hits": 25,
+                "hit_rate_pct": 25.25,
+                "stake_jpy": 9900,
+                "return_jpy": 5540,
+                "profit_jpy": -4360,
+                "roi_pct": 55.96,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    30.5376,
-                    65.914
+                    34.2424,
+                    81.5152
                   ]
                 }
               },
               "0.50": {
-                "races_bet": 93,
-                "hits": 31,
-                "hit_rate_pct": 33.33,
-                "stake_jpy": 9300,
-                "return_jpy": 6030,
-                "profit_jpy": -3270,
-                "roi_pct": 64.84,
+                "races_bet": 99,
+                "hits": 32,
+                "hit_rate_pct": 32.32,
+                "stake_jpy": 9900,
+                "return_jpy": 6350,
+                "profit_jpy": -3550,
+                "roi_pct": 64.14,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    44.3011,
-                    87.4194
+                    44.8485,
+                    86.2626
                   ]
                 }
               },
               "0.75": {
-                "races_bet": 93,
-                "hits": 33,
-                "hit_rate_pct": 35.48,
-                "stake_jpy": 9300,
-                "return_jpy": 6930,
-                "profit_jpy": -2370,
-                "roi_pct": 74.52,
+                "races_bet": 99,
+                "hits": 35,
+                "hit_rate_pct": 35.35,
+                "stake_jpy": 9900,
+                "return_jpy": 7540,
+                "profit_jpy": -2360,
+                "roi_pct": 76.16,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    52.3656,
-                    97.0968
+                    53.9394,
+                    99.1919
                   ]
                 }
               }
             }
           },
           "market_favorite_is_model_rank_7_plus": {
-            "races": 39,
-            "model_top1_hit_rate_pct": 7.69,
-            "market_favorite_hit_rate_pct": 23.08,
-            "model_top3_coverage_pct": 28.21,
-            "market_top3_coverage_pct": 58.97,
+            "races": 40,
+            "model_top1_hit_rate_pct": 7.5,
+            "market_favorite_hit_rate_pct": 25.0,
+            "model_top3_coverage_pct": 27.5,
+            "market_top3_coverage_pct": 60.0,
             "blend_top1": {
               "0.25": {
-                "races_bet": 39,
+                "races_bet": 40,
                 "hits": 5,
-                "hit_rate_pct": 12.82,
-                "stake_jpy": 3900,
+                "hit_rate_pct": 12.5,
+                "stake_jpy": 4000,
                 "return_jpy": 1090,
-                "profit_jpy": -2810,
-                "roi_pct": 27.95,
+                "profit_jpy": -2910,
+                "roi_pct": 27.25,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    6.6667,
-                    54.6154
+                    6.5,
+                    54.0
                   ]
                 }
               },
               "0.50": {
-                "races_bet": 39,
-                "hits": 7,
-                "hit_rate_pct": 17.95,
-                "stake_jpy": 3900,
-                "return_jpy": 1430,
-                "profit_jpy": -2470,
-                "roi_pct": 36.67,
+                "races_bet": 40,
+                "hits": 8,
+                "hit_rate_pct": 20.0,
+                "stake_jpy": 4000,
+                "return_jpy": 1820,
+                "profit_jpy": -2180,
+                "roi_pct": 45.5,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    12.5641,
-                    64.359
+                    17.5,
+                    77.75
                   ]
                 }
               },
               "0.75": {
-                "races_bet": 39,
-                "hits": 8,
-                "hit_rate_pct": 20.51,
-                "stake_jpy": 3900,
-                "return_jpy": 2050,
-                "profit_jpy": -1850,
-                "roi_pct": 52.56,
+                "races_bet": 40,
+                "hits": 9,
+                "hit_rate_pct": 22.5,
+                "stake_jpy": 4000,
+                "return_jpy": 2440,
+                "profit_jpy": -1560,
+                "roi_pct": 61.0,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    18.9744,
-                    93.8462
+                    23.5,
+                    102.75
                   ]
                 }
               }
@@ -2374,240 +2374,240 @@
         },
         "holdout": {
           "model_agrees_with_market_favorite": {
-            "races": 103,
-            "model_top1_hit_rate_pct": 58.25,
-            "market_favorite_hit_rate_pct": 58.25,
-            "model_top3_coverage_pct": 82.52,
-            "market_top3_coverage_pct": 87.38,
+            "races": 100,
+            "model_top1_hit_rate_pct": 57.0,
+            "market_favorite_hit_rate_pct": 57.0,
+            "model_top3_coverage_pct": 80.0,
+            "market_top3_coverage_pct": 88.0,
             "blend_top1": {
               "0.25": {
-                "races_bet": 103,
-                "hits": 60,
-                "hit_rate_pct": 58.25,
-                "stake_jpy": 10300,
-                "return_jpy": 9660,
-                "profit_jpy": -640,
-                "roi_pct": 93.79,
+                "races_bet": 100,
+                "hits": 57,
+                "hit_rate_pct": 57.0,
+                "stake_jpy": 10000,
+                "return_jpy": 9760,
+                "profit_jpy": -240,
+                "roi_pct": 97.6,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    74.8544,
-                    116.2136
+                    75.1,
+                    121.4
                   ]
                 }
               },
               "0.50": {
-                "races_bet": 103,
-                "hits": 60,
-                "hit_rate_pct": 58.25,
-                "stake_jpy": 10300,
-                "return_jpy": 9660,
-                "profit_jpy": -640,
-                "roi_pct": 93.79,
+                "races_bet": 100,
+                "hits": 57,
+                "hit_rate_pct": 57.0,
+                "stake_jpy": 10000,
+                "return_jpy": 9760,
+                "profit_jpy": -240,
+                "roi_pct": 97.6,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    74.8544,
-                    116.2136
+                    75.1,
+                    121.4
                   ]
                 }
               },
               "0.75": {
-                "races_bet": 103,
-                "hits": 60,
-                "hit_rate_pct": 58.25,
-                "stake_jpy": 10300,
-                "return_jpy": 9660,
-                "profit_jpy": -640,
-                "roi_pct": 93.79,
+                "races_bet": 100,
+                "hits": 57,
+                "hit_rate_pct": 57.0,
+                "stake_jpy": 10000,
+                "return_jpy": 9760,
+                "profit_jpy": -240,
+                "roi_pct": 97.6,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    74.8544,
-                    116.2136
+                    75.1,
+                    121.4
                   ]
                 }
               }
             }
           },
           "model_disagrees_with_market_favorite": {
-            "races": 132,
-            "model_top1_hit_rate_pct": 11.36,
-            "market_favorite_hit_rate_pct": 34.09,
-            "model_top3_coverage_pct": 50.76,
-            "market_top3_coverage_pct": 65.15,
+            "races": 136,
+            "model_top1_hit_rate_pct": 11.76,
+            "market_favorite_hit_rate_pct": 35.29,
+            "model_top3_coverage_pct": 50.0,
+            "market_top3_coverage_pct": 67.65,
             "blend_top1": {
               "0.25": {
-                "races_bet": 132,
-                "hits": 29,
-                "hit_rate_pct": 21.97,
-                "stake_jpy": 13200,
-                "return_jpy": 8080,
-                "profit_jpy": -5120,
-                "roi_pct": 61.21,
+                "races_bet": 136,
+                "hits": 30,
+                "hit_rate_pct": 22.06,
+                "stake_jpy": 13600,
+                "return_jpy": 7590,
+                "profit_jpy": -6010,
+                "roi_pct": 55.81,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    38.4848,
-                    85.7576
+                    36.3235,
+                    76.0294
                   ]
                 }
               },
               "0.50": {
-                "races_bet": 132,
-                "hits": 39,
-                "hit_rate_pct": 29.55,
-                "stake_jpy": 13200,
-                "return_jpy": 9230,
-                "profit_jpy": -3970,
-                "roi_pct": 69.92,
+                "races_bet": 136,
+                "hits": 43,
+                "hit_rate_pct": 31.62,
+                "stake_jpy": 13600,
+                "return_jpy": 9550,
+                "profit_jpy": -4050,
+                "roi_pct": 70.22,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    49.6212,
-                    92.4242
+                    49.9265,
+                    91.1765
                   ]
                 }
               },
               "0.75": {
-                "races_bet": 132,
-                "hits": 40,
-                "hit_rate_pct": 30.3,
-                "stake_jpy": 13200,
-                "return_jpy": 10590,
-                "profit_jpy": -2610,
-                "roi_pct": 80.23,
+                "races_bet": 136,
+                "hits": 43,
+                "hit_rate_pct": 31.62,
+                "stake_jpy": 13600,
+                "return_jpy": 10650,
+                "profit_jpy": -2950,
+                "roi_pct": 78.31,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    52.1212,
-                    118.4091
+                    52.5735,
+                    114.6324
                   ]
                 }
               }
             }
           },
           "model_top_is_market_rank_1_to_3": {
-            "races": 184,
-            "model_top1_hit_rate_pct": 39.13,
-            "market_favorite_hit_rate_pct": 48.91,
-            "model_top3_coverage_pct": 70.65,
-            "market_top3_coverage_pct": 78.8,
+            "races": 178,
+            "model_top1_hit_rate_pct": 39.33,
+            "market_favorite_hit_rate_pct": 48.88,
+            "model_top3_coverage_pct": 70.22,
+            "market_top3_coverage_pct": 79.78,
             "blend_top1": {
               "0.25": {
-                "races_bet": 184,
-                "hits": 79,
-                "hit_rate_pct": 42.93,
-                "stake_jpy": 18400,
-                "return_jpy": 15090,
-                "profit_jpy": -3310,
-                "roi_pct": 82.01,
+                "races_bet": 178,
+                "hits": 76,
+                "hit_rate_pct": 42.7,
+                "stake_jpy": 17800,
+                "return_jpy": 15150,
+                "profit_jpy": -2650,
+                "roi_pct": 85.11,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    65.4891,
-                    101.0326
+                    66.3483,
+                    104.4944
                   ]
                 }
               },
               "0.50": {
-                "races_bet": 184,
-                "hits": 86,
-                "hit_rate_pct": 46.74,
-                "stake_jpy": 18400,
-                "return_jpy": 15820,
-                "profit_jpy": -2580,
-                "roi_pct": 85.98,
+                "races_bet": 178,
+                "hits": 85,
+                "hit_rate_pct": 47.75,
+                "stake_jpy": 17800,
+                "return_jpy": 16080,
+                "profit_jpy": -1720,
+                "roi_pct": 90.34,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    68.8043,
-                    104.0761
+                    72.809,
+                    109.3258
                   ]
                 }
               },
               "0.75": {
-                "races_bet": 184,
-                "hits": 86,
-                "hit_rate_pct": 46.74,
-                "stake_jpy": 18400,
-                "return_jpy": 16830,
-                "profit_jpy": -1570,
-                "roi_pct": 91.47,
+                "races_bet": 178,
+                "hits": 83,
+                "hit_rate_pct": 46.63,
+                "stake_jpy": 17800,
+                "return_jpy": 16590,
+                "profit_jpy": -1210,
+                "roi_pct": 93.2,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    70.2174,
-                    118.0978
+                    71.236,
+                    122.0225
                   ]
                 }
               }
             }
           },
           "model_top_is_market_rank_4_to_6": {
-            "races": 37,
-            "model_top1_hit_rate_pct": 8.11,
-            "market_favorite_hit_rate_pct": 32.43,
-            "model_top3_coverage_pct": 43.24,
-            "market_top3_coverage_pct": 62.16,
+            "races": 44,
+            "model_top1_hit_rate_pct": 6.82,
+            "market_favorite_hit_rate_pct": 34.09,
+            "model_top3_coverage_pct": 38.64,
+            "market_top3_coverage_pct": 68.18,
             "blend_top1": {
               "0.25": {
-                "races_bet": 37,
-                "hits": 8,
-                "hit_rate_pct": 21.62,
-                "stake_jpy": 3700,
-                "return_jpy": 2080,
-                "profit_jpy": -1620,
-                "roi_pct": 56.22,
+                "races_bet": 44,
+                "hits": 9,
+                "hit_rate_pct": 20.45,
+                "stake_jpy": 4400,
+                "return_jpy": 1630,
+                "profit_jpy": -2770,
+                "roi_pct": 37.05,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    16.7568,
-                    111.0811
+                    16.1364,
+                    62.0455
                   ]
                 }
               },
               "0.50": {
-                "races_bet": 37,
-                "hits": 9,
-                "hit_rate_pct": 24.32,
-                "stake_jpy": 3700,
-                "return_jpy": 1880,
-                "profit_jpy": -1820,
-                "roi_pct": 50.81,
+                "races_bet": 44,
+                "hits": 11,
+                "hit_rate_pct": 25.0,
+                "stake_jpy": 4400,
+                "return_jpy": 2040,
+                "profit_jpy": -2360,
+                "roi_pct": 46.36,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    20.0,
-                    87.027
+                    23.4091,
+                    73.1818
                   ]
                 }
               },
               "0.75": {
-                "races_bet": 37,
-                "hits": 11,
-                "hit_rate_pct": 29.73,
-                "stake_jpy": 3700,
-                "return_jpy": 2570,
-                "profit_jpy": -1130,
-                "roi_pct": 69.46,
+                "races_bet": 44,
+                "hits": 14,
+                "hit_rate_pct": 31.82,
+                "stake_jpy": 4400,
+                "return_jpy": 2970,
+                "profit_jpy": -1430,
+                "roi_pct": 67.5,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    32.973,
-                    114.5946
+                    37.5,
+                    101.1364
                   ]
                 }
               }
@@ -2666,42 +2666,42 @@
           },
           "market_favorite_is_model_rank_1_to_3": {
             "races": 171,
-            "model_top1_hit_rate_pct": 39.77,
+            "model_top1_hit_rate_pct": 39.18,
             "market_favorite_hit_rate_pct": 47.95,
-            "model_top3_coverage_pct": 74.85,
-            "market_top3_coverage_pct": 80.12,
+            "model_top3_coverage_pct": 73.68,
+            "market_top3_coverage_pct": 81.29,
             "blend_top1": {
               "0.25": {
                 "races_bet": 171,
                 "hits": 78,
                 "hit_rate_pct": 45.61,
                 "stake_jpy": 17100,
-                "return_jpy": 13620,
-                "profit_jpy": -3480,
-                "roi_pct": 79.65,
+                "return_jpy": 14370,
+                "profit_jpy": -2730,
+                "roi_pct": 84.04,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    63.3333,
-                    95.614
+                    67.4854,
+                    103.3918
                   ]
                 }
               },
               "0.50": {
                 "races_bet": 171,
-                "hits": 83,
-                "hit_rate_pct": 48.54,
+                "hits": 84,
+                "hit_rate_pct": 49.12,
                 "stake_jpy": 17100,
-                "return_jpy": 14390,
-                "profit_jpy": -2710,
-                "roi_pct": 84.15,
+                "return_jpy": 15160,
+                "profit_jpy": -1940,
+                "roi_pct": 88.65,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    68.4211,
-                    100.8772
+                    71.345,
+                    107.6023
                   ]
                 }
               },
@@ -2710,95 +2710,95 @@
                 "hits": 82,
                 "hit_rate_pct": 47.95,
                 "stake_jpy": 17100,
-                "return_jpy": 13880,
-                "profit_jpy": -3220,
-                "roi_pct": 81.17,
+                "return_jpy": 14440,
+                "profit_jpy": -2660,
+                "roi_pct": 84.44,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    65.848,
-                    97.6608
+                    67.1345,
+                    102.807
                   ]
                 }
               }
             }
           },
           "market_favorite_is_model_rank_4_to_6": {
-            "races": 40,
-            "model_top1_hit_rate_pct": 15.0,
-            "market_favorite_hit_rate_pct": 42.5,
-            "model_top3_coverage_pct": 37.5,
-            "market_top3_coverage_pct": 65.0,
+            "races": 37,
+            "model_top1_hit_rate_pct": 13.51,
+            "market_favorite_hit_rate_pct": 43.24,
+            "model_top3_coverage_pct": 35.14,
+            "market_top3_coverage_pct": 67.57,
             "blend_top1": {
               "0.25": {
-                "races_bet": 40,
-                "hits": 10,
-                "hit_rate_pct": 25.0,
-                "stake_jpy": 4000,
-                "return_jpy": 3850,
-                "profit_jpy": -150,
-                "roi_pct": 96.25,
+                "races_bet": 37,
+                "hits": 8,
+                "hit_rate_pct": 21.62,
+                "stake_jpy": 3700,
+                "return_jpy": 2710,
+                "profit_jpy": -990,
+                "roi_pct": 73.24,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    39.75,
-                    165.0
+                    27.5676,
+                    130.2703
                   ]
                 }
               },
               "0.50": {
-                "races_bet": 40,
+                "races_bet": 37,
                 "hits": 13,
-                "hit_rate_pct": 32.5,
-                "stake_jpy": 4000,
-                "return_jpy": 3600,
-                "profit_jpy": -400,
-                "roi_pct": 90.0,
+                "hit_rate_pct": 35.14,
+                "stake_jpy": 3700,
+                "return_jpy": 3450,
+                "profit_jpy": -250,
+                "roi_pct": 93.24,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    45.75,
-                    138.0
+                    47.8378,
+                    147.8378
                   ]
                 }
               },
               "0.75": {
-                "races_bet": 40,
-                "hits": 14,
-                "hit_rate_pct": 35.0,
-                "stake_jpy": 4000,
-                "return_jpy": 5050,
-                "profit_jpy": 1050,
-                "roi_pct": 126.25,
+                "races_bet": 37,
+                "hits": 13,
+                "hit_rate_pct": 35.14,
+                "stake_jpy": 3700,
+                "return_jpy": 4610,
+                "profit_jpy": 910,
+                "roi_pct": 124.59,
                 "roi_95ci": {
                   "method": "race-level bootstrap percentile interval",
                   "replicates": 2000,
                   "roi_95ci": [
-                    51.5,
-                    233.0
+                    50.8108,
+                    238.3784
                   ]
                 }
               }
             }
           },
           "market_favorite_is_model_rank_7_plus": {
-            "races": 24,
-            "model_top1_hit_rate_pct": 4.17,
+            "races": 28,
+            "model_top1_hit_rate_pct": 3.57,
             "market_favorite_hit_rate_pct": 25.0,
-            "model_top3_coverage_pct": 37.5,
-            "market_top3_coverage_pct": 54.17,
+            "model_top3_coverage_pct": 32.14,
+            "market_top3_coverage_pct": 57.14,
             "blend_top1": {
               "0.25": {
-                "races_bet": 24,
+                "races_bet": 28,
                 "hits": 1,
-                "hit_rate_pct": 4.17,
-                "stake_jpy": 2400,
+                "hit_rate_pct": 3.57,
+                "stake_jpy": 2800,
                 "return_jpy": 270,
-                "profit_jpy": -2130,
-                "roi_pct": 11.25,
+                "profit_jpy": -2530,
+                "roi_pct": 9.64,
                 "roi_95ci": {
                   "method": "race-level bootstrap",
                   "replicates": 0,
@@ -2806,13 +2806,13 @@
                 }
               },
               "0.50": {
-                "races_bet": 24,
+                "races_bet": 28,
                 "hits": 3,
-                "hit_rate_pct": 12.5,
-                "stake_jpy": 2400,
-                "return_jpy": 900,
-                "profit_jpy": -1500,
-                "roi_pct": 37.5,
+                "hit_rate_pct": 10.71,
+                "stake_jpy": 2800,
+                "return_jpy": 700,
+                "profit_jpy": -2100,
+                "roi_pct": 25.0,
                 "roi_95ci": {
                   "method": "race-level bootstrap",
                   "replicates": 0,
@@ -2820,13 +2820,13 @@
                 }
               },
               "0.75": {
-                "races_bet": 24,
-                "hits": 4,
-                "hit_rate_pct": 16.67,
-                "stake_jpy": 2400,
-                "return_jpy": 1320,
-                "profit_jpy": -1080,
-                "roi_pct": 55.0,
+                "races_bet": 28,
+                "hits": 5,
+                "hit_rate_pct": 17.86,
+                "stake_jpy": 2800,
+                "return_jpy": 1360,
+                "profit_jpy": -1440,
+                "roi_pct": 48.57,
                 "roi_95ci": {
                   "method": "race-level bootstrap",
                   "replicates": 0,
@@ -3019,7 +3019,7 @@
   },
   "weekly_historical_backtest": {
     "generated_at": "2026-11-22T19:25:41.122243+00:00",
-    "age_hours": 26.97,
+    "age_hours": 50.47,
     "period": {
       "start": "2022-11-01",
       "end": "2026-10-31"
